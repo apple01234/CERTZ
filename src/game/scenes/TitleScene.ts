@@ -94,7 +94,7 @@ export class TitleScene extends Phaser.Scene {
       });
     }
 
-    // 중앙 세계수 실루엣 + 빛 + 파편
+    // 중앙 연합 실루엣 + 빛 + 파편
     this.glow = this.add.image(w / 2, h / 2 + 40, "glow").setAlpha(0.35).setBlendMode(Phaser.BlendModes.ADD);
     this.tree = this.add.image(w / 2, h / 2 + 10, "tree").setAlpha(0.92);
     this.frag = this.add.image(w / 2 + 120, h / 2 + 60, "fragment").setBlendMode(Phaser.BlendModes.ADD);
@@ -119,7 +119,7 @@ export class TitleScene extends Phaser.Scene {
     EventBus.emit("ui:title");
     audio.playBGM("title");
 
-    /* v1.4.12 — 벚꽃 잎 낙하 제거 (유저 지시) — 타이틀은 별빛+세계수 실루엣만 유지 */
+    /* v1.4.12 — 벚꽃 잎 낙하 제거 (유저 지시) — 타이틀은 별빛+연합 실루엣만 유지 */
 
     /* v1.2.1 (#4 최적화 x3) — 백그라운드 지연 로드: 타이틀 진입 즉시 코스튬/직업/GM 시트를 받는다.
      *  완료 시 애님 후등록 + deferDone 플래그. 유저가 시작 버튼을 누르는 시점엔 대부분 완료돼 있다. */

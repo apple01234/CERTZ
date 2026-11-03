@@ -11,7 +11,7 @@ const { YOUNG_PRINCESS_VILLAGE, storyPortalDestination, storyEntryAllowed, MIDDL
 const howlrstone = STORY_SEQUENCE.find(s => s.id === 'howlrstone');
 assert.equal(MIDDLE_CHAPTER_IMPLEMENTED, howlrstone.status !== 'not-implemented','잠금은 영프 편 구현 여부 데이터에서만 파생');
 const base={cleared:false,youngPrincessCleared:false};
-assert.equal(storyPortalDestination('village',base),null);
+assert.equal(storyPortalDestination('village',base),YOUNG_PRINCESS_VILLAGE,'new story is available without the removed campaign');
 assert.equal(storyPortalDestination('village',{...base,cleared:true}),YOUNG_PRINCESS_VILLAGE);
 assert.equal(storyPortalDestination('village',{cleared:true,youngPrincessCleared:true}),YOUNG_PRINCESS_VILLAGE,'base town never skips directly to Grand Planet');
 assert.equal(storyPortalDestination(YOUNG_PRINCESS_VILLAGE,{...base,cleared:true}),MIDDLE_CHAPTER_IMPLEMENTED?null:'dlcstargate1','해제 수단 없는 잠금은 그랜드 플레닛을 고립시킨다');
@@ -25,7 +25,7 @@ for(const stage of ['dlcstargate1','dlcstargatev','dlcsernium10']) {
   assert.equal(storyEntryAllowed(stage,{cleared:true,dlcTalked:true}),false,'old NPC flag is not an ending');
  }
 }
-assert.equal(storyEntryAllowed(YOUNG_PRINCESS_VILLAGE,base),false);
+assert.equal(storyEntryAllowed(YOUNG_PRINCESS_VILLAGE,base),true);
 assert.equal(storyEntryAllowed(YOUNG_PRINCESS_VILLAGE,{cleared:true}),true);
 assert.equal(storyEntryAllowed('forest1',base),true);
 assert.ok(STAGES[YOUNG_PRINCESS_VILLAGE]?.isVillage,'young princess has a real safe start village');
@@ -55,4 +55,7 @@ events.length=0;world.youngPrincessCleared=false;world.cleared=false;
 context.result.gotoStage.call(world,'dlcsernium10');assert.equal(events.length,0,'본편 미클리어 상태의 직접 진입 차단');
 assert.ok(source.includes('youngPrincessCleared: this.youngPrincessCleared'),'ending flag serialized');
 assert.ok(source.includes('this.youngPrincessCleared = savedPlayer.youngPrincessCleared ?? false'),'missing legacy flag restores false');
-console.log(`ALL CHECKS PASS: base ending → young princess start; Grand Planet gate follows MIDDLE_CHAPTER_IMPLEMENTED=${MIDDLE_CHAPTER_IMPLEMENTED}; base-clear requirement enforced`);
+assert.equal(storyEntryAllowed('dlcstargate1',{cleared:false,youngPrincessCleared:true}),true,'only the retained story ending gates Grand Planet');
+assert.equal(NEXT_STAGE.village,YOUNG_PRINCESS_VILLAGE);
+assert.equal(NEXT_STAGE.abyss10,'village','training returns to town instead of triggering a retired ending');
+console.log('PASS: direct Lilac entry; Grand Planet requires Lilac ending; training is optional');

@@ -19,7 +19,7 @@ import portraitCrops from "../../../public/assets/npcportrait/_map.json";
  *  v4.1.8 — 무료 플레이스홀더 npc_* 초상화 → 유료 SPUM 캐릭터 전면 교체 +
  *  챕터 마을 주민 17종 초상화 신설 (게임 내 NPC와 동일한 SPUM 스프라이트) */
 const NPC_PORTRAITS: Record<string, { tex: string; tone: string }> = {
-  "룬 정령 이그니": { tex: "pet_pixie", tone: "#67e8f9" }, // 시안 — 룬 정령
+  "연합 안내인": { tex: "pet_pixie", tone: "#67e8f9" }, // 시안 — 룬 정령
   "여관 주인 로안": { tex: "spum_mage", tone: "#fcd34d" },
   "마을 주민": { tex: "spum_villager_m", tone: "#fcd34d" },
   "마을 아이": { tex: "spum_villager_f", tone: "#fcd34d" },
@@ -32,7 +32,7 @@ const NPC_PORTRAITS: Record<string, { tex: string; tone: string }> = {
   "땅의 요정 여왕": { tex: "spum_elf", tone: "#a7f3d0" },
   "난쟁이 광산 조합장": { tex: "spum_miner", tone: "#fcd34d" },
   "마법사 흐레스": { tex: "npc_gm", tone: "#c4b5fd" },
-  "세계수 하울르스톤": { tex: "tree", tone: "#7dd3fc" },
+  "연합 기록관": { tex: "tree", tone: "#7dd3fc" },
   // v4.1.8 — 챕터 마을 주민 (게임 내 SPUM NPC와 동일 비주얼)
   "허브 채집가 베르": { tex: "spum_forager", tone: "#b8f0a0" },
   "신전 관리인 노아": { tex: "spum_mage", tone: "#b8f0a0" },

@@ -6795,7 +6795,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         break;
       }
 
-      /* ── 스톰브링어: 뇌왕 — 세계수 뿌리에서 솟는 수직 기둥 ── */
+      /* ── 스톰브링어: 뇌왕 — 연합 뿌리에서 솟는 수직 기둥 ── */
       case "stormbringer": {
         this.scene.cameras.main.flash(180, 150, 200, 255);
         this.scene.sfxSkill("thunder", 0.72);
@@ -7757,7 +7757,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const buff = this.hasBuff("buff_atk") || this.hasBuff("buff_king") ? 1.25 : 1;
     const king = this.hasBuff("buff_king") ? 1.3 / 1.25 : 1; // v3.0.6 — 왕의 가호 공격 +30%
     /* v3.0.16 — 세트 아이템 효과 + 몬스터 컬렉션 공격 % 보너스
-     *  v3.0.22 (#50) — 세계수의 가호: 평ATK +20·공격 +3% (결정 전부 수집 보너스)
+     *  v3.0.22 (#50) — 연합의 가호: 평ATK +20·공격 +3% (결정 전부 수집 보너스)
      *  v4.0.0 — 피규어/성좌 atkPct + 게이트 인런 카드 atkPct */
     const setPct = this.activeSet?.bonus.atkPct ?? 0;
     const colPct = collectionBonus(this.collectionRegistered).atkPct;
@@ -7782,7 +7782,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const potDef = sumPotLines([this.potentials[this.armor]]).def;
     /* v3.0.16 — 세트 방어력 보너스 */
     const setDef = this.activeSet?.bonus.defAdd ?? 0;
-    /* v3.0.22 (#50) — 세계수의 가호 방어 +8 */
+    /* v3.0.22 (#50) — 연합의 가호 방어 +8 */
     const blessDef = this.worldtreeBlessing ? WORLDTREE_BLESSING.def : 0;
     /* v3.0.20 (#8) — 별 1개마다 즉시 상승: +1 + 기본 방어의 6%
      *  v4.0.0 — 등급업 배율 + 피규어/배지/룬/성좌/스킨 flat 방어 */
@@ -7946,7 +7946,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** 몬스터 컬렉션 등록 종수 — 씬에서 최초 처치/로드 시 갱신 */
   collectionRegistered = 0;
 
-  /* ---------------- v3.0.22 (#50) — 세계수의 가호 ---------------- */
+  /* ---------------- v3.0.22 (#50) — 연합의 가호 ---------------- */
   /** 결정 전부 수집 보너스 활성 여부 (세이브) */
   worldtreeBlessing = false;
   /* v1.4.32 (유저 지시 #9 "n차 즉 차수가 점점 올라갈수록 예전 스킬 및 기본공격도
@@ -7965,7 +7965,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private get rebirthDmgMult(): number {
     return 1 + 0.12 * this.rebirths;
   }
-  /** 세계수의 가호 설정/해제 — atkTotal/defTotal/syncBonusHp에 즉시 반영 */
+  /** 연합의 가호 설정/해제 — atkTotal/defTotal/syncBonusHp에 즉시 반영 */
   setWorldtreeBlessing(on: boolean) {
     if (this.worldtreeBlessing === on) return;
     this.worldtreeBlessing = on;

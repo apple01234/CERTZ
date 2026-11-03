@@ -4,7 +4,7 @@ import "./fonts.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SERTZ — 기억의 서약",
+  title: "CERTZ — 라일락 월드",
   description:
     "당신만의 연합원으로 함께하는 2D 스토리 어드벤처. 왕국의 전쟁부터 별 너머의 귀향까지, 지워지지 않는 기억을 잇는 여정.",
   keywords: ["SERTZ", "기억의 서약", "스토리 어드벤처", "픽셀 RPG", "협동 보스"],

@@ -202,7 +202,7 @@ const ASSET_LIST = [
   "tile_cave",
   "tile_abyss",
   "tile_path_dark",
-  // v2.0 아뜰란티스 확장 타일 (v1.5 이관)
+  // v2.0 이전 서사 확장 타일 (v1.5 이관)
   "tile_magma", "tile_magma_path", "tile_stone", "tile_hel",
   /* vc196 — 무료 타일맵(Kenney CC0) 128px 심리스 19종 */
   "tile_amber", "tile_ash", "tile_blood", "tile_deep", "tile_desert", "tile_forest", "tile_garden", "tile_grass2", "tile_lava", "tile_morgue", "tile_moss", "tile_nebula", "tile_ruin", "tile_sand", "tile_vault",
@@ -266,7 +266,7 @@ const ASSET_LIST = [
   "icegolem_run0", "icegolem_run1", "icegolem_run2", "icegolem_run3",
   "wraith_idle0", "wraith_idle1",
   "wraith_run0", "wraith_run1", "wraith_run2", "wraith_run3",
-  // v2.0 아뜰란티스 확장 몬스터 (v1.5 이관)
+  // v2.0 이전 서사 확장 몬스터 (v1.5 이관)
   "swampbeast_idle0", "swampbeast_idle1",
   "swampbeast_run0", "swampbeast_run1", "swampbeast_run2", "swampbeast_run3",
   "emberwolf_idle0", "emberwolf_idle1",
@@ -576,7 +576,7 @@ export class BootScene extends Phaser.Scene {
       );
       container.add(
         this.add
-          .text(W / 2, H * 0.34 + Math.max(30, Math.round(W * 0.055)), "이그드라실 : 9개의 바다", {
+          .text(W / 2, H * 0.34 + Math.max(30, Math.round(W * 0.055)), "라일락 월드", {
             fontFamily: "Galmuri11, sans-serif",
             fontSize: `${Math.max(12, Math.round(W * 0.02))}px`,
             color: "#cbb88a",
@@ -613,7 +613,7 @@ export class BootScene extends Phaser.Scene {
      * (보스/탑/시련/제작/심연상점/환생/파크/무릉/거래/유니온/별자리)은 로딩 화면에서
      * 한 번도 언급되지 않았다. 24개로 늘려 첫 화면에서 콘텐츠 존재를 알린다. */
     const TIPS = [
-      "마을의 룬 정령 이그니와 대화해 첫 퀘스트를 시작하자",
+      "마을의 연합 안내인와 대화해 첫 퀘스트를 시작하자",
       "Lv 10이 되면 전직관 카이엔에게 1차 전직 시련을 의뢰하자",
       "물약은 D/F 키 — 설정에서 키 배치를 바꿀 수 있다",
       "보스전이 어두우면 설정에서 셰이더 강도를 조절하자",

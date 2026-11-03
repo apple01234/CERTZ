@@ -233,7 +233,7 @@ export default function GameRoot() {
                 onOpenUnion={() => togglePanelSfx("union")}
                 onOpenTrade={() => togglePanelSfx("trade")} /* v1.2.0 (#2) — 거래소 직접 진입 */
                 onOpenRank={() => togglePanelSfx("rank")} /* v1.3.0 (#7) — 랭킹창 */
-                onOpenGuide={() => togglePanelSfx("guide")} /* v1.4.12 (#16) — 이그니의 UI 기능 안내 */
+                onOpenGuide={() => togglePanelSfx("guide")} /* v1.4.12 (#16) — 안내인의 UI 기능 안내 */
                 /* v1.3.0 (#2) — onOpenMenu 제거: HUD ☰ 버튼 삭제, 메뉴 나가기는 설정 패널로 */
               />
             </div>

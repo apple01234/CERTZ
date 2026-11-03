@@ -298,7 +298,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                           {relTime(m.lastSeen)}
                         </p>
                       </div>
-                      {m.cleared && <p className="mt-0.5 text-[8px] font-black text-emerald-300">세계수 구원 완료</p>}
+                      {m.cleared && <p className="mt-0.5 text-[8px] font-black text-emerald-300">원정 기록 보유</p>}
                     </div>
                   </button>
                 );

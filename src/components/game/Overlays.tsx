@@ -17,7 +17,7 @@ const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
 
 /** 세이브 이어하기 라벨용 스테이지 표기명 (v2.0 — 구역 체인 대응) */
 const STAGE_LABEL: Record<string, string> = {
-  village: "미드가르드 마을",
+  village: "에델리오나 마을",
   forest: "숲의 신전",
   kingdom: "쿠소디아",
   alfheim: "알프헤임",
@@ -26,7 +26,7 @@ const STAGE_LABEL: Record<string, string> = {
   cave: "스바르트알프헤임",
   nidavellir: "니다벨리르",
   hel: "헬",
-  abyss: "세계수의 뿌리",
+  abyss: "심층 수련장",
 };
 
 /** 이어하기 라벨 — 구 세이브 키도 폴백 처리 */
@@ -90,7 +90,7 @@ export function TitleScreen() {
           {/* 양피지 부제 칩 — 우드 프레임 */}
           <p className="game-chip mx-auto mt-3 inline-block max-w-[min(94vw,560px)] px-4 py-1.5">
             <span className="text-sm font-black tracking-[0.3em] text-[#f0e2c0] [text-shadow:0_1px_2px_#000] sm:text-base">
-              이그드라실: 9개의 바다
+              라일락 월드
             </span>
             {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
              *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프
@@ -353,11 +353,11 @@ export function EndScreen({ end }: { end: EndState }) {
           )}
         </div>
         <h2 className="text-2xl font-black text-white">
-          {end.victory ? "세계수를 구원했다!" : "쓰러졌다…"}
+          {end.victory ? "도전을 완료했다!" : "쓰러졌다…"}
         </h2>
         <p className="mt-1 text-xs font-bold text-white/60">
           {end.victory
-            ? "심연의 군주를 물리치고 세계수의 빛을 되찾았다"
+            ? "전투를 마쳤다. 동료들과 다음 여정을 준비하자"
             : "하지만 모험은 끝나지 않았다"}
         </p>
 
@@ -634,7 +634,7 @@ export function NamePanel() {
           <span className="text-base font-black text-[#ffd98a]">이름을 정해라</span>
         </div>
         <p className="mb-3 text-[12px] font-bold leading-relaxed text-white/70">
-          룬 정령 이그니: &quot;그 이름, 세계수에 새겨질 거야. 모험가의 이름을 지어 줘.&quot;
+          연합 안내인: &quot;그 이름, 연합에 새겨질 거야. 모험가의 이름을 지어 줘.&quot;
         </p>
         <input
           ref={gate}

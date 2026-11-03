@@ -29,7 +29,7 @@ const CHAPTER_AMBIENT: Record<string, { color: number; alpha: number; light?: { 
   cave: { color: 0x0d0b1e, alpha: 0.42, light: { scale: 1.55, alpha: 0.5 } },       // 7장 스바르트알프헤임 — 어둠 요정의 수정 광맥 (v1.4.13 alpha 0.46→0.42)
   nidavellir: { color: 0x0d0b1e, alpha: 0.42, light: { scale: 1.5, alpha: 0.5 } }, // 8장 니다벨리르 — 룬 광산 (v1.4.13 0.48→0.42)
   hel: { color: 0x161016, alpha: 0.38, light: { scale: 1.55, alpha: 0.52 } },        // 9장 헬 (v1.4.13 0.42→0.38)
-  abyss: { color: 0x0b0918, alpha: 0.4, light: { scale: 1.55, alpha: 0.52 } },      // 10장 세계수의 뿌리 — 심연 (v1.4.13 0.44→0.40)
+  abyss: { color: 0x0b0918, alpha: 0.4, light: { scale: 1.55, alpha: 0.52 } },      // 10장 심층 수련장 — 심연 (v1.4.13 0.44→0.40)
   /* v1.4.13 (#6 셰이더 약화) — 니플헤임(눈 맵) 암전 0.28→0.18, 횃불 광원 알파 0.66→0.5:
    * "눈오는 곳 셰이더 너무 강해" 유저 지시 — 암전을 더 얕게, 시야 가독성 확보.
    * v1.4.30 (#11 니플헤임 눈부심) — 반대 피드백 "니플헤임 너무 밝아서 눈아파": 암전 0.18→0.38로

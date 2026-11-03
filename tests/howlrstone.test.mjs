@@ -112,7 +112,7 @@ assert.equal(storyEntryAllowed('dlcstargate1', base), false, '영프 엔딩 전�
 assert.equal(storyEntryAllowed('dlcstargate1', { cleared: true, youngPrincessCleared: true }), true);
 assert.equal(storyPortalDestination(YOUNG_PRINCESS_VILLAGE, base), null, '엔딩 전 영프 마을 → 그랜드 플래닛 잠김');
 assert.equal(storyPortalDestination(YOUNG_PRINCESS_VILLAGE, { cleared: true, youngPrincessCleared: true }), 'dlcstargate1');
-assert.equal(storyPortalDestination('village', { cleared: false, youngPrincessCleared: true }), null, '본편 미클리어면 영프 마을조차 불가');
+assert.equal(storyPortalDestination('village', { cleared: false, youngPrincessCleared: true }), 'youngprincessv', 'removed campaign is never a prerequisite');
 // 영프 편 내부 진입은 cleared 만 있으면 된다(엔딩 플래그 불필요)
 assert.equal(storyEntryAllowed(HOWLRSTONE_ENTRY, { cleared: true }), true);
 

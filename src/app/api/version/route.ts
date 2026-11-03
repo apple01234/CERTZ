@@ -29,7 +29,7 @@ const LATEST_VERSION: string = (pkg as { version: string }).version;
 const LATEST_CODE = 236;
 const VERSION_NOTE =
   /* vc233 — 버전을 올릴 때 이 문구도 함께 갱신한다(업데이트 배너 본문). */
-  "v2.0.0 (vc236) — 기억의 서약: 9개의 바다 제거, 34장 통합 캠페인, 픽셀 에셋 통일, 새 저장·경제 분리, 솔로·3인 협동 도전.";
+  "v2.0.0 (vc236) — 기억의 서약: 라일락 월드 제거, 34장 통합 캠페인, 픽셀 에셋 통일, 새 저장·경제 분리, 솔로·3인 협동 도전.";
 const RELEASE_BASE = `https://github.com/apple01234/CERTZ/releases/download/v${LATEST_VERSION}`;
 const APK_MIRROR =
   /* 파일명의 vc{code} 는 build.gradle versionCode 와 일치해야 한다(불일치 시 404).

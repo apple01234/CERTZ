@@ -1,8 +1,8 @@
 "use client";
 import dynamic from "next/dynamic";
 
-const CampaignRoot = dynamic(
-  () => import("@/components/campaign/CampaignRoot"),
+const GameRoot = dynamic(
+  () => import("@/components/game/GameRoot"),
   {
     ssr: false,
     loading: () => (
@@ -22,12 +22,12 @@ const CampaignRoot = dynamic(
             d="M1 3h6v1h2V3h6v10H9v1H7v-1H1V3zm1 1v8h5V5H2zm7 1v7h5V4H9v1zM3 6h3v1H3V6zm7 0h3v1h-3V6zM3 9h3v1H3V9zm7 0h3v1h-3V9z"
           />
         </svg>
-        <strong className="text-2xl tracking-widest">기억의 서약</strong>
+        <strong className="text-2xl tracking-widest">라일락 월드</strong>
         <span className="text-xs text-[#b5b5c8]">함께한 기억을 펼치는 중…</span>
       </div>
     ),
   },
 );
 export default function Home() {
-  return <CampaignRoot />;
+  return <GameRoot />;
 }

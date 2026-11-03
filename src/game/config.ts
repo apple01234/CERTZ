@@ -99,7 +99,7 @@ export type SaveData = {
   /* v3.0.5 — 스타포스 마일스톤 HP 보너스 (이미 maxHp에 가산된 총액 — 중복 가산 방지) */
   sfHp?: number;
   /* v1.4.33 (긴급수정 — 포탈 탈 때마다 최대 HP 증가) —
-   *  컬렉션·세트·세계수·피규어 등으로 maxHp 에 가산된 보너스 총액.
+   *  컬렉션·세트·연합·피규어 등으로 maxHp 에 가산된 보너스 총액.
    *  씬 전환 시 Player 가 새로 생성되면 이 값으로 bonusHpApplied 를 복원해
    *  같은 보너스가 다시 더해지는 것을 막는다. */
   bonusHp?: number;
@@ -223,9 +223,9 @@ export type SaveData = {
   questTracked?: string | null;
   /* v3.0.16 — 몬스터 컬렉션 처치 기록 (id → 처치 수, 최초 처치 시 등록) */
   monsterKills?: Record<string, number>;
-  /* v3.0.22 (#43/#44) — 챕터별 세계수 결정 수집 기록 (챕터키 → 수집 수) */
+  /* v3.0.22 (#43/#44) — 챕터별 연합 결정 수집 기록 (챕터키 → 수집 수) */
   fragmentsFound?: Record<string, number>;
-  /* v3.0.22 (#50) — 세계수의 가호 (아홉 결정 전부 수집 시 영구 해방) */
+  /* v3.0.22 (#50) — 연합의 가호 (아홉 결정 전부 수집 시 영구 해방) */
   worldtreeBlessing?: boolean;
   /* v3.0.28 (#보스난이도) — 진행 중 보스전의 난이도 (이지/노말/하드/카오스) — 재접속 복구용 */
   bossDiff?: string;
@@ -478,7 +478,7 @@ export function loadSave(): SaveData | null {
     if (d.questTracked === undefined) d.questTracked = null;
     // v3.0.16 — 몬스터 컬렉션 (구 세이브 호환)
     if (!d.monsterKills || typeof d.monsterKills !== "object") d.monsterKills = {};
-    // v3.0.22 — 결정 수집/세계수 가호 (구 세이브 호환)
+    // v3.0.22 — 결정 수집/연합 가호 (구 세이브 호환)
     if (!d.fragmentsFound || typeof d.fragmentsFound !== "object") d.fragmentsFound = {};
     if (typeof d.worldtreeBlessing !== "boolean") d.worldtreeBlessing = false;
     // v4.0.0 — 이세카이 업데이트 (구 세이브 호환 기본값)

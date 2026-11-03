@@ -276,7 +276,7 @@ export const LILAC_SCENARIOS: Record<string, LilacScenario> = {
       ] },
       { t: "cam", rx: 0.66, ry: 0.5, panMs: 800 },
       { t: "say", speaker: "루시", lines: [
-        "네가 잃어버렸다던 솔라플레임이그니션소드도 찾았어.",
+        "네가 잃어버렸다던 솔라플레임안내인션소드도 찾았어.",
         "그런데 소드를 가진 자가 소드를 잃을 때, 소드는 주인을 기억하지 못해.",
         "다시 만나야 해. 그 전까지는 아무것도 아니야.",
       ] },
@@ -654,11 +654,11 @@ export type LilacPlacement = { sub: number; id: string };
 
 export const LILAC_CHAPTER_MAP: Record<string, LilacPlacement[]> = {
   /* ══════════════════════════════════════════════════════════════════════
-   * vc234 (#2 "아뜰란티스 → 영준프린세스 → 그랜드 플레닛 순서인데 왜 스토리 섞음")
+   * vc234 (#2 "이전 서사 → 영준프린세스 → 그랜드 플레닛 순서인데 왜 스토리 섞음")
    *
    * [잘못된 배치 — 제거] 종전 이 표는 영프 16편을 **본편 챕터**(forest·kingdom·
    *  alfheim·muspelheim·niflheim·cave·nidavellir·hel·abyss)의 sub 1/5 에 끼워
-   *  넣었다. 그 결과 본편(아뜰란티스 기반 1~10챕터)을 진행하다가 갑자기 라일락
+   *  넣었다. 그 결과 본편(이전 서사 기반 1~10챕터)을 진행하다가 갑자기 라일락
    *  월드 컷씬이 튀어나와 **세계관·시간순이 뒤섞였다.** 영준 프린세스는 본편을
    *  끝낸 뒤 `youngprincessv` 마을에서 시작하는 **독립 편**이며, 본편과 같은
    *  챕터 키를 공유하지 않는다.

@@ -40,7 +40,7 @@ Mark deliberate ceilings with a `ponytail:` comment naming the upgrade path.
 - 기존 GameRoot/WorldScene/Player/장비/전직/하우징/계정/멀티플레이와 화면 구조를 유지하며 아뜰란티스·이그드라실 서사를 교체한다. 새 독립 캠페인 엔진으로 다시 만들지 않는다.
 - 정본은 `docs/handoff/evernote-approved/1.txt`부터 `8.txt`까지 순서대로 읽는다. 다른 기획·스토리 문서는 읽지 않는다. 충돌 시 먼저 지정한 문서를 우선한다.
 - 에셋은 기존 자료와 다운로드를 우선하고 꼭 필요한 경우에만 생성한다. 원본 런타임 에셋을 배포에서 제거하지 않는다.
-- **이번 커밋은 진행 중인 작업의 인계 체크포인트**다. 미완성 런타임 전환은 `docs/handoff/original-engine-integration.patch`에 보관했고 아직 적용하지 않았다. 현재 `/`는 여전히 CampaignRoot다.
+- 2026-11-03 후속 수정: `/`는 원래 GameRoot로 복구했다. 옛 9개 지역은 서사/엔딩 없이 선택 수련 원정으로 남기고, 시작 거점에서 라일락 월드로 바로 연결한다. 옛 본편 클리어는 입장 조건이 아니다. 보존 패치는 과거 초안이므로 그대로 재적용하지 않는다.
 - 다음 작업 전 `docs/handoff/DEEPSEEK_HANDOFF.md`를 읽는다. 아래 항목은 이전 구현의 역사이며 최신 지시와 충돌하면 적용하지 않는다.
 
 ## 이전 제품 기록 — 기억의 서약 (v2.0.0)

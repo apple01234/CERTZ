@@ -32,7 +32,6 @@ export function howlFinalStage(stage: string): boolean {
 }
 
 export function storyPortalDestination(stage: string, progress: StoryProgress): string | null {
-  if (!progress.cleared) return null;
   if (stage === "village") return YOUNG_PRINCESS_VILLAGE;
   if (stage === YOUNG_PRINCESS_VILLAGE) {
     return progress.youngPrincessCleared || !MIDDLE_CHAPTER_IMPLEMENTED ? "dlcstargate1" : null;
@@ -43,8 +42,8 @@ export function storyPortalDestination(stage: string, progress: StoryProgress): 
 /** 포탈·친구 따라가기·워프·세이브 재진입 모두 같은 잠금을 사용한다. */
 export function storyEntryAllowed(stage: string, progress: StoryProgress): boolean {
   if (stage.startsWith("dlc")) {
-    return !!progress.cleared && (!!progress.youngPrincessCleared || !MIDDLE_CHAPTER_IMPLEMENTED);
+    return !!progress.youngPrincessCleared || !MIDDLE_CHAPTER_IMPLEMENTED;
   }
-  if (stage.startsWith("youngprincess")) return !!progress.cleared;
+  if (stage.startsWith("youngprincess")) return true;
   return true;
 }

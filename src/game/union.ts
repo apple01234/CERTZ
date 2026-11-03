@@ -186,7 +186,7 @@ export const FAMILY_EFFECTS: Record<FamilyKey, { def: number; hp: number; atkPct
 export type ArtifactDef = { key: string; name: string; desc: (lv: number) => string; max: number; cost: (lv: number) => number };
 export const ARTIFACTS: ArtifactDef[] = [
   { key: "art_atk", name: "용맹의 문장", desc: (lv) => `공격력 +${lv * 3}`, max: 10, cost: (lv) => 12 + lv * 8 },
-  { key: "art_hp", name: "세계수의 가지", desc: (lv) => `최대 HP +${lv * 90}`, max: 10, cost: (lv) => 10 + lv * 7 },
+  { key: "art_hp", name: "연합의 가지", desc: (lv) => `최대 HP +${lv * 90}`, max: 10, cost: (lv) => 10 + lv * 7 },
   { key: "art_crit", name: "매의 눈동자", desc: (lv) => `크리티컬 확률 +${(lv * 0.6).toFixed(1)}%p`, max: 10, cost: (lv) => 14 + lv * 9 },
   { key: "art_gold", name: "난쟁이의 지갑", desc: (lv) => `골드 획득량 +${lv * 3}%`, max: 10, cost: (lv) => 12 + lv * 8 },
   { key: "art_def", name: "대지의 방패", desc: (lv) => `방어력 +${lv * 4}`, max: 10, cost: (lv) => 10 + lv * 6 },

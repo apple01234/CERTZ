@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { isTrainingStage } from "../trainingRegions";
 import { DECOR_BUDGET, decorSetFor, pickByTag, type DecorObj } from "../decorObjects";
 import { createGameState, type GameState } from "../state/gameState";
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
@@ -361,7 +362,7 @@ export class WorldScene extends Phaser.Scene {
   private eliteEnemy: Enemy | null = null;
   /* v3.0.22 (#46) — 전직 스토리 시험 상대 전용 참조 (정예 몬스터와 분리 — 처치 판정 정확화) */
   private jobTrialEnemy: Enemy | null = null;
-  /* v3.0.22 (#43/#44) — 챕터별 세계수 결정 수집 기록 (챕터키 → 수집 수) */
+  /* v3.0.22 (#43/#44) — 챕터별 연합 결정 수집 기록 (챕터키 → 수집 수) */
   private fragmentsFound: Record<string, number> = {};
   /* ----- v2.0: 프롤로그 보호 — 입장 직후 몬스터 즉시 공격 방지 ----- */
   private agroHoldUntil = 0;
@@ -437,7 +438,7 @@ export class WorldScene extends Phaser.Scene {
   private dojangEndsAt = 0;
   private dojangFrom: StageKey = "village";
   /* vc193 (버그 #3) — 재림(r5/r10/r15) 진입 직전 마을. 재림에서 긴급 귀환할 때
-   *  미드가르드로 튕기지 않고 이 마을로 돌아가게 한다. */
+   *  연합 거점로 튕기지 않고 이 마을로 돌아가게 한다. */
   private reincFrom: StageKey = "village";
   private dojangText: Phaser.GameObjects.Text | null = null;
   private dojangTextAcc = 0;
@@ -1265,7 +1266,7 @@ export class WorldScene extends Phaser.Scene {
       this.player.maxHp = savedPlayer.maxHp;
       this.player.hp = this.player.maxHp;
       /* v1.4.33 (긴급수정 — "포탈 탈 때마다 체력량이 늘어나는 버그")
-       *  세이브의 maxHp 에는 각종 보너스(컬렉션·세트·세계수·피규어)가 **이미 포함**돼 있다.
+       *  세이브의 maxHp 에는 각종 보너스(컬렉션·세트·연합·피규어)가 **이미 포함**돼 있다.
        *  그런데 씬 전환마다 new Player() 가 bonusHpApplied=0 으로 시작하므로
        *  syncBonusHp() 가 "보너스가 아직 안 더해졌다"고 오판해 같은 값을 또 더했다.
        *  → 포탈을 탈 때마다 최대 HP 가 계속 증가.
@@ -1454,7 +1455,7 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.16 — 몬스터 컬렉션 복원 + 등록 수 스탯 반영 */
     this.monsterKills = { ...(savedPlayer.monsterKills ?? {}) };
     this.player.setCollection(Object.keys(this.monsterKills).length);
-    /* v3.0.22 (#43/#44/#50) — 결정 수집 기록 + 세계수의 가호 복원 */
+    /* v3.0.22 (#43/#44/#50) — 결정 수집 기록 + 연합의 가호 복원 */
     this.fragmentsFound = { ...(savedPlayer.fragmentsFound ?? {}) };
     this.player.setWorldtreeBlessing(!!savedPlayer.worldtreeBlessing);
     /* v1.4.32 (지시 #9) — 환생 차수를 데미지 배율에 주입 (기본공격·모든 스킬 공통) */
@@ -2083,7 +2084,7 @@ export class WorldScene extends Phaser.Scene {
     }
     /* ---------- 복귀 차원문 (v2.0 — 이전 구역 자유 왕복, 지시 #8 / 실내 제외) ---------- */
     if (!this.isInterior) this.spawnReturnPortal();
-    /* v1.4.32 (유저 지시 #8) — DLC 해금(세계수 구원 판정) 후 미드가르드 마을 스타게이트.
+    /* v1.4.32 (유저 지시 #8) — DLC 해금(연합 구원 판정) 후 에델리오나 마을 스타게이트.
      *  worldtreeBlessing 이 켜지면 마을 중앙에 스타게이트가 열린다. */
     if (!this.isInterior) this.spawnStargate();
     /* v4.1.0 — 포탈 화면 밖 방향 가이드 (지시 #14) */
@@ -2306,7 +2307,7 @@ export class WorldScene extends Phaser.Scene {
      *  인트로·구역 안내 대사가 반복되던 버그 수정
      *  v3.0.10 (메이플식 챕터 연출): 챕터 1구역 최초 진입 시 타이틀 카드 컷신 후 인트로 대사 */
     /* v1.1.0 (#10) — 콘텐츠(탑/파크/게이트/옷장/도장)에선 마을 인트로 대사·튜토리얼을 띄우지 않는다.
-     *  기존엔 stageIntro 폴백(villageIntro — 룬 정령 이그니)이 모든 콘텐츠에서 재생돼
+     *  기존엔 stageIntro 폴백(villageIntro — 연합 안내인)이 모든 콘텐츠에서 재생돼
      *  "컨텐츠마다 NPC UI가 뜨는데 아무 의미 없다"는 지적으로 이어졌다 */
     const isContentStage = stageKey === "tower" || stageKey === "park" || stageKey === "gate" || stageKey === "closet" || stageKey === "dojang";
     if (!this.isInterior && !isContentStage) {
@@ -3284,7 +3285,7 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
-    // 스바르트알프헤임 동굴/광산 — 심연에 물든 수정 광맥 (세계수 파편 텍스처 보라 변형 + 글로우)
+    // 스바르트알프헤임 동굴/광산 — 심연에 물든 수정 광맥 (연합 파편 텍스처 보라 변형 + 글로우)
     if (ch === "cave" || ch === "nidavellir") {
       const rng2 = new Phaser.Math.RandomDataGenerator(["cave-crystal"]);
       for (let i = 0; i < 7; i++) {
@@ -3365,14 +3366,14 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
-    /* v1.4.10 — 숲(미드가르드) 유적 나무/소품(fm_tree/fm_prop) 블록 삭제 (유저 지시
+    /* v1.4.10 — 숲(연합 거점) 유적 나무/소품(fm_tree/fm_prop) 블록 삭제 (유저 지시
      *  "나무 및 오브젝트들의 배치가 이상하고 에셋이 안어울려" + "유적 없애고 상자만 놔뒀는데 뭐임?"):
      *  ForgottenMemories 팩은 183~235px 대형 유적풍 소품 — 64px 짤리 나무·바위와
      *  아트 스타일도 스케일도 어울리지 않고, 충돌 없는 depth 1 배치라 캐릭터 발밑에
      *  깔리거나 뚫고 다니게 된다. 마을 유적은 v1.4.3~4에서 이미 철거됐고, 유저가
      *  필드에서 여전히 본 '유적 같은 것'의 잔여분이 이 fm_* 소품 — 전면 제거로 정리.
      *  숲은 기본 tree/pine/rock 세트로 통일해 아트 정합성 확보 */
-    // 쿠소디아/아뜰란티스 — 육한 식물·바위·뼈 (Cursed Land, CC0 — v1.5 배치1 이관)
+    // 쿠소디아/이전 서사 — 육한 식물·바위·뼈 (Cursed Land, CC0 — v1.5 배치1 이관)
     /* v2.6 수정 — 육식 식물류(cl_jawsplant 등)는 장식이 아니라 '위험 오브젝트'.
      *  (※ 능대 swampbeast는 몬스터명 — 이 오브젝트와는 별개)
      *  밟으면 챕터 배율에 비례한 접촉 데미지 + 씹기 연출 (버그: 닿아도 데미지 없음)
@@ -3758,13 +3759,13 @@ export class WorldScene extends Phaser.Scene {
       const line = meta.lines[Math.floor(Math.random() * meta.lines.length)];
       this.showDialogueRaw({ speaker: "{name}", lines: [line] });
     }
-    /* v3.0.22 (#50) — 세계수의 가호: 아홉 챕터의 결정을 모두 수집하면 영구 해방 */
+    /* v3.0.22 (#50) — 연합의 가호: 아홉 챕터의 결정을 모두 수집하면 영구 해방 */
     this.fragmentsFound[ch] = (this.fragmentsFound[ch] ?? 0) + 1;
     if (!this.player.worldtreeBlessing && FRAGMENT_CHAPTERS.every((k) => (this.fragmentsFound[k] ?? 0) > 0)) {
       this.player.setWorldtreeBlessing(true);
       audio.sfx.levelup();
       this.spawnBurstAt(this.player.x, this.player.y, 26, 0x7de8ff);
-      this.showBanner("세계수의 가호 해방! — ATK+20 · DEF+8 · HP+200 · 공격 +3% (영구)");
+      this.showBanner("연합의 가호 해방! — ATK+20 · DEF+8 · HP+200 · 공격 +3% (영구)");
       if (!this.queuedDialogue) {
         this.markSeen("worldtreeBlessing");
         this.queuedDialogue = "worldtreeBlessing";
@@ -3995,7 +3996,7 @@ export class WorldScene extends Phaser.Scene {
      *  입장·긴급귀환이 전부 startTransition 단일 통로를 지나므로 여기서 한 번만 막으면
      *  커버된다 — 보스를 두고 다른 맵으로 도망가는 사례를 원천 차단. */
     /* vc193 (버그 #3) — 재림 스테이지로 들어갈 때 직전 마을을 기록.
-     *  재림 안에서 긴급 귀환하면 이 마을로 돌아간다(미드가르드 튕김 방지). */
+     *  재림 안에서 긴급 귀환하면 이 마을로 돌아간다(연합 거점 튕김 방지). */
     if (/^r\d+$/.test(target) && this.stageDef?.key && !/^r\d+$/.test(this.stageDef.key)) {
       this.reincFrom = this.stageDef.key;
     }
@@ -4116,8 +4117,8 @@ export class WorldScene extends Phaser.Scene {
 
   /* ================= 복귀 차원문 (v2.0 — 메이플식 자유 왕복, 지시 #8) ================= */
 
-  /* v1.4.32 (유저 지시 #8) — DLC 해금 후 미드가르드 스타게이트.
-   *  세계수의 가호(worldtreeBlessing, 아홉 결정 전부 수집)를 얻으면 마을 중앙에
+  /* v1.4.32 (유저 지시 #8) — DLC 해금 후 연합 거점 스타게이트.
+   *  연합의 가호(worldtreeBlessing, 아홉 결정 전부 수집)를 얻으면 마을 중앙에
    *  별빛 게이트가 열린다. 미해금 상태에서는 옅은 잔광만 남겨 "아직 닫혀 있다"를
    *  시각적으로 알린다(진입 불가). */
   private stargate: Phaser.GameObjects.Image | null = null;
@@ -5473,7 +5474,7 @@ export class WorldScene extends Phaser.Scene {
       ],
       alfheim: [
         { tex: "spum_villager_f", name: "요정 정찰병", dlg: "fieldNpc_alfheim", story: "숲의 노래가 잡혔어. 나무들이 도움을 청하는 걸, 나만 들을 수 있는 건 아니거든." },
-        { tex: "spum_villager_m", name: "숲의 현자", dlg: "fieldNpc_alfheim", story: "세계수의 꿈속에서 우리는 모두 한 잎사귀일 뿐이지. 겸손하게 사려게." },
+        { tex: "spum_villager_m", name: "숲의 현자", dlg: "fieldNpc_alfheim", story: "연합의 꿈속에서 우리는 모두 한 잎사귀일 뿐이지. 겸손하게 사려게." },
         { tex: "spum_villager_f", name: "꽃잎 몰이꾼", dlg: "fieldNpc_alfheim", story: "꽃잎이 흩어지는 계절이면 반드시 누군가는 떠난다. 그래서 나는 배웅을 배웠지." },
       ],
       nidavellir: [
@@ -5488,7 +5489,7 @@ export class WorldScene extends Phaser.Scene {
       ],
       abyss: [
         { tex: "spum_villager_m", name: "심연 생존자", dlg: "fieldNpc_abyss", story: "위로 올라가는 법은 잊었어. 대신 내려가는 길은 999개쯤 알지." },
-        { tex: "spum_villager_f", name: "세계수 수액 채집가", dlg: "fieldNpc_abyss", story: "뿌리의 수액은 달다. 대가로 꿈을 조금씩 가져가지만." },
+        { tex: "spum_villager_f", name: "연합 수액 채집가", dlg: "fieldNpc_abyss", story: "뿌리의 수액은 달다. 대가로 꿈을 조금씩 가져가지만." },
         { tex: "spum_villager_m", name: "등불 드리프터", dlg: "fieldNpc_abyss", story: "심연에선 등불이 꺼진 방향이 곧 바다다. 나는 그 바다를 건너왔지." },
       ],
     };
@@ -8273,7 +8274,7 @@ export class WorldScene extends Phaser.Scene {
     this.cleared = false;
     this.seenSet = new Set();
     this.fragmentsFound = {};
-    this.player.setWorldtreeBlessing(false); // 세계수 가호도 스토리 보상이므로 재도전으로
+    this.player.setWorldtreeBlessing(false); // 연합 가호도 스토리 보상이므로 재도전으로
     /* v1.2.0 (#14) — 방문 구역 기록도 초기화: 환생 후 지역 이동 부적으로 환생 전 해방 맵을
      *  그대로 워프하던 문제. 스토리 진행(포탈/퀘스트)과 함께 방문 기록도 처음부터.
      *  시작 마을만 즉시 기록 — 재림의 땅(r1~r15)도 abyss10 재해방 후 다시 진입한다. */
@@ -8479,7 +8480,7 @@ export class WorldScene extends Phaser.Scene {
     if (tier >= 4) return null;
     if (tier === 0) {
       const vq = STAGES["village"].quests.length;
-      if ((this.savedQuestIdx["village"] ?? 0) < vq) return "마을 퀘스트 체인 완료 (이그니와 함께)";
+      if ((this.savedQuestIdx["village"] ?? 0) < vq) return "마을 퀘스트 체인 완료 (안내인와 함께)";
       return null;
     }
     if (!this.jobStoryDone.includes((tier + 1) as 2 | 3 | 4)) {
@@ -9658,10 +9659,10 @@ export class WorldScene extends Phaser.Scene {
     const specialZone =
       this.stageDef.key === "tower" || this.stageDef.key === "closet" || this.stageDef.key === "gate" ||
       this.stageDef.key === "dojang" || this.stageDef.key === "park" || this.stageDef.key === "praid";
-    const final = !specialZone && NEXT_STAGE[this.stageDef.key] === null;
+    const final = !specialZone && !isTrainingStage(this.stageDef.key) && NEXT_STAGE[this.stageDef.key] === null;
     /* vc231 — 영프 편 마지막 구역은 NEXT_STAGE 가 dlcstargate1 이라 final 이 아니다.
      *  `this.cleared`(본편 세계 구원) 를 건드리지 않는다 — 영프 엔딩은 별도 플래그다. */
-    if (!howlFinalStage(this.stageDef.key)) this.cleared = final;
+    if (final) this.cleared = true;
     if (!specialZone) this.advanceQuest(); // 보스 퀘스트 완료 — 골드/경험치 보상 포함 (특수 구역 보스는 제외)
     /* ══════════════════════════════════════════════════════════════════════════
      * vc231 — 영프 편 엔딩 처리 (vc230 이 남긴 숙제)
@@ -13780,10 +13781,10 @@ export class WorldScene extends Phaser.Scene {
       const vk = (spec.num <= 1 ? "village" : `${spec.key}v`) as StageKey;
       if (STAGES[vk]) return vk;
     }
-    /* vc193 (버그 #3 "재림 지역에서 가까운 마을로 가면 미드가르드 마을로 가지는 버그") —
+    /* vc193 (버그 #3 "재림 지역에서 가까운 마을로 가면 에델리오나 마을로 가지는 버그") —
      *  재림 스테이지는 key 가 `r5` / `r10` / `r15` 이고 parseStage() 가
      *  ch="village" 를 반환한다(챕터 정규식에 없음). 그래서 위 spec 분기를 못 타고
-     *  곧장 "village"(미드가르드)로 떨어졌다.
+     *  곧장 "village"(연합 거점)로 떨어졌다.
      *  재림은 10챕터(심연) 종료 후 열리는 후반 콘텐츠이므로 가장 가까운 마을은
      *  재림 진입 직전 마을이다. 재림에 들어올 때 기록해 둔 마을로 보낸다. */
     if (/^r\d+$/.test(cur)) {
@@ -13796,7 +13797,7 @@ export class WorldScene extends Phaser.Scene {
           if (STAGES[bvk]) return bvk;
         }
       }
-      /* 기록이 없으면 심연(10챕터) 마을로 — 미드가르드로 튕기지 않게 */
+      /* 기록이 없으면 심연(10챕터) 마을로 — 연합 거점로 튕기지 않게 */
       const av = "abyssv" as StageKey;
       if (STAGES[av]) return av;
     }
@@ -15721,7 +15722,7 @@ export class WorldScene extends Phaser.Scene {
   /* ================= 인트로 플레이 시퀀스 ================= */
   /**
    * 책장 넘기기 대신 직접 플레이하는 오프닝:
-   *  0) 이동 학습 — 이그니의 안내로 실제로 걸어보기
+   *  0) 이동 학습 — 안내인의 안내로 실제로 걸어보기
    *  1) 마을 우물로 이동 — 빛 기둥 마커 추적
    *  2) 우물 앞에서 이름 정하기 (인게임 패널)
    *  3) 이름 리액션 대사 → 마을 오프닝 → 퀘스트 시작
@@ -15741,10 +15742,10 @@ export class WorldScene extends Phaser.Scene {
    *  클릭/탭/스페이스로 넘기고, 건너뛰기 버튼 제공. 종료 시 인트로(플레이형)로 자연 연결 */
   private showPrologue(onDone: () => void) {
     const beats = [
-      "다섯 왕국을 지탱하던 세계수가\n지쳐 무너져 내렸다.",
-      "어둠은 대지를 삼켰고,\n차원의 균열마다 마물이 흘러넘쳤다.",
-      "그러나 별들은 예언했다.\n한 명의 아이가 빛을 되돌려 놓으리라고.",
-      "인피니트보석 왕국의 마지막 희망.\n그 이야기가 지금, 시작된다.",
+      "라일락 월드. 세 왕국은 무한의 보석을 두고 전쟁을 벌였다.",
+      "이웃 부부에게 길러진 하루는 절벽에서 라일락에게 목숨을 구한다.",
+      "누군가를 죽이는 사람, 두려움에 도망치는 사람, 그리고 누군가를 살리는 사람.",
+      "너는 어떤 사람이 되고 싶니? 별빛 펜던트와 한 자루 검의 여정이 시작된다.",
     ];
     this.dialoguing = true;
     /* vc206 (지시 #2 "WASD 조작 변경시 게임 멈추는 버그" / 실측: 월드 진입 직후 physics 가
@@ -15828,7 +15829,7 @@ export class WorldScene extends Phaser.Scene {
 
   private tickIntro(dt: number, move: Phaser.Math.Vector2) {
     const p = this.player;
-    // 이그니 가이드가 플레이어를 따라다님
+    // 안내인 가이드가 플레이어를 따라다님
     this.introGuide?.setPosition(p.x + 24, p.y - 30);
     this.introGuideSpark?.setPosition(p.x + 24, p.y - 48);
 
@@ -15849,7 +15850,7 @@ export class WorldScene extends Phaser.Scene {
           .setTint(0x9df0ff)
           .setAlpha(0.55);
         this.tweens.add({ targets: this.introMarker, alpha: { from: 0.4, to: 0.8 }, scaleX: { from: 1, to: 1.2 }, duration: 850, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-        this.showBanner("룬 정령 이그니: 마을 우물로 와! 네 이름을 정해 주고 싶어!");
+        this.showBanner("연합 안내인: 마을 우물로 와! 네 이름을 정해 주고 싶어!");
       }
     } else if (this.introStep === 1) {
       const wp = this.wellPos;
@@ -16542,6 +16543,10 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.15 (#3) — 반복의뢰 수주 판정용 savedQuestIdx 즉시 갱신 (stale 판정 제거:
      *  기존엔 씬 재입장 전까지 옛 인덱스를 보고 수주 조건을 false로 판정했다) */
     this.savedQuestIdx[this.stageDef.key] = this.questIdx;
+    if (done && howlFinalStage(this.stageDef.key) && this.questIdx === this.stageDef.quests.length) {
+      this.youngPrincessCleared = true;
+      this.cleared = true;
+    }
     // 퀘스트 보상 — 골드 + 경험치 (2D MMORPG 기본 요소)
     if (done?.reward) {
       this.player.addGold(done.reward);
@@ -16604,10 +16609,10 @@ export class WorldScene extends Phaser.Scene {
   }
 
   emitQuest() {
-    // 인트로 시퀀스 중 — 이그니의 안내를 퀘스트 패널에 표시
+    // 인트로 시퀀스 중 — 안내인의 안내를 퀘스트 패널에 표시
     if (this.introStep >= 0 && this.introStep < 3) {
       this.emitQuestState({
-        title: "룬 정령 이그니의 안내",
+        title: "연합 안내인의 안내",
         desc: "배너를 따라 마을을 돌아보자",
         current: 1,
         target: 1,
@@ -16879,7 +16884,7 @@ export class WorldScene extends Phaser.Scene {
       /* v3.0.22 (#38) — 전직은 레벨 + 전직 퀘스트 완료가 모두 필요. jobLock = 미완료 사유 */
       canJob: canJobNow(this.player.lv, this.player.cls) && this.jobQuestCleared(),
       jobLock: this.jobQuestLockText(),
-      /* v3.0.22 (#43/#44/#50) — 결정 수집 진행도 + 세계수의 가호 */
+      /* v3.0.22 (#43/#44/#50) — 결정 수집 진행도 + 연합의 가호 */
       fragFound: FRAGMENT_CHAPTERS.filter((k) => (this.fragmentsFound[k] ?? 0) > 0).length,
       fragTotal: FRAGMENT_CHAPTERS.length,
       blessing: this.player.worldtreeBlessing,
@@ -17221,7 +17226,7 @@ export class WorldScene extends Phaser.Scene {
       jobStoryDone: [...this.jobStoryDone],
       /* v2.3 — 반복 의뢰 수주 해금 + 본 스토리 대사 기록 */
       repeatOn: this.repeatOn,
-      /* v3.0.22 (#43/#44/#50) — 결정 수집 + 세계수의 가호 */
+      /* v3.0.22 (#43/#44/#50) — 결정 수집 + 연합의 가호 */
       fragmentsFound: { ...this.fragmentsFound },
       worldtreeBlessing: this.player.worldtreeBlessing,
       /* v3.0.6 — 반복 의뢰 진행도 (재입장 시 카운트 유지) */

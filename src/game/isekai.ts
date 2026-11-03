@@ -1,6 +1,6 @@
 /* =====================================================================
  * v4.0.0 "바르가 업데이트" — 균열 수비전 + 수집형 성장 시스템
- *  - 세계수 뿌리에서 열리는 균열(바르가)을 방어하는 웨이브 디펜스,
+ *  - 연합 뿌리에서 열리는 균열(바르가)을 방어하는 웨이브 디펜스,
  *    3인 협동 몬스터 웨이브 디펜스 RPG)에서 착안해 SERTZ에 맞게 재해석한 콘텐츠.
  *  - 이 파일은 데이터 테이블 + 순수 계산 헬퍼만 담당 (Phaser 의존 없음).
  *  실제 상태는 SaveData(config.ts) + Player/WorldScene에 존재한다.
@@ -40,7 +40,7 @@ export const FIGURES: FigureDef[] = [
   { icon: "runegolem_idle0", key: "fig_golem", name: "룬 골렘", grade: 2, desc: "고대 룬이 깨어났다", bonus: { atkPct: 2, hp: 150 } },
   { icon: "emberwolf_idle0", key: "fig_fenrir", name: "펜리르 그림자", grade: 2, desc: "포효가 남겨둔 흔적", bonus: { atkPct: 3 } },
   { icon: "cos_wings", key: "fig_valk", name: "발키리 날개", grade: 2, desc: "빛의 결정 날개", bonus: { crit: 4, def: 8 } },
-  { icon: "gw_crystal", key: "fig_worldtree", name: "세계수의 심장", grade: 3, desc: "다섯 왕국을 지탱하는 전설", bonus: { atkPct: 4, hp: 300, crit: 2 } },
+  { icon: "gw_crystal", key: "fig_worldtree", name: "연합의 심장", grade: 3, desc: "다섯 왕국을 지탱하는 전설", bonus: { atkPct: 4, hp: 300, crit: 2 } },
 ];
 
 export const FIGURE_MAP: Record<string, FigureDef> = Object.fromEntries(FIGURES.map((f) => [f.key, f]));

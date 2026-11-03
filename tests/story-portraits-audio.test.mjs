@@ -9,7 +9,12 @@ const read = p => fs.readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 /* vc235 — data: URL 은 기준 경로가 없어 stages.ts 의 `./howlrstone` import 를
  *  해석하지 못했다. HEAD 소스를 임시 파일로 물질화해 import 한다. */
 const before = await importFromGit('src/game/stages.ts');
-assert.deepEqual(CHAPTERS, before.CHAPTERS, '기존 챕터/인덱스/대사/밸런스 보존');
+const combat = chapters => chapters.map(({title,subtitle,intro,bossDone,beats,...rest})=>rest);
+assert.deepEqual(combat(CHAPTERS), combat(before.CHAPTERS), 'map IDs, combat, equipment travel and balance remain compatible');
+for (const ch of CHAPTERS.filter(c=>!c.dlc)) {
+  assert.ok(ch.title.startsWith('수련 원정'));
+  assert.deepEqual(ch.beats, [], 'retired narrative quests are removed');
+}
 /* vc231 — 영프 편 50필드가 추가됐다. 계약의 본질은 "기존 저장키/순서가 그대로"이므로
  * 신규 키 집합을 명시적으로 열거해 고정하고, 기존 키는 전부 그대로인지 본다. */
 /* vc235 — 챕터가 15개(1화=1챕터)로 늘고 장마다 스테이지 수가 다르며
@@ -29,6 +34,8 @@ assert.deepEqual(
   NEXT_STAGE,
   {
     ...beforeNext,
+    village: 'youngprincessv',
+    abyss10: 'village',
     youngprincessv: HW_KEYS[0],
     ...Object.fromEntries(HW_KEYS.map((k, i) => [k, i < HW_KEYS.length - 1 ? HW_KEYS[i + 1] : 'dlcstargate1'])),
   },
@@ -66,9 +73,9 @@ assert.deepEqual(vanished, [], '기존 스테이지 키는 하나도 사라지�
 assert.ok(baseOldKeys.every(k => newKeys.includes(k)), '기존 스테이지 키 전부 유지');
 assert.equal(CHAPTERS.filter(c => !c.dlc).length, 9);
 assert.deepEqual(CHAPTERS.filter(c => !c.dlc).map(c => c.num), [2,3,4,5,6,7,8,9,10]);
-assert.equal(STAGES.village.name, '제1장 미드가르드');
-assert.equal(STORY_SEQUENCE[1].status, 'implemented', 'vc231 — 영프 편 콘텐츠 투입');
-assert.equal(STORY_SEQUENCE_LABEL, '아뜰란티스 기반 스토리 1~10챕터 → 하울르스톤: 영준 프린세스(1기 15화) → 그랜드 플레닛');
+assert.equal(STAGES.village.name, '제1장 연합 거점');
+assert.equal(STORY_SEQUENCE[0].status, 'implemented');
+assert.equal(STORY_SEQUENCE_LABEL, '라일락 월드 1기 → 그랜드 플레닛');
 const tracks = new Set(BGM_ALL_TRACKS);
 let stages = 0;
 for (const ch of CHAPTERS) {

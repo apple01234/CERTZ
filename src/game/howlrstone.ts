@@ -26,7 +26,7 @@
  *  5화  협상 그리고 연합 — 조선시대 왕국의 카시엘로아(시엘), 라일락 연합 결성
  *  6화  초월자 — 생명의 초월자 루시페르(루시), 인피니트보석의 자아
  *  7화  군단장들과의 전투 — 해롤드 / 베로니카·딘 / 엔젤릭 영프·거대 골렘
- *  8화  두 전사의 격전 — 페르온(다크엑스칼리버) vs 아리(솔라플레임이그니션소드)
+ *  8화  두 전사의 격전 — 페르온(다크엑스칼리버) vs 아리(솔라플레임안내인션소드)
  *  9화  과거의 향기는 라일락 꽃밭보다 진하다 — 라일락의 희생, 페르온의 합류
  * 10화  어둠의 성채 — 4개의 문(물·바람·번개·불), 스칼렛 환영 4체
  * 11화  어둠의 왕좌 — 빛의 아이온 / 어둠의 알다바오트
@@ -284,8 +284,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { sub: 3, dialogue: "howlLetter", quest: { id: "hw2", type: "hunt", title: "석양이 바다를 집어 삼키는 꿈", desc: "아덴하르 총리는 기계 오작동이라 했지만 카르텔 국왕은 아니라고 했다. 해변을 어지럽힌 잔당을 소탕해라.", need: 10, targetKey: "x2_reeffish", targetLabel: "해변의 잔당", reward: Math.round(2900 * G), expReward: 4600 } }
     ],
     repeat: {need: 28, gold: Math.round(210 * G), exp: 210, title: "[반복] 해변 순찰", desc: "석양으로 물든 바다 — 해안선을 계속 지켜야 한다."},
-    lvGate: {enter: 130, mid: 140},
-    scaleMul: {hp: 9.0, atk: 3.1, exp: 26000.0, gold: 5.6},
+    lvGate: {enter: 1, mid: 1},
+    scaleMul: {hp: 1, atk: 0.65, exp: 30, gold: 1},
   },
   {
     key: "howlrstone2",
@@ -307,8 +307,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { sub: 2, dialogue: "howlWar", quest: { id: "hw3", type: "hunt", title: "거대한 해적선", desc: "성이 전함으로 변하고 상어전함들이 맞섰다. 그때 거대한 해적선이 나타났다 — 바다의 군단장 해롤드다.", need: 8, targetKey: "swampbeast", targetLabel: "해롤드의 부하", reward: Math.round(3100 * G), expReward: 5000 } }
     ],
     repeat: {need: 28, gold: Math.round(210 * G), exp: 210, title: "[반복] 해변 순찰", desc: "석양으로 물든 바다 — 해안선을 계속 지켜야 한다."},
-    lvGate: {enter: 135, mid: 145},
-    scaleMul: {hp: 9.0, atk: 3.1, exp: 26000.0, gold: 5.6},
+    lvGate: {enter: 1, mid: 1},
+    scaleMul: {hp: 1.65, atk: 0.77, exp: 54, gold: 1.3},
   },
   {
     key: "howlrstone3",
@@ -333,8 +333,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { sub: 4, dialogue: "howlrstone1Done", quest: { id: "hw5c", type: "reach", title: "다음 해역으로", desc: "열린 차원문에 닿아 다음 해역으로 이동해라.", targetLabel: "차원문" } }
     ],
     repeat: {need: 28, gold: Math.round(210 * G), exp: 210, title: "[반복] 해변 순찰", desc: "석양으로 물든 바다 — 해안선을 계속 지켜야 한다."},
-    lvGate: {enter: 140, mid: 150},
-    scaleMul: {hp: 9.0, atk: 3.1, exp: 26000.0, gold: 5.6},
+    lvGate: {enter: 1, mid: 1},
+    scaleMul: {hp: 2.3, atk: 0.89, exp: 97, gold: 1.6},
   },
   {
     key: "howlrstone4",
@@ -356,8 +356,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { sub: 2, dialogue: "howlAri", quest: { id: "hw6", type: "hunt", title: "근위대장 아리스텔라", desc: "\"아직 움직이지 마십시오 카르텔국왕\" — 근위대장 아리가 부상자를 지키는 동안 앞길을 막은 자들을 처리해라.", need: 10, targetKey: "x3_imp", targetLabel: "에벤트왕국 습격자", reward: Math.round(3000 * G), expReward: 4700 } }
     ],
     repeat: {need: 30, gold: Math.round(230 * G), exp: 230, title: "[반복] 연합 순찰", desc: "라일락 연합의 임무 — 각 왕국을 계속 오가야 한다."},
-    lvGate: {enter: 145, mid: 155},
-    scaleMul: {hp: 12.4, atk: 3.7, exp: 48000.0, gold: 6.4},
+    lvGate: {enter: 1, mid: 1},
+    scaleMul: {hp: 2.95, atk: 1.01, exp: 175, gold: 1.9},
   },
   {
     key: "howlrstone5",
@@ -380,8 +380,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { sub: 3, dialogue: "howlAlliance", quest: { id: "hw8", type: "collect", title: "라일락 연합", desc: "화해와 연합이 필요하다고 생각한 두 왕국이 라일락 연합을 만들었다. 모든 나라의 이름을 적어라.", targetLabel: "연합 서명", reward: Math.round(3500 * G), expReward: 5500 } }
     ],
     repeat: {need: 30, gold: Math.round(230 * G), exp: 230, title: "[반복] 연합 순찰", desc: "라일락 연합의 임무 — 각 왕국을 계속 오가야 한다."},
-    lvGate: {enter: 150, mid: 160},
-    scaleMul: {hp: 12.4, atk: 3.7, exp: 48000.0, gold: 6.4},
+    lvGate: {enter: 1, mid: 1},
+    scaleMul: {hp: 3.6, atk: 1.13, exp: 315, gold: 2.2},
   },
   {
     key: "howlrstone6",
@@ -404,8 +404,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { sub: 3, dialogue: "", quest: { id: "hw10", type: "hunt", title: "[기믹] 어둠의 왕좌가 도래하기까지", desc: "\"지금 우리쪽으로 오는 자는 살려 주겠다. 대신에 나머지는 전부 죽음이다\" — 스칼렛의 첩자를 베어라.", need: 8, targetKey: "x3_necromancer", targetLabel: "스칼렛의 첩자", reward: Math.round(4200 * G), expReward: 6700 } }
     ],
     repeat: {need: 30, gold: Math.round(230 * G), exp: 230, title: "[반복] 연합 순찰", desc: "라일락 연합의 임무 — 각 왕국을 계속 오가야 한다."},
-    lvGate: {enter: 155, mid: 165},
-    scaleMul: {hp: 12.4, atk: 3.7, exp: 48000.0, gold: 6.4},
+    lvGate: {enter: 1, mid: 1},
+    scaleMul: {hp: 4.25, atk: 1.25, exp: 567, gold: 2.5},
   },
   {
     key: "howlrstone7",
@@ -429,13 +429,13 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { sub: 4, dialogue: "howlSwords", quest: { id: "hw13", type: "hunt", title: "두 전사의 격전", desc: "서로의 검이 맞댈수록 천둥과 땅이 갈라졌다. 검은 드래곤의 잔재를 베어라.", need: 8, targetKey: "x2_darkhound", targetLabel: "검은 드래곤의 잔재", reward: Math.round(4200 * G), expReward: 6400 } }
     ],
     repeat: {need: 32, gold: Math.round(260 * G), exp: 260, title: "[반복] 군단장 전선", desc: "각 왕국에 배치된 군단장들 — 계속 부대를 소모시켜라."},
-    lvGate: {enter: 160, mid: 170},
-    scaleMul: {hp: 16.8, atk: 4.4, exp: 90000.0, gold: 7.4},
+    lvGate: {enter: 1, mid: 1},
+    scaleMul: {hp: 4.9, atk: 1.37, exp: 1020, gold: 2.8},
   },
   {
     key: "howlrstone8",
     title: "영프 8장 — 두 전사의 격전",
-    subtitle: "페르온(다크엑스칼리버) vs 아리(솔라플레임이그니션소드)",
+    subtitle: "페르온(다크엑스칼리버) vs 아리(솔라플레임안내인션소드)",
     episodes: "8화",
     stages: 5,
     intro: "chapterIntroHowlrstone8",
@@ -453,8 +453,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { sub: 4, dialogue: "", quest: { id: "hw15", type: "hunt", title: "[기믹] 어둠의 왕좌로 가는 길", desc: "페르온이 말했다 \"어둠에 왕좌로 가는 길은 내가 잘 알아 나도 돕지\" — 길을 막는 자들을 베어라.", need: 8, targetKey: "x3_bigzombie", targetLabel: "왕좌의 수문장", reward: Math.round(5000 * G), expReward: 7800 } }
     ],
     repeat: {need: 32, gold: Math.round(260 * G), exp: 260, title: "[반복] 군단장 전선", desc: "각 왕국에 배치된 군단장들 — 계속 부대를 소모시켜라."},
-    lvGate: {enter: 165, mid: 175},
-    scaleMul: {hp: 16.8, atk: 4.4, exp: 90000.0, gold: 7.4},
+    lvGate: {enter: 1, mid: 1},
+    scaleMul: {hp: 5.55, atk: 1.49, exp: 1837, gold: 3.1},
   },
   {
     key: "howlrstone9",
@@ -476,8 +476,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
 
     ],
     repeat: {need: 32, gold: Math.round(260 * G), exp: 260, title: "[반복] 군단장 전선", desc: "각 왕국에 배치된 군단장들 — 계속 부대를 소모시켜라."},
-    lvGate: {enter: 170, mid: 180},
-    scaleMul: {hp: 16.8, atk: 4.4, exp: 90000.0, gold: 7.4},
+    lvGate: {enter: 1, mid: 1},
+    scaleMul: {hp: 6.2, atk: 1.6099999999999999, exp: 3306, gold: 3.4},
   },
   {
     key: "howlrstone10",
@@ -501,8 +501,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { sub: 4, dialogue: "howlBalloon", quest: { id: "hw18", type: "collect", title: "그림 열기구", desc: "스칼렛이 가는 길을 끊었다. 란과 루시의 힘을 합쳐 그림 열기구를 만들 재료를 모아라.", targetLabel: "그림의 재료", reward: Math.round(4400 * G), expReward: 6800 } }
     ],
     repeat: {need: 34, gold: Math.round(300 * G), exp: 300, title: "[반복] 성채 정찰", desc: "어둠의 성채가 계속 군대를 만들어낸다 — 계속 베어내야 한다."},
-    lvGate: {enter: 175, mid: 185},
-    scaleMul: {hp: 22.5, atk: 5.2, exp: 170000.0, gold: 8.6},
+    lvGate: {enter: 1, mid: 1},
+    scaleMul: {hp: 6.8500000000000005, atk: 1.73, exp: 5951, gold: 3.6999999999999997},
   },
   {
     key: "howlrstone11",
@@ -524,8 +524,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { sub: 2, dialogue: "howlIon", quest: { id: "hw19", type: "hunt", title: "빛의 아이온 · 어둠의 알다바오트", desc: "라이트와 다크니스보석이 형체화된 존재가 그들을 위협했다. 형체를 흩어라.", need: 8, targetKey: "helhound", targetLabel: "형체화된 보석의 파편", reward: Math.round(5000 * G), expReward: 7600 } }
     ],
     repeat: {need: 34, gold: Math.round(300 * G), exp: 300, title: "[반복] 성채 정찰", desc: "어둠의 성채가 계속 군대를 만들어낸다 — 계속 베어내야 한다."},
-    lvGate: {enter: 180, mid: 190},
-    scaleMul: {hp: 22.5, atk: 5.2, exp: 170000.0, gold: 8.6},
+    lvGate: {enter: 1, mid: 1},
+    scaleMul: {hp: 7.5, atk: 1.85, exp: 10711, gold: 4},
   },
   {
     key: "howlrstone12",
@@ -548,8 +548,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { sub: 3, dialogue: "", quest: { id: "hw21", type: "hunt", title: "[기믹] 남은 6명", desc: "남은 인원은 도사, 루시, 리안, 아리, 란, 제르까지 6명뿐. 스칼렛이 흡수한 군세를 끊어라.", need: 8, targetKey: "x3_bigzombie", targetLabel: "흡수된 군세", reward: Math.round(6000 * G), expReward: 9000 } }
     ],
     repeat: {need: 34, gold: Math.round(300 * G), exp: 300, title: "[반복] 성채 정찰", desc: "어둠의 성채가 계속 군대를 만들어낸다 — 계속 베어내야 한다."},
-    lvGate: {enter: 185, mid: 195},
-    scaleMul: {hp: 22.5, atk: 5.2, exp: 170000.0, gold: 8.6},
+    lvGate: {enter: 1, mid: 1},
+    scaleMul: {hp: 8.15, atk: 1.9699999999999998, exp: 19281, gold: 4.3},
   },
   {
     key: "howlrstone13",
@@ -572,8 +572,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { sub: 3, dialogue: "howlEndTime", quest: { id: "hw23", type: "hunt", title: "THE END TIME", desc: "\"내가 이것만으로 끝날것이라고 생각하는거야?\" — 라일락월드의 반을 삼킨 어둠을 밀어내라.", need: 10, targetKey: "helhound", targetLabel: "삼켜진 자들", reward: Math.round(4800 * G), expReward: 7400 } }
     ],
     repeat: {need: 36, gold: Math.round(340 * G), exp: 340, title: "[반복] 왕좌 수복", desc: "어둠의 왕좌가 무너졌다 — 남은 잔재를 계속 정화하자."},
-    lvGate: {enter: 190, mid: 200},
-    scaleMul: {hp: 30.0, atk: 6.2, exp: 320000.0, gold: 10.0},
+    lvGate: {enter: 1, mid: 1},
+    scaleMul: {hp: 8.8, atk: 2.09, exp: 34705, gold: 4.6},
   },
   {
     key: "howlrstone14",
@@ -596,8 +596,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { sub: 4, dialogue: "howlNewBeginning", quest: { id: "hw25", type: "collect", title: "라일락 연합의 탄생", desc: "완전히 5왕국이 서로 싸우지 않고 연합의 임무로 파견될 수 있도록. 연합의 증표를 세워라.", targetLabel: "연합의 증표", reward: Math.round(6000 * G), expReward: 9000 } }
     ],
     repeat: {need: 36, gold: Math.round(340 * G), exp: 340, title: "[반복] 왕좌 수복", desc: "어둠의 왕좌가 무너졌다 — 남은 잔재를 계속 정화하자."},
-    lvGate: {enter: 195, mid: 205},
-    scaleMul: {hp: 30.0, atk: 6.2, exp: 320000.0, gold: 10.0},
+    lvGate: {enter: 1, mid: 1},
+    scaleMul: {hp: 9.450000000000001, atk: 2.21, exp: 62469, gold: 4.9},
   },
   {
     key: "howlrstone15",
@@ -620,8 +620,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { sub: 3, dialogue: "", quest: { id: "hw27", type: "hunt", title: "[기믹] 남은 어둠", desc: "보석의 힘과 각자의 힘, 무수히 많은 시간과 추억들은 완전히 리셋되지 않았다. 남은 어둠을 걷어라.", need: 8, targetKey: "x3_wogol", targetLabel: "남은 어둠", reward: Math.round(7400 * G), expReward: 10800 } }
     ],
     repeat: {need: 36, gold: Math.round(340 * G), exp: 340, title: "[반복] 왕좌 수복", desc: "어둠의 왕좌가 무너졌다 — 남은 잔재를 계속 정화하자."},
-    lvGate: {enter: 200, mid: 210},
-    scaleMul: {hp: 30.0, atk: 6.2, exp: 320000.0, gold: 10.0},
+    lvGate: {enter: 1, mid: 1},
+    scaleMul: {hp: 10.1, atk: 2.33, exp: 112444, gold: 5.2},
   },
 ];
 

@@ -3113,16 +3113,16 @@ function CollectionPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void 
           </div>
         )}
 
-        {/* v3.0.22 (#43/#44/#50) — 세계수 결정 수집 현황 (챕터마다 다른 결정 + 완전 수집 시 영구 가호) */}
+        {/* v3.0.22 (#43/#44/#50) — 연합 결정 수집 현황 (챕터마다 다른 결정 + 완전 수집 시 영구 가호) */}
         <div className={`mb-2 rounded-lg border p-2.5 ${rpg.blessing ? "border-sky-300/60 bg-sky-400/[0.1]" : "border-white/15 bg-white/[0.04]"}`}>
           <p className="text-[12px] font-black text-sky-200">
-            🌳 세계수 결정 — {rpg.fragFound ?? 0} / {rpg.fragTotal ?? 9} 챕터 수집
+            🌳 연합 결정 — {rpg.fragFound ?? 0} / {rpg.fragTotal ?? 9} 챕터 수집
             {rpg.blessing ? " · 가호 활성" : ""}
           </p>
           <p className="mt-0.5 text-[10px] font-bold text-white/50">
             {rpg.blessing
               ? "다섯 왕국의 결정이 모두 모였다 — ATK+20 · DEF+8 · HP+200 · 공격 +3% (영구)"
-              : "챕터마다 다른 결정이 숨어 있다. 전부 모으면 세계수의 가호를 얻는다 (ATK+20 · DEF+8 · HP+200 · 공격 +3%)"}
+              : "챕터마다 다른 결정이 숨어 있다. 전부 모으면 연합의 가호를 얻는다 (ATK+20 · DEF+8 · HP+200 · 공격 +3%)"}
           </p>
         </div>
 
@@ -3854,16 +3854,16 @@ export function GamePanels({
   if (panel === "content") return <ContentPanel rpg={rpg} onClose={onClose} />; // v1.0.8 — 무한 콘텐츠 허브
   if (panel === "rank") return <RankingPanel rpg={rpg} onClose={onClose} />; // v1.3.1 복원 — 랭킹창 + 랭커 특전 (93b3fbf에서 유실)
   if (panel === "opt") return <KeymapPanel onClose={onClose} />;
-  if (panel === "guide") return <GuidePanel onClose={onClose} />; // v1.4.12 (#16) — 이그니의 UI 기능 안내
+  if (panel === "guide") return <GuidePanel onClose={onClose} />; // v1.4.12 (#16) — 안내인의 UI 기능 안내
   if (panel === "home") return <HomePanel rpg={rpg} onClose={onClose} />; // vc178 — 집 꾸미기
   return null;
 }
 
 /* =====================================================================
- * v1.4.12 (#16 유저 지시 "각각의 UI가 무슨기능을 하는지를 설명해줘(이그니가)")
- * — 이그니의 UI 기능 안내 패널.
+ * v1.4.12 (#16 유저 지시 "각각의 UI가 무슨기능을 하는지를 설명해줘(안내인가)")
+ * — 안내인의 UI 기능 안내 패널.
  *  긴 튜토리얼이 아니라 "각 UI가 무슨 기능을 하는지"를 화면 위치별로 한 줄씩 정리.
- *  화자는 룬 정령 이그니 — 게임 세계관 유지.
+ *  화자는 연합 안내인 — 게임 세계관 유지.
  * ===================================================================== */
 const GUIDE_SECTIONS: { area: string; icon: string; items: { name: string; desc: string }[] }[] = [
   {
@@ -3935,7 +3935,7 @@ function GuidePanel({ onClose }: { onClose: () => void }) {
     <div className="pointer-events-auto fixed inset-0 z-40 flex items-center justify-center bg-black/55" onPointerDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="game-panel flex max-h-[86vh] w-[min(560px,94vw)] flex-col p-4" style={{ zoom: 0.92 }}>
         <div className="flex items-center justify-between">
-          <h2 className="text-[15px] font-black">룬 정령 이그니의 UI 안내서</h2>
+          <h2 className="text-[15px] font-black">연합 안내인의 UI 안내서</h2>
           <button onClick={onClose} className="rounded border border-white/20 bg-white/5 px-2 py-1 text-[11px] font-black text-white/70 hover:bg-white/10">닫기</button>
         </div>
         <p className="mt-1.5 rounded-lg border border-emerald-300/25 bg-emerald-400/10 px-2.5 py-2 text-[11px] font-bold leading-relaxed text-emerald-100">

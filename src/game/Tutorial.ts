@@ -28,49 +28,49 @@ interface TutStep {
 /* v1.4.10 — 유저 지시 "튜토리얼 및 게임 중에 부연 설명이 너무 적어 사용자 친화적이 않음":
  *  각 단계에 ▸조작법 · ▸위치 · ▸실패 시 대처까지 담은 2~3문장 상세 설명으로 보강.
  *  desc는 패널(520px)에 2줄까지 표시되며, 시작 배너로도 그대로 안내된다.
- * v1.0.13 피드백#17 — 화자를 이그니(요정)로 확정: 제목에 [이그니] 접두, 본문은 이그니 말투
+ * v1.0.13 피드백#17 — 화자를 안내인(요정)로 확정: 제목에 [안내인] 접두, 본문은 안내인 말투
  *  ("~해보자!", "여기를 꾹 눌러줘!")로 무엇을 · 어디를 · 누르면 무슨 일이 벌어지는지 + 팁 1개.
  *  ⑤스킬/⑥물약 단계 진입·완료 시 tut:dom 이벤트로 TouchControls DOM 버튼에 링 하이라이트. */
 const STEPS: TutStep[] = [
   {
     id: "talk",
-    title: "[이그니] ① 주민과 대화",
+    title: "[안내인] ① 주민과 대화",
     desc: "머리 위에 표시가 뜬 주민에게 슥~ 다가가 보자! 가까이 가면 아래에 '말 걸기' 버튼이 반짝 떠올라 — 모바일은 그 버튼을 꾹, PC는 E 키! 대화창이 열리면 화면을 탭해 다음 대사로 넘기면 된다구.",
     goal: 1,
     marker: "npc",
   },
   {
     id: "portal",
-    title: "[이그니] ② 차원문 이동",
+    title: "[안내인] ② 차원문 이동",
     desc: "화면 동쪽 끝의 소용돌이 차원문(포탈)으로 걸어 들어가 보자! 사냥터 목록이 뜨면 첫 사냥터 '숲의 신전'을 선택해 줘. 이동은 화면 왼쪽 아래 빈 점선 원을 손가락으로 밀면 그 방향으로 슉!",
     goal: 1,
     marker: "portal",
   },
   {
     id: "kill",
-    title: "[이그니] ③ 첫 전투",
+    title: "[안내인] ③ 첫 전투",
     desc: "오른쪽 아래의 큰 빨간 '공격' 버튼을 꾹꾹 눌러 몬스터를 3마리 처치하자(PC는 X 키)! 몬스터에게 부딪히면 아프니까, 때리고 살짝 물러났다 다시 때리는 리듬이 안전해. 왼쪽 아래 파란 MP가 차오르면 다음 단계에서 쓸 스킬 준비 완료!",
     goal: 3,
     marker: "enemy",
   },
   {
     id: "pickup",
-    title: "[이그니] ④ 전리품 줍기",
+    title: "[안내인] ④ 전리품 줍기",
     desc: "몬스터를 잡으면 골드와 아이템이 바닥에 툭! 떨어져. 그 위로 그냥 지나가기만 해도 자동으로 주워져 — 편리하지? 장비는 가방 버튼에서 착용하고, 잡동사니는 팔면 골드가 된다구.",
     goal: 1,
     marker: null,
   },
   {
     id: "skill",
-    title: "[이그니] ⑤ 스킬 사용",
+    title: "[안내인] ⑤ 스킬 사용",
     desc: "공격 버튼 옆의 금색 스킬 버튼(PC는 Z 키)을 눌러 보자! 휘리릭 — 주변 전체를 한 번에 베는 '회전베기'가 터진다구. 버튼이 어두우면 MP 부족이나 쿨타임 중이라는 뜻. 기본 공격으로 MP를 채우고 다시 도전!",
     goal: 1,
     marker: "enemy",
   },
   {
     id: "pot",
-    title: "[이그니] ⑥ 물약 회복",
-    desc: "HP바가 빨갛게 깎이면, 공격 버튼 바로 옆의 빨간 물약 버튼(PC는 D 키)! 꿀꺽 — HP가 쭉 회복된다. 물약이 0개면 상점에서 살 수 있다구. 팁: 위급할 때 말고 미리미리 마시는 게 이그니의 비책이야!",
+    title: "[안내인] ⑥ 물약 회복",
+    desc: "HP바가 빨갛게 깎이면, 공격 버튼 바로 옆의 빨간 물약 버튼(PC는 D 키)! 꿀꺽 — HP가 쭉 회복된다. 물약이 0개면 상점에서 살 수 있다구. 팁: 위급할 때 말고 미리미리 마시는 게 안내인의 비책이야!",
     goal: 1,
     marker: null,
   },
@@ -79,14 +79,14 @@ const STEPS: TutStep[] = [
    *  goal 1 = 설정에서 해당 토글을 한 번 조작하면 완료(WorldScene이 tut:notify 수신). */
   {
     id: "shader",
-    title: "[이그니] ⑦ 쉐이더 효과",
+    title: "[안내인] ⑦ 쉐이더 효과",
     desc: "더보기(☰) → 설정을 열고 '툰 셰이더'를 눌러 봐! 캐릭터 테두리에 빛이 번지고 색이 또렷해져서 입체감이 확 살아난다구. 폰이 뜨거워지거나 버벅이면 다시 끄면 돼 — 언제든 바꿀 수 있으니까 부담 갖지 마!",
     goal: 1,
     marker: null,
   },
   {
     id: "contrast",
-    title: "[이그니] ⑧ 고대비 모드",
+    title: "[안내인] ⑧ 고대비 모드",
     desc: "같은 설정 화면에서 '고대비 모드'도 켜 봐! 밝은 낮 야외나 햇빛 아래에서 글자가 훨씬 또렷하게 읽힌다구. 눈이 편한 쪽으로 골라 쓰면 돼. 이제 준비 끝 — 진짜 모험을 떠나자!",
     goal: 1,
     marker: null,
@@ -94,7 +94,7 @@ const STEPS: TutStep[] = [
 ];
 
 /* v1.4.10 — 상세 설명(2~3줄) 수용을 위해 패널 높이 62→80 확대
- * v1.0.13 피드백#17 — 이그니 상세 안내(4문장) 수용: 패널 높이 80→96 (desc 4줄 + 여백)
+ * v1.0.13 피드백#17 — 안내인 상세 안내(4문장) 수용: 패널 높이 80→96 (desc 4줄 + 여백)
  *  desc 랩폭 390px @12px ≈ 32자/줄 × 4줄 = 128자 이내 — 위 STEPS desc는 전부 이 한도 내 */
 const PANEL_W = 520;
 const PANEL_H = 96;
@@ -123,9 +123,9 @@ export class Tutorial {
     this.stepIdx = Phaser.Math.Clamp(resumeStep, 0, STEPS.length - 1);
     this.buildHud();
     this.refresh();
-    /* v1.0.13 피드백#17 — 이그니 화자 배너 + 재개 단계가 ⑤/⑥이면 DOM 버튼 하이라이트 즉시 복원 */
+    /* v1.0.13 피드백#17 — 안내인 화자 배너 + 재개 단계가 ⑤/⑥이면 DOM 버튼 하이라이트 즉시 복원 */
     this.emitDom(this.domKeyOf(STEPS[this.stepIdx].id), true);
-    this.scene.showBanner(`튜토리얼 시작 — 이그니: ${STEPS[this.stepIdx].desc}`);
+    this.scene.showBanner(`튜토리얼 시작 — 안내인: ${STEPS[this.stepIdx].desc}`);
     /* v1.1.1 (#1 가림) — 튜토리얼 활성 사실을 React에 알린다.
      *  튜토리얼 패널은 Phaser(캔버스 내부)라 React DOM 오버레이(보상 팝업 z-70 · 퀘스트 트래커 등)에
      *  항상 가려진다 → React가 tut:active를 받으면 상단 중앙 충돌 UI를 비켜세운다 (HUD/Overlays 참조) */
@@ -261,7 +261,7 @@ export class Tutorial {
     this.refresh();
     /* v1.0.13 피드백#17 — 새 단계가 ⑤/⑥이면 DOM 버튼 하이라이트 on */
     this.emitDom(this.domKeyOf(STEPS[this.stepIdx].id), true);
-    s.showBanner(`튜토리얼 ${this.stepIdx + 1}/${STEPS.length} — 이그니: ${STEPS[this.stepIdx].desc}`);
+    s.showBanner(`튜토리얼 ${this.stepIdx + 1}/${STEPS.length} — 안내인: ${STEPS[this.stepIdx].desc}`);
   }
 
   /* ───────────────────── 프레임 갱신 ───────────────────── */

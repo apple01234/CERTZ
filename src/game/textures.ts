@@ -162,7 +162,7 @@ export function buildAllAnims(scene: Phaser.Scene) {
   }
   /* v4.8.0 — 영준프린세스 1기(라일락 월드) 전용 몬스터 40종.
    *  0x72 DungeonTileset II(CC0) 원본 16px 를 ×4 업스케일한 시트를 쓴다.
-   *  이그드라실(x3_*)과 키가 겹치지 않도록 lil_ 접두사를 유지하고,
+   *  이전 서사(x3_*)과 키가 겹치지 않도록 lil_ 접두사를 유지하고,
    *  같은 팩 계열이라 화풍은 기존 챕터와 일치한다. */
   for (const k of [
     "lil_rat", "lil_shadowmoth", "lil_bookwisp",
@@ -253,7 +253,7 @@ export function buildAllAnims(scene: Phaser.Scene) {
   if (!BOSS_ATLAS["boss"]) a.create({ key: "boss-idle", ...fr("boss_idle", 2, 2, -1) });
   if (!BOSS_ATLAS["boss2"]) a.create({ key: "boss2-idle", ...fr("boss2_idle", 2, 2, -1) });
   if (!BOSS_ATLAS["boss3"]) a.create({ key: "boss3-idle", ...fr("boss3_idle", 2, 2, -1) });
-  // v2.0 아뜰란티스 확장 몬스터 (v1.5 이관)
+  // v2.0 이전 서사 확장 몬스터 (v1.5 이관)
   a.create({ key: "swampbeast-idle", ...fr("swampbeast_idle", 2, 2, -1) });
   a.create({ key: "swampbeast-run", ...fr("swampbeast_run", 4, 7, -1) });
   a.create({ key: "emberwolf-idle", ...fr("emberwolf_idle", 2, 2, -1) });
@@ -264,7 +264,7 @@ export function buildAllAnims(scene: Phaser.Scene) {
   a.create({ key: "runegolem-run", ...fr("runegolem_run", 4, 6, -1) });
   a.create({ key: "helhound-idle", ...fr("helhound_idle", 2, 2, -1) });
   a.create({ key: "helhound-run", ...fr("helhound_run", 4, 10, -1) });
-  // v2.0 아뜰란티스 신규 보스
+  // v2.0 이전 서사 신규 보스
   if (!BOSS_ATLAS["boss_nidhog"]) a.create({ key: "boss_nidhog-idle", ...fr("boss_nidhog_idle", 2, 2, -1) });
   if (!BOSS_ATLAS["boss_surt"]) a.create({ key: "boss_surt-idle", ...fr("boss_surt_idle", 2, 2, -1) });
   if (!BOSS_ATLAS["boss_fenrir"]) a.create({ key: "boss_fenrir-idle", ...fr("boss_fenrir_idle", 2, 2, -1) });

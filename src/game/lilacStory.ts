@@ -420,7 +420,7 @@ export const LILAC_DIALOGUES: Record<string, { speaker: string; lines: string[] 
   lilac06_sword: {
     speaker: "루시",
     lines: [
-      "네가 잃어버렸다던 솔라플레임이그니션소드도 찾았어.",
+      "네가 잃어버렸다던 솔라플레임안내인션소드도 찾았어.",
       "그런데 소드를 가진 자가 소드를 잃을 때, 소드는 주인을 기억하지 못해.",
       "다시 만나야 해. 그 전까지는 아무것도 아니야.",
     ],
