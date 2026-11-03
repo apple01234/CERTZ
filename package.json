@@ -1,23 +1,26 @@
 {
   "name": "nextjs_tailwind_shadcn_ts",
-  "version": "1.4.62",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "dev": "node server.js 2>&1 | tee dev.log",
     "dev:next": "next dev -p 3000 2>&1 | tee dev.log",
     "//build": "v1.0.16 — prisma generate 선행 필수: next.config의 ignoreBuildErrors 제거로 Prisma Client 부재가 곧 타입 오류가 된다",
-    "build": "prisma generate && next build && (bun scripts/fc-server/postbuild.js || node scripts/fc-server/postbuild.js)",
-    "build:next": "prisma generate && next build",
+    "build": "prisma generate && next build && (bun scripts/fc-server/postbuild.js || node scripts/fc-server/postbuild.js) && node campaign-assets.mjs",
+    "build:next": "prisma generate && next build && node campaign-assets.mjs",
     "start": "NODE_ENV=production node server.js",
     "//test": "vc235 — 테스트 30개가 있었지만 실행 스크립트가 없어 CI 에서 한 번도 돌지 않았다. ts-resolve-hook 이 확장자 없는 상대 import 를 .ts 로 해석한다.",
-    "test": "node --experimental-strip-types --import ./tests/ts-resolve-hook.mjs \"tests/*.test.mjs\"",
+    "test": "node --experimental-strip-types --import ./tests/ts-resolve-hook.mjs --test tests/*.test.mjs tests/campaign/*.test.mjs",
     "//lint": "v1.0.16 (R8) — 저장소 게이트와 같은 명령. lint는 로컬 편의용(경고 허용), lint:strict는 CI 강제용",
     "lint": "eslint .",
     "lint:strict": "eslint src --max-warnings 0",
     "db:push": "prisma db push --accept-data-loss",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "test:campaign": "node --experimental-strip-types --import ./tests/ts-resolve-hook.mjs --test tests/campaign/*.test.mjs",
+    "campaign:server": "node multiplayer/campaign/server.mjs",
+    "test:campaign:browser": "node scripts/playtest-campaign.mjs"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.1.0",
@@ -118,6 +121,6 @@
     "typescript": "^5"
   },
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=24"
   }
 }

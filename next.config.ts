@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import { readFileSync } from "node:fs";
 
 /**
- * APK_EXPORT=1 → Capacitor용 정적 export (distDir .next-apk 분리로 dev .next 보호 — webDir)
+ * APK_EXPORT=1 → Capacitor용 정적 export (최종 산출물 .next-apk — Next 16 작업 캐시는 여전히 .next; 웹 빌드와 동시 실행 금지)
  * STATIC_EXPORT=1 → Vercel 정적 프론트 미러 export (v1.4.20 멀티서버 분리)
  *   - distDir 기본값(.next) 유지: output:export 결과가 표준 out/에 생성돼야 Vercel 빌더가 감지
  * 일반 dev/배포는 standalone 그대로.

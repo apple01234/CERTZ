@@ -1,0 +1,677 @@
+{
+  "pack": "Dungeon Crawl Stone Soup tiles, Oct-5-2010",
+  "origin": "user-provided Drive archive CERTZ-src-slim-20261102-2213.tar.gz",
+  "archiveMd5": "4aef7f75eae848706970af021f529ed4",
+  "source": "https://opengameart.org/content/dungeon-crawl-32x32-tiles",
+  "license": "CC0-1.0",
+  "files": {
+    "minion": {
+      "file": "minion.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/orc_warrior.png",
+      "sha256": "06eae3b6f271f90ec41b9cab38dfc1291039b8d447eab1e63a72a91ed7cc758a"
+    },
+    "book": {
+      "file": "book.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/item/book/artefact/bookmark.png",
+      "sha256": "cbdf16cf0c454df899a350d849c4453e59463ca4be88069c2fdede6fcd34bedd"
+    },
+    "scroll": {
+      "file": "scroll.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/item/book/book_of_the_dead.png",
+      "sha256": "009940b1ae437ac227e9c4576ef4bff2ae795a53f4cb09b71a0e280ddbdcf78d"
+    },
+    "fountain": {
+      "file": "fountain.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/dngn_blue_fountain.png",
+      "sha256": "3e442838530de83fa466b0c7d4028fd9bb9590438fbc4783ee681ccfecff54f0"
+    },
+    "statue": {
+      "file": "statue.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/dngn_granite_statue.png",
+      "sha256": "fe6f88c4f65c01a868b6a2103f6315e6c75e40b17716f3492509e85ce0763359"
+    },
+    "column": {
+      "file": "column.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/crumbled_column.png",
+      "sha256": "3c577affd0c74d8d5863520afd9257006e3464129ae3ab39356fc95fec181da4"
+    },
+    "pillar": {
+      "file": "pillar.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/zot_pillar.png",
+      "sha256": "791916c5fa1860d8c7bee000bc6526c607aca4a3dd9d423a6d07967af60281ad"
+    },
+    "door": {
+      "file": "door.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/dngn_closed_door.png",
+      "sha256": "1dd473c3bc25e6dd9d3acffc3110d4ff73c6dd628bbbe5ac2f9027276092be89"
+    },
+    "altar": {
+      "file": "altar.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/altars/dngn_altar.png",
+      "sha256": "8571ce3f95a5edd918da1de65733c8f1085ef601bd8418aa18e15264c1926309"
+    },
+    "bookshelf": {
+      "file": "bookshelf.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/shops/shop_books.png",
+      "sha256": "fdb9e81e1e1d5b8a5aeaf97c97c0b622ad7352f196ea88a98211fe9c9f21838a"
+    },
+    "armory": {
+      "file": "armory.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/shops/shop_armour.png",
+      "sha256": "c4777f57f5756d40ccbf563aeeee061e53ead7a5f48aa013cb27c35bbf2c4ea4"
+    },
+    "tree-red": {
+      "file": "tree-red.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/wall/tree1_red.png",
+      "sha256": "1371636a2849660fb80c2861268a65bceba5ec8fb84f86cc2cbd01728d04cba0"
+    },
+    "tree-gold": {
+      "file": "tree-gold.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/wall/tree2_yellow.png",
+      "sha256": "bba83487f4a97b6891a0936e3127df9741bda849f930308be7a0327ca82b4e72"
+    },
+    "wall-castle": {
+      "file": "wall-castle.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/wall/stone_brick1.png",
+      "sha256": "b961824fe656bcf6362aea25e485cef33343e3e31fbdf5b4675717210a9ba8a0"
+    },
+    "wall-ruin": {
+      "file": "wall-ruin.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/wall/stone2_dark0.png",
+      "sha256": "7fe52a8daeaca07e7cc33580227f51ab7e4e662d2a8e80c7aca418f15e55550a"
+    },
+    "wall-machine": {
+      "file": "wall-machine.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/wall/dngn_metal_wall.png",
+      "sha256": "c39dcbe4e44f41624dee90975a6efbba343793bd53991c4a8546d7c14c753c2b"
+    },
+    "wall-desert": {
+      "file": "wall-desert.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/wall/sandstone_wall0.png",
+      "sha256": "baa7291d00f9aefc457430071b6458ba6301ea3f1b874fbaf160335714c5880a"
+    },
+    "floor-castle": {
+      "file": "floor-castle.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/rect_gray0.png",
+      "sha256": "c70e11ae35b8ecad8c0bf90781b092579cbf78ec90efd28f15c2cc8b390bf41a"
+    },
+    "floor-castle-1": {
+      "file": "floor-castle-1.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/rect_gray1.png",
+      "sha256": "a773c13cf0c9bd43945a4526f2100b05f8280468476ac7c9dc363c8e2706c094"
+    },
+    "floor-castle-2": {
+      "file": "floor-castle-2.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/rect_gray2.png",
+      "sha256": "fe0c5781c32f2a6900124cb5db9cf3597d112255f711ae2ba2093a6f94a106a4"
+    },
+    "floor-garden": {
+      "file": "floor-garden.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/grass/grass0-dirt-mix1.png",
+      "sha256": "42ab5d43aaf0f56079d4487ab0d698784350f513be7fad5b4d5433263e977eb9"
+    },
+    "floor-garden-1": {
+      "file": "floor-garden-1.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/grass/grass0-dirt-mix2.png",
+      "sha256": "2fc22ef0d9bd3a254678ab38fe45f2c4a5a253cf313b848c840f8366453f353c"
+    },
+    "floor-garden-2": {
+      "file": "floor-garden-2.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/grass/grass0-dirt-mix3.png",
+      "sha256": "f5cc01324d66647dc59bd35fd332b468f23097bcd09e03097e852f14f26f2cd8"
+    },
+    "floor-forest": {
+      "file": "floor-forest.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/grass/grass0.png",
+      "sha256": "5e26b415a3b8fe7f88e406c6a0a2a7cb6b35832042be1ea8f5f553e2e12d647b"
+    },
+    "floor-forest-1": {
+      "file": "floor-forest-1.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/grass/grass1.png",
+      "sha256": "eb991f6d9ca15defe73529d3c28b450f177d7801c142fb911fa9ac5a7c27a1b3"
+    },
+    "floor-forest-2": {
+      "file": "floor-forest-2.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/grass/grass0-dirt-mix3.png",
+      "sha256": "f5cc01324d66647dc59bd35fd332b468f23097bcd09e03097e852f14f26f2cd8"
+    },
+    "floor-harbor": {
+      "file": "floor-harbor.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/pebble_brown0.png",
+      "sha256": "dbd74d78edce6dbaa98e1effce57c07af3aa46362b0a9c834479176163657b63"
+    },
+    "floor-harbor-1": {
+      "file": "floor-harbor-1.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/pebble_brown1.png",
+      "sha256": "20ff9122a81052b0e90504f50fa21db0a78d8a60899bb03614d79a4b8e7b1980"
+    },
+    "floor-harbor-2": {
+      "file": "floor-harbor-2.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/pebble_brown2.png",
+      "sha256": "d0c0eaa18a1b26a1cbf1b8e1bfcfde4e876a2ec9250521cfbab8e41186e24653"
+    },
+    "floor-ruin": {
+      "file": "floor-ruin.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/tomb0.png",
+      "sha256": "cbb6335c8541f2b5767a1de3a367141c2257cb3056c5b8a74e70e9124cbaa5e3"
+    },
+    "floor-ruin-1": {
+      "file": "floor-ruin-1.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/tomb1.png",
+      "sha256": "2edc81691c8efa3c246102467fdfc702c6ad50eea752307ef811a141d77a2b4a"
+    },
+    "floor-ruin-2": {
+      "file": "floor-ruin-2.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/tomb2.png",
+      "sha256": "77f4278ee7d746e4713b893fbec2ba43b38fdb3dce8d976a5dd3786adf5826fd"
+    },
+    "floor-astral": {
+      "file": "floor-astral.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/crystal_floor0.png",
+      "sha256": "0e036b6e1e336ceefc5e3e934482749eddd2d5bb289bb401f384da583095b73c"
+    },
+    "floor-astral-1": {
+      "file": "floor-astral-1.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/crystal_floor1.png",
+      "sha256": "09bea52654a6fa6537dd291cda093ded67f58041de0dff709fbd470250ea1bd1"
+    },
+    "floor-astral-2": {
+      "file": "floor-astral-2.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/crystal_floor2.png",
+      "sha256": "b5fc6ab43cdb8d4593c3afe7311411875f3eea2b7783346a9d95e1d5db7e997c"
+    },
+    "floor-machine": {
+      "file": "floor-machine.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/mesh0.png",
+      "sha256": "af2a205eb3b62757d965b856f551ba3b69cda98ca6325c7bb1c21b47a49b259f"
+    },
+    "floor-machine-1": {
+      "file": "floor-machine-1.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/mesh1.png",
+      "sha256": "7e8d6a9520e10b72a78b3b007a72b76995f34edb92e5ceb79e3315d9c54293c5"
+    },
+    "floor-machine-2": {
+      "file": "floor-machine-2.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/mesh2.png",
+      "sha256": "172fcc9419f5ef935f4f8622275e2739b44dd14d09bb256107fff3c775fc1db0"
+    },
+    "floor-snow": {
+      "file": "floor-snow.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/ice0.png",
+      "sha256": "bae5b3161c119fd3b283b1ffc5882f062465900c480f94984fd74d4e26948aaf"
+    },
+    "floor-snow-1": {
+      "file": "floor-snow-1.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/ice1.png",
+      "sha256": "07e95ae68340cdbd851b4b540d3763d5902e0d24f43f587152a4cfcb575a75b7"
+    },
+    "floor-snow-2": {
+      "file": "floor-snow-2.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/ice2.png",
+      "sha256": "b4602de39f4d08ba707fb83da9f5448699fa1a5b258178445a4c2072caa5d4da"
+    },
+    "floor-desert": {
+      "file": "floor-desert.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/sandstone_floor0.png",
+      "sha256": "2f0cda15a53fbef6fce3e55129c5d75d247adcee724d7a3c5a6596b8c0f01004"
+    },
+    "floor-desert-1": {
+      "file": "floor-desert-1.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/sandstone_floor1.png",
+      "sha256": "d67331ff4a96b0a235f2994043a2420b2e6fa1c42627c20a01665ff6d6fd484b"
+    },
+    "floor-desert-2": {
+      "file": "floor-desert-2.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/sandstone_floor2.png",
+      "sha256": "c18c7970f0a1f7ecd92a7f9689199751c27cd2ad024adc8aa5aec76958a1fe70"
+    },
+    "floor-volcano": {
+      "file": "floor-volcano.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/volcanic_floor0.png",
+      "sha256": "c0cae4dff6ef3ed955c3a64baf0f8a9d4c32b87a33d06fb09c0778ef194b4b15"
+    },
+    "floor-volcano-1": {
+      "file": "floor-volcano-1.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/volcanic_floor1.png",
+      "sha256": "6f678b76a28ee30a6633dab92b7303d13b82f4b7c9a1d522e6e183e4b3812d03"
+    },
+    "floor-volcano-2": {
+      "file": "floor-volcano-2.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/volcanic_floor2.png",
+      "sha256": "7159e2b54120b8fb44c840bddccf0260e4ed1bf110e8507db13dbfd465307379"
+    },
+    "path": {
+      "file": "path.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/dirt_full.png",
+      "sha256": "d7c50a76a6683baffc20d84546c2149af42455734a5b61cb330384d5386c89ac"
+    },
+    "lava": {
+      "file": "lava.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/floor/lava0.png",
+      "sha256": "e886424c6ec09e9cb1c7983fb4286707844cf083e78b322540a0b70fbe792e04"
+    },
+    "water": {
+      "file": "water.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-dngn/water/deep_water_wave_N.png",
+      "sha256": "81c0fb84461e615f0e1758b774369f42ad242847608dc08de580722dff19b874"
+    },
+    "boss-a1-03": {
+      "file": "boss-a1-03.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/guardian_serpent.png",
+      "sha256": "618985d42fd8dbc8b17ae079357a7376f26e8a82db41c0fec4622716094831c6"
+    },
+    "boss-a1-07": {
+      "file": "boss-a1-07.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/deep_elf_sorcerer.png",
+      "sha256": "abdf483da9297c4bfcd9c957e1b925dbc30e0d2bfe157991f40600e483c49e73"
+    },
+    "boss-a1-08": {
+      "file": "boss-a1-08.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/undead/vampire_knight.png",
+      "sha256": "44f26c222c9bbefb47c673fb1f5af60ec822d3d8e3131ef85d4374fc73562d4d"
+    },
+    "boss-a1-10": {
+      "file": "boss-a1-10.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/nonliving/crystal_golem.png",
+      "sha256": "362e7dad47c6cdf637d3aa8ec96e6a85513f4782cbf0c7e92c7bc986b3cdd838"
+    },
+    "boss-a1-11": {
+      "file": "boss-a1-11.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/orb_guardian.png",
+      "sha256": "49468d49a01d1ae439bae4cae90515b9681c5060616ed2b930889ba5aac37542"
+    },
+    "boss-a1-13": {
+      "file": "boss-a1-13.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/deep_elf_death_mage.png",
+      "sha256": "86e7a6b0e1aa6423906f866e39ba511f5b890b6618ec67e2b2a8bd132ddf1b45"
+    },
+    "boss-a1-14": {
+      "file": "boss-a1-14.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/undead/ancient_lich.png",
+      "sha256": "cf7b41137e64234e25f83f46f97439442d3dc6278b2a6e2124a39ec82d48d428"
+    },
+    "boss-a2-01": {
+      "file": "boss-a2-01.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/nonliving/wood_golem.png",
+      "sha256": "2c826f5cfdd1f2d0c68559801da58a87675ac3487da7b94e5b108bbf0fcba80e"
+    },
+    "boss-a2-02": {
+      "file": "boss-a2-02.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/nonliving/electric_golem.png",
+      "sha256": "8039026997debad776dd226373f9ac61ef54c1c81b83fe56e84e9f4e1e69f250"
+    },
+    "boss-a2-03": {
+      "file": "boss-a2-03.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/nonliving/iron_golem.png",
+      "sha256": "6527899baff552ae87ff2fd5c504e676455c05415ad85dd9e5722c7aa2409ee8"
+    },
+    "boss-a2-05": {
+      "file": "boss-a2-05.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/nonliving/clay_golem.png",
+      "sha256": "d4b1c20ecc05f2da6b9354d2b7b29a20325a41492abf1c76a3c391da11493a0b"
+    },
+    "boss-a2-06": {
+      "file": "boss-a2-06.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/iron_dragon.png",
+      "sha256": "283b3a39145b25b371c4fc41ca1334b17fc48297cf68513c052bb29df87258bf"
+    },
+    "boss-a2-08": {
+      "file": "boss-a2-08.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/deep_elf_summoner.png",
+      "sha256": "1bebc1e9797255c8e187786018ab8c530498892de3ab3a70eb3500efc67edcbc"
+    },
+    "boss-a2-10": {
+      "file": "boss-a2-10.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/titan.png",
+      "sha256": "10e885a013d3cd3d32211820c01ed4efd5518b276e1161fbed6af3beecd674e9"
+    },
+    "boss-a3-01": {
+      "file": "boss-a3-01.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/stone_giant.png",
+      "sha256": "e3398b5f0644186134152571a5851c6b5b0db2e52dafecc7290a188b54543062"
+    },
+    "boss-a3-02": {
+      "file": "boss-a3-02.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/deep_elf_blademaster.png",
+      "sha256": "f4e41d504a4dc9a183cb1fb77db6b789a5bf8f3e694475b5c2c9cd449b7906b7"
+    },
+    "boss-a3-03": {
+      "file": "boss-a3-03.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/dragon.png",
+      "sha256": "4901b805c883240c310d39fa61010ab6806c9f911bec2c2235c3a068f20c45d4"
+    },
+    "boss-a3-04": {
+      "file": "boss-a3-04.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/ice_dragon.png",
+      "sha256": "cc56607a586c279d3aae104042d57c180f0f3424e8690a3568a05bd5a7b4f750"
+    },
+    "boss-a3-05": {
+      "file": "boss-a3-05.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/sphinx.png",
+      "sha256": "e8a20e2688438189afddcf7e70135695c1948254e59ac1df4d873b7bf1873e66"
+    },
+    "boss-a3-06": {
+      "file": "boss-a3-06.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/storm_dragon.png",
+      "sha256": "78f58aab1f30261e4746061e94bbc79ffe586dfc1d74ec3ae144da687eef019e"
+    },
+    "boss-a3-07": {
+      "file": "boss-a3-07.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/daeva.png",
+      "sha256": "9d9522bed9042b8456721c648e3b0f41c56141c9e2e76e31819a8278f679f1fe"
+    },
+    "boss-a3-09": {
+      "file": "boss-a3-09.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/dc-mon/deep_elf_demonologist.png",
+      "sha256": "aa1bfb2e113ee8a3478b1999c8db83a77530e1de66f06fd8d6f719198fd699eb"
+    },
+    "gem": {
+      "file": "gem.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/item/misc/misc_crystal.png",
+      "sha256": "fe323a0fe53d350b7c462eeea1ac9b31647ec0a528a9f5cd6fa1618b934b2185"
+    },
+    "rune": {
+      "file": "rune.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/item/misc/misc_rune.png",
+      "sha256": "ffa791490778d1411b4a8dc08df49c1a95f1d4ffb73c4ee1422b22b12da91ca0"
+    },
+    "coin": {
+      "file": "coin.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/item/misc/gold_pile.png",
+      "sha256": "ac0d74fda078d63c47ee4860e3f51a24f892f2d887731f081a31accc05157b75"
+    },
+    "potion": {
+      "file": "potion.png",
+      "archivePath": "CERTZ/assets_dl/extracted/dungeoncrawl_32x32/crawl-tiles Oct-5-2010/item/potion/brilliant_blue.png",
+      "sha256": "6b970d9b4814adb6ce6ab89b69cb326df442fc538673b9199703e0b383d77f7f"
+    }
+  },
+  "projectFiles": {
+    "knight": {
+      "url": "/assets/npcbody/npcbody_knight.png",
+      "archivePath": "CERTZ/public/assets/npcbody/npcbody_knight.png",
+      "sha256": "d2eb3d8c57f403814a3b8d8162d46e7d0fc16407815a58d0600a749a2649db56",
+      "width": 96,
+      "height": 96,
+      "provenance": "Existing user-supplied project art; SPUM purchased prefab renders"
+    },
+    "archer": {
+      "url": "/assets/npcbody/npcbody_scout.png",
+      "archivePath": "CERTZ/public/assets/npcbody/npcbody_scout.png",
+      "sha256": "2ed7d5e52a1d06f747660fa19894a5a2fe4232c861b8db5e0f20991ade19c373",
+      "width": 96,
+      "height": 96,
+      "provenance": "Existing user-supplied project art; SPUM purchased prefab renders"
+    },
+    "mage": {
+      "url": "/assets/npcbody/npcbody_mage.png",
+      "archivePath": "CERTZ/public/assets/npcbody/npcbody_mage.png",
+      "sha256": "246b663e5555f379f15a346f63b91fa6198c67b0496fcf858ab88d159d121bb0",
+      "width": 96,
+      "height": 96,
+      "provenance": "Existing user-supplied project art; SPUM purchased prefab renders"
+    },
+    "duelist": {
+      "url": "/assets/npcbody/npcbody_devil.png",
+      "archivePath": "CERTZ/public/assets/npcbody/npcbody_devil.png",
+      "sha256": "1489a983f7e9ecb48ac066ed242a99f092f1ecfdb8dbc8243ca3ded6d841ef58",
+      "width": 96,
+      "height": 96,
+      "provenance": "Existing user-supplied project art; SPUM purchased prefab renders"
+    },
+    "captain": {
+      "url": "/assets/npcbody/npcbody_fisher.png",
+      "archivePath": "CERTZ/public/assets/npcbody/npcbody_fisher.png",
+      "sha256": "1681a9d0a4db75ce83570259997f035bd67ca744ab728eca6586e6a13bcb3c7d",
+      "width": 96,
+      "height": 96,
+      "provenance": "Existing user-supplied project art; SPUM purchased prefab renders"
+    },
+    "sage": {
+      "url": "/assets/npcbody/npcbody_mystic.png",
+      "archivePath": "CERTZ/public/assets/npcbody/npcbody_mystic.png",
+      "sha256": "8515dd37a89e186b1902fce996facd5b850673a8db9226a1dbedad1741498596",
+      "width": 96,
+      "height": 96,
+      "provenance": "Existing user-supplied project art; SPUM purchased prefab renders"
+    },
+    "healer": {
+      "url": "/assets/npcbody/npcbody_priest.png",
+      "archivePath": "CERTZ/public/assets/npcbody/npcbody_priest.png",
+      "sha256": "dbb2f36e74c280b80bd30b73e302f5cc93d69b29cffd81376a7a9b15e6b663ca",
+      "width": 96,
+      "height": 96,
+      "provenance": "Existing user-supplied project art; SPUM purchased prefab renders"
+    },
+    "guardian": {
+      "url": "/assets/npcbody/npcbody_elf.png",
+      "archivePath": "CERTZ/public/assets/npcbody/npcbody_elf.png",
+      "sha256": "56943959bffb571b7a1af281b17dbcfd46f5ea487a30832a58a4f7fb57724877",
+      "width": 96,
+      "height": 96,
+      "provenance": "Existing user-supplied project art; SPUM purchased prefab renders"
+    },
+    "shadow-knight": {
+      "url": "/assets/npcbody/npcbody_butler.png",
+      "archivePath": "CERTZ/public/assets/npcbody/npcbody_butler.png",
+      "sha256": "5bb4696882af0628cd5668cf369d12a30041770cf4d452695dead0e82f542f9a",
+      "width": 96,
+      "height": 96,
+      "provenance": "Existing user-supplied project art; SPUM purchased prefab renders"
+    },
+    "library-shelf": {
+      "url": "/assets/objects/dungeon/obj_dungeon_bookshelf.png",
+      "archivePath": "CERTZ/public/assets/objects/dungeon/obj_dungeon_bookshelf.png",
+      "sha256": "fc5de57e40ae5ddda7770a113a672ce519f0191334a5e16b6fb6408751285222",
+      "width": 64,
+      "height": 128,
+      "provenance": "Existing user-supplied project art; Tiny RPG Forest / Dungeon Tale / town props",
+      "frameWidth": 64,
+      "frameHeight": 64
+    },
+    "library-table": {
+      "url": "/assets/furn_table.webp",
+      "archivePath": "CERTZ/public/assets/furn_table.webp",
+      "sha256": "f3885706e085c816fb25a6cdbca525f262f2eb6e06d3369a81d8e2ede7a04949",
+      "width": 101,
+      "height": 53,
+      "provenance": "Existing project furniture/foliage used by WorldScene; supplied Drive bytes unchanged"
+    },
+    "library-candle": {
+      "url": "/assets/objects/dungeon/obj_dungeon_candle.png",
+      "archivePath": "CERTZ/public/assets/objects/dungeon/obj_dungeon_candle.png",
+      "sha256": "7d8650e8e013062e68c90c768f2d9894a854f8a9b233021a58ad1b7205e29933",
+      "width": 24,
+      "height": 40,
+      "provenance": "Existing user-supplied project art; Tiny RPG Forest / Dungeon Tale / town props"
+    },
+    "library-throne": {
+      "url": "/assets/objects/dungeon/obj_dungeon_throne.png",
+      "archivePath": "CERTZ/public/assets/objects/dungeon/obj_dungeon_throne.png",
+      "sha256": "15a1e8c8cb576bf6cb98d64c23a6b918c319a199c7b4dd0f684a1f493a24240e",
+      "width": 58,
+      "height": 32,
+      "provenance": "Existing user-supplied project art; Tiny RPG Forest / Dungeon Tale / town props"
+    },
+    "garden-tree": {
+      "url": "/assets/fm_tree3.png",
+      "archivePath": "CERTZ/public/assets/fm_tree3.png",
+      "sha256": "961c4900dc6c02a6a3dc51d46ba38c203ceb7b5603935647aa0800470f812390",
+      "width": 98,
+      "height": 110,
+      "provenance": "Existing project furniture/foliage used by WorldScene; supplied Drive bytes unchanged"
+    },
+    "garden-bush": {
+      "url": "/assets/fm_shrub1.png",
+      "archivePath": "CERTZ/public/assets/fm_shrub1.png",
+      "sha256": "4af428ea82b5d78ca9efa0b54f25fcc7b21a0dbc7b4509297999f4dac2a5d894",
+      "width": 60,
+      "height": 104,
+      "provenance": "Existing project furniture/foliage used by WorldScene; supplied Drive bytes unchanged"
+    },
+    "garden-rock": {
+      "url": "/assets/objects/forest/obj_forest_rock.png",
+      "archivePath": "CERTZ/public/assets/objects/forest/obj_forest_rock.png",
+      "sha256": "30744c2447ee98e08dda871ea8c0b6440ab85c92fa3bc3614e97cdb678bd288c",
+      "width": 124,
+      "height": 112,
+      "provenance": "Existing user-supplied project art; Tiny RPG Forest / Dungeon Tale / town props"
+    },
+    "town-house": {
+      "url": "/assets/objects/town/obj_town_house_blue.png",
+      "archivePath": "CERTZ/public/assets/objects/town/obj_town_house_blue.png",
+      "sha256": "71fd835ea9a6bac3e39d83525a7b8b431c009d579b5ad64b2878030bc534011e",
+      "width": 160,
+      "height": 112,
+      "provenance": "Existing user-supplied project art; Tiny RPG Forest / Dungeon Tale / town props"
+    },
+    "town-stall": {
+      "url": "/assets/objects/town/obj_town_stall_stripe.png",
+      "archivePath": "CERTZ/public/assets/objects/town/obj_town_stall_stripe.png",
+      "sha256": "9a88c4d6d873225a448fc49a1727cc587640ba6f4f681888425d63668e340563",
+      "width": 118,
+      "height": 58,
+      "provenance": "Existing user-supplied project art; Tiny RPG Forest / Dungeon Tale / town props"
+    },
+    "town-barrel": {
+      "url": "/assets/furn_barrel.webp",
+      "archivePath": "CERTZ/public/assets/furn_barrel.webp",
+      "sha256": "bea6de9c5b301f9d18163d1aded157dc2d651008b9845e8ca8b313f42f1a12a1",
+      "width": 27,
+      "height": 35,
+      "provenance": "Existing project furniture/foliage used by WorldScene; supplied Drive bytes unchanged"
+    },
+    "town-bench": {
+      "url": "/assets/furn_bench.webp",
+      "archivePath": "CERTZ/public/assets/furn_bench.webp",
+      "sha256": "3bce5c2f5f5c1447c784073ab920c1f08fdaaca6a41b9c63a9f31c80a9d9e57f",
+      "width": 85,
+      "height": 39,
+      "provenance": "Existing project furniture/foliage used by WorldScene; supplied Drive bytes unchanged"
+    },
+    "portrait-knight": {
+      "url": "/assets/npcportrait/npcbody_knight.png",
+      "archivePath": "CERTZ/public/assets/npcportrait/npcbody_knight.png",
+      "sha256": "b439bde58429f71fbd6c9c07325411c6ebd92c07a328513899afe29bb01e3adc",
+      "width": 84,
+      "height": 84,
+      "provenance": "Existing DialogueBox exact-source SPUM portrait crop; docs/assets_license/spum_npc_restore.json"
+    },
+    "portrait-archer": {
+      "url": "/assets/npcportrait/npcbody_scout.png",
+      "archivePath": "CERTZ/public/assets/npcportrait/npcbody_scout.png",
+      "sha256": "b395730b493547a122febb1522e04a8b81f19ba6c3cd1b8a7682d87c46f8e6b0",
+      "width": 84,
+      "height": 84,
+      "provenance": "Existing DialogueBox exact-source SPUM portrait crop; docs/assets_license/spum_npc_restore.json"
+    },
+    "portrait-mage": {
+      "url": "/assets/npcportrait/npcbody_mage.png",
+      "archivePath": "CERTZ/public/assets/npcportrait/npcbody_mage.png",
+      "sha256": "294ec74d23bc689d0acce514767ee8d9712dd3da07ad3f02b92db357fe75bd06",
+      "width": 84,
+      "height": 84,
+      "provenance": "Existing DialogueBox exact-source SPUM portrait crop; docs/assets_license/spum_npc_restore.json"
+    },
+    "portrait-duelist": {
+      "url": "/assets/npcportrait/npcbody_devil.png",
+      "archivePath": "CERTZ/public/assets/npcportrait/npcbody_devil.png",
+      "sha256": "2eb22ea4ff349198cb937fc39e9cb24ac3ae08839fa2950beeca0ff965944639",
+      "width": 84,
+      "height": 84,
+      "provenance": "Existing DialogueBox exact-source SPUM portrait crop; docs/assets_license/spum_npc_restore.json"
+    },
+    "portrait-captain": {
+      "url": "/assets/npcportrait/npcbody_fisher.png",
+      "archivePath": "CERTZ/public/assets/npcportrait/npcbody_fisher.png",
+      "sha256": "5568e29d70a9707093603006ad72b1b3cb7669b9f0d0a3ad52e5ccb77d7d50e7",
+      "width": 84,
+      "height": 84,
+      "provenance": "Existing DialogueBox exact-source SPUM portrait crop; docs/assets_license/spum_npc_restore.json"
+    },
+    "portrait-sage": {
+      "url": "/assets/npcportrait/npcbody_mystic.png",
+      "archivePath": "CERTZ/public/assets/npcportrait/npcbody_mystic.png",
+      "sha256": "b2d334ae3b4ec393b6ec5c917404c00e3f536a4a12b7614816229658ea5d233c",
+      "width": 84,
+      "height": 84,
+      "provenance": "Existing DialogueBox exact-source SPUM portrait crop; docs/assets_license/spum_npc_restore.json"
+    },
+    "portrait-healer": {
+      "url": "/assets/npcportrait/npcbody_priest.png",
+      "archivePath": "CERTZ/public/assets/npcportrait/npcbody_priest.png",
+      "sha256": "8fdbc9d7a7c196d4da228fd7bad784e7b63479c0beb160c18f93113193940887",
+      "width": 84,
+      "height": 84,
+      "provenance": "Existing DialogueBox exact-source SPUM portrait crop; docs/assets_license/spum_npc_restore.json"
+    },
+    "portrait-guardian": {
+      "url": "/assets/npcportrait/npcbody_elf.png",
+      "archivePath": "CERTZ/public/assets/npcportrait/npcbody_elf.png",
+      "sha256": "6167e9efa54c1239b3db31a8691c20dabaf9eb5420647a69bcc7c8a7344b418d",
+      "width": 84,
+      "height": 84,
+      "provenance": "Existing DialogueBox exact-source SPUM portrait crop; docs/assets_license/spum_npc_restore.json"
+    },
+    "portrait-shadow-knight": {
+      "url": "/assets/npcportrait/npcbody_butler.png",
+      "archivePath": "CERTZ/public/assets/npcportrait/npcbody_butler.png",
+      "sha256": "1602fb85c9cacea58e55f27fdce02ec83c1c1fa6240b934ac9b07ad3cd2cec67",
+      "width": 84,
+      "height": 84,
+      "provenance": "Existing DialogueBox exact-source SPUM portrait crop; docs/assets_license/spum_npc_restore.json"
+    },
+    "garden-tree-gold": {
+      "url": "/assets/fm_tree2.png",
+      "archivePath": "CERTZ/public/assets/fm_tree2.png",
+      "sha256": "37323ad546888cd9962fe427f4abc91c6492ec40b11d80374940d3f393536e4c",
+      "width": 183,
+      "height": 165,
+      "provenance": "Existing project furniture/foliage used by WorldScene; supplied Drive bytes unchanged"
+    }
+  },
+  "audioFiles": {
+    "bgm_village_forest": {
+      "url": "/assets/audio/bgm_village_forest.ogg",
+      "archivePath": "CERTZ/public/assets/audio/bgm_village_forest.ogg",
+      "sha256": "c67be445b8eb8094dc6b0b844c6f66fa29def15ce4f27d6c376c0ae754e44c04",
+      "provenance": "Existing src/game/audio.ts track and mix configuration; public/assets/CREDITS.md"
+    },
+    "bgm_forest_1": {
+      "url": "/assets/audio/bgm_forest_1.ogg",
+      "archivePath": "CERTZ/public/assets/audio/bgm_forest_1.ogg",
+      "sha256": "8f176b3b42806b82b44276b5419f40f883c1c6c66c92b2d0d205ba55a6f8956d",
+      "provenance": "Existing src/game/audio.ts track and mix configuration; public/assets/CREDITS.md"
+    },
+    "bgm_cave_1": {
+      "url": "/assets/audio/bgm_cave_1.ogg",
+      "archivePath": "CERTZ/public/assets/audio/bgm_cave_1.ogg",
+      "sha256": "219b1050b6b1e2321862ad1596418c3110b3ddfba93de95efbb32deaeb34592b",
+      "provenance": "Existing src/game/audio.ts track and mix configuration; public/assets/CREDITS.md"
+    },
+    "bgm_alfheim_1": {
+      "url": "/assets/audio/bgm_alfheim_1.ogg",
+      "archivePath": "CERTZ/public/assets/audio/bgm_alfheim_1.ogg",
+      "sha256": "657acb54cd32d4818672641103e4e5eb99aadd6b5f8e3cff4b5ca506fdd69844",
+      "provenance": "Existing src/game/audio.ts track and mix configuration; public/assets/CREDITS.md"
+    },
+    "bgm_niflheim_1": {
+      "url": "/assets/audio/bgm_niflheim_1.ogg",
+      "archivePath": "CERTZ/public/assets/audio/bgm_niflheim_1.ogg",
+      "sha256": "6cc61c7654803ea4e5b8fac61cc19352ce420a2d26b0f84b3593b5b2139cc05f",
+      "provenance": "Existing src/game/audio.ts track and mix configuration; public/assets/CREDITS.md"
+    },
+    "bgm_forest_boss": {
+      "url": "/assets/audio/bgm_forest_boss.ogg",
+      "archivePath": "CERTZ/public/assets/audio/bgm_forest_boss.ogg",
+      "sha256": "5198ebb6a5188a46a1a4fa83550e563b90cc7dd812b788ffc6b078d3a66d0c62",
+      "provenance": "Existing src/game/audio.ts track and mix configuration; public/assets/CREDITS.md"
+    },
+    "sfx_quest": {
+      "url": "/assets/audio/sfx_quest.ogg",
+      "archivePath": "CERTZ/public/assets/audio/sfx_quest.ogg",
+      "sha256": "e12eb95d0458675c2692831454ed09c7a680de966e7c705ce67a7e12560aa73a",
+      "provenance": "Existing src/game/audio.ts track and mix configuration; public/assets/CREDITS.md"
+    }
+  }
+}

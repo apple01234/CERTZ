@@ -71,7 +71,7 @@ gh workflow run exe-build.yml --ref main
 | `.next/standalone/` | 있음 | 없음 |
 | `.next-apk/index.html` | 없음 | 있음 |
 
-APK·EXE 빌드는 `.next-apk` 를 쓰고, `distDir` 가 분리돼 있어 `.next` 를 덮지 않는다.
+APK·EXE의 **최종 정적 산출물**은 `.next-apk` 이다. Next 16.1의 `output: export`는 작업 캐시로 `.next`를 사용하므로, 같은 체크아웃에서 웹 서버를 실행하며 앱 export를 빌드하지 않는다. CI처럼 별도 러너/체크아웃을 사용하거나 순차 빌드 후 필요한 웹 산출물을 다시 생성한다.
 
 ## 5. 테스트
 

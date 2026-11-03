@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "node",
+      "args": ["scripts/campaign-mcp.mjs"]
+    },
+    "rea": {
+      "command": "node",
+      "args": ["scripts/rea-mcp.mjs"]
+    }
+  }
+}

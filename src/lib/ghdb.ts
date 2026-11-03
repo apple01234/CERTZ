@@ -40,6 +40,7 @@ export type PayoutRec = { gold: number; count: number };
  *  읽기 정규화에서 구형/이형 값(문자열 uid)은 node 호환 형태로 흡수한다. */
 export type CharNameRec = { by: string; at: number; kind?: string };
 export type DbShape = {
+  campaigns?: Record<string, import("./campaignStore").CampaignStore>;
   users: Record<string, UserRec>;
   tokens: Record<string, TokenRec>;
   saves: Record<string, SaveRec>;

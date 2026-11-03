@@ -97,7 +97,7 @@ export function TitleScreen() {
              *  v1.0.19 (#문구정리) — 패치노트를 타이틀에 늘어놓던 문구를 게임 소개 한 줄로 교체.
              *  "3D VFX · 툰 셰이딩 · 30 FPS · 5분 자동저장" 같은 개발자 체크리스트는 첫 화면에서
              *  완성도가 아니라 프로토타입 인상을 줬다. 기능 나열은 설정/패치노트로 보낸다. */}
-            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v{APP_VERSION} — 9개의 바다를 건너, 세계수의 뿌리까지</span>
+            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v{APP_VERSION} — 기억의 서약 · 왕국에서 별 너머까지</span>
           </p>
         </div>
 
