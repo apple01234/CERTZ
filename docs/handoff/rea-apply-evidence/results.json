@@ -1,0 +1,420 @@
+{
+  "maps": [
+    {
+      "stage": "howlrstone1x1",
+      "theme": "library",
+      "layers": [
+        {
+          "name": "rea:ground",
+          "type": "TilemapLayer"
+        },
+        {
+          "name": "rea:paths",
+          "type": "TilemapLayer"
+        },
+        {
+          "name": "rea:structures",
+          "type": "TilemapLayer"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_bookshelf",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_bookshelf",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_bookshelf",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_bookshelf",
+          "type": "Image"
+        }
+      ],
+      "inventory": [
+        "weapon_1",
+        "armor_1"
+      ],
+      "cellWidth": 152.14285714285714
+    },
+    {
+      "stage": "howlrstone3x1",
+      "theme": "coast",
+      "layers": [
+        {
+          "name": "rea:ground",
+          "type": "TilemapLayer"
+        },
+        {
+          "name": "rea:paths",
+          "type": "TilemapLayer"
+        },
+        {
+          "name": "rea:structures",
+          "type": "TilemapLayer"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_barrel",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_barrel",
+          "type": "Image"
+        }
+      ],
+      "inventory": [
+        "weapon_1",
+        "armor_1"
+      ],
+      "cellWidth": 152.14285714285714
+    },
+    {
+      "stage": "howlrstone6x1",
+      "theme": "grove",
+      "layers": [
+        {
+          "name": "rea:ground",
+          "type": "TilemapLayer"
+        },
+        {
+          "name": "rea:paths",
+          "type": "TilemapLayer"
+        },
+        {
+          "name": "rea:structures",
+          "type": "TilemapLayer"
+        },
+        {
+          "name": "rea:prop:obj_forest_tree_pink",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_forest_tree_pink",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_forest_tree_pink",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_forest_tree_pink",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_forest_tree_pink",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_forest_tree_pink",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_forest_tree_pink",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_forest_tree_pink",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_forest_tree_pink",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_forest_tree_pink",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_forest_tree_pink",
+          "type": "Image"
+        }
+      ],
+      "inventory": [
+        "weapon_1",
+        "armor_1"
+      ],
+      "cellWidth": 148.66666666666666
+    },
+    {
+      "stage": "howlrstone10x2",
+      "theme": "citadel",
+      "layers": [
+        {
+          "name": "rea:ground",
+          "type": "TilemapLayer"
+        },
+        {
+          "name": "rea:paths",
+          "type": "TilemapLayer"
+        },
+        {
+          "name": "rea:structures",
+          "type": "TilemapLayer"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        },
+        {
+          "name": "rea:prop:obj_dungeon_torch",
+          "type": "Image"
+        }
+      ],
+      "inventory": [
+        "weapon_1",
+        "armor_1"
+      ],
+      "cellWidth": 150.58823529411765
+    }
+  ],
+  "cameras": [
+    {
+      "during": {
+        "stage": "howlrstone1x1",
+        "cinematic": true,
+        "paused": true,
+        "zoom": 1.3490738600717538,
+        "actors": [
+          {
+            "name": "rea:actor:haru",
+            "texture": "chm0_idle0"
+          }
+        ]
+      },
+      "after": {
+        "cinematic": false,
+        "paused": false,
+        "zoom": 1.5,
+        "baseZoom": 1.5,
+        "dialoguing": false
+      }
+    },
+    {
+      "during": {
+        "stage": "howlrstone3x1",
+        "cinematic": true,
+        "paused": true,
+        "zoom": 1.2968825135248392,
+        "actors": []
+      },
+      "after": {
+        "cinematic": false,
+        "paused": false,
+        "zoom": 1.5,
+        "baseZoom": 1.5,
+        "dialoguing": false
+      }
+    },
+    {
+      "during": {
+        "stage": "howlrstone6x1",
+        "cinematic": true,
+        "paused": true,
+        "zoom": 1.2640391793074444,
+        "actors": []
+      },
+      "after": {
+        "cinematic": false,
+        "paused": false,
+        "zoom": 1.5,
+        "baseZoom": 1.5,
+        "dialoguing": false
+      }
+    }
+  ],
+  "skills": [
+    {
+      "cls": "berserker",
+      "startup": "startup",
+      "name": "태양검 · 일광참 ·극",
+      "style": "solar",
+      "phase": "release",
+      "objects": 4
+    },
+    {
+      "cls": "guardian",
+      "startup": "startup",
+      "name": "생명의 파동 · 치유 ·극",
+      "style": "life",
+      "phase": "release",
+      "objects": 4
+    },
+    {
+      "cls": "sniper",
+      "startup": "startup",
+      "name": "뇌전 관통 화살 ·극",
+      "style": "lightning",
+      "phase": "release",
+      "objects": 4
+    },
+    {
+      "cls": "windrunner",
+      "startup": "startup",
+      "name": "귀환 차크람 · 꽃의 궤적 ·극",
+      "style": "chakram",
+      "phase": "release",
+      "objects": 2
+    },
+    {
+      "cls": "archmage",
+      "startup": "startup",
+      "name": "마도서 · 삼중 술식 ·극",
+      "style": "book",
+      "phase": "release",
+      "objects": 7
+    },
+    {
+      "cls": "sage",
+      "startup": "startup",
+      "name": "아트 장막 · 치유 ·극",
+      "style": "art",
+      "phase": "release",
+      "objects": 4
+    },
+    {
+      "cls": "assassin",
+      "startup": "startup",
+      "name": "그림자 잔향 ·극",
+      "style": "shadow",
+      "phase": "release",
+      "objects": 3
+    },
+    {
+      "cls": "swashbuckler",
+      "startup": "startup",
+      "name": "카피 · 원소 순환 ·극",
+      "style": "copy",
+      "phase": "release",
+      "objects": 4
+    },
+    {
+      "cls": "corsair",
+      "startup": "startup",
+      "name": "삼지창 · 물결 쇄도 ·극",
+      "style": "water",
+      "phase": "release",
+      "objects": 7
+    },
+    {
+      "cls": "raider",
+      "startup": "startup",
+      "name": "공학망치 · 분신 타격 ·극",
+      "style": "hammer",
+      "phase": "release",
+      "objects": 3
+    }
+  ],
+  "collision": {
+    "initial": {
+      "width": 56,
+      "height": 18,
+      "x": 300.5,
+      "y": 469.3
+    },
+    "turned": {
+      "width": 18.000000000000004,
+      "height": 56
+    },
+    "oldRemoved": true,
+    "finalRemoved": true
+  },
+  "pageErrors": []
+}

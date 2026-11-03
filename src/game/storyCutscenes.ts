@@ -23,12 +23,30 @@ export type ChapterIntroShot = {
   /** 월드 좌표 비율 (0~1) — 맵 크기에 맞춰 환산한다 */
   rx: number;
   ry: number;
+  /** Prefer real map landmarks over a ratio when the scene supplies them. */
+  focus?: "entry" | "feature" | "player";
   panMs?: number;
   holdMs?: number;
   zoom?: number;
   /** DIALOGUES 키 */
   dialogue?: string;
 };
+
+type IntroLandmarks = {
+  width: number;
+  height: number;
+  entry: { x: number; y: number };
+  feature: { x: number; y: number };
+  player: { x: number; y: number };
+};
+
+export function resolveChapterIntroShots(spec: ChapterIntroSpec, landmarks: IntroLandmarks) {
+  return spec.shots.map(({ rx, ry, focus, ...shot }) => ({
+    ...shot,
+    x: focus ? landmarks[focus].x : rx * landmarks.width,
+    y: focus ? landmarks[focus].y : ry * landmarks.height,
+  }));
+}
 
 export type ChapterIntroSpec = {
   /** 이 연출을 처음 진입 때 한 번만 볼지 */
@@ -198,8 +216,21 @@ export const CHAPTER_INTROS: Record<string, ChapterIntroSpec> = {
   },
 };
 
+/** Route direction and long/close shots vary across the 15 real chapters. */
+export const HOWLRSTONE_INTROS: Record<string, ChapterIntroSpec> = Object.fromEntries(
+  Array.from({ length: 15 }, (_, index) => [`howlrstone${index + 1}`, {
+    once: true,
+    shots: [
+      { rx: 0.25, ry: 0.5, focus: "entry", zoom: 0.9, panMs: 420, holdMs: 180 },
+      { rx: 0.7, ry: 0.5, focus: "feature", zoom: index % 3 === 0 ? 0.78 : 0.85, panMs: 900 + index % 3 * 140, holdMs: 300 },
+      { rx: 0.7, ry: 0.5, focus: "feature", zoom: 1.25, panMs: 520, holdMs: 500 },
+      { rx: 0.25, ry: 0.5, focus: "player", zoom: 1, panMs: 480, holdMs: 80 },
+    ],
+  }]),
+);
+
 /** 챕터 키로 진입 연출 조회. 없으면 null (연출 생략 — 안전) */
 export function chapterIntroOf(key: string | null | undefined): ChapterIntroSpec | null {
   if (!key) return null;
-  return CHAPTER_INTROS[key] ?? null;
+  return HOWLRSTONE_INTROS[key] ?? CHAPTER_INTROS[key] ?? null;
 }

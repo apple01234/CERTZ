@@ -1,6 +1,8 @@
 // node --experimental-strip-types --import ./tests/ts-resolve-hook.mjs tests/lilac-cutscene.test.mjs
 import assert from "node:assert/strict";
 import { LILAC_SCENARIOS, LILAC_CHAPTER_MAP, lilacScenarioIdAt } from "../src/game/lilacScenarios.ts";
+import { HOWLRSTONE_CHAPTERS } from "../src/game/howlrstone.ts";
+import { chapterIntroOf, resolveChapterIntroShots } from "../src/game/storyCutscenes.ts";
 
 let checks = 0;
 const ok = (name, cond) => { assert.ok(cond, name); checks++; };
@@ -28,17 +30,22 @@ for (const id of ids) {
 /* 3) 매핑 전수 — 모든 시나리오가 어딘가에 배치됨 */
 const placed = new Set();
 for (const ch of Object.keys(LILAC_CHAPTER_MAP)) {
+  const chapter = HOWLRSTONE_CHAPTERS.find((chapter) => chapter.key === ch);
+  ok(`${ch}: 실제 챕터`, chapter);
+  const fields = chapter.stages;
+  for (const p of LILAC_CHAPTER_MAP[ch]) {
+    ok(`${ch}/${p.sub}: 실제 구역`, p.sub >= 1 && p.sub <= fields);
+  }
   for (const p of LILAC_CHAPTER_MAP[ch]) placed.add(p.id);
 }
 for (const id of ids) ok(`매핑 존재: ${id}`, placed.has(id));
+ok("15개 장 모두 연출 있음", Object.keys(LILAC_CHAPTER_MAP).length === 15);
 
-/* 4) 조회 함수 동작
- *  vc234 — 영프 편은 본편 챕터와 키를 공유하지 않는다. 종전엔 forest/1 에
- *  lilac00 이 배치돼 본편을 진행하다 라일락 컷씬이 튀어나왔다(유저 지적:
- *  "아뜰란티스 → 영준프린세스 → 그랜드 플레닛 순서인데 왜 스토리를 섞나").
- *  이제 본편 키는 전부 null 이고, howlrstone 만 매핑을 가진다. */
+/* 4) Only the fifteen real Lilac chapters carry these directions. */
 ok("howlrstone1/1 → lilac00", lilacScenarioIdAt("howlrstone1", 1) === "lilac00");
-ok("howlrstone5/10 → lilac15", lilacScenarioIdAt("howlrstone5", 10) === "lilac15");
+ok("howlrstone1/4 → lilac01", lilacScenarioIdAt("howlrstone1", 4) === "lilac01");
+ok("howlrstone15/1 → lilac15", lilacScenarioIdAt("howlrstone15", 1) === "lilac15");
+ok("존재하지 않는 howlrstone5/10 금지", lilacScenarioIdAt("howlrstone5", 10) === null);
 ok("howlrstone1/2 미배치 구역은 null", lilacScenarioIdAt("howlrstone1", 2) === null);
 ok("본편 forest 는 영프 연출 없음", lilacScenarioIdAt("forest", 1) === null);
 ok("본편 abyss 도 영프 연출 없음", lilacScenarioIdAt("abyss", 1) === null);
@@ -53,6 +60,26 @@ for (const id of ids) {
       ok(`${id}: 대사 1줄 이상`, Array.isArray(st.lines) && st.lines.length > 0);
     }
   }
+}
+
+/* Revised opening precedence: Lilac gives a pendant, never Scarlet with a book. */
+const opening = LILAC_SCENARIOS.lilac00.steps.filter((step) => step.t === "say");
+ok("라일락 구조자", opening.some((step) => step.speaker === "라일락"));
+ok("개정판 펜던트", opening.some((step) => step.lines.some((line) => line.includes("펜던트"))));
+ok("구판 스칼렛 구조자 아님", !opening.some((step) => step.speaker === "스칼렛"));
+for (const scenario of Object.values(LILAC_SCENARIOS)) {
+  for (const step of scenario.steps.filter((step) => step.t === "enter")) {
+    ok(`${scenario.id}: 부팅 기본 몸체`, /^ch[mf][0-5]_idle0$/.test(step.actor.tex));
+  }
+}
+for (const chapter of HOWLRSTONE_CHAPTERS) {
+  const intro = chapterIntroOf(chapter.key);
+  ok(`${chapter.key}: 경로 인트로`, intro?.shots.length === 4);
+  const shots = resolveChapterIntroShots(intro, {
+    width: 1200, height: 700, entry: { x: 101, y: 202 }, feature: { x: 808, y: 404 }, player: { x: 181, y: 350 },
+  });
+  ok(`${chapter.key}: 실제 목표 클로즈업`, shots[2].x === 808 && shots[2].y === 404);
+  ok(`${chapter.key}: 플레이어 복귀`, shots[3].x === 181 && shots[3].y === 350);
 }
 
 console.log(`lilac-cutscene: ${checks} checks passed / ${ids.length} scenarios`);

@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { isTrainingStage } from "../trainingRegions";
-import { DECOR_BUDGET, decorSetFor, pickByTag, type DecorObj } from "../decorObjects";
+import { DECOR_BUDGET, decorSetFor, pickByTag, isSolidDecor, decorCollisionBounds, type DecorObj } from "../decorObjects";
 import { createGameState, type GameState } from "../state/gameState";
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
@@ -8,6 +8,7 @@ import { finaleTargetOrder, finalePlanReach, type FinalePlan } from "../fx/ultFi
 import { storyPortalDestination, storyEntryAllowed, howlFinalStage, YOUNG_PRINCESS_VILLAGE } from "../storyProgression";
 import { fieldNpcLook } from "../npcThemes";
 import { resolveGroundTile } from "../tileThemes"; // vc204 — 지역 지면 → 타일 단일 매핑
+import { renderAuthoredMapLayers } from "../fx/AuthoredMapLayers";
 import { openMaskAt, patternFor } from "../autotile"; // vc204 — 4비트 이웃 마스크 오토타일
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
@@ -22,8 +23,9 @@ import { FifthAuraRig } from "../fx/FifthAura"; // v1.4.41 (#9) — 5차 블룸�
 import { fifthBurstFor } from "../fx/fifthLooks"; // vc204 (#15) — 직업별 각성 버스트
 import { lineByKey as chibiLineByKey, CHIBI_LINES, type ChibiSave } from "../chibiQuests"; // vc204 (#7) — 씹덕 NPC 퀘스트
 import { getTraumaShake, playUltCinematic } from "../fx/UltCinematic"; // v1.4.41 (#13) — 궁극기 시네마틱
-import { playStoryCutscene, storyCutscenePlaying } from "../fx/StoryCutscene"; // v1.4.41 — 스토리 컷씬
-import { chapterIntroOf } from "../storyCutscenes"; // v1.4.41 — 챕터별 진입 연출 데이터
+import { playStoryCutscene } from "../fx/StoryCutscene";
+import { sceneCinematicPlaying } from "../fx/sceneCinematic";
+import { chapterIntroOf, resolveChapterIntroShots } from "../storyCutscenes";
 import { playAutoCutscene } from "../fx/AutoCutscene"; // v4.9.0 — 메이플식 자동 컷씬
 import { PixelFxManager } from "../fx/PixelFxManager"; // v4.9.3 — pixelfx 통합 매니저
 import { LILAC_SCENARIOS, lilacScenarioIdAt } from "../lilacScenarios"; // v4.9.0 — 1기 시나리오 데이터
@@ -269,7 +271,7 @@ export class WorldScene extends Phaser.Scene {
   /** v1.3.1 (#8) — 앱 전환 복귀 자가치유 핸들러 (cleanup에서 해제) */
   private onVisChange: (() => void) | null = null;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
-  private dialoguing = false;
+  dialoguing = false;
 
   // F4: 공유 파티클 이미터 (생성 1회)
   private hitEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -1672,9 +1674,12 @@ export class WorldScene extends Phaser.Scene {
     const theme = STAGE_THEME[stageKey] ?? STAGE_THEME.village;
     this.solidGroup = this.physics.add.staticGroup();
     this.isInterior = stageKey === "interior_inn" || stageKey === "interior_home";
+    this.layout = !this.isInterior && !this.stageDef.isVillage && stageKey !== "dojang"
+      ? generateRoomLayout(stageKey, this.stageW, this.stageH) : null;
+    const authoredArt = this.layout ? renderAuthoredMapLayers(this, this.layout, (img) => this.attachDecorCollision(img)) : null;
     if (this.isInterior) {
       this.buildInterior(stageKey);
-    } else {
+    } else if (!authoredArt) {
     const groundTex = theme.ground;
     /* v1.4.35 (유저 지시 #5 "DLC 및 재림 스테이지 빼고는 종이쪼가리 같은 너가 쳐 만든
      *  타일맵 쓰지마. 분명 예전 이런 느낌의 타일맵 에셋을 써라고 했을텐데??")
@@ -1798,7 +1803,6 @@ export class WorldScene extends Phaser.Scene {
      *  가장자리 셀에만 16프레임 오버레이를 덮는다.
      *  마스크 규칙·프레임 배정은 src/game/autotile.ts, 근거는 게임 빌드 실측
      *  (tools/autotile_derive.py — 이웃 마스크가 같으면 같은 패턴 86~100%). */
-    if (!this.isInterior && this.layout) this.drawGroundEdges(this.layout);
     /* v4.10.0 (유저 지시 "맵이 지금 위치에서 x축이 화면 정 가운데에 있어야지") —
      *  Phaser follow/clamp 줌 보정 — PC 웹(줌>1)에서 맵이 화면 x축에서 어긋나던 근본 수정.
      *  상세 원인·보정 내용은 setupCameraClampFix 주석 참조. */
@@ -1810,13 +1814,13 @@ export class WorldScene extends Phaser.Scene {
      *  마을/실내는 개방형 유지. 포탈·스폰·파편·보스 모두 레이아웃을 따른다. */
     /* v3.3.0 (#흑화) — 굴 레이아웃 조건에서 무릉도장 제외: 개방된 도장(벽 없음)으로 생성 */
     if (!this.isInterior && !this.stageDef.isVillage && stageKey !== "dojang") {
-      const lay = generateRoomLayout(stageKey, this.stageW, this.stageH);
-      this.layout = lay;
+      const lay = this.layout!;
       const entryC = cellCenterOf(lay, lay.entry);
       const exitC = cellCenterOf(lay, lay.exit);
       this.entryHome.set(entryC.x + 70, entryC.y);
       this.portalHome.set(exitC.x, exitC.y);
-      this.buildDungeonWalls(lay, parseStage(stageKey).ch);
+      this.buildDungeonWalls(lay, parseStage(stageKey).ch, !!authoredArt);
+      if (!authoredArt) this.drawGroundEdges(lay);
     } else {
       this.portalHome.set(this.stageW - 130, this.stageH * 0.52);
       this.entryHome.set(180, this.stageH / 2);
@@ -1837,7 +1841,7 @@ export class WorldScene extends Phaser.Scene {
     this.scale.on("resize", this.applyCameraZoom, this);
 
     /* ---------- 장식 (F1: 정의된 소수만 — 실내는 buildInterior가 자체 배치) ---------- */
-    if (!this.isInterior) this.placeDecor(stageKey);
+    if (!this.isInterior && !authoredArt) this.placeDecor(stageKey);
 
     /* ---------- 상점 NPC (v3.0.15 #9 — 상인은 마을에만 배치. 필드 몬스터 구역에서 제거) ---------- */
     if (!this.isInterior && this.stageDef.isVillage) this.spawnMerchant();
@@ -1895,14 +1899,6 @@ export class WorldScene extends Phaser.Scene {
     }
     /* vc146 (#5) — 2.5D 카메라 초기화 (심도 안개 + y-depth 정렬. 설정에서 끌 수 있음) */
     this.initPerspective();
-    /* v1.4.41 — 챕터 첫 진입 스토리 컷씬. 보스 컷씬과 같은 camCinema 패턴을 쓰므로
-     * 서로 겹치지 않는다(보스 인트로는 zone 10 진입 시점, 이건 씬 생성 직후). */
-    this.playChapterIntroCutscene(stageKey);
-    /* v4.9.0 — 영준프린세스 1기(라일락 월드) 자동 진행 컷씬.
-     *  기존 chapterIntroOf(카메라 팬만)와 달리 레터박스 + 배우 등장/퇴장 +
-     *  자동 대사 진행을 포함한다. 재생 중이면 기존 인트로는 자동으로 건너뛴다
-     *  (playChapterIntroCutscene 이 playing 게이트로 막힌다). */
-    this.playLilacOpeningCutscene(stageKey);
     /* v3.3.0 (지시 #5) — 현재 챕터 번호 기록: 챕터 4(알프헤임)부터만 체력% 고정 피해 발동 */
     this.player.stageCh = chapterSpec(stageKey)?.num ?? 1;
     if (savedPlayer) this.restoreFromSave(savedPlayer, stageKey);
@@ -2139,7 +2135,7 @@ export class WorldScene extends Phaser.Scene {
          *  실측: 마을 입장 직후 NPC 자동 대사가 걸리면 20초 동안 조작이 막혀
          *  "게임이 멈췄다"로 체감됐다(41초 대기 후에야 풀림). 정상 대사는 6초를
          *  넘기지 않으므로 상한을 6초로 낮춰도 정상 흐름은 잘리지 않는다. */
-        if (this.dialoguing && this.dialogueSince > 0 && this.time.now - this.dialogueSince > 6000) {
+        if (!sceneCinematicPlaying(this) && this.dialoguing && this.dialogueSince > 0 && this.time.now - this.dialogueSince > 6000) {
           console.warn("[SERTZ] 대사 6초 붙임 감지 — 강제 종료(자가치유)");
           this.restoreBossIntroCam(); // v1.0.2 (#보스컷씬) — 강제 종료 경로에서도 카메라 복귀
           this.dialoguing = false;
@@ -2310,7 +2306,10 @@ export class WorldScene extends Phaser.Scene {
      *  기존엔 stageIntro 폴백(villageIntro — 연합 안내인)이 모든 콘텐츠에서 재생돼
      *  "컨텐츠마다 NPC UI가 뜨는데 아무 의미 없다"는 지적으로 이어졌다 */
     const isContentStage = stageKey === "tower" || stageKey === "park" || stageKey === "gate" || stageKey === "closet" || stageKey === "dojang";
-    if (!this.isInterior && !isContentStage) {
+    // Restore the player first; one director owns physics/input until its final shot.
+    const directedIntro = !this.isInterior && !isContentStage &&
+      (this.playLilacOpeningCutscene(stageKey) || this.playChapterIntroCutscene(stageKey));
+    if (!this.isInterior && !isContentStage && !directedIntro) {
       if (stageKey === "village" && !savedPlayer?.playerName) {
         // v1.1.0 (#18) — 신규 플레이어: 프롤로그 시네마틱(내레이션 4비트) → 플레이형 인트로(이동 → 우물 → 이름 짓기)
         this.showPrologue(() => this.startIntroSequence());
@@ -2478,93 +2477,52 @@ export class WorldScene extends Phaser.Scene {
   /* v4.9.0 — 영준프린세스 1기 자동 진행 컷씬 실행기.
    *  메이플식: 레터박스 → 카메라 팬 → 배우 등장 → 자동 대사 → 퇴장.
    *  챕터당 1회만(세이브 기록). 재생 중이면 기존 인트로가 playing 게이트로 밀린다. */
-  private playLilacOpeningCutscene(stageKey: StageKey) {
-    try {
-      const parsed = parseStage(stageKey);
-      if (!parsed.ch || parsed.ch === "village") return;
-      /* 챕터·구역 → 시나리오 id 매핑 (1기 16편을 9개 챕터의 구역에 배치) */
-      const scenId = lilacScenarioIdAt(parsed.ch, parsed.sub);
-      if (!scenId) return;
-      const scen = LILAC_SCENARIOS[scenId];
-      if (!scen) return;
-      const seenKey = `lilacCut_${scen.id}`;
-      if (this.cutsceneSeen.includes(seenKey)) return;
-
-      const started = playAutoCutscene(this, {
-        id: scen.id,
-        stageW: this.stageW,
-        stageH: this.stageH,
-        steps: scen.steps,
-      }, () => {
-        try {
-          if (!this.cutsceneSeen.includes(seenKey)) {
-            this.cutsceneSeen = [...this.cutsceneSeen, seenKey];
-            this.saveSoon();
-          }
-        } catch { /* 세이브 실패는 연출에 영향 없음 */ }
-      });
-
-      if (started) {
-        this.dialoguing = true;
-        this.time.delayedCall(80, () => { this.dialoguing = false; });
+  private playLilacOpeningCutscene(stageKey: StageKey): boolean {
+    const parsed = parseStage(stageKey);
+    const scenId = lilacScenarioIdAt(parsed.ch, parsed.sub);
+    const scen = scenId ? LILAC_SCENARIOS[scenId] : undefined;
+    if (!scen) return false;
+    const seenKey = `lilacCut_rea1_${scen.id}`;
+    if (this.cutsceneSeen.includes(seenKey)) return false;
+    return playAutoCutscene(this, {
+      id: scen.id,
+      stageW: this.stageW,
+      stageH: this.stageH,
+      anchors: { entry: this.entryHome, feature: this.portalHome },
+      steps: scen.steps,
+    }, () => {
+      if (!this.cutsceneSeen.includes(seenKey)) {
+        this.cutsceneSeen = [...this.cutsceneSeen, seenKey];
+        this.saveSoon();
       }
-    } catch (err) {
-      /* 연출 실패가 게임을 막으면 안 된다 */
-      console.warn("[SERTZ] 자동 컷씬 생략", err);
-      try { this.camCinema = false; this.physics.world.resume(); } catch { /* 무시 */ }
-    }
+    });
   }
 
-  private playChapterIntroCutscene(stageKey: StageKey) {
-    try {
-      if (!this.player) return;
-      /* 구역 1에서만 — 중간 구역 재진입마다 컷씬이 뜨면 사냥 흐름을 끊는다 */
-      const parsed = parseStage(stageKey);
-      if (parsed.sub !== 1) return;
-      /* 마을/실내는 제외 */
-      if (!parsed.ch || parsed.ch === "village") return;
-      const spec = chapterIntroOf(parsed.ch);
-      if (!spec || spec.shots.length === 0) return;
-      if (spec.once !== false && this.cutsceneSeen.includes(parsed.ch)) return;
-
-      /* 맵 크기 대비 비율 좌표를 월드 좌표로 환산 */
-      const shots = spec.shots.map((s) => ({
-        x: s.rx * this.stageW,
-        y: s.ry * this.stageH,
-        panMs: s.panMs,
-        holdMs: s.holdMs,
-        zoom: s.zoom,
-        dialogue: s.dialogue,
-      }));
-
-      const started = playStoryCutscene(this, {
-        shots,
-        showDialogue: (key) => this.showDialogueOnce(key),
-        onDone: () => {
-          /* 본 것으로 기록 — 세이브에 남겨 재방문 시 생략 */
-          try {
-            if (!this.cutsceneSeen.includes(parsed.ch)) {
-              this.cutsceneSeen = [...this.cutsceneSeen, parsed.ch];
-              this.saveSoon();
-            }
-          } catch { /* 세이브 실패는 연출에 영향 없음 */ }
-        },
-      });
-      if (started) {
-        /* 컷씬 동안 입력·대화 상태 정합 */
-        this.dialoguing = true;
-        this.time.delayedCall(80, () => { this.dialoguing = false; });
-      }
-    } catch (err) {
-      /* 연출 실패가 게임을 막으면 안 된다 — 조용히 생략 */
-      console.warn("[SERTZ] 챕터 컷씬 생략", err);
-      try { this.camCinema = false; this.physics.world.resume(); } catch { /* 무시 */ }
-    }
+  private playChapterIntroCutscene(stageKey: StageKey): boolean {
+    if (!this.player || isTrainingStage(stageKey)) return false;
+    const parsed = parseStage(stageKey);
+    if (parsed.sub !== 1 || !parsed.ch || parsed.ch === "village") return false;
+    const spec = chapterIntroOf(parsed.ch);
+    if (!spec?.shots.length || (spec.once !== false && this.cutsceneSeen.includes(parsed.ch))) return false;
+    const shots = resolveChapterIntroShots(spec, {
+      width: this.stageW, height: this.stageH, entry: this.entryHome, feature: this.portalHome, player: this.player,
+    });
+    return playStoryCutscene(this, {
+      shots,
+      showDialogue: (key) => this.showDialogueOnce(key),
+      onDone: () => {
+        if (!this.cutsceneSeen.includes(parsed.ch)) {
+          this.cutsceneSeen = [...this.cutsceneSeen, parsed.ch];
+          this.saveSoon();
+        }
+      },
+    });
   }
 
   private applyManualCameraFollow(dt: number) {
     const cam = this.cameras?.main;
     if (!cam || !this.player?.active) return;
+    if (sceneCinematicPlaying(this)) { this.camCinemaSince = 0; return; }
     /* vc204 (지시서 #2·#18) — 카메라 워치독.
      *  종전에는 camCinema 가 true 인 동안 여기서 즉시 return 했고, 그 플래그를 푸는 곳은
      *  보스 인트로 팬 완료 콜백 하나뿐이었다(타임아웃 없음). 팬 콜백이 한 번이라도
@@ -2942,7 +2900,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** 닫힌 셀을 챕터 분위기에 맞는 암벽 타일로 채워 벽(충돌)을 만든다 */
-  private buildDungeonWalls(lay: RoomLayout, ch: string) {
+  private buildDungeonWalls(lay: RoomLayout, ch: string, layeredArt = false) {
     /* v3.0.23 (#55) — "빈 공간이 이상한 검은 카펫으로 채워짐" 수정:
      *  구 어두운 벽돌 텍스처를 44~54% 명도로 틴트하면 카펫처럼 보였음.
      *  → 밝은 석벽 텍스처(wall_rock)로 교체 + 베이스 명도 62~74%로 상향 — 암벽으로 읽힘.
@@ -2976,6 +2934,7 @@ export class WorldScene extends Phaser.Scene {
           .tileSprite(x, y, lay.cellW + 1, lay.cellH + 1, wallTex)
           .setOrigin(0)
           .setDepth(2)
+          .setVisible(!layeredArt)
           .setTint(scaled);
         this.solidGroup.add(ts);
         /* v1.0.16 — 벽 통과 버그 하드닝: TileSprite를 그룹에 add할 때 정적 바디가
@@ -3502,8 +3461,7 @@ export class WorldScene extends Phaser.Scene {
    *  모든 후보는 기존 규칙(blocked / inOpenArea / nearSolidObstacle)을 통과해야
    *  한다 — 포탈·스폰·기존 장식을 가리지 않는다.
    *
-   *  충돌은 big 오브젝트에만 준다. 소품까지 막으면 통행로가 좁아져
-   *  "진행이 막힌다"는 불만(v1.3.1)이 재발한다.
+   *  고체 소품은 불투명 발밑만 막고, 바닥 무늬/불꽃은 통과시킨다.
    */
   private placeDecorObjects(
     ch: string,
@@ -3573,15 +3531,7 @@ export class WorldScene extends Phaser.Scene {
       budget.big,
       (o, x, y) => {
         const img = this.add.image(x, y, o.key).setDepth(this.yDepthFor(y));
-        /* 나무·건물은 발밑만 충돌한다. 스프라이트 전체를 막으면 캐릭터가
-         *  허공에서 걸린다(그림자 위를 못 지나감). */
-        this.solidGroup.add(img);
-        const bh = Math.max(18, Math.round(o.h * 0.30));
-        const bw = Math.max(20, Math.round(o.w * 0.55));
-        (img.body as Phaser.Physics.Arcade.StaticBody)
-          .setSize(bw, bh)
-          .setOffset(Math.round((o.w - bw) / 2), Math.max(0, o.h - bh - 2));
-        img.setData("obstacle", true);
+        this.attachDecorCollision(img);
       },
       openPos,
     );
@@ -3591,7 +3541,7 @@ export class WorldScene extends Phaser.Scene {
       usable(pickByTag(setKey, "wall")),
       budget.wall,
       (o, x, y) => {
-        this.add.image(x, y, o.key).setDepth(this.yDepthFor(y) - 1).setAlpha(0.98);
+        this.attachDecorCollision(this.add.image(x, y, o.key).setDepth(this.yDepthFor(y) - 1).setAlpha(0.98));
       },
       wallPos,
     );
@@ -3601,7 +3551,7 @@ export class WorldScene extends Phaser.Scene {
       usable(pickByTag(setKey, "floor")),
       budget.floor,
       (o, x, y) => {
-        this.add.image(x, y, o.key).setDepth(1).setAlpha(0.96);
+        this.attachDecorCollision(this.add.image(x, y, o.key).setDepth(this.yDepthFor(y)).setAlpha(0.96));
       },
       openPos,
     );
@@ -3611,10 +3561,20 @@ export class WorldScene extends Phaser.Scene {
       usable(pickByTag(setKey, "small")),
       budget.small,
       (o, x, y) => {
-        this.add.image(x, y, o.key).setDepth(this.yDepthFor(y)).setAlpha(0.96);
+        this.attachDecorCollision(this.add.image(x, y, o.key).setDepth(this.yDepthFor(y)).setAlpha(0.96));
       },
       openPos,
     );
+  }
+
+  private attachDecorCollision(img: Phaser.GameObjects.Image) {
+    if (!isSolidDecor(img.texture.key)) return;
+    const foot = decorCollisionBounds(img.displayWidth, img.displayHeight, img.texture.key, img.rotation, img.originX, img.originY);
+    const collider = this.add.rectangle(img.x + foot.x, img.y + foot.y, foot.width, foot.height).setVisible(false);
+    collider.setData("obstacle", true).setData("decorOwner", img);
+    this.solidGroup.add(collider);
+    img.setData("footCollider", collider);
+    img.once("destroy", () => { if (collider.scene) collider.destroy(); });
   }
 
   private hitPlantHazard(plant: Phaser.GameObjects.Image) {
@@ -15250,6 +15210,7 @@ export class WorldScene extends Phaser.Scene {
         .setRotation(((d.rot ?? 0) % 4) * (Math.PI / 2))
         .setDepth(Math.floor(this.homeCellY(d.y) / 10));
       this.homeDecorImgs.push(img);
+      this.attachDecorCollision(img);
     }
   }
 
@@ -15277,6 +15238,7 @@ export class WorldScene extends Phaser.Scene {
         .setRotation(((d.rot ?? 0) % 4) * (Math.PI / 2))
         .setDepth(this.yDepthFor(d.y));
       this.fieldDecorImgs.push(img);
+      this.attachDecorCollision(img);
     }
   }
 

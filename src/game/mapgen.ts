@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { authoredOpenXY, authoredRoomLayout, type AuthoredPresentation } from "./authoredLayouts";
 
 /**
  * v3.0 (사용자 지시 #7) — 아이작/개미굴식 구역 레이아웃 생성기
@@ -22,6 +23,8 @@ export type RoomLayout = {
   open: boolean[];
   entry: number;
   exit: number;
+  /** Original authored story/planet rooms; physics and pathfinding still use open. */
+  authored?: AuthoredPresentation;
   /* v1.3.0 (#9 층식 구조) — 유저 지시 "레이어와 콜리전을 잘 이용하여 층 식 구조의 타일비맵을 좀 활용해":
    *  level[c] = 0 지상 / 1 단(높은 지대). 단은 걸어 다닐 수 있는 높은 층 — 절벽 면(남측)이
    *  플레이어를 덮는 레이어 연출 + 콜리전으로 통행 차단, 계단(stairs)으로만 오르내린다. */
@@ -31,6 +34,8 @@ export type RoomLayout = {
 };
 
 export function generateRoomLayout(seed: string, mapW: number, mapH: number): RoomLayout {
+  const authored = authoredRoomLayout(seed, mapW, mapH);
+  if (authored) return authored;
   const cols = Math.max(4, Math.round(mapW / 400));
   const rows = Math.max(3, Math.round(mapH / 310));
   const cellW = mapW / cols;
@@ -255,6 +260,7 @@ export function cellCenterOf(layout: RoomLayout, idx: number): { x: number; y: n
 
 /** 월드 좌표가 개방 영역(패딩 고려)인지 — 스폰/장식 배치 판정용 */
 export function isOpenXY(layout: RoomLayout, x: number, y: number, pad = 26): boolean {
+  if (layout.authored) return authoredOpenXY(layout, x, y, pad);
   const c = Math.floor(x / layout.cellW);
   const r = Math.floor(y / layout.cellH);
   if (c < 0 || r < 0 || c >= layout.cols || r >= layout.rows) return false;

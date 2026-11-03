@@ -7,6 +7,7 @@ import {
   sumPotLines, FAMILY_ELEM, rollPotentials, activeSetBonus, collectionBonus, WORLDTREE_BLESSING,
   POT_PITY_MAX, STAR_PITY_STEP, STAR_PITY_MAX, STAR_PITY_FROM,
   type ItemKey, type BuffKey, type PetKey, type CosmeticKey, type ElemKey, type Potentials,
+  ELEMENT_META,
 } from "../data";
 import { ULT_CLASSES,
   classDef, isClassKey, bonusOf, nextTierOf, freeJobOption, familyOf, chainOf,
@@ -35,6 +36,8 @@ import { cine3d } from "../cine3d"; // vc181 — 3D 시네마틱 레이어
 import { memoCooldowns, restoreCooldowns } from "../cooldownMemo"; // v1.0.15 (피드백 #3) — 맵 이동 간 쿨타임 유지
 /* vc209 (#ponytail ①) — 데미지 배율 순수함수 (테스트 25케이스가 경계값 고정) */
 import { damageMultiplier } from "../combat/damageModel";
+import { copiedReactionElement, signatureZones, signatureZoneContains, startSignatureCast, STARTER_SIGNATURE, weaponMasterProfileOf, type SignatureCast, type WeaponMasterProfile } from "../weaponMasterProfiles";
+import { WeaponMasterCombat } from "../fx/WeaponMasterCombat";
 
 /**
  * 주인공 세르츠.
@@ -229,6 +232,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private swingDone = false; // v2.2 — 스윙 판정(65ms) 완료 플래그 (공격 중 걷기 복귀용)
   private lastMove = new Phaser.Math.Vector2(); // v2.2 — 최근 입력 이동 (러지 여부 판단)
   private hitSet: Set<unknown> = new Set();
+  private signatureCast: SignatureCast | null = null;
+  private signatureElement: ElemKey | null = null;
+  private copiedElement: ElemKey = "none";
+
+  /** Runtime-only cast inspection; cooldown remains the original skill1Cd/save memo. */
+  get skillCastPhase(): string {
+    return this.signatureCast?.phase ?? (this.skill1Cd > 0 ? "cooldown" : "idle");
+  }
+
+  cancelSkillCast() {
+    this.signatureCast?.cancel();
+  }
 
   skill1Cd = 0; // 계열별 주력기 (전사 회전베기 / 궁수 관통 화살 / 마법사 매직 볼트)
   skill2Cd = 0; // 계열별 기동기 (전사·궁수 돌진 / 마법사 점멸)
@@ -380,11 +395,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.skill5Cd = cdMemo.skill5 ?? 0;
     this.skill5bCd = cdMemo.skill5b ?? 0;
     this.potCd = cdMemo.pot ?? 0;
+    const cancelCast = () => this.cancelSkillCast();
+    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, cancelCast);
+    this.once(Phaser.GameObjects.Events.DESTROY, () => {
+      this.cancelSkillCast();
+      scene.events.off(Phaser.Scenes.Events.SHUTDOWN, cancelCast);
+    });
   }
 
   /** v1.0.15 (피드백 #3) — 맵 전환 직전 현재 남은 스킬/물약 쿨타임을 메모에 기록.
    *  WorldScene.gotoStage(유일한 맵 이동 통로)에서 호출된다. */
   memoSkillCooldowns() {
+    this.cancelSkillCast();
     memoCooldowns({
       skill1: this.skill1Cd,
       skill2: this.skill2Cd,
@@ -459,7 +481,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   update(dt: number, move: Phaser.Math.Vector2, attackPressed: boolean) {
-    if (this.state === "dead") return;
+    if (this.state === "dead") { this.cancelSkillCast(); return; }
     const ms = dt;
 
     this.atkCooldown = Math.max(0, this.atkCooldown - ms);
@@ -616,7 +638,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       //  기존은 이동 입력이 facing을 덮어써 조준 방향이 흔들리고 다음 발 화살이 엉뚱한 방향으로 나갔다.
       // v3.0.18 — 0.8→0.92: 공격 연타 중 이동이 크게 느려져 "걸리는" 체감 완화
       if (move.lengthSq() > 0.01) {
-        this.setVelocity(move.x * this.speed * 0.92, move.y * this.speed * 0.92);
+        const castMove = this.signatureCast?.phase === "startup" ? 0.3 : this.signatureCast ? 0.55 : 0.92;
+        this.setVelocity(move.x * this.speed * castMove, move.y * this.speed * castMove);
         // 스윙 판정(65ms) 이후엔 걷기 애니로 복귀 — 공격 포즈로 미끄러지는 얼음막기 감삭 제거
         if (this.swingDone) {
           const horiz = Math.abs(this.facing.x) >= Math.abs(this.facing.y);
@@ -629,7 +652,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
            *  이동 방향 반영은 idle 상태(위 분기)에서만 한다. */
           if (horiz && this.facing.x !== 0) this.setFlipX(this.facing.x > 0);
         }
-      } else if (this.swingDone) {
+      } else if (this.swingDone || this.signatureCast) {
         this.setVelocity(0, 0);
       }
     }
@@ -1255,6 +1278,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   get skill1Name(): string {
     const t = this.tierLabels();
     const base = (() => {
+      const signature = weaponMasterProfileOf(this.cls);
+      if (signature) return signature.name;
       if (t) return t[1];
       const fam = familyOf(this.cls);
       if (fam === "ranger") return "관통 화살";
@@ -1324,6 +1349,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   useSkill1() {
     if (this.state !== "idle" || this.skill1Cd > 0 || this.mp < 15) return;
+    const signature = weaponMasterProfileOf(this.cls) ?? (!this.cls || this.cls === "warrior" ? STARTER_SIGNATURE : null);
+    if (signature) { this.useSignatureSkill(signature); return; }
     this.mp -= 15;
     this.skill1Cd = this.skill1MaxEff;
     this.state = "attack";
@@ -1367,6 +1394,91 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "dreadvolley": return this.skill1DreadVolley();
       default: return this.skill1Spin(false);
     }
+  }
+
+  /** JENNY attack lifecycle applied to the original Player; original stats/network/input stay authoritative. */
+  private useSignatureSkill(baseProfile: WeaponMasterProfile) {
+    const aim = this.aimDirFree();
+    this.faceAtk(aim);
+    const origin = { x: this.x, y: this.y };
+    let profile = baseProfile.style === "starter" ? { ...baseProfile, element: this.attackElem } : baseProfile;
+    if (profile.style === "copy") {
+      const observed = this.scene.getAllTargets().filter(target => target.active && Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y) < 500)
+        .sort((a, b) => Phaser.Math.Distance.Between(this.x, this.y, a.x, a.y) - Phaser.Math.Distance.Between(this.x, this.y, b.x, b.y))[0];
+      const element = (observed as unknown as { elem?: ElemKey } | undefined)?.elem;
+      if (element && element !== "none") this.copiedElement = element;
+      const reaction = copiedReactionElement(this.copiedElement === "none" ? "fire" : this.copiedElement);
+      profile = { ...profile, element: reaction, color: ELEMENT_META[reaction].hex };
+    }
+    const tier = this.sTier;
+    this.mp -= 15;
+    this.skill1Cd = this.skill1MaxEff;
+    this.state = "attack";
+    this.swingDone = false;
+    this.lungeTime = 0;
+    this.hitSet.clear();
+    this.setVelocity(0, 0);
+    this.netEmitAction("s1");
+    this.tutNotify("skill");
+    this.setData("rea:skill", profile.style);
+    const effects = new WeaponMasterCombat(this.scene, profile, origin, aim, tier, {
+      texture: this.texture.key, frame: this.frame.name, flip: this.flipX, scaleX: this.scaleX, scaleY: this.scaleY,
+    });
+    effects.startup();
+    audio.sfx.elemCast(profile.element);
+    this.signatureCast = startSignatureCast(profile, {
+      schedule: (delay, callback) => {
+        const timer = this.scene.time.delayedCall(delay, callback);
+        return () => timer.remove(false);
+      },
+      valid: () => this.active && this.state === "attack" && this.hp > 0 && this.scene.sys.isActive(),
+      phase: phase => this.setData("rea:phase", phase),
+      release: (pulse, claimTarget) => {
+        this.swingDone = true;
+        const direction = Math.abs(aim.x) >= Math.abs(aim.y) ? "hero-atk" : aim.y > 0 ? "hero-atk-down" : "hero-atk-up";
+        this.playAnim(direction);
+        effects.release(pulse);
+        if (pulse === 0) {
+          this.scene.sfxSkill(profile.style === "hammer" ? "superhit" : profile.style === "lightning" ? "thunder" : "wind2", 0.9);
+          if (profile.style === "life" || profile.style === "art") {
+            this.heal(Math.round(this.maxHp * ((profile.style === "life" ? 0.08 : 0.06) + tier * 0.01)));
+            if (profile.style === "art") {
+              const add = Math.max(this.selfDefBuff?.add ?? 0, 6 + 3 * tier);
+              this.selfDefBuff = { add, until: Math.max(this.selfDefBuff?.until ?? 0, this.scene.time.now + 2800) };
+              this.mp = Math.min(this.maxMp, this.mp + 5);
+            }
+          }
+        }
+        const zones = signatureZones(profile.style, origin, aim, tier, pulse);
+        let hits = 0;
+        this.signatureElement = profile.element;
+        try {
+          for (const target of this.scene.getAllTargets()) {
+            if (!target.active) continue;
+            const radius = Math.max((target as unknown as { hitW?: number }).hitW ?? 24, (target as unknown as { hitH?: number }).hitH ?? 24) / 2;
+            if (!zones.some(zone => signatureZoneContains(zone, target, radius)) || !claimTarget(target)) continue;
+            const multiplier = profile.style === "starter" ? 1.6 + 0.42 * tier + (tier === 1 ? 0.25 : 0)
+              : (profile.style === "life" || profile.style === "art" ? 1.8 : 2.25) + 0.34 * tier;
+            const { dmg, crit } = this.rollDamage(multiplier, true);
+            const away = new Phaser.Math.Vector2(target.x - origin.x, target.y - origin.y);
+            if (away.lengthSq() < 0.001) away.copy(aim);
+            away.normalize();
+            target.takeDamage(dmg, away, profile.style === "hammer" ? 320 : 180, crit);
+            if (crit) this.scene.sfxCrit();
+            hits++;
+          }
+        } finally { this.signatureElement = null; }
+        if (hits > 0) this.scene.onMeleeConnect(hits, "skill");
+        this.scene.emitHud();
+      },
+      cleanup: () => {
+        effects.clear();
+        this.signatureCast = null;
+        this.signatureElement = null;
+        if (this.state === "attack") { this.state = "idle"; this.setVelocity(0, 0); }
+      },
+    });
+    this.scene.emitHud();
   }
 
   /** 전사 — 회전베기 360° (v3.0.4 — 전직마다 기존 스킬 강화: 배율/반경 대폭 상향 + 단계별 부가효과)
@@ -2097,6 +2209,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   useSkill2() {
+    if (this.signatureCast && this.state === "attack" && this.skill2Cd <= 0 && this.mp >= 20) this.cancelSkillCast();
     if (this.state !== "idle" || this.skill2Cd > 0 || this.mp < 20) return;
     const move = this.scene.currentMoveVec();
     const auto = this.autoDashDir; // v3.0.1 — 자동 지정 방향 최우선 (1회 소모)
@@ -3632,6 +3745,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.hp <= 0) {
       this.hp = 0;
       this.state = "dead";
+      this.cancelSkillCast();
       this.setVelocity(0, 0);
       this.scene.onPlayerDead();
     }
@@ -8043,6 +8157,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** v3.0.15 (#16) — 공격 원소 (계열 고정: 전사 화염/궁수 자연/마법사 냉기/도적 어둠, 미전직 무속성) */
   get attackElem(): ElemKey {
+    if (this.signatureElement) return this.signatureElement;
     const fam = familyOf(this.cls);
     return fam ? (FAMILY_ELEM[fam] ?? "none") : "none";
   }

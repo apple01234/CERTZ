@@ -153,8 +153,22 @@ export function decorFootprint(width: number, height: number, key?: string) {
 export function isSolidDecor(key: string) {
   return (
     !/(carpet|rug|pentagram|candle|torch|flower)/.test(key) &&
-    /(tree|rock|trunk|house|shop|stall|bench|barrel|jar|anvil|throne|bookshelf|table|fence|grave|planter|monument|well|pillar|column|altar|fountain|armory)/.test(
+    /(tree|rock|trunk|house|shop|stall|bench|barrel|jar|anvil|throne|bookshelf|table|fence|grave|planter|monument|well|pillar|column|altar|fountain|armory|furn_(crate|bucket|chair|pots))/.test(
       key,
     )
   );
+}
+
+/** Rotate the measured feet with the artwork, including furniture's 0.9 origin. */
+export function decorCollisionBounds(width: number, height: number, key: string, rotation = 0, originX = 0.5, originY = 0.5) {
+  const foot = decorFootprint(width, height, key);
+  const cx = foot.offsetX + foot.width / 2 - width * originX;
+  const cy = foot.offsetY + foot.height / 2 - height * originY;
+  const cos = Math.cos(rotation), sin = Math.sin(rotation);
+  return {
+    x: cx * cos - cy * sin,
+    y: cx * sin + cy * cos,
+    width: Math.abs(foot.width * cos) + Math.abs(foot.height * sin),
+    height: Math.abs(foot.width * sin) + Math.abs(foot.height * cos),
+  };
 }
