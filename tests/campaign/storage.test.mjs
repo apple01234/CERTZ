@@ -57,7 +57,7 @@ test("protection objectives are finite and actively defendable, not endless hunt
   assert.ok(d.kills >= 3);
   assert.equal(d.integrity, 100);
 });
-test("build whitelist removes old art while preserving unified licensed assets", async () => {
+test("build processing preserves original RPG art alongside story assets", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "oath-assets-"));
   try {
     await mkdir(path.join(root, "tiles"));
@@ -72,14 +72,14 @@ test("build whitelist removes old art while preserving unified licensed assets",
     ])
       await writeFile(path.join(root, f), "fixture");
     await pruneCampaignAssets(root);
-    await assert.rejects(access(path.join(root, "hero_old.png")));
-    await assert.rejects(access(path.join(root, "tiles/kenney_tinytown.png")));
-    await assert.rejects(access(path.join(root, "tiles/kenney_tinydungeon.png")));
+    await access(path.join(root, "hero_old.png"));
+    await access(path.join(root, "tiles/kenney_tinytown.png"));
+    await access(path.join(root, "tiles/kenney_tinydungeon.png"));
     assert.equal(
       await readFile(path.join(root, "campaign/skill-sunburst.png"), "utf8"),
       "fixture",
     );
-    assert.equal(allowedCampaignAsset("hero_old.png"), false);
+    assert.equal(allowedCampaignAsset("hero_old.png"), true);
     assert.equal(await readFile(path.join(root, "campaign/drive/knight.png"), "utf8"), "fixture");
   } finally {
     await rm(root, { recursive: true });

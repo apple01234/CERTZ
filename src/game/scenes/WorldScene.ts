@@ -17132,7 +17132,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.saveTimer !== null) return;
     this.saveTimer = window.setTimeout(() => {
       this.saveTimer = null;
-      this.saveSoon();
+      this.save();
     }, 250);
   }
   /** 예약된 저장을 즉시 확정 (씬 종료·포탈 이동·백그라운드 진입) */

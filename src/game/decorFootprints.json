@@ -1,0 +1,410 @@
+{
+  "obj_town_stall_stripe": {
+    "width": 118,
+    "height": 58,
+    "opaque": [
+      0,
+      0,
+      118,
+      58
+    ],
+    "sha256": "9a88c4d6d873225a448fc49a1727cc587640ba6f4f681888425d63668e340563",
+    "url": "/assets/objects/town/obj_town_stall_stripe.png"
+  },
+  "obj_town_waterfall": {
+    "width": 32,
+    "height": 48,
+    "opaque": [
+      0,
+      0,
+      32,
+      48
+    ],
+    "sha256": "477e37ca2c68501cf9d597d77f390f10e25985aa412a7b86ae2164f9990f0ea2",
+    "url": "/assets/objects/town/obj_town_waterfall.png"
+  },
+  "obj_town_bench": {
+    "width": 88,
+    "height": 128,
+    "opaque": [
+      0,
+      0,
+      88,
+      128
+    ],
+    "sha256": "857528fbb1566c28200444785fd6d1b7d5fe8af052b0043235b16af16629c2f3",
+    "url": "/assets/objects/town/obj_town_bench.png"
+  },
+  "obj_town_vending": {
+    "width": 88,
+    "height": 24,
+    "opaque": [
+      0,
+      0,
+      88,
+      24
+    ],
+    "sha256": "cf08c4dc91bec66a6e7636127294488f4e3428949356b96ee0b344af6a927a94",
+    "url": "/assets/objects/town/obj_town_vending.png"
+  },
+  "obj_town_planter": {
+    "width": 112,
+    "height": 80,
+    "opaque": [
+      0,
+      0,
+      112,
+      80
+    ],
+    "sha256": "8040bfb969e92d7a179419a4dff448124f729999a67c38ab293b4ea408850039",
+    "url": "/assets/objects/town/obj_town_planter.png"
+  },
+  "obj_town_barrel": {
+    "width": 20,
+    "height": 104,
+    "opaque": [
+      0,
+      0,
+      20,
+      104
+    ],
+    "sha256": "e4511206c6cdc837f883b8b3064c00ddf39c703bf1f56c0ad539513eb7f054ff",
+    "url": "/assets/objects/town/obj_town_barrel.png"
+  },
+  "obj_town_house_blue": {
+    "width": 160,
+    "height": 112,
+    "opaque": [
+      0,
+      0,
+      160,
+      112
+    ],
+    "sha256": "71fd835ea9a6bac3e39d83525a7b8b431c009d579b5ad64b2878030bc534011e",
+    "url": "/assets/objects/town/obj_town_house_blue.png"
+  },
+  "obj_town_shop_black": {
+    "width": 224,
+    "height": 112,
+    "opaque": [
+      0,
+      0,
+      224,
+      112
+    ],
+    "sha256": "dab73acdfe920b50638fa1b3fa0c9afb0ff9a5903c73428c75771d46cb794654",
+    "url": "/assets/objects/town/obj_town_shop_black.png"
+  },
+  "obj_dungeon_pentagram": {
+    "width": 48,
+    "height": 46,
+    "opaque": [
+      0,
+      2,
+      42,
+      46
+    ],
+    "sha256": "d02bb7f23b1cc6784d14ee96f848109437cd43c770ba023dc6e5a4c3295c5e48",
+    "url": "/assets/objects/dungeon/obj_dungeon_pentagram.png"
+  },
+  "obj_dungeon_barrel": {
+    "width": 64,
+    "height": 72,
+    "opaque": [
+      0,
+      0,
+      64,
+      72
+    ],
+    "sha256": "08b1645b4d4592625e4af8341b59f1ee762cc1b45e3602052893596224cc1498",
+    "url": "/assets/objects/dungeon/obj_dungeon_barrel.png"
+  },
+  "obj_dungeon_anvil": {
+    "width": 52,
+    "height": 36,
+    "opaque": [
+      0,
+      0,
+      52,
+      36
+    ],
+    "sha256": "a7033e13ca0f6e195dd0c7c27a7160d07d731033e18a0b9a5c99f1f1c41ae461",
+    "url": "/assets/objects/dungeon/obj_dungeon_anvil.png"
+  },
+  "obj_dungeon_stump": {
+    "width": 12,
+    "height": 16,
+    "opaque": [
+      0,
+      0,
+      12,
+      16
+    ],
+    "sha256": "a3a7a898b5195cf67aa8471b66bf95c660c202c5659b4463ef59679cd63af600",
+    "url": "/assets/objects/dungeon/obj_dungeon_stump.png"
+  },
+  "obj_dungeon_jar": {
+    "width": 48,
+    "height": 116,
+    "opaque": [
+      0,
+      0,
+      48,
+      116
+    ],
+    "sha256": "13e06f7f41da214f1cfe5a15b612ac06bb6f84104b1ca618a7a0815a452839f5",
+    "url": "/assets/objects/dungeon/obj_dungeon_jar.png"
+  },
+  "obj_dungeon_tree_dead": {
+    "width": 61,
+    "height": 33,
+    "opaque": [
+      0,
+      0,
+      61,
+      33
+    ],
+    "sha256": "c3969f635206302c9d96bd8d74b3ac904c8b854c82590df3783914c092d10cb1",
+    "url": "/assets/objects/dungeon/obj_dungeon_tree_dead.png"
+  },
+  "obj_dungeon_candle": {
+    "width": 24,
+    "height": 40,
+    "opaque": [
+      0,
+      0,
+      24,
+      40
+    ],
+    "sha256": "7d8650e8e013062e68c90c768f2d9894a854f8a9b233021a58ad1b7205e29933",
+    "url": "/assets/objects/dungeon/obj_dungeon_candle.png"
+  },
+  "obj_dungeon_table": {
+    "width": 112,
+    "height": 52,
+    "opaque": [
+      0,
+      0,
+      112,
+      52
+    ],
+    "sha256": "68dbd9a913bf949aca4dabea919f703f21a737fd39a0de361ca61ea818650e85",
+    "url": "/assets/objects/dungeon/obj_dungeon_table.png"
+  },
+  "obj_dungeon_throne": {
+    "width": 58,
+    "height": 32,
+    "opaque": [
+      0,
+      0,
+      58,
+      32
+    ],
+    "sha256": "15a1e8c8cb576bf6cb98d64c23a6b918c319a199c7b4dd0f684a1f493a24240e",
+    "url": "/assets/objects/dungeon/obj_dungeon_throne.png"
+  },
+  "obj_dungeon_fence": {
+    "width": 46,
+    "height": 13,
+    "opaque": [
+      0,
+      0,
+      46,
+      13
+    ],
+    "sha256": "ed8bf72ef26ba1d9a42bbcec6cfa49235fab26c55e87cffd56992069ee07bffb",
+    "url": "/assets/objects/dungeon/obj_dungeon_fence.png"
+  },
+  "obj_dungeon_sign": {
+    "width": 56,
+    "height": 56,
+    "opaque": [
+      0,
+      0,
+      56,
+      56
+    ],
+    "sha256": "7fd6141e49c5c255706b8c9c30a4eeeea4617942d7326f238ba6ad2dadc6e020",
+    "url": "/assets/objects/dungeon/obj_dungeon_sign.png"
+  },
+  "obj_dungeon_grave": {
+    "width": 116,
+    "height": 64,
+    "opaque": [
+      0,
+      0,
+      116,
+      64
+    ],
+    "sha256": "fd69b1d98e908949bbd1b648b59bc2308b693167f37c2b0ad5af09886a8f2f40",
+    "url": "/assets/objects/dungeon/obj_dungeon_grave.png"
+  },
+  "obj_dungeon_torch": {
+    "width": 28,
+    "height": 52,
+    "opaque": [
+      0,
+      0,
+      28,
+      52
+    ],
+    "sha256": "be82f755fa57055bbb44a5a9feb5b1a0ce20282e47d20adc51f4798920f104b7",
+    "url": "/assets/objects/dungeon/obj_dungeon_torch.png"
+  },
+  "obj_dungeon_rock_small": {
+    "width": 64,
+    "height": 64,
+    "opaque": [
+      0,
+      0,
+      64,
+      64
+    ],
+    "sha256": "2f33b22548b7da3c6bed29257312d7d53db9e9f2eceae46c7ee2bf1994dc9ad6",
+    "url": "/assets/objects/dungeon/obj_dungeon_rock_small.png"
+  },
+  "obj_dungeon_bookshelf": {
+    "width": 64,
+    "height": 128,
+    "opaque": [
+      0,
+      0,
+      64,
+      64
+    ],
+    "sha256": "fc5de57e40ae5ddda7770a113a672ce519f0191334a5e16b6fb6408751285222",
+    "url": "/assets/objects/dungeon/obj_dungeon_bookshelf.png"
+  },
+  "obj_dungeon_carpet_v": {
+    "width": 28,
+    "height": 124,
+    "opaque": [
+      0,
+      0,
+      28,
+      124
+    ],
+    "sha256": "9db3699fb1b50bcf4eff1b15e2da5b4a7849ca7c1fa7868548b84978be307cf8",
+    "url": "/assets/objects/dungeon/obj_dungeon_carpet_v.png"
+  },
+  "obj_dungeon_chest": {
+    "width": 48,
+    "height": 40,
+    "opaque": [
+      0,
+      0,
+      48,
+      40
+    ],
+    "sha256": "a4df8baae97fb7d5d5a1e1eb3ff09adafd9d78f786c95f63a715cb25d82425be",
+    "url": "/assets/objects/dungeon/obj_dungeon_chest.png"
+  },
+  "obj_forest_tree_pink": {
+    "width": 65,
+    "height": 80,
+    "opaque": [
+      0,
+      0,
+      65,
+      80
+    ],
+    "sha256": "f9819f21e0fd4239bba972c62e0d377fb84171837d4811d4a9c82009d5fcaad9",
+    "url": "/assets/objects/forest/obj_forest_tree_pink.png"
+  },
+  "obj_forest_bush": {
+    "width": 116,
+    "height": 92,
+    "opaque": [
+      0,
+      0,
+      116,
+      92
+    ],
+    "sha256": "cd4cadf6384bd700559821cde7ea7e47df80e6eec89ea66f3423d9173180b29b",
+    "url": "/assets/objects/forest/obj_forest_bush.png"
+  },
+  "obj_forest_rock": {
+    "width": 124,
+    "height": 112,
+    "opaque": [
+      0,
+      0,
+      124,
+      112
+    ],
+    "sha256": "30744c2447ee98e08dda871ea8c0b6440ab85c92fa3bc3614e97cdb678bd288c",
+    "url": "/assets/objects/forest/obj_forest_rock.png"
+  },
+  "obj_forest_sign": {
+    "width": 72,
+    "height": 88,
+    "opaque": [
+      0,
+      0,
+      72,
+      88
+    ],
+    "sha256": "108a38eda8c45928ae5eb74fa10ac4e226bb80ef242121aa774166c02d24917d",
+    "url": "/assets/objects/forest/obj_forest_sign.png"
+  },
+  "obj_forest_bush_tall": {
+    "width": 64,
+    "height": 108,
+    "opaque": [
+      0,
+      0,
+      64,
+      108
+    ],
+    "sha256": "06edc1c8070dfa78dec864317d229a66583cd809809e22b7b45010c1c46c3fc2",
+    "url": "/assets/objects/forest/obj_forest_bush_tall.png"
+  },
+  "obj_forest_trunk": {
+    "width": 37,
+    "height": 33,
+    "opaque": [
+      0,
+      0,
+      36,
+      33
+    ],
+    "sha256": "83e5e322167b714945822eeb6432996d5353f1a0cde5427d3ce30eeb0ee4bab8",
+    "url": "/assets/objects/forest/obj_forest_trunk.png"
+  },
+  "obj_forest_rock_monument": {
+    "width": 100,
+    "height": 89,
+    "opaque": [
+      0,
+      0,
+      100,
+      89
+    ],
+    "sha256": "f3d8ec88c11cf4eb3922c9bca4ec9fa68563d8d5bfc4b43b88a53fee40cf08ec",
+    "url": "/assets/objects/forest/obj_forest_rock_monument.png"
+  },
+  "obj_forest_tree_dried": {
+    "width": 96,
+    "height": 104,
+    "opaque": [
+      0,
+      0,
+      96,
+      104
+    ],
+    "sha256": "5c0ed1c8e58560930a7b634a7fdf0099cc2c333edd091952fe5d7cad3fad28b3",
+    "url": "/assets/objects/forest/obj_forest_tree_dried.png"
+  },
+  "obj_forest_tree_orange": {
+    "width": 65,
+    "height": 80,
+    "opaque": [
+      0,
+      0,
+      65,
+      80
+    ],
+    "sha256": "7373f918bd222e3502082996c0eeb6c3eb849b454f0206d9b584f8f3787d6f9c",
+    "url": "/assets/objects/forest/obj_forest_tree_orange.png"
+  }
+}

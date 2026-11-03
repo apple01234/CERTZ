@@ -34,7 +34,16 @@
 
 Mark deliberate ceilings with a `ponytail:` comment naming the upgrade path.
 
-## 현재 제품 — 기억의 서약 (v2.0.0)
+## 최신 사용자 지시 및 인계 (2026-11-03)
+
+- 작업·커밋·푸시 대상은 **apple01234/CERTZ의 main**이다. 이전 SERTZ 전용 지시는 폐기한다.
+- 기존 GameRoot/WorldScene/Player/장비/전직/하우징/계정/멀티플레이와 화면 구조를 유지하며 아뜰란티스·이그드라실 서사를 교체한다. 새 독립 캠페인 엔진으로 다시 만들지 않는다.
+- 정본은 `docs/handoff/evernote-approved/1.txt`부터 `8.txt`까지 순서대로 읽는다. 다른 기획·스토리 문서는 읽지 않는다. 충돌 시 먼저 지정한 문서를 우선한다.
+- 에셋은 기존 자료와 다운로드를 우선하고 꼭 필요한 경우에만 생성한다. 원본 런타임 에셋을 배포에서 제거하지 않는다.
+- **이번 커밋은 진행 중인 작업의 인계 체크포인트**다. 미완성 런타임 전환은 `docs/handoff/original-engine-integration.patch`에 보관했고 아직 적용하지 않았다. 현재 `/`는 여전히 CampaignRoot다.
+- 다음 작업 전 `docs/handoff/DEEPSEEK_HANDOFF.md`를 읽는다. 아래 항목은 이전 구현의 역사이며 최신 지시와 충돌하면 적용하지 않는다.
+
+## 이전 제품 기록 — 기억의 서약 (v2.0.0)
 
 - 사용자 최신 지시가 과거의 ‘기존 9챕터 유지’ 규칙보다 우선한다. **9개의 바다를 새 게임에 되살리지 않는다.**
 - 진입점: `src/components/campaign/CampaignRoot.tsx`. 정본·진행·전투: `src/game/campaign/`. 이전 WorldScene/데이터는 호환성 검사 및 과거 소스이며 새 게임 진입점이 아니다.

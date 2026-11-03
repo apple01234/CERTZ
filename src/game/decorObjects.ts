@@ -1,3 +1,4 @@
+import footprints from "./decorFootprints.json" with { type: "json" };
 /**
  * vc235 — 장식 오브젝트 카탈로그 (에셋 추출분 연결)
  *
@@ -70,7 +71,8 @@ export const DECOR_SETS: Record<string, DecorObj[]> = {
     { key: "obj_town_barrel", tag: "small", w: 20, h: 104 },
     { key: "obj_town_planter", tag: "small", w: 112, h: 80 },
     { key: "obj_town_waterfall", tag: "wall", w: 32, h: 48 },
-  ],};
+  ],
+};
 
 /** 챕터 → 오브젝트 세트. 스토리 분위기에 맞춰 고른다. */
 export const CHAPTER_DECOR_SET: Record<string, string> = {
@@ -94,7 +96,12 @@ export const CHAPTER_DECOR_SET: Record<string, string> = {
  *  전투 중 시각 노이즈가 되고 드로우콜이 늘기 때문이다. 그래서 **큰 오브젝트는
  *  적게, 작은 소품은 조금 더** 두되 총량을 묶는다.
  */
-export type DecorBudget = { big: number; wall: number; floor: number; small: number };
+export type DecorBudget = {
+  big: number;
+  wall: number;
+  floor: number;
+  small: number;
+};
 
 export const DECOR_BUDGET: Record<string, DecorBudget> = {
   /* forest 세트에는 floor 태그(카펫·식탁 같은 바닥 가구)가 없다.
@@ -115,4 +122,39 @@ export function pickByTag(setKey: string, tag: ObjTag): DecorObj[] {
 /** 챕터에 맞는 세트 키. 미등록 챕터는 dungeon 으로 폴백. */
 export function decorSetFor(chapter: string): string {
   return CHAPTER_DECOR_SET[chapter] ?? "dungeon";
+}
+
+/** Feet-only collision shared by the original world and story scenes. */
+export function decorFootprint(width: number, height: number, key?: string) {
+  const mask = key
+    ? (footprints as Record<string, { width: number; opaque: number[] }>)[key]
+    : undefined;
+  if (mask) {
+    const scale = width / mask.width,
+      [left, top, right, bottom] = mask.opaque.map((n) => n * scale);
+    const w = Math.max(12, Math.round((right - left) * 0.7)),
+      h = Math.max(12, Math.round((bottom - top) * 0.3));
+    return {
+      width: w,
+      height: h,
+      offsetX: Math.round((left + right - w) / 2),
+      offsetY: Math.max(0, bottom - h - 2),
+    };
+  }
+  const w = Math.max(20, Math.round(width * 0.55)),
+    h = Math.max(18, Math.round(height * 0.3));
+  return {
+    width: w,
+    height: h,
+    offsetX: Math.round((width - w) / 2),
+    offsetY: Math.max(0, height - h - 2),
+  };
+}
+export function isSolidDecor(key: string) {
+  return (
+    !/(carpet|rug|pentagram|candle|torch|flower)/.test(key) &&
+    /(tree|rock|trunk|house|shop|stall|bench|barrel|jar|anvil|throne|bookshelf|table|fence|grave|planter|monument|well|pillar|column|altar|fountain|armory)/.test(
+      key,
+    )
+  );
 }

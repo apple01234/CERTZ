@@ -1,0 +1,351 @@
+diff --git a/src/app/layout.tsx b/src/app/layout.tsx
+index 2c2ab25..ad419a0 100755
+--- a/src/app/layout.tsx
++++ b/src/app/layout.tsx
+@@ -4,7 +4,7 @@ import "./fonts.css";
+ import "./globals.css";
+ 
+ export const metadata: Metadata = {
+-  title: "SERTZ — 기억의 서약",
++  title: "CERTZ — 라일락 월드",
+   description:
+     "당신만의 연합원으로 함께하는 2D 스토리 어드벤처. 왕국의 전쟁부터 별 너머의 귀향까지, 지워지지 않는 기억을 잇는 여정.",
+   keywords: ["SERTZ", "기억의 서약", "스토리 어드벤처", "픽셀 RPG", "협동 보스"],
+diff --git a/src/app/page.tsx b/src/app/page.tsx
+index 082e629..96e20f6 100755
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -1,8 +1,8 @@
+ "use client";
+ import dynamic from "next/dynamic";
+ 
+-const CampaignRoot = dynamic(
+-  () => import("@/components/campaign/CampaignRoot"),
++const GameRoot = dynamic(
++  () => import("@/components/game/GameRoot"),
+   {
+     ssr: false,
+     loading: () => (
+@@ -22,12 +22,12 @@ const CampaignRoot = dynamic(
+             d="M1 3h6v1h2V3h6v10H9v1H7v-1H1V3zm1 1v8h5V5H2zm7 1v7h5V4H9v1zM3 6h3v1H3V6zm7 0h3v1h-3V6zM3 9h3v1H3V9zm7 0h3v1h-3V9z"
+           />
+         </svg>
+-        <strong className="text-2xl tracking-widest">기억의 서약</strong>
+-        <span className="text-xs text-[#b5b5c8]">함께한 기억을 펼치는 중…</span>
++        <strong className="text-2xl tracking-widest">라일락 월드</strong>
++        <span className="text-xs text-[#b5b5c8]">웨폰마스터의 여정을 준비하는 중…</span>
+       </div>
+     ),
+   },
+ );
+ export default function Home() {
+-  return <CampaignRoot />;
++  return <GameRoot />;
+ }
+diff --git a/src/game/config.ts b/src/game/config.ts
+index b8fc5cd..3dab528 100755
+--- a/src/game/config.ts
++++ b/src/game/config.ts
+@@ -1,3 +1,6 @@
++import { migrateStoryProgress, STORY_REVISION, storyBackupKey } from "./storyRevision";
++export { STORY_REVISION, storyBackupKey } from "./storyRevision";
++
+ /** 게임 전역 상수 */
+ export const GAME_W = 960;
+ export const GAME_H = 540;
+@@ -66,6 +69,8 @@ export type SaveData = {
+    *   · version 이 없는 세이브는 0 으로 간주한다(현재 존재하는 모든 구 세이브).
+    */
+   v?: number;
++  /** Only narrative progress belongs to this revision; inventory/classes retain their IDs. */
++  storyRevision?: string;
+   stage: string;
+   lv: number;
+   exp: number;
+@@ -365,7 +370,7 @@ export function mutateFriends(fn: (list: { code: string; name: string }[]) => {
+  *  이 값이 필요한 이유는 "지금"이 아니라 "나중"이다. 의미 변경이 일어나는 순간
+  *  이 상수가 없으면 구 세이브를 구분할 방법이 사라진다.
+  */
+-export const SAVE_VERSION = 1;
++export const SAVE_VERSION = 2;
+ 
+ /**
+  * 세이브 마이그레이션 — 로드 직후, 기본값 채우기 **전에** 호출한다.
+@@ -379,14 +384,36 @@ export const SAVE_VERSION = 1;
+  */
+ export function migrateSave(d: SaveData): SaveData {
+   const from = typeof d.v === "number" ? d.v : 0; // v 없음 = 0 (도입 이전 세이브)
+-  if (from >= SAVE_VERSION) return d;
++  const migrated = migrateStoryProgress(d);
++  return from >= SAVE_VERSION ? migrated : { ...migrated, v: SAVE_VERSION };
++}
++
++function reportSaveFailure(err: unknown) {
++  console.error("[SERTZ] 세이브 저장 실패", err);
++  try {
++    const quota = err instanceof Error && /quota|exceed/i.test(err.name + err.message);
++    window.dispatchEvent(new CustomEvent("sertz:save-failed", { detail: { quota } }));
++  } catch { /* 이벤트 불가 환경 */ }
++}
+ 
+-  /* ---- 0 → 1 : 버전 도입. 데이터 변환은 없다. ---- */
+-  /* (예시) 1 → 2 : 경험치 단위가 절대값 → 퍼센트로 바뀌면 여기서 변환한다.
+-   *   if (from < 2) { d.exp = toPercent(d.exp); }  */
++/** The first pre-revision source is immutable, including each character and the legacy mirror. */
++function preservePriorStorySource(key: string) {
++  const storage = window.localStorage;
++  const raw = storage.getItem(key);
++  if (!raw) return;
++  try {
++    if (JSON.parse(raw)?.storyRevision === STORY_REVISION) return;
++  } catch { /* Preserve a damaged source too before replacing it. */ }
++  const backup = storyBackupKey(key);
++  if (storage.getItem(backup) === null) storage.setItem(backup, raw);
++}
+ 
+-  d.v = SAVE_VERSION;
+-  return d;
++/** Slot/scene carry loads must use the same migration as loadSave before selecting a stage. */
++export function prepareStorySave(data: SaveData, sourceKey = activeSaveKey()): SaveData {
++  if (typeof window !== "undefined" && data.storyRevision !== STORY_REVISION) {
++    try { preservePriorStorySource(sourceKey); } catch (err) { reportSaveFailure(err); }
++  }
++  return migrateSave(data);
+ }
+ 
+ export function loadSave(): SaveData | null {
+@@ -400,7 +427,7 @@ export function loadSave(): SaveData | null {
+     /* vc219 — 마이그레이션을 기본값 채우기보다 먼저 돌린다.
+      *  순서가 반대면 "기본값으로 채워진 뒤" 마이그레이션이 그 위를 덮어써
+      *  변환 결과가 사라진다. */
+-    const d = migrateSave(parsed);
++    const d = prepareStorySave(parsed);
+     // 신규 필드 기본값 채우기 (구버전 세이브 호환)
+     if (typeof d.gold !== "number") d.gold = 30;
+     if (!d.potions) d.potions = { hp: 2, mp: 1 };
+@@ -521,17 +548,20 @@ export function writeSave(data: SaveData) {
+   if (typeof window === "undefined") return;
+   try {
+     const key = activeSaveKey();
++    // If backup creation fails, throw before either original save is overwritten.
++    preservePriorStorySource(key);
++    if (activeCharId && key !== SAVE_KEY) preservePriorStorySource(SAVE_KEY);
+     /* v1.0.16 (O12) — 종전엔 활성 캐릭터가 있으면 같은 데이터를 두 번 직렬화했다
+      *  (char_<id> 키 + 레거시 미러 키). 세이브는 스테이지 전환마다 불리므로 낭비가 컸다.
+      *  한 번만 문자열로 만들고 두 키에 같은 값을 쓴다. */
+-    const json = JSON.stringify(data);
++    const json = JSON.stringify(migrateSave(data));
+     window.localStorage.setItem(key, json);
+     /* v1.0.18 — 로비 멀티캐릭터: 활성 캐릭터가 있으면 레거시 키에도 미러링
+      *  (구버전 APK 롤백 시 "마지막 플레이 캐릭터" 이어하기 보장 — 원본은 char_<id>가 진실) */
+     if (activeCharId && key !== SAVE_KEY) window.localStorage.setItem(SAVE_KEY, json);
+     for (const fn of saveHooks) {
+       try {
+-        fn(data);
++        fn(migrateSave(data));
+       } catch {
+         /* 훅 실패는 저장 본체에 영향 없음 */
+       }
+@@ -542,11 +572,7 @@ export function writeSave(data: SaveData) {
+      *  그대로 두면 몇 시간 플레이가 통째로 날아간 뒤에야 알게 된다.
+      *  실패를 콘솔에 남기고 전역 이벤트로 알려 UI가 경고를 띄우게 한다.
+      *  (이벤트 발신 자체가 실패할 수 있으므로 2중 try) */
+-    console.error("[SERTZ] 세이브 저장 실패", err);
+-    try {
+-      const quota = err instanceof Error && /quota|exceed/i.test(err.name + err.message);
+-      window.dispatchEvent(new CustomEvent("sertz:save-failed", { detail: { quota } }));
+-    } catch { /* 이벤트 불가 환경 */ }
++    reportSaveFailure(err);
+   }
+ }
+ 
+diff --git a/src/game/scenes/WorldScene.ts b/src/game/scenes/WorldScene.ts
+index 698d8de..5e7323d 100755
+--- a/src/game/scenes/WorldScene.ts
++++ b/src/game/scenes/WorldScene.ts
+@@ -1,5 +1,7 @@
+ import Phaser from "phaser";
+-import { DECOR_BUDGET, decorSetFor, pickByTag, type DecorObj } from "../decorObjects";
++import { DECOR_BUDGET, decorSetFor, pickByTag, decorFootprint, isSolidDecor, type DecorObj } from "../decorObjects";
++import { STORY_REVISION } from "../storyRevision";
++import { prepareStorySave } from "../config";
+ import { createGameState, type GameState } from "../state/gameState";
+ import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
+ import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
+@@ -1654,9 +1656,10 @@ export class WorldScene extends Phaser.Scene {
+       save?: SaveData;
+       fresh?: boolean;
+     };
+-    const save = data.save;
++    const migratingStory = data.save && data.save.storyRevision !== STORY_REVISION;
++    const save = data.save ? prepareStorySave(data.save) : undefined;
+     /* v2.2 — data.stage 명시 시 우선 (실내 진입: save는 village 캐리, stage는 interior) */
+-    const rawStage = (data.stage as StageKey | undefined) ?? (save ? (save.stage as StageKey) : "village");
++    const rawStage = migratingStory ? "village" : (data.stage as StageKey | undefined) ?? (save ? (save.stage as StageKey) : "village");
+     /* 유효하지 않은 스테이지 키(구 세이브/수정 세이브) 방어 — 체인 시작점으로 안전 폴백 (v2.0 구세이브 폴백 내장) */
+     const stageKey: StageKey = resolveStage(rawStage);
+     this.stageDef = STAGES[stageKey];
+@@ -9658,10 +9661,10 @@ export class WorldScene extends Phaser.Scene {
+     const specialZone =
+       this.stageDef.key === "tower" || this.stageDef.key === "closet" || this.stageDef.key === "gate" ||
+       this.stageDef.key === "dojang" || this.stageDef.key === "park" || this.stageDef.key === "praid";
+-    const final = !specialZone && NEXT_STAGE[this.stageDef.key] === null;
++    const final = false; // Only the reconstruction objective completes the new story.
+     /* vc231 — 영프 편 마지막 구역은 NEXT_STAGE 가 dlcstargate1 이라 final 이 아니다.
+      *  `this.cleared`(본편 세계 구원) 를 건드리지 않는다 — 영프 엔딩은 별도 플래그다. */
+-    if (!howlFinalStage(this.stageDef.key)) this.cleared = final;
++    // Expeditions and Grand Planet bosses preserve main-story completion.
+     if (!specialZone) this.advanceQuest(); // 보스 퀘스트 완료 — 골드/경험치 보상 포함 (특수 구역 보스는 제외)
+     /* ══════════════════════════════════════════════════════════════════════════
+      * vc231 — 영프 편 엔딩 처리 (vc230 이 남긴 숙제)
+@@ -16542,6 +16545,11 @@ export class WorldScene extends Phaser.Scene {
+     /* v3.0.15 (#3) — 반복의뢰 수주 판정용 savedQuestIdx 즉시 갱신 (stale 판정 제거:
+      *  기존엔 씬 재입장 전까지 옛 인덱스를 보고 수주 조건을 false로 판정했다) */
+     this.savedQuestIdx[this.stageDef.key] = this.questIdx;
++    if (done && howlFinalStage(this.stageDef.key) && this.questIdx === this.stageDef.quests.length) {
++      this.youngPrincessCleared = true;
++      this.cleared = true;
++      this.showDialogueOnce("howlrstoneEnding");
++    }
+     // 퀘스트 보상 — 골드 + 경험치 (2D MMORPG 기본 요소)
+     if (done?.reward) {
+       this.player.addGold(done.reward);
+@@ -17132,7 +17140,7 @@ export class WorldScene extends Phaser.Scene {
+     if (this.saveTimer !== null) return;
+     this.saveTimer = window.setTimeout(() => {
+       this.saveTimer = null;
+-      this.saveSoon();
++      this.save();
+     }, 250);
+   }
+   /** 예약된 저장을 즉시 확정 (씬 종료·포탈 이동·백그라운드 진입) */
+@@ -17161,6 +17169,7 @@ export class WorldScene extends Phaser.Scene {
+   /** 세이브 페이로드 생성 — stageOverride는 스테이지 전환 캐리용 */
+   private buildSave(stageOverride?: StageKey): SaveData {
+     return {
++      storyRevision: STORY_REVISION,
+       stage: stageOverride ?? this.stageDef.key,
+       /* vc232 (#4) — 토벌 진행도 영속화 (씬 재진입 시 복원) */
+       huntKills: { ...this.killTotals },
+diff --git a/src/game/stages.ts b/src/game/stages.ts
+index 3a2eb01..7884468 100755
+--- a/src/game/stages.ts
++++ b/src/game/stages.ts
+@@ -40,14 +40,13 @@ export type StageKey = string;
+ 
+ /** 표시 전용 순서. 본편 1장=village, 2~10장=기존 9개 필드. 저장키/인덱스 보존. */
+ export const STORY_SEQUENCE = [
+-  { id: "atlantis", title: "아뜰란티스 기반 스토리", chapters: [1, 10], status: "existing" },
+   /* vc231 — 영프 편 콘텐츠 투입. 이 status 가 "not-implemented" 를 벗어나는 순간
+    *  `storyProgression.MIDDLE_CHAPTER_IMPLEMENTED` 가 true 가 되어
+    *  "영프 엔딩을 봐야 그랜드 플래닛이 열린다" 로 게이트가 정상 잠긴다(vc230 설계 그대로). */
+-  { id: "howlrstone", title: "하울르스톤: 영준 프린세스", chapters: [1, 5], status: "implemented" },
++  { id: "howlrstone", title: "라일락 월드 — 하루의 여정", chapters: [1, 15], status: "implemented" },
+   { id: "grandplanet", title: "그랜드 플레닛", status: "existing-dlc" },
+ ] as const;
+-export const STORY_SEQUENCE_LABEL = "아뜰란티스 기반 스토리 1~10챕터 → 하울르스톤: 영준 프린세스(1기 15화) → 그랜드 플레닛";
++export const STORY_SEQUENCE_LABEL = "하루의 여정 · 라일락 월드 → 그랜드 플레닛";
+ 
+ export type EnemyKey =
+   | "wolf" | "minion" | "spider" | "golem" | "frostwolf" | "icegolem" | "wraith"
+@@ -129,7 +128,7 @@ export type BossKey =
+   | "nidhog" | "surt" | "fenrir" | "skoll" | "gram" | "abudditos"
+   | "vord" | "jorm" | "nagr"
+   /* vc231 — 영프 편 보스 5종. 정의는 `howlrstone.ts` 의 HOWLRSTONE_BOSSES. */
+-  | "harold" | "verodin" | "feron" | "shadow" | "scarlet";
++  | HowlrstoneBossKey;
+ 
+ /* ================= v3.0.28 (#보스난이도) — 메이플식 보스 난이도 =================
+  *  이지 / 노말 / 하드 / 카오스 4단계. 스토리 보스·재림 보스 공통 적용.
+@@ -1447,10 +1446,10 @@ const VILLAGE: StageDef = {
+ /* ---------- 90 구역 생성 ---------- */
+ 
+ export const STAGES: Record<StageKey, StageDef> = { village: VILLAGE };
+-export const NEXT_STAGE: Record<StageKey, StageKey | null> = { village: "forest1" };
++export const NEXT_STAGE: Record<StageKey, StageKey | null> = { village: "howlrstone1x1" };
+ export const PREV_STAGE: Record<StageKey, StageKey | null> = { village: null };
+ /** 구역 라벨 — "2-3" 형식 (복귀 차원문/HUD 표기) */
+-export const STAGE_SHORT: Record<StageKey, string> = { village: "미드가르드 마을" };
++export const STAGE_SHORT: Record<StageKey, string> = { village: "에델리오나 마을" };
+ 
+ for (let ci = 0; ci < CHAPTERS.length; ci++) {
+   const spec = CHAPTERS[ci];
+@@ -1476,8 +1475,8 @@ for (let ci = 0; ci < CHAPTERS.length; ci++) {
+ }
+ 
+ STAGES.youngprincessv = {
+-  key: "youngprincessv", name: "하울르스톤: 영준 프린세스 — 시작 마을",
+-  subtitle: "본편 이후의 세계 — 영프 엔딩 후 이 마을에서 그랜드 플레닛으로",
++  key: "youngprincessv", name: "라일락 연합의 거점",
++  subtitle: "하루의 여정 — 재건 이후 그랜드 플레닛으로",
+   width: 1500, height: 860, groundTint: 0xffffff,
+   flowerCount: 6, treeCount: 6, rockCount: 2,
+   quests: [], enemies: [], boss: false, isVillage: true,
+@@ -1510,7 +1509,9 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
+     const stageCount = spec.stages;
+     for (let sub = 1; sub <= stageCount; sub++) {
+       const key = `${spec.key}x${sub}`;
+-      const isBoss = spec.boss !== null && sub === stageCount;
++      const beat = spec.beats.find((b) => b.sub === sub);
++      const storyBoss = beat?.boss ?? (sub === stageCount ? spec.boss : null);
++      const isBoss = storyBoss != null;
+       /* 구역별 몬스터 조합 — 2구역마다 주력 교체 (본편 subEnemyMix 와 같은 규칙). */
+       const pool = spec.enemies.map((g) => g.key);
+       const n = Math.min(20, 8 + Math.floor(sub / 2) * 2);
+@@ -1523,7 +1524,6 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
+         : [grp(pool[2] ?? pool[0], Math.ceil(n * 0.5)), grp(pool[0], Math.ceil(n * 0.3)), grp(pool[1] ?? pool[0], Math.ceil(n * 0.2))];
+ 
+       /* 퀘스트 — 고정 비트가 있으면 그것, 없으면 레벨 게이트/자동 토벌로 채운다. */
+-      const beat = spec.beats.find((b) => b.sub === sub);
+       let quests: QuestDef[];
+       if (beat) {
+         quests = [{
+@@ -1574,7 +1574,7 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
+         quests,
+         enemies: mix,
+         boss: isBoss,
+-        bossKey: isBoss ? (spec.boss as BossKey) : undefined,
++        bossKey: isBoss ? (storyBoss as BossKey) : undefined,
+         repeat: {
+           targetKey: spec.main as EnemyKey,
+           need: spec.repeat.need,
+diff --git a/src/game/storyProgression.ts b/src/game/storyProgression.ts
+index 30537ca..c9561ad 100644
+--- a/src/game/storyProgression.ts
++++ b/src/game/storyProgression.ts
+@@ -1,11 +1,13 @@
+ /** 세계관 간 이동 계약. 본편 클리어·영프 엔딩을 서로 대신하지 않는다. */
+ import { STORY_SEQUENCE } from "./stages";
+ import { HOWLRSTONE_FINAL } from "./howlrstone";
++import { STORY_REVISION } from "./storyRevision";
+ 
+ export const YOUNG_PRINCESS_VILLAGE = "youngprincessv";
+ /** 영프 편 마지막 구역 — 이 보스를 잡으면 `youngPrincessCleared` 가 선다. */
+ export const HOWLRSTONE_END = HOWLRSTONE_FINAL;
+ export type StoryProgress = {
++  storyRevision?: string;
+   cleared?: boolean;
+   youngPrincessCleared?: boolean;
+ };
+@@ -32,10 +34,9 @@ export function howlFinalStage(stage: string): boolean {
+ }
+ 
+ export function storyPortalDestination(stage: string, progress: StoryProgress): string | null {
+-  if (!progress.cleared) return null;
+   if (stage === "village") return YOUNG_PRINCESS_VILLAGE;
+   if (stage === YOUNG_PRINCESS_VILLAGE) {
+-    return progress.youngPrincessCleared || !MIDDLE_CHAPTER_IMPLEMENTED ? "dlcstargate1" : null;
++    return progress.storyRevision === STORY_REVISION && progress.youngPrincessCleared ? "dlcstargate1" : null;
+   }
+   return null;
+ }
+@@ -43,8 +44,7 @@ export function storyPortalDestination(stage: string, progress: StoryProgress):
+ /** 포탈·친구 따라가기·워프·세이브 재진입 모두 같은 잠금을 사용한다. */
+ export function storyEntryAllowed(stage: string, progress: StoryProgress): boolean {
+   if (stage.startsWith("dlc")) {
+-    return !!progress.cleared && (!!progress.youngPrincessCleared || !MIDDLE_CHAPTER_IMPLEMENTED);
++    return progress.storyRevision === STORY_REVISION && !!progress.youngPrincessCleared;
+   }
+-  if (stage.startsWith("youngprincess")) return !!progress.cleared;
+   return true;
+ }
