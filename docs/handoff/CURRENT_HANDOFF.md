@@ -79,3 +79,17 @@ Evernote 원문: https://share.evernote.com/note/8925784f-6c18-eab0-c266-bcc2efb
 스크립트는 별도 브라우저 프로필로 일반 로비 생성/시작을 거친 뒤, 테스트 전용 내부 scene 접근으로 대표 지역 전환/직업 S1/가구 회전을 확인한다. 이는 15장 전체 정상 플레이 완료 검증이 아니다. 원래 창의 `window.__SERTZ_SCENE__`가 현재 WorldScene이며 `player.skillCastPhase`, `rea:*` 객체 이름/데이터로 실제 연결을 확인할 수 있다. 외부 계정 DB 키가 없으면 로컬 테스트의 계정 API는 500을 반환할 수 있으므로 온라인 인증 검증으로 표시하지 않는다.
 
 최종 검사 결과/스크린샷 범위는 `REA_APPLY_VALIDATION.md`를 확인한다. 이후 작업마다 worklog.md Task를 추가한다.
+
+## 작업 도구 (2026-11-04 설치 — 이 컨테이너 실측 결과)
+
+인계받은 에이전트가 같은 시도를 반복하지 않도록 실제 동작 여부를 남긴다.
+
+| 도구 | 설치 | 이 컨테이너에서의 상태 |
+|---|---|---|
+| `worktrunk`(`wt`) | `/root/.local/bin/wt` v0.81.0, 래퍼 `wtx` | **정상 동작.** git 2.43+ 요구 → git 2.39.5 라 직접 실행은 거부되지만 `wtx`(버전 조회만 2.43 으로 응답하는 shim)로 우회. worktree 생성/제거/목록 모두 실측 확인. |
+| `Scrapling` | `/root/.venvs/tools` (scrapling 0.5) | **정상 동작.** `Fetcher.get()` 으로 GitHub 커밋 페이지 파싱해 원격 main 해시 확인까지 실측. |
+| `agent-desktop` | `/root/.local/bin/agent-desktop` v1.1.0 | **GUI 조작 불가.** AT-SPI 가 이 컨테이너에서 D-Bus fd limit(`Failed to set fd limit to 65536: Operation not permitted`)과 X 접근 문제로 안정 동작하지 않는다. 단 `agent-desktop skills get desktop` 의 스킬 문서는 읽을 수 있어 워크플로 참고용으로 쓸 수 있다. |
+| `heretic-llm` | `/root/.venvs/tools` (2.0.0) | **CLI 실행 확인.** 모델 수정 작업은 GPU/모델 다운로드가 필요해 이 컨테이너에서는 미검증. |
+
+검증 실행 환경 주의: Turbopack 이 `OS file watch limit reached` 로 죽는다(inotify 상향 권한 없음).
+`npx next dev --webpack -p 3100 -H 127.0.0.1` 로 우회한다. 프로덕션 빌드는 정상(`npm run build` 성공).
