@@ -4,8 +4,8 @@
  */
 import { NextRequest } from "next/server";
 import { timingSafeEqual } from "node:crypto";
-import { loadDb, mutateDb } from "@/lib/ghdb";
-import { audit, hashPw, issueToken, json, options, publicUser, rateLimit } from "@/lib/sapi";
+import { loadDb, mutateDb, ensureAdminAccount } from "@/lib/ghdb";
+import { ADMIN_USERS, audit, hashPw, issueToken, json, options, publicUser, rateLimit } from "@/lib/sapi";
 import type { Resp } from "@/lib/ghdb";
 
 export function OPTIONS(req: NextRequest) { return options(req); }
@@ -26,6 +26,23 @@ export async function POST(req: NextRequest) {
      *  비밀번호 불일치엔 재조회하지 않는다(무차별 대입 비용 보호). */
     let { db } = await loadDb(false);
     if (!db.users[id]) ({ db } = await loadDb(true));
+    /* vc238 — 관리자 계정 자가 복구(serverless).
+     *  커스텀 서버(accounts/index.js)는 부팅 시 오토시드 + SERTZ_ADMIN_PASSWORD 동기화를 하지만,
+     *  Vercel 은 이 라우트가 ghdb.ts 를 직접 쓰므로 그 경로가 실행되지 않는다. 게다가 register 는
+     *  admin 아이디를 403 으로 막아 새 세대에서 관리자 계정을 만들 방법이 아예 없었다.
+     *  로그인 시도가 관리자 아이디이고 SERTZ_ADMIN_PASSWORD 가 설정돼 있으면 DB에 반영한다. */
+    if (!db.users[id] && ADMIN_USERS.includes(id) && process.env.SERTZ_ADMIN_PASSWORD) {
+      const synced = await mutateDb((fdb) => {
+        const changed = ensureAdminAccount(fdb);
+        return changed
+          ? { resp: { status: 200, body: { synced: true } } }
+          : { status: 200, body: { synced: false } };
+      });
+      if (synced.status === 200) {
+        ({ db } = await loadDb(true));
+        audit("admin_autoseed_serverless", { uid: id });
+      }
+    }
     const user = db.users[id];
     if (user && user.provider === "local") {
       const hash = Buffer.from(hashPw(String(b.pw || ""), user.salt), "hex");

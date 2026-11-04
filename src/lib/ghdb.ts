@@ -17,7 +17,7 @@
  *   - 읽기 = 인스턴스 메모리 캐시(8초 TTL) — 랭킹/거래소 목록 등 공개 읽기 절감
  */
 
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } from "node:crypto";
 import storage from "../../accounts/storage.json" with { type: "json" };
 
 /* ---------------- 데이터 형태 (accounts/index.js 파일 DB와 동일) ---------------- */
@@ -243,6 +243,55 @@ function parseDbRaw(raw: RawFile | null): { db: DbShape; sha: string | null } {
   if (!json) throw new Error("DB 복호화 실패 — 키 불일치?");
   const parsed = JSON.parse(json) as DbShape;
   return { db: normalizeDb(parsed), sha: raw.sha };
+}
+
+/* vc238 — serverless 관리자 복구 경로.
+ *
+ *  accounts/index.js(커스텀 서버)에는 관리자 오토시드 + syncAdminPassword 가 있지만,
+ *  Vercel 은 src/app/api/* 라우트가 ghdb.ts 를 직접 쓰므로 그 경로가 **전혀 실행되지 않았다.**
+ *  반면 register 라우트는 admin 아이디 가입을 403 으로 막는다 → 결과적으로 새 세대에서
+ *  관리자 계정을 만들 방법이 아예 없었다(로그인은 계속 401).
+ *
+ *  여기서 커스텀 서버와 동일한 계약을 재현한다:
+ *   · 관리자 아이디가 없으면 SERTZ_ADMIN_PASSWORD 로 생성
+ *   · 이미 있으면 해시를 env 값으로 동기화(비밀번호 분실 복구)
+ *   · env 미설정이면 아무것도 하지 않는다(무작위 비밀번호 자동 발급은 하지 않는다 —
+ *     serverless 로그를 아무도 상시 보지 않으므로 발급해도 회수할 방법이 없다)
+ *  쓰기가 필요하므로 mutateDb 안에서 호출한다(loadDb 는 읽기 전용이라 순수해야 한다). */
+export function ensureAdminAccount(db: DbShape): boolean {
+  const envPw = (process.env.SERTZ_ADMIN_PASSWORD || "").trim();
+  if (!envPw) return false;
+  let changed = false;
+  for (const aid of ADMIN_USERS) {
+    const cur = db.users[aid];
+    if (!cur) {
+      const salt = randomBytes(16).toString("hex");
+      /* scrypt 해시로 저장해야 login 라우트(hashPw=scryptSync)와 맞는다.
+       * sha256 으로 넣으면 계정은 생기지만 로그인이 영구 실패한다. */
+      db.users[aid] = {
+        id: aid,
+        name: aid.slice(0, 8),
+        provider: "local",
+        salt,
+        hash: scryptSync(envPw, salt, 64).toString("hex"),
+        createdAt: Date.now(),
+        role: "admin",
+      } as UserRec;
+      changed = true;
+      continue;
+    }
+    if (cur.provider !== "local") continue;
+    const want = scryptSync(envPw, cur.salt, 64).toString("hex");
+    if (cur.hash !== want) {
+      cur.hash = want;
+      changed = true;
+    }
+    if (cur.role !== "admin") {
+      cur.role = "admin";
+      changed = true;
+    }
+  }
+  return changed;
 }
 
 type Cache = { db: DbShape; sha: string | null; at: number } | null;
