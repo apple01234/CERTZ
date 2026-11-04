@@ -55,7 +55,7 @@ const LATEST_CODE = androidVer.code;
 const LATEST_TAG = androidVer.name || LATEST_VERSION;
 const VERSION_NOTE =
   /* vc233 — 버전을 올릴 때 이 문구도 함께 갱신한다(업데이트 배너 본문). */
-  "v2.0.6 (vc242) — 연출을 키로 한 단계씩 진행, 근접·원거리 자동 조준 보정(사거리 내 최근접 적), 과보정 없음.";
+  "v2.0.7 (vc243) — 정본 명칭 정리: 무기명 손상 표기(안내인션) 수정, 기본 이름을 하루로(플레이어 닉네임 변경 가능), CANON_NAMES 정본 문서.";
 const RELEASE_BASE = `https://github.com/apple01234/CERTZ/releases/download/v${LATEST_TAG}`;
 const APK_MIRROR =
   /* 파일명의 vc{code} 는 build.gradle versionCode 와 일치해야 한다(불일치 시 404).

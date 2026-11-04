@@ -36,7 +36,7 @@ export function writeMuted(m: boolean) {
 }
 
 /** 기본 주인공 이름 — 인트로에서 이름을 정하기 전까지 대사 치환용 */
-export const DEFAULT_NAME = "세르츠";
+export const DEFAULT_NAME = "하루";
 
 /** 플레이어 이름 (세이브 무관 전역 — DialogueBox/배너 치환용) */
 let playerName = DEFAULT_NAME;

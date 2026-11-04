@@ -5962,7 +5962,7 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
         <div className="mb-2.5 mt-3 flex items-center gap-2.5 rounded-lg border border-amber-200/30 bg-amber-400/[0.07] px-2.5 py-2.5">
           <div className="min-w-0 flex-1">
             <p className="text-[12px] font-black text-amber-200">이름 변경</p>
-            <p className="truncate text-[10px] text-white/50">현재 이름: {getPlayerName() || "세르츠"}</p>
+            <p className="truncate text-[10px] text-white/50">현재 이름: {getPlayerName() || "하루"}</p>
           </div>
           <button
             onClick={() => {

@@ -76,7 +76,7 @@ function migrateLegacy(store: SlotsStore) {
   window.localStorage.setItem(`sertz_char_${id}`, JSON.stringify(legacy));
   store.chars[id] = {
     id,
-    name: legacy.playerName || "세르츠",
+    name: legacy.playerName || "하루",
     cls: legacy.startCls ?? legacy.cls ?? null,
     lv: legacy.lv ?? 1,
     stage: legacy.stage ?? "village",
@@ -117,7 +117,7 @@ function readoptOrphans(store: SlotsStore) {
       if (!save || typeof save.stage !== "string") continue;
       store.chars[id] = {
         id,
-        name: save.playerName || "세르츠",
+        name: save.playerName || "하루",
         cls: save.cls ?? (save as { startCls?: string | null }).startCls ?? null,
         lv: save.lv ?? 1,
         stage: save.stage ?? "village",
@@ -292,7 +292,7 @@ export function importCloudSave(
   const meta = store.chars[id];
   store.chars[id] = {
     id,
-    name: name || meta?.name || "세르츠",
+    name: name || meta?.name || "하루",
     cls: data.startCls ?? data.cls ?? meta?.cls ?? null,
     lv: data.lv ?? meta?.lv ?? 1,
     stage: data.stage ?? meta?.stage ?? "village",
@@ -322,7 +322,7 @@ export function importCharsFromCloud(chars: Record<string, unknown>): number {
     if (!v || typeof v !== "object") continue;
     const data = v as SaveData;
     if (typeof data.stage !== "string") continue;
-    const name = String(data.playerName ?? rawName).trim().slice(0, 8) || "세르츠";
+    const name = String(data.playerName ?? rawName).trim().slice(0, 8) || "하루";
     if (names.has(name)) continue; // 이미 있음 — 로컬 유지
     const id = `c${Date.now().toString(36)}${Math.floor(Math.random() * 36).toString(36)}${added}`;
     try {
@@ -381,7 +381,7 @@ export function syncCharMeta(save: SaveData) {
   if (!meta) {
     store.chars[id] = {
       id,
-      name: save.playerName || "세르츠",
+      name: save.playerName || "하루",
       cls: (save as { startCls?: string | null }).startCls ?? save.cls ?? null,
       lv: save.lv ?? 1,
       stage: save.stage ?? "village",

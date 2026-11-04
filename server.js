@@ -118,7 +118,7 @@ app.prepare().then(() => {
     }
     if (!LATEST_CODE) { LATEST_CODE = 240; _apkTag = LATEST_VERSION; }
     const VERSION_NOTE =
-      "v2.0.6 (vc242) — 연출을 키로 한 단계씩 진행, 근접·원거리 자동 조준 보정(사거리 내 최근접 적), 과보정 없음.";
+      "v2.0.7 (vc243) — 정본 명칭 정리: 무기명 손상 표기(안내인션) 수정, 기본 이름을 하루로(플레이어 닉네임 변경 가능), CANON_NAMES 정본 문서.";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
