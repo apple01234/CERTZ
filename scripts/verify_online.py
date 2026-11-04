@@ -41,10 +41,14 @@ def check(name, condition):
 
 
 try:
+    # 세대 이름은 accounts/storage.json 한 곳에서만 정의한다(하드코딩 금지).
+    import json as _json
+    from pathlib import Path as _Path
+    _gen = _json.loads(_Path(__file__).resolve().parent.parent.joinpath('accounts/storage.json').read_text())['generation']
     for path in ['/api/auth/me', '/api/rank', '/api/market', '/api/chat', '/api/party?code=QAONLY00']:
         status, data, headers = request(path)
         check('public read ' + path, status == 200 and 'error' not in data)
-        check('new generation ' + path, headers.get('X-CERTZ-Online-Generation') == 'lilac-v1')
+        check('new generation ' + path, headers.get('X-CERTZ-Online-Generation') == _gen)
     status, _, headers = request('/api/auth/login', native=True, method='OPTIONS')
     check('APK preflight', status == 204 and headers.get('Access-Control-Allow-Origin') == 'https://localhost')
     check('old APK token expires', request('/api/auth/me', token='0' * 64, native=True)[0] == 401)

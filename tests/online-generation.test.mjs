@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 import storage from '../accounts/storage.json' with { type: 'json' };
+/* 세대는 accounts/storage.json 한 곳에서만 정의한다 — 여기서 하드코딩하면
+ *  세대를 올릴 때마다 테스트가 깨지고, 실제로 lilac-v2 전환에서 걸렸다. */
+const GEN = storage.generation;
 
 const prefix = `db-backup/${storage.generation}/`;
 let serial = 0;
@@ -60,7 +63,8 @@ async function fixture(run, { failure = 0, missingKey = false, wrongKey = false 
 
 test('new account, cloud save, market and relay writes share one generation and leave the old ciphertext intact', async () => {
   await fixture(async ({ db, relay, requests, files, secret }) => {
-    assert.equal(storage.generation, 'lilac-v1');
+    assert.ok(GEN.startsWith('lilac-'), `세대 이름 규약 위반: ${GEN}`);
+    assert.match(GEN, /^lilac-v\d+$/);
     assert.deepEqual((await db.loadDb()).db.users, {});
     const response = await db.mutateDb(data => {
       data.users.player = { id: 'player', name: '플레이어', provider: 'local', salt: 'fixture', hash: 'fixture', createdAt: 1 };
