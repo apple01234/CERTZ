@@ -171,9 +171,26 @@ jobs:
             echo "릴리스 없음 → 신규 생성"
             gh release create "$TAG" --title "$TAG" --notes "SERTZ Android APK — v${VERSION} (vc${CODE})" --repo "$GITHUB_REPOSITORY"
           fi
-          gh release upload "$TAG" "SERTZ-vc${CODE}.apk" --clobber --repo "$GITHUB_REPOSITORY"
+          # vc238 — android-build 와 exe-build 가 같은 태그(v{versionName})를 동시에 만들면
+          #  한쪽이 "릴리스 없음"을 읽은 직후 다른 쪽이 생성해 업로드가 HTTP 404 로 죽었다
+          #  (실제로 v2.0.2 에서 APK 업로드가 이 이유로 실패). 릴리스가 보일 때까지 재확인 후 업로드한다.
+          upload() {
+            local file="$1"
+            for attempt in 1 2 3 4 5; do
+              if gh release upload "$TAG" "$file" --clobber --repo "$GITHUB_REPOSITORY"; then
+                return 0
+              fi
+              echo "업로드 재시도 $attempt/5 — 릴리스 가시화 대기"
+              gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 || \
+                gh release create "$TAG" --title "$TAG" --notes "SERTZ Android APK — v${VERSION} (vc${CODE})" --repo "$GITHUB_REPOSITORY" || true
+              sleep $((attempt * 5))
+            done
+            echo "::error::업로드 실패: $file"
+            return 1
+          }
+          upload "SERTZ-vc${CODE}.apk"
           if [ -f "SERTZ-vc${CODE}-mapping.txt" ]; then
-            gh release upload "$TAG" "SERTZ-vc${CODE}-mapping.txt" --clobber --repo "$GITHUB_REPOSITORY"
+            upload "SERTZ-vc${CODE}-mapping.txt"
           fi
           echo "--- release assets ---"
           gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'

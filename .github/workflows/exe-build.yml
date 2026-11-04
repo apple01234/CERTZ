@@ -121,6 +121,17 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release view "v${VERSION}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create "v${VERSION}" --title "SERTZ v${VERSION} (vc${CODE})" --notes "EXE 빌드 자동 첨부 (vc${CODE})" --repo "$GITHUB_REPOSITORY"
-          gh release upload "v${VERSION}" "electron/dist/SERTZ-vc${CODE}-setup.exe" --clobber --repo "$GITHUB_REPOSITORY"
+          # vc238 — android-build 와 같은 태그를 동시에 만들면 릴리스 가시화 전에 업로드해
+          #  HTTP 404 로 죽는다(실제로 v2.0.2 APK 가 이 이유로 실패). 재확인 후 재시도한다.
+          for attempt in 1 2 3 4 5; do
+            if gh release upload "v${VERSION}" "electron/dist/SERTZ-vc${CODE}-setup.exe" --clobber --repo "$GITHUB_REPOSITORY"; then
+              break
+            fi
+            echo "업로드 재시도 $attempt/5"
+            gh release view "v${VERSION}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+              gh release create "v${VERSION}" --title "SERTZ v${VERSION} (vc${CODE})" --notes "EXE 빌드 자동 첨부 (vc${CODE})" --repo "$GITHUB_REPOSITORY" || true
+            sleep $((attempt * 5))
+            if [ "$attempt" -eq 5 ]; then echo "::error::EXE 업로드 실패"; exit 1; fi
+          done
           echo "--- release assets ---"
           gh release view "v${VERSION}" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'
