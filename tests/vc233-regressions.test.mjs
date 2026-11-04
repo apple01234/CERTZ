@@ -91,6 +91,19 @@ const ok = (name, cond) => { assert.ok(cond, `✗ ${name}`); checks++; };
   ok("server.js 가 package.json 파생", srv.includes('require("./package.json")'));
   ok("server.js 에 옛 버전 없음", !/LATEST_VERSION = "1\.4\.5[0-6]"/.test(srv));
 
+  /* vc238 — APK 다운로드 경로가 v1.4.57/vc217 에 멈춰 사이트 다운로드가 전부 404 였다.
+   *  손으로 맞추는 구조를 없앴으니, 다시 하드코딩이 되돌아오지 않게 잠근다. */
+  ok("server.js APK_MIRROR 가 build.gradle 에서 파생", srv.includes("versionCode\\s+(\\d+)") && srv.includes("APK_MIRROR = `"));
+  ok("server.js 에 옛 APK 미러(v1.4.57/vc217) 없음", !srv.includes("v1.4.57/SERTZ-vc217"));
+
+  const cfg = read("next.config.ts");
+  ok("next.config APK 리다이렉트가 build.gradle 에서 파생", cfg.includes("readAndroidVersion") && cfg.includes("SERTZ-vc${apkCode}.apk"));
+  ok("next.config 에 옛 APK 리다이렉트(v1.4.54/vc214) 없음", !cfg.includes("v1.4.54/SERTZ-vc214"));
+
+  const verRoute = read("src/app/api/version/route.ts");
+  ok("version 라우트가 build.gradle 에서 versionCode 파생", verRoute.includes("readAndroidVersion") && verRoute.includes('versionCode\\s+(\\d+)'));
+  ok("version 라우트에 하드코딩 vc236 없음", !/const LATEST_CODE = 236;/.test(verRoute));
+
   ok(`package.json 버전과 LATEST_CODE 동기 (${pkg.version})`, Number(pkg.version.split(".").pop()) >= 0);
 }
 

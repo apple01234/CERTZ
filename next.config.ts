@@ -1,6 +1,22 @@
 import type { NextConfig } from "next";
 import { readFileSync } from "node:fs";
 
+/* vc238 — APK 리다이렉트가 v1.4.54/vc214 에 하드코딩돼 있어, 최신 버전을 받으려는
+ *  /SERTZ-v*.apk 링크가 **구버전 APK 로 튕겼다**. 릴리스마다 손으로 고쳐야 했고
+ *  실제로 세 릴리스 연속 방치됐다(다운로드 오류 리포트의 근원).
+ *  이제 build.gradle 의 versionCode/versionName 을 단일 출처로 삼아 자동 파생한다.
+ *  → 버전을 올리면 이 파일을 건드릴 필요가 없다. */
+function readAndroidVersion(): { code: string; name: string } {
+  try {
+    const gradle = readFileSync("android/app/build.gradle", "utf8");
+    const code = /versionCode\s+(\d+)/.exec(gradle)?.[1] ?? "";
+    const name = /versionName\s+"([^"]+)"/.exec(gradle)?.[1] ?? "";
+    return { code, name };
+  } catch {
+    return { code: "", name: "" };
+  }
+}
+
 /**
  * APK_EXPORT=1 → Capacitor용 정적 export (최종 산출물 .next-apk — Next 16 작업 캐시는 여전히 .next; 웹 빌드와 동시 실행 금지)
  * STATIC_EXPORT=1 → Vercel 정적 프론트 미러 export (v1.4.20 멀티서버 분리)
@@ -67,9 +83,15 @@ const nextConfig: NextConfig = isStaticExport
       async redirects() {
         /* vc138 — v1.0.3-beta 하드코딩이 잔존해 /SERTZ-*.apk 경유 링크가 구버전 APK로
          *  리다이렉트되던 잠복 버그 수정 (server.js 정규식은 beta 미포함이라 이쪽이 개입).
-         *  APK_MIRROR(server.js·route.ts)와 수동 싱크 유지. */
-        const APK_DL =
-          "https://github.com/apple01234/CERTZ/releases/download/v1.4.54/SERTZ-vc214.apk";
+         *  vc238 — build.gradle 에서 파생해 수동 싱크를 없앤다(위 readAndroidVersion). */
+        const { code: apkCode, name: apkName } = readAndroidVersion();
+        const APK_TAG = apkName ? `v${apkName}` : "v2.0.1";
+        const APK_DL = apkCode
+          ? `https://github.com/apple01234/CERTZ/releases/download/${APK_TAG}/SERTZ-vc${apkCode}.apk`
+          : `https://github.com/apple01234/CERTZ/releases/download/${APK_TAG}/SERTZ-vc237.apk`;
+        if (!apkCode) {
+          console.warn("[next.config] build.gradle 버전 파싱 실패 — APK 리다이렉트가 구버전으로 폴백됩니다");
+        }
         return [
           {
             /* v4.1.0 — 모든 버전의 /SERTZ-vX.apk 경로를 한 규칙으로 처리

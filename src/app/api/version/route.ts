@@ -22,15 +22,32 @@ export const dynamic = "force-static";
  *   APK 파일명에 쓰이는 값만 build.gradle 과 맞추면 된다 — 아래 REQUIRED_CODE.
  *   (불일치를 빌드 시점에 잡기 위해 3번째 숫자로 경고를 남긴다) */
 import pkg from "../../../../package.json";
+import { readFileSync } from "node:fs";
 
 const LATEST_VERSION: string = (pkg as { version: string }).version;
 /* versionCode 는 package.json 에 없다 — 릴리스마다 1씩 증가하는 별도 축이다.
- *  아래 값은 **현재 릴리스** 기준이며, 버전을 올릴 때 함께 올려야 APK 미러가 유효하다. */
-const LATEST_CODE = 236;
+ *  vc238 — 손으로 맞추다 세 릴리스 연속 어긋났다(236 잔존 → vc236.apk 404).
+ *  APK 파일명과 릴리스 태그의 유일한 출처인 build.gradle 에서 파생한다. */
+function readAndroidVersion(): { code: number; name: string } {
+  try {
+    const gradle = readFileSync("android/app/build.gradle", "utf8");
+    return {
+      code: Number(/versionCode\s+(\d+)/.exec(gradle)?.[1] ?? 0),
+      name: /versionName\s+"([^"]+)"/.exec(gradle)?.[1] ?? "",
+    };
+  } catch {
+    return { code: 0, name: "" };
+  }
+}
+const androidVer = readAndroidVersion();
+const LATEST_CODE = androidVer.code;
+/* 태그는 릴리스 워크플로우가 만드는 이름(v{versionName})과 일치해야 한다.
+ *  package.json 과 build.gradle versionName 이 다르면 APK 실제 위치를 따라간다. */
+const LATEST_TAG = androidVer.name || LATEST_VERSION;
 const VERSION_NOTE =
   /* vc233 — 버전을 올릴 때 이 문구도 함께 갱신한다(업데이트 배너 본문). */
-  "v2.0.0 (vc236) — 기억의 서약: 라일락 월드 제거, 34장 통합 캠페인, 픽셀 에셋 통일, 새 저장·경제 분리, 솔로·3인 협동 도전.";
-const RELEASE_BASE = `https://github.com/apple01234/CERTZ/releases/download/v${LATEST_VERSION}`;
+  "v2.0.1 (vc237) — 기억의 서약: Space(NPC/채집 키) 상호작용 통일, 공격 X 전용, 인트로 스킵 후 멈춤 수정, 34장 통합 캠페인.";
+const RELEASE_BASE = `https://github.com/apple01234/CERTZ/releases/download/v${LATEST_TAG}`;
 const APK_MIRROR =
   /* 파일명의 vc{code} 는 build.gradle versionCode 와 일치해야 한다(불일치 시 404).
    * vc233 — 버전 태그를 LATEST_VERSION 에서 파생시켜 버전 범프 시 URL 이 자동 추종. */

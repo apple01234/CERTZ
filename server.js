@@ -28,18 +28,23 @@ const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
   /* v3.2.1 — 모든 APK 요청(/SERTZ-*.apk)은 다운로드 경로로 즉시 리다이렉트.
-   *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음).
-   *  gofile(qUiPRRXl)은 콜드스토리지라 첫 응답까지 ~1분 걸려 백업용으로만 안내. */
-  const APK_MIRROR =
-  /* vc138 — GitHub API 자산 DELETE 일시 장애로 동일 이름 교체가 막힌 기간의 안전 경로:
-   *  vc138 자산을 별도 이름으로 업로드하고 이쪽을 가리킴. 루프가 동일 이름 교체에 성공하면
-   *  양쪽 URL 모두 vc138이 됨 (서버 307 리다이렉트이므로 클라 영향 없음). */
-  /* vc177 — APK는 릴리스 태그 v1.2.5에 있다(이전 태그는 vc176까지 보유).
-   *  태그와 파일명이 어긋나면 404가 되므로 버전 태그를 그대로 쓴다. */
-  "https://github.com/apple01234/CERTZ/releases/download/v1.4.57/SERTZ-vc217.apk";
+   *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음). */
+  /* vc238 — 여기가 v1.4.57/vc217 에 멈춰 있어 **사이트의 APK 다운로드가 전부 404**였다.
+   *  릴리스마다 손으로 고쳐야 하는 구조라 vc218~237 동안 방치됐다.
+   *  이제 build.gradle 의 versionCode/versionName 에서 파생한다(단일 출처).
+   *  APK 번들처럼 gradle 파일이 없는 환경에서는 아래 폴백 상수를 쓴다. */
+  let APK_TAG = "v2.0.1";
+  let APK_CODE = 237;
+  try {
+    const _g = require("fs").readFileSync(require("path").join(__dirname, "android/app/build.gradle"), "utf8");
+    const _c = Number(/versionCode\s+(\d+)/.exec(_g)?.[1] ?? 0);
+    const _n = /versionName\s+"([^"]+)"/.exec(_g)?.[1];
+    if (_c) APK_CODE = _c;
+    if (_n) APK_TAG = `v${_n}`;
+  } catch { /* APK 번들: gradle 부재 — 폴백 사용 */ }
+  const APK_MIRROR = `https://github.com/apple01234/CERTZ/releases/download/${APK_TAG}/SERTZ-vc${APK_CODE}.apk`;
   /* v1.4.39 — 데스크톱 클라이언트 자동 업데이트. electron/main.js checkForUpdates() 가 읽는다. */
-  const EXE_MIRROR =
-    "https://github.com/apple01234/CERTZ/releases/download/v1.4.57/SERTZ-vc217-setup.exe";
+  const EXE_MIRROR = `https://github.com/apple01234/CERTZ/releases/download/${APK_TAG}/SERTZ-vc${APK_CODE}-setup.exe`;
   const { createReadStream, statSync } = require("node:fs");
   const path = require("node:path");
   const DOWNLOAD_FILES = {
@@ -78,10 +83,18 @@ app.prepare().then(() => {
     let _pkgVer = "0.0.0";
     try { _pkgVer = require("./package.json").version || _pkgVer; } catch { /* 번들 환경 — 아래 값 유지 */ }
     const LATEST_VERSION = _pkgVer;
-    /* versionCode 는 package.json 에 없다 — 릴리스마다 1 증가하는 별도 축. */
-    const LATEST_CODE = 237;
+    /* versionCode 는 package.json 에 없다 — 릴리스마다 1 증가하는 별도 축.
+     *  vc238 — 손으로 맞추다 어긋났다(236 잔존 → vc236.apk 404). build.gradle 파생. */
+    let LATEST_CODE = 0;
+    let _apkTag = LATEST_VERSION;
+    try {
+      const _gradle = require("fs").readFileSync(require("path").join(__dirname, "android/app/build.gradle"), "utf8");
+      LATEST_CODE = Number(/versionCode\s+(\d+)/.exec(_gradle)?.[1] ?? 0);
+      _apkTag = /versionName\s+"([^"]+)"/.exec(_gradle)?.[1] || LATEST_VERSION;
+    } catch { /* APK 번들엔 gradle 이 없다 — APK_MIRROR 상수 유지 */ }
+    if (!LATEST_CODE) LATEST_CODE = 237;
     const VERSION_NOTE =
-      "v2.0.1 (vc237) — 기억의 서약: 34장 통합 캠페인, 픽셀 에셋 통일, 새 저장·경제 분리, 솔로·3인 협동 도전.";
+      "v2.0.1 (vc237) — 기억의 서약: Space(NPC/채집 키) 상호작용 통일, 공격 X 전용, 인트로 스킵 후 멈춤 수정, 34장 통합 캠페인.";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
