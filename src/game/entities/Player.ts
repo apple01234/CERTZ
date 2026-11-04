@@ -1188,8 +1188,53 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return this.facing.x !== 0 ? this.facing.x > 0 : this.flipX;
   }
 
-  /** 조준 방향: 마지막 이동 방향(4방향 스냅 — 근접 애니메이션은 4방향 시트 기준) */
+  /** 조준 방향: 마지막 이동 방향(4방향 스냅 — 근접 애니메이션은 4방향 시트 기준)
+   *
+   *  vc242 (지시 #7) — "이동은 원하는 대로, 공격은 약간의 보정(보스 및 가까운 대상 자동 조준)".
+   *  사용자가 준 데모(라일락_월드_데모)의 autoAim 과 같은 방식으로 동작한다:
+   *    · 사거리 밖이면 조준하지 않는다(허공에 휘두르는 건 그대로 허용 — 과보정 방지)
+   *    · 사거리 안이면 **가장 가까운 적** 방향으로만 살짝 틀어 준다
+   *    · 보스는 별도 우선순위 없이 거리로만 판정(데모와 동일) — 붙어 있으면 자연히 보스가 잡힌다
+   *  각도 제한(cone)은 두지 않는다. 데모도 제한이 없고, 제한을 두면 "등 뒤 적"을
+   *  못 때려 조작감이 둔해진다. 대신 사거리를 짧게 잡아 과보정을 막는다.
+   *
+   *  [주의] 순수 조준 계산만 한다. facing 자체는 이동 입력이 소유하므로 여기서 덮어쓰지 않는다
+   *  (덮어쓰면 이동 방향이 튀어 "이동은 원하는 대로"가 깨진다). */
+  private aimAssistRange(): number {
+    /* 근접 계열은 실제 타격 반경과 비슷하게, 원거리는 화면 밖까지 당기지 않도록 짧게. */
+    const fam = familyOf(this.cls);
+    if (fam === "ranger" || fam === "mage" || fam === "pirate") return 190;
+    return 84;
+  }
+
+  /** 사거리 내 최근접 적 방향. 없으면 null. */
+  private autoAimDir(): Phaser.Math.Vector2 | null {
+    const range = this.aimAssistRange();
+    const list = this.scene?.getAllTargets?.();
+    if (!list || list.length === 0) return null;
+    let best: { x: number; y: number; r: number } | null = null;
+    let bestD = range;
+    for (const e of list) {
+      if (!e.active || !e.alive) continue;
+      /* 적 몸통 반경을 빼서 "겉면까지의 거리"로 비교 — 큰 보스가 부당하게 밀리지 않게. */
+      const r = (e as { body?: { radius?: number } }).body?.radius ?? 8;
+      const d = Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y) - r;
+      if (d < bestD) { bestD = d; best = { x: e.x, y: e.y, r }; }
+    }
+    if (!best) return null;
+    const dx = best.x - this.x;
+    const dy = best.y - this.y;
+    if (dx === 0 && dy === 0) return null;
+    return new Phaser.Math.Vector2(dx, dy).normalize();
+  }
+
   private aimDir(): Phaser.Math.Vector2 {
+    /* vc242 — 자동 조준 보정. 대상이 없으면 기존 facing 그대로(입력 100% 존중). */
+    const assist = this.autoAimDir();
+    if (assist) {
+      if (Math.abs(assist.x) >= Math.abs(assist.y)) return new Phaser.Math.Vector2(assist.x >= 0 ? 1 : -1, 0);
+      return new Phaser.Math.Vector2(0, assist.y >= 0 ? 1 : -1);
+    }
     const f = this.facing;
     if (Math.abs(f.x) >= Math.abs(f.y)) return new Phaser.Math.Vector2(f.x >= 0 ? 1 : -1, 0);
     return new Phaser.Math.Vector2(0, f.y >= 0 ? 1 : -1);
@@ -1198,6 +1243,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** v3.0 (사용자 지시 #2) — 자유 조준: facing 그대로 정규화해 반환
    *  원거리 계열(마법사 볼트/궁수 화살)은 4방향 스냅 없이 8방향+대각선(아날로그) 조준 */
   private aimDirFree(): Phaser.Math.Vector2 {
+    /* vc242 (지시 #7) — 원거리도 동일한 자동 조준 보정을 받는다.
+     *  근접과 달리 4방향 스냅을 하지 않으므로(자유 조준) 대각선 각도 그대로 쏜다. */
+    const assist = this.autoAimDir();
+    if (assist) return assist;
     const f = this.facing;
     if (f.lengthSq() < 0.001) return new Phaser.Math.Vector2(1, 0);
     return f.clone().normalize();

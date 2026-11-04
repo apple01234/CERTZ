@@ -134,7 +134,15 @@ export function playAutoCutscene(scene: Phaser.Scene, spec: AutoCutsceneSpec, on
         // Re-show the existing box after a camera/movement step hid it.
         name.setText(step.speaker); body.setText(step.lines.join("\n")); dialogue.setVisible(true);
         const chars = step.lines.reduce((n, line) => n + line.length, 0);
-        session.delay(Math.max(step.minHold ?? 1100, Math.min(5200, chars * (step.holdPerChar ?? 42))), () => {
+        /* vc242 (지시 #2) — 대사도 "키를 눌러 다음 장면" 으로 바꾼다.
+         *  종전엔 글자 수로 시간을 계산해 자동으로 넘어가서, 느리게 읽는 사람은
+         *  대사를 놓쳤고 빠른 사람은 기다려야 했다.
+         *  minMs = 다 읽을 최소 시간(짧은 대사가 즉시 넘어가지 않게),
+         *  maxMs = 무입력 시 자동 진행 상한. */
+        session.waitForKey({
+          minMs: Math.max(420, Math.min(1400, chars * 14)),
+          maxMs: Math.max(step.minHold ?? 1100, Math.min(5200, chars * (step.holdPerChar ?? 42))) * 3,
+        }, () => {
           dialogue.setVisible(false); next();
         });
         break;

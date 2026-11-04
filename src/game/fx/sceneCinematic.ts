@@ -70,6 +70,52 @@ export class CinematicSession {
     this.timers.add(timer);
     return timer;
   }
+
+  /** vc242 (지시 #2) — "연출 시에도 NPC/채집 키를 눌러야만 다음 장면으로 한 단계씩 넘어가게".
+   *
+   *  [왜 delay 로는 안 되는가] 종전 연출은 pan→delay(holdMs)→next 로 **시간이 흐르면
+   *  알아서** 다음 장면으로 넘어갔다. 유저는 연출을 읽을 시간을 스스로 정할 수 없었고,
+   *  Space/ESC 는 전체 스킵(연출 전부 종료)에만 묶여 있었다. 그래서 "한 단계씩" 넘기는
+   *  수단 자체가 없었다.
+   *
+   *  [구현] minMs 동안은 키를 무시해(연출이 즉시 넘어가 버리지 않게) 최소 감상 시간을 주고,
+   *  그 뒤로는 NPC/채집 키(interact) 또는 Space 입력에 다음 단계로 넘어간다.
+   *  maxMs 가 지나면 자동 진행 — 유저가 키를 안 눌러도 연출이 영구 정지하지 않는다.
+   *  ESC 는 기존대로 전체 스킵(종료)이라 건드리지 않는다.
+   *
+   *  [키] interact 를 먼저 찾고, 없으면 SPACE 폴백. WorldScene 이 interact 를
+   *  Space/E 로 등록하므로 실기기·키맵 변경 모두 자동으로 따라간다. */
+  waitForKey(opts: { minMs?: number; maxMs?: number } = {}, fn: () => void): void {
+    if (!this.active) return;
+    const minMs = Math.max(0, opts.minMs ?? 320);
+    const maxMs = Math.max(minMs + 100, opts.maxMs ?? 6000);
+    const started = this.scene.time.now;
+    let done = false;
+    const finish = () => {
+      if (done || !this.active) return;
+      done = true;
+      this.scene.input.keyboard?.off("keydown", onAny);
+      timer?.remove(false);
+      if (timer) this.timers.delete(timer);
+      fn();
+    };
+    /* 아무 키나 받되 최소 시간 전에는 무시 — 실수로 넘겨 읽을 기회를 뺏기지 않게. */
+    const onAny = (ev: KeyboardEvent) => {
+      if (this.scene.time.now - started < minMs) return;
+      const code = ev.code ?? "";
+      const isAdvance = code === "Space" || code === "Enter" || code === "NumpadEnter"
+        || code === "KeyE" || code === "Escape";
+      if (!isAdvance) return;
+      /* Escape 는 전체 스킵이 우선 — 여기서 잡으면 "한 단계" 의미가 사라진다. */
+      if (code === "Escape") return;
+      ev.preventDefault?.();
+      finish();
+    };
+    const timer: Phaser.Time.TimerEvent = this.delay(maxMs, finish);
+    this.scene.input.keyboard?.on("keydown", onAny);
+    this.cleanups.push(() => this.scene.input.keyboard?.off("keydown", onAny));
+  }
+
   tween(config: Phaser.Types.Tweens.TweenBuilderConfig): void {
     this.tweens.add(this.scene.tweens.add(config));
   }

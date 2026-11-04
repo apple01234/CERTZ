@@ -118,7 +118,7 @@ app.prepare().then(() => {
     }
     if (!LATEST_CODE) { LATEST_CODE = 240; _apkTag = LATEST_VERSION; }
     const VERSION_NOTE =
-      "v2.0.4 (vc240) — 기억의 서약: Space(NPC/채집 키) 상호작용 통일, 공격 X 전용, 인트로 스킵 후 멈춤 수정, 관리자 계정 복구.";
+      "v2.0.6 (vc242) — 연출을 키로 한 단계씩 진행, 근접·원거리 자동 조준 보정(사거리 내 최근접 적), 과보정 없음.";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

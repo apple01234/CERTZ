@@ -88,7 +88,10 @@ function fakeScene({ paused = false, cameraSignals = true } = {}) {
   const scene = {
     camCinema: false, dialoguing: false, baseZoom: 2, stageW: 1200, stageH: 700,
     player: { x: 180, y: 350, active: true },
-    cameras: { main: cam }, input, events, physics: { world }, time: { delayedCall },
+    cameras: { main: cam }, input, events, physics: { world },
+    /* vc242 — waitForKey 가 scene.time.now 로 최소 감상 시간을 판정한다.
+     *  종전 스텁엔 delayedCall 만 있어 now 가 undefined 였고, 키 입력이 항상 무시됐다. */
+    time: { delayedCall, get now() { return now; } },
     textures: { exists: (key) => /^ch[mf]\d_idle0$/.test(key) }, anims: { exists: (key) => /^ch[mf]\d-/.test(key) },
     add: {
       rectangle: (x, y) => object('rectangle', x, y), text: (x, y, text) => object('text', x, y).setText(text),
@@ -149,9 +152,42 @@ test('Story pans complete on camera events and defer dialogue until ownership is
   assert.equal(autoCutscenePlaying(fake.scene), true, 'directors share exclusion');
   assert.equal(fake.cam.pans[0].x, 250, 'clamps with target 1.6 zoom, not stale zoom2');
   assert.equal(fake.cam.pans[0].y, 140.625);
-  fake.advance(799); assert.equal(storyCutscenePlaying(fake.scene), true);
-  fake.advance(1); assertReleased(fake); assert.equal(completed, 1); assert.deepEqual(shown, ['intro']);
+  /* vc242 (지시 #2) — 각 단계가 "키 입력 대기(상한 6초)" 로 바뀌었다. 종전 800ms 자동 진행이
+   *  아니라 2단계 × (pan 300 + 대기 상한) 만큼 흘려야 끝난다. 키를 누르면 즉시 끝나는 것은
+   *  아래 'advance key' 테스트에서 따로 검증한다. */
+  fake.advance(30000); assertReleased(fake); assert.equal(completed, 1); assert.deepEqual(shown, ['intro']);
   fake.advance(10000); assert.equal(completed, 1);
+});
+
+test('Cinematic advance key moves exactly one shot at a time', () => {
+  /* vc242 (지시 #2) — Space/Enter/E 로 다음 장면 한 단계씩. 전체 스킵이 아니다. */
+  const fake = fakeScene(); const shown = []; let completed = 0; let pans = 0;
+  assert.equal(playStoryCutscene(fake.scene, {
+    shots: [
+      { x: 100, y: 100, panMs: 120, holdMs: 100, dialogue: 'a' },
+      { x: 200, y: 200, panMs: 120, holdMs: 100, dialogue: 'b' },
+      { x: 300, y: 300, panMs: 120, holdMs: 100, dialogue: 'c' },
+    ],
+    onDone: () => completed++, showDialogue: (key) => { shown.push(key); return true; },
+  }), true);
+  const panCount = () => fake.cam.pans.length;
+  pans = panCount();
+  /* 첫 pan(120ms) 도착 후 키 대기. 최소 감상 시간(260ms)이 지나야 입력을 받는다. */
+  fake.advance(500);
+  const before = panCount();
+  fake.scene.input.keyboard.emit('keydown', { code: 'Space' });
+  fake.advance(30);
+  assert.equal(panCount(), before + 1, '키 1회 = 다음 장면 1개');
+  assert.equal(completed, 0, '아직 끝나지 않았다(전체 스킵이 아님)');
+  /* vc242 — 각 장면은 minMs(260ms) 를 지나야 다음 입력을 받는다. 키 사이에 그만큼 흘린다. */
+  fake.advance(420);
+  fake.scene.input.keyboard.emit('keydown', { code: 'KeyE' });
+  fake.advance(420);
+  fake.scene.input.keyboard.emit('keydown', { code: 'Enter' });
+  fake.advance(2000);
+  assert.equal(completed, 1);
+  assert.deepEqual(shown, ['a', 'b', 'c']);
+  assert.equal(pans > 0, true);
 });
 
 test('skipping an active zoom cancels its future ticks before restoring baseZoom', () => {
@@ -192,7 +228,10 @@ test('preexisting physics pause survives skip; missing actor does not create pla
 test('interrupted camera event has bounded healing, and every authored sequence completes and cleans up', () => {
   const interrupted = fakeScene({ cameraSignals: false });
   playStoryCutscene(interrupted.scene, { shots: [{ x: 300, y: 300, panMs: 120, holdMs: 0 }] });
-  interrupted.advance(300); assertReleased(interrupted);
+  /* vc242 — holdMs:0 이어도 waitForKey 의 최소 감상 시간(260ms)과 무입력 상한(2600ms)을
+   *  지나야 다음 단계로 간다. 종전엔 delay(0) 이라 300ms 면 끝났다.
+   *  여기서 검증하려는 것은 "카메라 신호가 없어도 힐링이 유한하다"이므로 상한까지 흘린다. */
+  interrupted.advance(4000); assertReleased(interrupted);
   for (const scenario of Object.values(LILAC_SCENARIOS)) {
     const fake = fakeScene(); let completed = 0;
     playAutoCutscene(fake.scene, spec(scenario.steps), () => completed++);
