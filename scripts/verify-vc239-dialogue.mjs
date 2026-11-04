@@ -4,14 +4,14 @@
 import { chromium } from 'playwright';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-const out = '/root/.hermes/cache/scratch/qa-vc239';
+const out = process.env.QA_OUT ?? "/root/.hermes/cache/scratch/qa-vc239-prod";
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage', '--use-gl=swiftshader'] });
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
 const page = await ctx.newPage();
 const pageErrors = [];
 page.on('pageerror', e => pageErrors.push(String(e)));
-await page.goto('http://127.0.0.1:3100', { waitUntil: 'domcontentloaded', timeout: 90000 });
+await page.goto(process.env.QA_URL ?? 'http://127.0.0.1:3100', { waitUntil: 'domcontentloaded', timeout: 90000 });
 await page.locator('button', { hasText: '게임 시작' }).first().click({ timeout: 120000 });
 await page.getByRole('button', { name: '캐릭터 생성', exact: true }).first().click();
 await page.locator('input').first().fill(`대사${String(Date.now()).slice(-5)}`);

@@ -4921,3 +4921,4 @@ Stage Summary:
 - `tests/howlrstone-dialogue.test.mjs` 추가 — 모든 비트/bossDone/인트로/보스 인트로 키의 실존, 화자·줄 비어있지 않음, 정본 어휘(펜던트·라일락) 포함, 옛 서사(이그드라실·아뜰란티스·9개의 바다) 미포함을 검사한다. 문자열 키는 타입 검사가 못 잡으므로 런타임 계약이 필요하다.
 - 검증: `npm test` 90/90, `tsc --noEmit` 통과. Chromium 1280×800 에서 51개 키를 실제 `showDialogueOnce` 로 호출해 **51/51 표시 성공, dialoguing 51/51, pageerror 0** 확인(`scripts/verify-vc239-dialogue.mjs`).
 - 환경 참고: Turbopack 이 이 컨테이너에서 `OS file watch limit reached` 로 죽는다(inotify 상향 권한 없음). `next dev --webpack -p 3100` 으로 우회해 검증했다. 이 사실을 인계 문서에 남긴다.
+- 프로덕션 빌드 검증 추가: `npm run build` 성공(Compiled successfully 38.4s, EXIT=0), `.next/standalone` 산출물(server.js·next-server.js·BUILD_ID·public/assets) 완비. standalone 서버를 3200 포트에 띄워 HTTP 200 확인 후 **배포 산출물에서 동일한 대사 검증을 재실행해 51/51 표시 성공, pageerror 0** 을 확인했다. 개발 서버가 아닌 실제 빌드 결과로 검증한 것이다.
