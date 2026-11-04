@@ -27,17 +27,26 @@ import { readFileSync } from "node:fs";
 const LATEST_VERSION: string = (pkg as { version: string }).version;
 /* versionCode 는 package.json 에 없다 — 릴리스마다 1씩 증가하는 별도 축이다.
  *  vc238 — 손으로 맞추다 세 릴리스 연속 어긋났다(236 잔존 → vc236.apk 404).
- *  APK 파일명과 릴리스 태그의 유일한 출처인 build.gradle 에서 파생한다. */
+ *  APK 파일명과 릴리스 태그의 유일한 출처인 build.gradle 에서 파생한다.
+ *
+ *  vc241 — **Vercel 에는 android/ 가 없다**(.vercelignore). build.gradle 만 읽으면 파싱이
+ *  조용히 실패해 code:0 · SERTZ-vc0.apk 를 응답했다(운영 실측). 커밋된 android-version.json
+ *  을 2차 소스로 두고, 그것도 없으면 package.json 버전으로 태그만이라도 맞춘다. */
 function readAndroidVersion(): { code: number; name: string } {
   try {
     const gradle = readFileSync("android/app/build.gradle", "utf8");
-    return {
-      code: Number(/versionCode\s+(\d+)/.exec(gradle)?.[1] ?? 0),
-      name: /versionName\s+"([^"]+)"/.exec(gradle)?.[1] ?? "",
-    };
+    const code = Number(/versionCode\s+(\d+)/.exec(gradle)?.[1] ?? 0);
+    if (code) return { code, name: /versionName\s+"([^"]+)"/.exec(gradle)?.[1] ?? "" };
   } catch {
-    return { code: 0, name: "" };
+    /* Vercel: android/ 제외됨 */
   }
+  try {
+    const v = JSON.parse(readFileSync("android-version.json", "utf8")) as { code?: number; name?: string };
+    if (v.code) return { code: Number(v.code), name: String(v.name ?? "") };
+  } catch {
+    /* 없으면 package.json */
+  }
+  return { code: 0, name: "" };
 }
 const androidVer = readAndroidVersion();
 const LATEST_CODE = androidVer.code;
@@ -46,7 +55,7 @@ const LATEST_CODE = androidVer.code;
 const LATEST_TAG = androidVer.name || LATEST_VERSION;
 const VERSION_NOTE =
   /* vc233 — 버전을 올릴 때 이 문구도 함께 갱신한다(업데이트 배너 본문). */
-  "v2.0.1 (vc237) — 기억의 서약: Space(NPC/채집 키) 상호작용 통일, 공격 X 전용, 인트로 스킵 후 멈춤 수정, 34장 통합 캠페인.";
+  "v2.0.4 (vc240) — 기억의 서약: Space(NPC/채집 키) 상호작용 통일, 공격 X 전용, 인트로 스킵 후 멈춤 수정, 관리자 계정 복구.";
 const RELEASE_BASE = `https://github.com/apple01234/CERTZ/releases/download/v${LATEST_TAG}`;
 const APK_MIRROR =
   /* 파일명의 vc{code} 는 build.gradle versionCode 와 일치해야 한다(불일치 시 404).

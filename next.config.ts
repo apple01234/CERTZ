@@ -4,17 +4,39 @@ import { readFileSync } from "node:fs";
 /* vc238 — APK 리다이렉트가 v1.4.54/vc214 에 하드코딩돼 있어, 최신 버전을 받으려는
  *  /SERTZ-v*.apk 링크가 **구버전 APK 로 튕겼다**. 릴리스마다 손으로 고쳐야 했고
  *  실제로 세 릴리스 연속 방치됐다(다운로드 오류 리포트의 근원).
- *  이제 build.gradle 의 versionCode/versionName 을 단일 출처로 삼아 자동 파생한다.
- *  → 버전을 올리면 이 파일을 건드릴 필요가 없다. */
+ *  이제 버전 파일에서 자동 파생한다 → 버전을 올리면 이 파일을 건드릴 필요가 없다.
+ *
+ *  vc241 수정 — build.gradle 만 읽었는데 **Vercel 빌드에는 android/ 가 없다**.
+ *  .vercelignore 가 android/ 를 제외하므로 readFileSync 가 던지고, 폴백 값이 그대로
+ *  링크에 박혀 /api/version 이 code:0 · SERTZ-vc0.apk 를 응답했다(실측).
+ *  → 존재하는 소스에서 순서대로 시도한다: build.gradle(로컬·CI) → android-version.json → package.json. */
 function readAndroidVersion(): { code: string; name: string } {
+  /* 1) build.gradle — 로컬/CI/GitHub Actions 에는 있다 */
   try {
     const gradle = readFileSync("android/app/build.gradle", "utf8");
     const code = /versionCode\s+(\d+)/.exec(gradle)?.[1] ?? "";
     const name = /versionName\s+"([^"]+)"/.exec(gradle)?.[1] ?? "";
-    return { code, name };
+    if (code) return { code, name };
   } catch {
-    return { code: "", name: "" };
+    /* Vercel: android/ 제외됨 — 다음 소스로 */
   }
+  /* 2) android-version.json — Vercel 에도 포함되는 커밋된 사본(빌드 스크립트가 갱신) */
+  try {
+    const v = JSON.parse(readFileSync("android-version.json", "utf8")) as { code?: number | string; name?: string };
+    const code = String(v.code ?? "");
+    if (code) return { code, name: String(v.name ?? "") };
+  } catch {
+    /* 없으면 package.json */
+  }
+  /* 3) package.json — versionName 과 versionCode 는 별도 축이라 태그만이라도 맞춘다 */
+  try {
+    const pkg = JSON.parse(readFileSync("package.json", "utf8")) as { version?: string };
+    const name = String(pkg.version ?? "");
+    if (name) return { code: "", name };
+  } catch {
+    /* 무시 */
+  }
+  return { code: "", name: "" };
 }
 
 /**
@@ -85,10 +107,10 @@ const nextConfig: NextConfig = isStaticExport
          *  리다이렉트되던 잠복 버그 수정 (server.js 정규식은 beta 미포함이라 이쪽이 개입).
          *  vc238 — build.gradle 에서 파생해 수동 싱크를 없앤다(위 readAndroidVersion). */
         const { code: apkCode, name: apkName } = readAndroidVersion();
-        const APK_TAG = apkName ? `v${apkName}` : "v2.0.1";
+        const APK_TAG = apkName ? `v${apkName}` : "v2.0.4";
         const APK_DL = apkCode
           ? `https://github.com/apple01234/CERTZ/releases/download/${APK_TAG}/SERTZ-vc${apkCode}.apk`
-          : `https://github.com/apple01234/CERTZ/releases/download/${APK_TAG}/SERTZ-vc237.apk`;
+          : `https://github.com/apple01234/CERTZ/releases/download/${APK_TAG}/SERTZ-vc240.apk`;
         if (!apkCode) {
           console.warn("[next.config] build.gradle 버전 파싱 실패 — APK 리다이렉트가 구버전으로 폴백됩니다");
         }

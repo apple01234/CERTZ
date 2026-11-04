@@ -97,10 +97,22 @@ const ok = (name, cond) => { assert.ok(cond, `✗ ${name}`); checks++; };
   ok("server.js 에 옛 APK 미러(v1.4.57/vc217) 없음", !srv.includes("v1.4.57/SERTZ-vc217"));
 
   const cfg = read("next.config.ts");
+  const verRoute = read("src/app/api/version/route.ts");
   ok("next.config APK 리다이렉트가 build.gradle 에서 파생", cfg.includes("readAndroidVersion") && cfg.includes("SERTZ-vc${apkCode}.apk"));
+
+  /* vc241 — Vercel 은 .vercelignore 로 android/ 를 제외한다. build.gradle 만 신뢰하면
+   *  파싱이 조용히 실패해 code:0 · SERTZ-vc0.apk 를 응답했다(운영 실측).
+   *  → 커밋된 android-version.json 을 2차 소스로 반드시 두고, 세 파생처가 모두 그걸 봐야 한다. */
+  const avJson = JSON.parse(read("android-version.json"));
+  ok("android-version.json 존재", typeof avJson.code === "number" && typeof avJson.name === "string");
+  ok("android-version.json code 가 0 이 아님", avJson.code > 0);
+  ok("next.config 가 android-version.json 폴백 사용", cfg.includes("android-version.json"));
+  ok("server.js 가 android-version.json 폴백 사용", srv.includes("android-version.json"));
+  ok("version 라우트가 android-version.json 폴백 사용", verRoute.includes("android-version.json"));
+  /* code:0 / vc0.apk 같은 깨진 링크가 '실제 URL 문자열'로 박히지 않게 한다(주석 설명은 제외) */
+  ok("세 파생처에 깨진 폴백 URL 없음", !/releases\/download\/[^`"']*SERTZ-vc0\.apk/.test(cfg + srv + verRoute));
   ok("next.config 에 옛 APK 리다이렉트(v1.4.54/vc214) 없음", !cfg.includes("v1.4.54/SERTZ-vc214"));
 
-  const verRoute = read("src/app/api/version/route.ts");
   ok("version 라우트가 build.gradle 에서 versionCode 파생", verRoute.includes("readAndroidVersion") && verRoute.includes('versionCode\\s+(\\d+)'));
   ok("version 라우트에 하드코딩 vc236 없음", !/const LATEST_CODE = 236;/.test(verRoute));
 

@@ -31,17 +31,28 @@ app.prepare().then(() => {
    *  GitHub 릴리스 = CDN 즉시 다운로드(약 20초/140MB, 대기 없음). */
   /* vc238 — 여기가 v1.4.57/vc217 에 멈춰 있어 **사이트의 APK 다운로드가 전부 404**였다.
    *  릴리스마다 손으로 고쳐야 하는 구조라 vc218~237 동안 방치됐다.
-   *  이제 build.gradle 의 versionCode/versionName 에서 파생한다(단일 출처).
-   *  APK 번들처럼 gradle 파일이 없는 환경에서는 아래 폴백 상수를 쓴다. */
-  let APK_TAG = "v2.0.1";
-  let APK_CODE = 237;
-  try {
-    const _g = require("fs").readFileSync(require("path").join(__dirname, "android/app/build.gradle"), "utf8");
-    const _c = Number(/versionCode\s+(\d+)/.exec(_g)?.[1] ?? 0);
-    const _n = /versionName\s+"([^"]+)"/.exec(_g)?.[1];
+   *  vc241 — Vercel 은 android/ 를 제외하므로 gradle 이 없다. 커밋된 android-version.json 을
+   *  2차 소스로 쓰고, 없을 때만 폴백 상수를 쓴다(build.gradle → json → 상수). */
+  const _fsx = require("fs"), _pathx = require("path");
+  const _readText = (p) => { try { return _fsx.readFileSync(_pathx.join(__dirname, p), "utf8"); } catch { return ""; } };
+  let APK_TAG = "v2.0.4";
+  let APK_CODE = 240;
+  const _gradleSrc = _readText("android/app/build.gradle");
+  if (_gradleSrc) {
+    const _c = Number(/versionCode\s+(\d+)/.exec(_gradleSrc)?.[1] ?? 0);
+    const _n = /versionName\s+"([^"]+)"/.exec(_gradleSrc)?.[1];
     if (_c) APK_CODE = _c;
     if (_n) APK_TAG = `v${_n}`;
-  } catch { /* APK 번들: gradle 부재 — 폴백 사용 */ }
+  } else {
+    const _avSrc = _readText("android-version.json");
+    if (_avSrc) {
+      try {
+        const _av = JSON.parse(_avSrc);
+        if (_av.code) APK_CODE = Number(_av.code);
+        if (_av.name) APK_TAG = `v${_av.name}`;
+      } catch { /* 손상 파일 무시 */ }
+    }
+  }
   const APK_MIRROR = `https://github.com/apple01234/CERTZ/releases/download/${APK_TAG}/SERTZ-vc${APK_CODE}.apk`;
   /* v1.4.39 — 데스크톱 클라이언트 자동 업데이트. electron/main.js checkForUpdates() 가 읽는다. */
   const EXE_MIRROR = `https://github.com/apple01234/CERTZ/releases/download/${APK_TAG}/SERTZ-vc${APK_CODE}-setup.exe`;
@@ -84,17 +95,30 @@ app.prepare().then(() => {
     try { _pkgVer = require("./package.json").version || _pkgVer; } catch { /* 번들 환경 — 아래 값 유지 */ }
     const LATEST_VERSION = _pkgVer;
     /* versionCode 는 package.json 에 없다 — 릴리스마다 1 증가하는 별도 축.
-     *  vc238 — 손으로 맞추다 어긋났다(236 잔존 → vc236.apk 404). build.gradle 파생. */
+     *  vc238 — 손으로 맞추다 어긋났다(236 잔존 → vc236.apk 404). 버전 파일에서 파생.
+     *  vc241 — Vercel 은 android/ 를 제외하므로 build.gradle 이 없다. 커밋된
+     *  android-version.json 을 2차 소스로 쓰고, 없으면 폴백 상수를 쓴다. */
     let LATEST_CODE = 0;
     let _apkTag = LATEST_VERSION;
-    try {
-      const _gradle = require("fs").readFileSync(require("path").join(__dirname, "android/app/build.gradle"), "utf8");
+    const _fs = require("fs"), _path = require("path");
+    const _readVer = (p) => { try { return _fs.readFileSync(_path.join(__dirname, p), "utf8"); } catch { return ""; } };
+    const _gradle = _readVer("android/app/build.gradle");
+    if (_gradle) {
       LATEST_CODE = Number(/versionCode\s+(\d+)/.exec(_gradle)?.[1] ?? 0);
       _apkTag = /versionName\s+"([^"]+)"/.exec(_gradle)?.[1] || LATEST_VERSION;
-    } catch { /* APK 번들엔 gradle 이 없다 — APK_MIRROR 상수 유지 */ }
-    if (!LATEST_CODE) LATEST_CODE = 237;
+    }
+    if (!LATEST_CODE) {
+      const _avJson = _readVer("android-version.json");
+      if (_avJson) {
+        try {
+          const _av = JSON.parse(_avJson);
+          if (_av.code) { LATEST_CODE = Number(_av.code); _apkTag = String(_av.name || LATEST_VERSION); }
+        } catch { /* 손상된 파일 무시 */ }
+      }
+    }
+    if (!LATEST_CODE) { LATEST_CODE = 240; _apkTag = LATEST_VERSION; }
     const VERSION_NOTE =
-      "v2.0.1 (vc237) — 기억의 서약: Space(NPC/채집 키) 상호작용 통일, 공격 X 전용, 인트로 스킵 후 멈춤 수정, 34장 통합 캠페인.";
+      "v2.0.4 (vc240) — 기억의 서약: Space(NPC/채집 키) 상호작용 통일, 공격 X 전용, 인트로 스킵 후 멈춤 수정, 관리자 계정 복구.";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
