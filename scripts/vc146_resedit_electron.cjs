@@ -28,7 +28,7 @@ vi.fixedInfo.productVersionMS = 1 << 16;
 vi.fixedInfo.productVersionLS = 6 << 16;
 const strings = {
   ProductName: "SERTZ",
-  FileDescription: "SERTZ — 바다의 수호자: 아뜰란티스 (vc146 정식)",
+  FileDescription: "SERTZ — 기억의 서약 (vc146 정식)",
   ProductVersion: "1.0.6",
   FileVersion: "1.0.6.0",
   CompanyName: "SERTZ",

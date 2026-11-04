@@ -185,7 +185,7 @@ function useListNav(count: number, onConfirm: (idx: number) => void, enabled = t
       } else if (e.code === "ArrowUp" || e.key === "ArrowUp" || (wasdNav && e.code === "KeyW")) {
         e.preventDefault();
         setIdx((i) => (i - 1 + count) % count);
-      } else if (e.code === "KeyE" || e.key === "e" || e.key === "E") {
+      } else if (e.code === "Space" || e.code === "Enter" || e.code === "KeyE" || e.key === "e" || e.key === "E") { // 하루 v1 — NPC/채집 키(Space) 확정, E는 구버전 호환
         e.preventDefault();
         confirmRef.current(idxRef.current);
       }
@@ -3081,7 +3081,7 @@ function CollectionPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void 
               ))}
               {GATHER_DEFS.every((g) => (rpg.gatherBag?.[g.key] ?? 0) === 0) && (
                 <span className="text-[9px] font-bold text-white/40">
-                  아직 모은 재료가 없다 — 필드에서 E키로 채집하자
+                  아직 모은 재료가 없다 — 필드에서 Space(NPC/채집 키)로 채집하자
                 </span>
               )}
             </div>
@@ -3911,7 +3911,7 @@ const GUIDE_SECTIONS: { area: string; icon: string; items: { name: string; desc:
     items: [
       { name: "조이스틱 (점선 원)", desc: "손가락으로 밀면 그 방향으로 이동. PC는 방향키/WASD." },
       { name: "채팅", desc: "멀티 서버에서 다른 모험가와 대화. 싱글에서는 안내 메시지가 떠." },
-      { name: "'E' 버튼", desc: "NPC·상자·차원문 앞에 나타나는 상호작용 버튼. PC는 E 키!" },
+      { name: "'Space' 버튼", desc: "NPC·채집·상자·차원문 앞에 나타나는 상호작용 버튼. PC는 Space(NPC/채집 키)!" },
     ],
   },
   {
@@ -6086,7 +6086,7 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
 
         <div className="mt-2.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
           <p className="text-[10px] leading-relaxed text-white/50">
-            이동 키는 위 “이동 키 배치”에서 방향키/WASD 중 고를 수 있어요. SPACE는 항상 공격 · ESC는 창 닫기 고정입니다.
+            이동 키는 위 “이동 키 배치”에서 방향키/WASD 중 고를 수 있어요. Space는 NPC/채집(상호작용) 기본 키 · ESC는 창 닫기 고정입니다.
             <br />
             {scheme === "wasd"
               ? "WASD 이동 중 — W/A/S/D는 이동 전용(액션 배정 불가), 대신 화살표를 스킬에 배정할 수 있어요."

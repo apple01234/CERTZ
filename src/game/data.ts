@@ -845,7 +845,7 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   outfit_warlord: { key: "outfit_warlord", name: "파멸의 대군주", icon: "costm_warlord_idle0", desc: "암흑 뿔투구에 붉은 망토의 대군주 — 천하를 삼킨 야망의 정점 (남형)", price: 560, tint: 0xff8a6a, slot: "outfit" },
   outfit_paladin: { key: "outfit_paladin", name: "황실 그레이트 성기사", icon: "costm_paladin_idle0", desc: "그레이트 헬름에 청색 갑주의 성기사 — 왕가의 최후의 방패 (남형)", price: 560, tint: 0x9ad8ff, slot: "outfit" },
   outfit_nightblade: { key: "outfit_nightblade", name: "밤을 두른 칼날", icon: "costm_nightblade_idle0", desc: "암흑 투구에 흑의 장비의 칼날 — 달빛 아래 소리 없이 다가온다 (남형)", price: 560, tint: 0xbe78ff, slot: "outfit" },
-  outfit_mariner: { key: "outfit_mariner", name: "푸른 파도 항해사", icon: "costm_mariner_idle0", desc: "청색 캡에 청록 항해복의 모험가 — 아홉 바다를 건넌 자 (남형)", price: 560, tint: 0x5ac8e8, slot: "outfit" },
+  outfit_mariner: { key: "outfit_mariner", name: "푸른 파도 항해사", icon: "costm_mariner_idle0", desc: "청색 캡에 청록 항해복의 모험가 — 먼 바다를 건너온 자 (남형)", price: 560, tint: 0x5ac8e8, slot: "outfit" },
   /* v1.4.11 — 잠자던 시트 활성화 신규 2종 (미사용 에셋 통합 — 남녀형 시트 완비) */
   outfit_flame: { key: "outfit_flame", name: "화염의 무희", icon: "cost_flame_idle0", desc: "백발에 진홍 드레스의 화염 무희 — 불꽃처럼 요동치는 무대 (남녀형)", price: 560, tint: 0xff8a6a, slot: "outfit" },
   outfit_mystic: { key: "outfit_mystic", name: "신비술사", icon: "cost_mystic_idle0", desc: "보라색 트윈테일의 신비술사 — 별의 언어를 읽는 자 (남녀형)", price: 560, tint: 0xb08aff, slot: "outfit" },

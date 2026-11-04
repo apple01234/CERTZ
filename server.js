@@ -79,9 +79,9 @@ app.prepare().then(() => {
     try { _pkgVer = require("./package.json").version || _pkgVer; } catch { /* 번들 환경 — 아래 값 유지 */ }
     const LATEST_VERSION = _pkgVer;
     /* versionCode 는 package.json 에 없다 — 릴리스마다 1 증가하는 별도 축. */
-    const LATEST_CODE = 236;
+    const LATEST_CODE = 237;
     const VERSION_NOTE =
-      "v2.0.0 (vc236) — 기억의 서약: 9개의 바다 제거, 34장 통합 캠페인, 픽셀 에셋 통일, 새 저장·경제 분리, 솔로·3인 협동 도전.";
+      "v2.0.1 (vc237) — 기억의 서약: 34장 통합 캠페인, 픽셀 에셋 통일, 새 저장·경제 분리, 솔로·3인 협동 도전.";
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({

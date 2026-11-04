@@ -37,9 +37,10 @@ export type MoveScheme = "arrows" | "wasd";
 
 const KEYMAP_STORAGE = "sertz_keymap_v2"; // v1.0.4 — 이동 체계 변경으로 저장 맵 리셋
 const MOVE_SCHEME_STORAGE = "sertz_movescheme_v1"; // v1.0.17 — 이동 스킴 저장
+const INTERACT_SPACE_MIGRATION = "haru_interact_space_v1"; // 하루 v1 — E→Space 마이그레이션 플래그
 
 /** 단일 알파벳 또는 화살표 코드만 허용 (v1.0.17 — 화살표 추가) */
-const BIND_CODE_RE = /^(UP|DOWN|LEFT|RIGHT|[A-Z])$/;
+const BIND_CODE_RE = /^(UP|DOWN|LEFT|RIGHT|SPACE|[A-Z0-9])$/; // 하루 v1 — SPACE·숫자 저장 허용 (WASD 프리셋 1~5 보존)
 
 /** 기본 배치 — v1.0.4: 이동 화살표 전용, 전투 키는 Z X C V + A S D F 클러스터 (유저 지시)
  *  Z=스킬1 X=공격 C=스킬2 V=스킬3 (기존 유지) / A=스킬4 S=스킬5 D=HP물약 F=MP물약
@@ -58,7 +59,9 @@ export const DEFAULT_KEYMAP: KeyMap = {
   skill5b: "Q",
   potHp: "D",
   potMp: "F",
-  interact: "E",
+  /* 하루 v1 (유저 지시) — 상호작용(NPC 대화·채집·상자·차원문)은 "NPC/채집 키" Space 로 통일.
+   *  공격은 X 전용(종전 Space 하드코딩 공격 제거). */
+  interact: "SPACE",
   bag: "I",
   shop: "G",
   job: "K",
@@ -178,6 +181,7 @@ export function keyLabel(code: string): string {
   if (code === "DOWN") return "↓";
   if (code === "LEFT") return "←";
   if (code === "RIGHT") return "→";
+  if (code === "SPACE") return "Space";
   return code;
 }
 
@@ -229,6 +233,15 @@ export function loadKeyMap(scheme: MoveScheme = loadMoveScheme()): KeyMap {
     /* vc145 (#10) — 구 저장 맵에 friends가 없던 시절: 저장값이 B(구 하드코딩 잔재·자동전투와 충돌)면
      *  기본 R로 되돌린다. B는 이제 자동전투 전용. */
     if (out.friends === "B" && !parsed.friends) out.friends = "R";
+    /* 하루 v1 — 상호작용 E → Space 1회 마이그레이션. Space 를 쓰던 다른 액션은 E 와 맞교환. */
+    if (!window.localStorage.getItem(INTERACT_SPACE_MIGRATION)) {
+      if (out.interact === "E") {
+        for (const a of Object.keys(out) as GameAction[]) if (a !== "interact" && out[a] === "SPACE") out[a] = "E";
+        out.interact = "SPACE";
+        try { window.localStorage.setItem(KEYMAP_STORAGE, JSON.stringify(out)); } catch { /* 무시 */ }
+      }
+      try { window.localStorage.setItem(INTERACT_SPACE_MIGRATION, "1"); } catch { /* 무시 */ }
+    }
     return sanitizeForScheme(out, scheme);
   } catch {
     return { ...presetKeyMapFor(scheme) };

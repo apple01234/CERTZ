@@ -9,7 +9,7 @@
 - License: CC0 1.0 (Public Domain)
 - Source: https://opengameart.org/content/zelda-like-tilesets-and-sprites
 - Used for: 주인공 캐릭터(걷기/방향별 검 공격), 필드 타일, 흙길 타일, 꽃,
-  하트 UI, 불꽃, 반짝임, 타격 스타, 수정(세계수 파편), "?" 퀘스트 말풍선
+  하트 UI, 불꽃, 반짝임, 타격 스타, 수정(마력 파편), "?" 퀘스트 말풍선
 
 ### Weapon Slash - Effect — Cethiel
 - License: CC0 1.0
@@ -46,7 +46,7 @@
 ### [LPC] Wolf Animation — williamthompsonj
 - License: CC-BY 3.0 / CC-BY 4.0
 - Source: https://opengameart.org/content/lpc-wolf-animation
-- Used for: 이그드라실 늑대 (걷기/포효 프레임)
+- Used for: 늑대 (전투 몬스터, 걷기/포효 프레임)
 
 ### Sotrak Rewop — gilgaphoenixignis
 - License: CC-BY 3.0 / CC-BY 4.0

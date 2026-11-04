@@ -161,7 +161,7 @@ function createWindow(port) {
     minWidth: 960,
     minHeight: 600,
     backgroundColor: "#0b1020",
-    title: "SERTZ — 바다의 수호자: 아뜰란티스",
+    title: "SERTZ — 기억의 서약",
     autoHideMenuBar: true,
     show: false,
     icon: path.join(__dirname, "icon.png"),

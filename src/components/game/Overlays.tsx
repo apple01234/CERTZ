@@ -501,7 +501,7 @@ export function InteractPrompt() {
         {st.label}
         <span className={`ml-0.5 rounded border px-1.5 py-0.5 text-[9px] font-black leading-none ${
           st.kind === "job" ? "border-amber-300/50 bg-amber-400/15 text-amber-200" : "border-emerald-300/40 bg-emerald-400/15 text-emerald-200"
-        }`}>E</span>
+        }`}>{keyLabel(loadKeyMap().interact)}</span>
       </button>
     );
   }
@@ -535,7 +535,7 @@ export function InteractPrompt() {
       {st.label}
       <span className={`ml-0.5 rounded border px-1.5 py-0.5 text-[9px] font-black leading-none ${
         st.kind === "job" ? "border-amber-300/50 bg-amber-400/15 text-amber-200" : "border-emerald-300/40 bg-emerald-400/15 text-emerald-200"
-      }`}>E</span>
+      }`}>{keyLabel(loadKeyMap().interact)}</span>
     </button>
   );
 }

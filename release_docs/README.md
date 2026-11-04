@@ -1,4 +1,4 @@
-# SERTZ — 이그드라실: 아홉 왕국 (v1.0.2 통합 안정화 릴리스)
+# SERTZ — 기억의 서약 (v1.0.2 통합 안정화 릴리스)
 
 2D 탑다운 MMORPG · Phaser 4.2.1 + Next.js 16 · versionCode 67 / versionName 1.0.2
 

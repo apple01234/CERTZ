@@ -39,7 +39,7 @@ import { SkillInputBuffer, type SkillCaster, type SkillId } from "./input/skillB
 import { cine3d } from "../cine3d"; // vc181 — 3D 시네마틱 레이어
 import { writeSave, loadSave, getFcode, type SaveData, setPlayerName, getPlayerName } from "../config";
 import { createSimRunner, SIM_STEP_MS } from "../sim/fixedStep"; // vc183 — 20Hz 고정 틱 시뮬레이션
-import { loadKeyMap, loadMoveScheme, moveKeysFor, type KeyMap, type GameAction, type MoveScheme } from "../keymap";
+import { keyLabel, loadKeyMap, loadMoveScheme, moveKeysFor, type KeyMap, type GameAction, type MoveScheme } from "../keymap";
 import {
   classDef, canJobNow, nextJobLevel, freeJobOption, FREE_JOB_COST, chainOf, FIFTH_LEVEL,
   resolveSkill1Of, resolveSkill2Of, SKILL3_KIND, SKILL4_KIND,
@@ -379,7 +379,7 @@ export class WorldScene extends Phaser.Scene {
   /* ----- v2.0: 토벌 퀘스트 기준선 (퀘스트 시작 이후 킬만 카운트 — 지시 #17) ----- */
   private huntBaseline: Record<string, number> = {};
   /* ----- v2.0: E 상호작용 말풍선 (이름 위 배치 — 지시 #14) ----- */
-  private eBubble: Phaser.GameObjects.Arc | null = null;
+  private eBubble: Phaser.GameObjects.Arc | Phaser.GameObjects.Rectangle | null = null;
   private eBubbleText: Phaser.GameObjects.Text | null = null;
   /* ----- v2.0: 방향키 입력 순서 (마지막 누른 키 우선 — 지시 #16) ----- */
   private dirOrder: { x: string[]; y: string[] } = { x: [], y: [] };
@@ -12084,7 +12084,8 @@ export class WorldScene extends Phaser.Scene {
       if (this.autoHunt && !useTouch && mv.lengthSq() === 0) move = this.autoHuntMove; // v3.0.15 (#5): 펫 조건 제거
 
       // 키보드 공격/스킬 — 이동은 화살표 고정, 액션 키는 키 매핑 따름 (v1.0.4)
-      if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keyFor("attack")))
+      /* 하루 v1 — Space 는 "NPC/채집 키"(interact)로 이관. 공격은 키맵 attack(X) 만 받는다. */
+      if (Phaser.Input.Keyboard.JustDown(this.keyFor("attack")))
         this.attackQueued = true;
       if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill1"))) this.player.useSkill1();
       if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill2"))) this.player.useSkill2();
@@ -14826,12 +14827,17 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
     if (!this.eBubble) {
-      this.eBubble = this.add.circle(0, 0, 11, 0x0f2233).setStrokeStyle(2, 0x7de8ff, 0.95).setDepth(61);
+      /* 하루 v1 — 키 배지는 현재 키맵의 상호작용 키를 그대로 표기(기본 Space) */
+      const keyText = keyLabel(this.keymap.interact);
+      const wide = keyText.length > 1;
+      this.eBubble = (wide
+        ? this.add.rectangle(0, 0, 8 + keyText.length * 6, 16, 0x241a3c)
+        : this.add.circle(0, 0, 11, 0x241a3c)).setStrokeStyle(2, 0xffd24a, 0.95).setDepth(61);
       this.eBubbleText = this.add
-        .text(0, 0, "E", {
+        .text(0, 0, keyText, {
           fontFamily: "Galmuri11, sans-serif",
-          fontSize: "12px",
-          color: "#7de8ff",
+          fontSize: wide ? "9px" : "12px",
+          color: "#ffd24a",
           fontStyle: "bold",
         })
         .setOrigin(0.5)
@@ -15813,7 +15819,14 @@ export class WorldScene extends Phaser.Scene {
     this.tweens.add({ targets: t2, alpha: 0.55, duration: 800, yoyo: true, repeat: -1 });
 
     let i = 0;
+    /* 하루 v1 (버그 수정) — 스킵/완료 후에도 `once("keydown-SPACE")` 리스너가 남아 있었다.
+     *  tSkip 은 cleanup() 으로 텍스트를 파괴하는데 리스너는 그대로여서, 이후 Space 를 누르면
+     *  next() → t1.setText() 가 파괴된 Text 에 접근해 TypeError 를 던졌다.
+     *  Phaser 의 rAF 루프는 update 예외 시 다음 프레임을 예약하지 못하므로 게임이 영구 정지한다.
+     *  상호작용 키가 Space 로 통일되면서 이 경로가 상시 발생하므로 닫힘 상태를 명시적으로 잠근다. */
+    let closed = false;
     const showBeat = () => {
+      if (closed) return;
       /* 알파 트윈 폐기 — 저FPS 환경에서 트윈이 수 초 늘어져 텍스트가 어둡게 보이고
        *  빠른 탭이 씹히는 문제의 근본 차단. 비트 전환은 즉시 확정 + 짧은 위징(흔들림)만 */
       t0.setAlpha(1);
@@ -15822,6 +15835,10 @@ export class WorldScene extends Phaser.Scene {
       this.tweens.add({ targets: t1, scale: { from: 1.015, to: 1 }, duration: 260, overwrite: true });
     };
     const cleanup = () => {
+      if (closed) return;
+      closed = true;
+      this.input.keyboard?.off("keydown-SPACE", next); // 잔여 리스너 해제 (파괴된 Text 접근 차단)
+      this.tweens.killTweensOf(t1);
       overlay.destroy(); deco.destroy(); t0.destroy(); t1.destroy(); t2.destroy(); tSkip.destroy();
       this.input.keyboard?.removeCapture("SPACE");
       this.dialoguing = false;
@@ -15829,6 +15846,7 @@ export class WorldScene extends Phaser.Scene {
       this.introSeenSave(); // v1.1.0 (#18) — 시청/스킵 모두 1회 기록 (재시작 시 재생 방지)
     };
     const next = () => {
+      if (closed) return;
       i += 1;
       if (i >= beats.length) { cleanup(); onDone(); return; }
       showBeat();
