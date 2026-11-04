@@ -1842,6 +1842,8 @@ export class WorldScene extends Phaser.Scene {
 
     /* ---------- 장식 (F1: 정의된 소수만 — 실내는 buildInterior가 자체 배치) ---------- */
     if (!this.isInterior && !authoredArt) this.placeDecor(stageKey);
+    /* vc238 — 날씨는 맵 렌더 방식과 무관하게 항상 적용한다(placeDecor 은 authored 맵에서 호출되지 않음). */
+    this.setupHowlrstoneWeather(stageKey);
 
     /* ---------- 상점 NPC (v3.0.15 #9 — 상인은 마을에만 배치. 필드 몬스터 구역에서 제거) ---------- */
     if (!this.isInterior && this.stageDef.isVillage) this.spawnMerchant();
@@ -3025,6 +3027,75 @@ export class WorldScene extends Phaser.Scene {
       if (Phaser.Math.Distance.Between(x, y, s.x, s.y) < minDist) return true;
     }
     return false;
+  }
+
+
+  /** vc238 — 영프 편(라일락 월드) 테마별 날씨.
+   *
+   *  [왜 별도 메서드인가] 종전 날씨는 placeDecor() 안에 있었는데, placeDecor 는
+   *   `if (!this.isInterior && !authoredArt) this.placeDecor(stageKey)` 로만 호출된다.
+   *   영프 편은 authored 맵(--> authArt 존재)이라 이 경로를 타지 않아
+   *   날씨 코드가 **한 번도 실행되지 않았다**(브라우저 검증에서 확인).
+   *   그래서 맵 렌더 방식과 무관하게 항상 호출되는 메서드로 분리한다.
+   *
+   *  [에셋] 새 파일을 만들지 않는다 — BootScene 이 이미 로드하는
+   *   wx_spark5(작은 빛 입자) / wx_smoke(연기)만 재사용한다. 배포 목록 무변경.
+   *  [비용] 저사양(fxLevel 0)은 빈도를 2배로 낮춘다.
+   *  [주의] 마을(youngprincessv)은 제외 — 예전에 "벚꽃 없애" 지시가 있었다. */
+  private setupHowlrstoneWeather(stageKey: StageKey) {
+    const chNow = parseStage(stageKey).ch;
+    if (!chNow?.startsWith("howlrstone")) return;
+    const chapterNo = Number(chNow.replace("howlrstone", ""));
+    const slow = this.fxLevel === 0;
+    const swirl = (tex: string, cfg: Phaser.Types.GameObjects.Particles.ParticleEmitterConfig) => {
+      this.weatherSnow = this.add.particles(0, 0, tex, cfg).setDepth(54);
+    };
+    if (chapterNo <= 3) {
+      /* 1~3화 해안 — 라일락 꽃잎이 바람에 흩날린다 (정본: 라일락+펜던트) */
+      swirl("wx_spark5", {
+        x: { min: -80, max: 1400 }, y: -10,
+        lifespan: 7000,
+        speedX: { min: -26, max: -8 }, speedY: { min: 12, max: 30 },
+        scale: { min: 0.10, max: 0.22 },
+        alpha: { start: 0.5, end: 0.12 },
+        tint: 0xd9b8ff,
+        rotate: { min: 0, max: 360 },
+        quantity: 1, frequency: slow ? 420 : 190,
+      });
+    } else if (chapterNo <= 6) {
+      /* 4~6화 석양의 바다 — 물보라/모래 먼지가 수평으로 분다 */
+      swirl("wx_spark5", {
+        x: { min: -80, max: 1400 }, y: { min: 0, max: 900 },
+        lifespan: 4000,
+        speedX: { min: -90, max: -40 }, speedY: { min: -6, max: 10 },
+        scale: { min: 0.06, max: 0.14 },
+        alpha: { start: 0.35, end: 0.05 },
+        tint: 0xffd9a0,
+        quantity: 1, frequency: slow ? 360 : 150,
+      });
+    } else if (chapterNo <= 9) {
+      /* 7~9화 격전 — 어둠의 재가 위로 떠오른다 */
+      swirl("wx_smoke", {
+        x: { min: -80, max: 1400 }, y: { min: 200, max: 1100 },
+        lifespan: 5200,
+        speedX: { min: -8, max: 8 }, speedY: { min: -26, max: -10 },
+        scale: { min: 0.08, max: 0.2 },
+        alpha: { start: 0.24, end: 0 },
+        tint: 0x8a5aff,
+        quantity: 1, frequency: slow ? 480 : 230,
+      });
+    } else {
+      /* 10~15화 어둠의 성채·왕좌 — 불티가 아래에서 피어오른다 */
+      swirl("wx_spark5", {
+        x: { min: -80, max: 1400 }, y: { min: 300, max: 1200 },
+        lifespan: 4200,
+        speedX: { min: -10, max: 10 }, speedY: { min: -46, max: -18 },
+        scale: { min: 0.05, max: 0.13 },
+        alpha: { start: 0.55, end: 0 },
+        tint: 0xff5a3a,
+        quantity: 1, frequency: slow ? 380 : 165,
+      });
+    }
   }
 
   private placeDecor(stageKey: StageKey) {

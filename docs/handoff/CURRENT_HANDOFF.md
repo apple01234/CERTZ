@@ -59,7 +59,8 @@ Evernote 원문: https://share.evernote.com/note/8925784f-6c18-eab0-c266-bcc2efb
 ## 남은 작업과 알려진 한계 — 다음 우선순위
 
 1. **본문/목표/지형의 정본 정렬**: `howlrstone.ts`, `lilacStory.ts`의 기존 1기 15화 데이터/의뢰가 아직 개정 하루 이야기 전체로 이관되지 않았다. 새 카메라 16개는 연결됐지만 첫 필드는 여전히 도서관 구조이고 절벽 구출은 회상 연출이다. 퀘스트 제목/대사/지역 구조를 승인 문서 순서와 맞춰야 한다. 전투 없는 talk/reach/collect 목표도 실제 상호작용으로 끝낼 수 있어야 한다.
-2. **첫 보상 밸런스**: 첫 “1레벨 달성” 의뢰의 기존 EXP72000 때문에 새 캐릭터가 즉시 약26레벨이 된다. 입장 레벨 완화 후 남은 보상 곡선 문제이며 이번 범위에서는 수정하지 않았다.
+   - **vc238 추가 확인**: `howlrstone.ts` 가 참조하는 비트 대사 키 **22개가 `DIALOGUES` 에 전부 없다**(`howlBook`·`howlLetter`·`howlWar`·`howlAri`·`howlDokkaebi`·`howlAlliance`·`howlLuci`·`howlGolem`·`howlRiande`·`howlSwords`·`howlLilac`·`howlFourDoors`·`howlWindDoor`·`howlBalloon`·`howlIon`·`howlCurse`·`howlSunMark`·`howlEndTime`·`howlTimeRuler`·`howlNewBeginning`·`howlSerniumCall`·`howlrstone1Done`). `showDialogueOnce` 가 없는 키에 조용히 `false` 를 돌려주므로 **1기 15장 비트 대사가 한 번도 재생되지 않는다**. 챕터 인트로(`chapterIntroHowlrstone*`)와 보스 인트로는 정상이므로, 대사 자체를 새로 쓰기 전에 키 22개를 먼저 채워야 한다. `bossDone` 15개(`howlrstone1Done`~`15Done`)도 같은 상태다.
+2. ~~**첫 보상 밸런스**~~ — **vc238 에서 수정 완료.** 1장 레벨게이트 6000×12=72,000 EXP(Lv1→Lv26)의 원인은 두 겹이었다: ① `lvGate` 가 15장 전부 `{enter:1, mid:1}` 이라 게이트가 아무것도 막지 못해 보상이 곧 성장곡선 전체가 됨 ② 같은 값이 15장에서는 2248만이라 그 장 필요량에 크게 미달(초반 폭주 + 후반 정체). 15챕터를 레벨 밴드(1→8→15→…→120→135)로 재앵커하고 `scaleMul.exp`·`lvGate`·비트 `expReward` 28개를 재계산했다. 1-1 지급 672 EXP(→Lv5), 완주 Lv152(그랜드플레닛 126 충족). 회귀 테스트 `tests/howlrstone-balance.test.mjs`(367 검사).
 3. **시각 통일과 보스**: 원본 타일/소품/캐릭터가 모두 같은 작품 스타일로 정리된 상태는 아니다. 인간 보스의 SPUM 표현/애니메이션/정본 패턴을 아직 전체 적용하지 않았다. 기존 캐릭터 외형 선택과 장비 표시를 보존하며 다운로드/허용 에셋으로 교체한다.
    기존 기능 안내창/보상창/일반 대화가 플레이필드와 새 컷씬에 겹치는 UI 큐 문제도 캡처에서 확인됐다. 컷씬 종료 후 대기 UI를 순차 표시하도록 원래 EventBus/모달 경로를 정리해야 한다.
 4. **상위 전직 검토**: 원래 트리에서 stormcaptain/powdermaster가 raider 자식이고 seaking도 stormcaptain→raider로 이어진다. 호환을 위해 유지했으므로 이들의 S1은 공학망치다. 물 계열 명칭/전승 일치를 고칠 때 저장/스탯/스킬을 함께 이관한다. 이름만 바꾸지 않는다.

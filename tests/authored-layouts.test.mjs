@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import fs from 'node:fs';
 import { authoredOpenXY, authoredRoomLayout } from '../src/game/authoredLayouts.ts';
 import { AUTHORED_GROUND_SOURCES, renderAuthoredMapLayers } from '../src/game/fx/AuthoredMapLayers.ts';
+import { isSolidDecor } from '../src/game/decorObjects.ts';
 import { HOWLRSTONE_CHAPTERS } from '../src/game/howlrstone.ts';
 
 function reachable(lay) {
@@ -107,8 +108,20 @@ test('Tilemap layers reuse native admitted floors, keep collision separate, and 
   assert.deepEqual(layers.map(x => x.name), ['rea:ground','rea:paths','rea:structures']);
   assert.deepEqual(lay.open, before);
   assert.ok(images.some(x => x.key === 'obj_dungeon_bookshelf'), 'library uses retained native bookshelf art');
-  assert.deepEqual(attached, images, 'all props reach the original feet-collision hook');
-  for (const image of images) {
+  /* vc238 — 경계 장식(rea:edge:*)은 **발밑 충돌 훅을 타면 안 된다**.
+   *  기존 계약은 "모든 prop 이 충돌 훅을 탄다"였는데, 통행로 가장자리에 깔리는
+   *  바닥 장식까지 충돌체가 되면 투명 벽이 생긴다. 그래서 계약을 두 갈래로 나눈다:
+   *   · 구조물 prop(rea:prop:*) → 반드시 충돌 훅
+   *   · 경계 장식(rea:edge:*)   → 절대 충돌 훅 금지 + isSolidDecor 금지 */
+  const realProps = images.filter(x => !String(x.name).startsWith('rea:edge:'));
+  const edgeProps = images.filter(x => String(x.name).startsWith('rea:edge:'));
+  assert.equal(edgeProps.length + realProps.length, images.length);
+  assert.deepEqual(attached, realProps, 'all structural props reach the original feet-collision hook');
+  for (const image of edgeProps) {
+    assert.equal(attached.includes(image), false, `${image.key}: edge decor must not create a collider`);
+    assert.equal(isSolidDecor(image.key), false, `${image.key}: edge decor must be walk-through`);
+  }
+  for (const image of realProps) {
     const cell = Math.floor(image.y / lay.cellH) * lay.cols + Math.floor(image.x / lay.cellW);
     assert.equal(lay.open[cell], false, 'solid shelf feet stay outside the traversable aisles');
     assert.equal(image.scale, 1, 'native bookshelf pixels retain their scale');
@@ -126,4 +139,59 @@ test('Tilemap layers reuse native admitted floors, keep collision separate, and 
   assert.ok(created.every(x => x.destroyed));
   scene.textures.exists = () => false;
   assert.equal(renderAuthoredMapLayers(scene, lay), null, 'missing assets preserve legacy renderer fallback');
+});
+
+test('vc238 edge decor outlines the floor without ever narrowing a route', () => {
+  const manifest = JSON.parse(fs.readFileSync(new URL('../public/assets/ground/manifest.json', import.meta.url)));
+  const existingProp = key => ['dungeon','forest','town'].some(set => fs.existsSync(new URL(`../public/assets/objects/${set}/${key}.png`, import.meta.url)));
+  const makeScene = () => ({
+    textures: { exists: key => key in manifest || existingProp(key), get: key => ({ getSourceImage: () => manifest[key] }) },
+    add: { image: (x, y, key) => {
+      const image = { x, y, key, name: 'obj_x', setOrigin() { return this; }, setScale(s) { this.scale = s; return this; }, setDepth() { return this; }, setName(n) { this.name = n; return this; }, setTint() { return this; } };
+      return image; } },
+    events: { once: () => {} },
+    make: { tilemap: () => ({
+      addTilesetImage: (name, key, w, h, _m, _s, gid) => ({ name, key, w, h, gid }),
+      createLayer: () => ({ setName() { return this; }, setDepth() { return this; }, setTint() { return this; } }),
+      destroy() {},
+    }) },
+  });
+
+  /* 모든 영프 구역 + 그랜드 플래닛 일부 — 경계 장식이 통행로/입출구를 건드리지 않아야 한다. */
+  const cases = HOWLRSTONE_CHAPTERS.flatMap(spec => Array.from({ length: spec.stages }, (_, i) => ({
+    key: `${spec.key}x${i + 1}`, width: spec.width + (i + 1) * 130, height: spec.height + (i + 1) * 30,
+  })));
+  cases.push({ key: 'dlcstargate1', width: 2330, height: 1230 });
+  cases.push({ key: 'dlcsernium5', width: 2850, height: 1350 });
+
+  let total = 0;
+  for (const { key, width, height } of cases) {
+    const lay = authoredRoomLayout(key, width, height);
+    assert.ok(lay, key);
+    const attached = [];
+    const result = renderAuthoredMapLayers(makeScene(), lay, img => attached.push(img));
+    assert.ok(result, `${key}: layers render`);
+    const edges = result.images.filter(x => String(x.name).startsWith('rea:edge:'));
+    total += edges.length;
+    assert.ok(edges.length <= 96, `${key}: edge budget (${edges.length} > 96)`);
+    assert.equal(attached.some(x => String(x.name).startsWith('rea:edge:')), false, `${key}: edge decor reached the collider hook`);
+    for (const img of edges) {
+      assert.equal(isSolidDecor(img.key), false, `${key}/${img.key}: solid edge decor would seal an aisle`);
+      const c = Math.floor(img.x / lay.cellW), r = Math.floor(img.y / lay.cellH);
+      const cell = r * lay.cols + c;
+      assert.ok(c >= 0 && c < lay.cols && r >= 0 && r < lay.rows, `${key}: edge decor inside bounds`);
+      assert.equal(lay.open[cell], true, `${key}: edge decor must sit on walkable ground, not inside a wall`);
+      /* 경계 장식은 통행로 중앙을 막지 않는다 — 단 벽에 붙은 가장자리는 허용.
+       *  (coast 처럼 열린 셀이 전부 통행로인 맵에서 배치가 0개가 되던 문제를 풀려면
+       *   가장자리는 열어줘야 한다. 소품은 모두 충돌 없는 키라 통행 자체는 유지된다.) */
+      if (lay.authored.paths[cell]) {
+        const onWallEdge = c <= 1 || c >= lay.cols - 2 || r <= 1 || r >= lay.rows - 2
+          || !lay.open[cell - 1] || !lay.open[cell + 1] || !lay.open[cell - lay.cols] || !lay.open[cell + lay.cols];
+        assert.ok(onWallEdge, `${key}: edge decor must hug a wall, not block mid-route`);
+      }
+      assert.notEqual(cell, lay.entry, `${key}: entry cell must stay clear`);
+      assert.notEqual(cell, lay.exit, `${key}: exit cell must stay clear`);
+    }
+  }
+  assert.ok(total > 0, 'edge decor actually gets placed somewhere');
 });
