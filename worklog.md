@@ -4913,3 +4913,11 @@ Stage Summary:
 - **영프편 테마별 날씨를 추가했다.** 1~3화 라일락 꽃잎 / 4~6화 물보라 / 7~9화 어둠의 재 / 10~15화 불티. 새 에셋 없이 BootScene 이 이미 로드하는 `wx_spark5`·`wx_smoke` 만 재사용했다. 날씨는 원래 `placeDecor()` 안에 있었는데 그 함수는 `!authoredArt` 일 때만 호출돼 **영프편(authored 맵)에서는 한 줄도 실행되지 않았다** — 맵 렌더 방식과 무관하게 항상 호출되는 `setupHowlrstoneWeather()` 로 분리했다.
 - 검증: `npm test` 89/89, `npx tsc --noEmit` 통과, `npx eslint src --max-warnings 0` 통과. Chromium 1280×800 에서 원본 로비/캐릭터 생성 후 6개 구역을 실제 전환해 엣지 장식 27~50개 생성·충돌체 0·날씨 emitter 1·pageerror 0을 확인했다(`scripts/verify-vc238-map.mjs`, 결과 JSON 보존).
 - 미완료: 비트 대사 키 22개 복구, 1장을 정본 1화(절벽·펜던트·지하감옥의 검)로 정렬, 컷씬↔안내 UI 겹침, 인간 보스 SPUM 패턴, 상위 전직(corsair/raider) 정리, 2기 통합. APK/운영 배포는 이번에도 빌드·설치·배포 전까지 검증하지 않았다.
+
+## Task — 영프편 비트 대사 22+bossDone 15키 복구 (2026-11-04, vc239)
+
+- `howlrstone.ts` 가 참조하는 비트 대사 22키와 `chapterSpec.bossDone` 15키가 `DIALOGUES` 에 전부 없었다. `showDialogueOnce` 는 없는 키에 조용히 `false` 를 돌려주므로 오류·경고 없이 **1기 15장 대사가 한 번도 재생되지 않는 상태**였다. vc238 브라우저 검증에서 발견해 이번에 채웠다.
+- 정본 우선순위(evernote-approved 1.txt 우선)에 맞춰 작성했다. 구조자는 라일락(+펜던트), 주인공은 하루다. 원문 문장이 있는 곳은 그대로 인용했고(세 가지 사람·펜던트 위탁·검의 봉인 경고·3분 뒤에 보시죠·꽃말이 추억 등), 시스템 안내가 필요한 곳만 새로 썼다. 2기 결말은 창작하지 않았다.
+- `tests/howlrstone-dialogue.test.mjs` 추가 — 모든 비트/bossDone/인트로/보스 인트로 키의 실존, 화자·줄 비어있지 않음, 정본 어휘(펜던트·라일락) 포함, 옛 서사(이그드라실·아뜰란티스·9개의 바다) 미포함을 검사한다. 문자열 키는 타입 검사가 못 잡으므로 런타임 계약이 필요하다.
+- 검증: `npm test` 90/90, `tsc --noEmit` 통과. Chromium 1280×800 에서 51개 키를 실제 `showDialogueOnce` 로 호출해 **51/51 표시 성공, dialoguing 51/51, pageerror 0** 확인(`scripts/verify-vc239-dialogue.mjs`).
+- 환경 참고: Turbopack 이 이 컨테이너에서 `OS file watch limit reached` 로 죽는다(inotify 상향 권한 없음). `next dev --webpack -p 3100` 으로 우회해 검증했다. 이 사실을 인계 문서에 남긴다.
