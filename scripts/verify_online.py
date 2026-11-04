@@ -52,8 +52,10 @@ try:
     status, _, headers = request('/api/auth/login', native=True, method='OPTIONS')
     check('APK preflight', status == 204 and headers.get('Access-Control-Allow-Origin') == 'https://localhost')
     check('old APK token expires', request('/api/auth/me', token='0' * 64, native=True)[0] == 401)
-    check('fresh DB administrator ID cannot be claimed',
-          request('/api/auth/register', {'id': 'admin', 'pw': secrets.token_urlsafe(24), 'name': '검증용'})[0] == 403)
+    # 관리자 아이디는 절대 일반 가입으로 만들 수 없어야 한다.
+    #  vc239 이후 관리자 계정이 존재하므로 403(예약 차단) 또는 409(이미 존재) 둘 다 정상이다.
+    check('administrator ID cannot be claimed by public signup',
+          request('/api/auth/register', {'id': 'admin', 'pw': secrets.token_urlsafe(24), 'name': '검증용'})[0] in (403, 409))
     suffix = secrets.token_hex(4)
     for index in range(2):
         uid = 'qa_' + suffix + str(index)
