@@ -4922,3 +4922,11 @@ Stage Summary:
 - 검증: `npm test` 90/90, `tsc --noEmit` 통과. Chromium 1280×800 에서 51개 키를 실제 `showDialogueOnce` 로 호출해 **51/51 표시 성공, dialoguing 51/51, pageerror 0** 확인(`scripts/verify-vc239-dialogue.mjs`).
 - 환경 참고: Turbopack 이 이 컨테이너에서 `OS file watch limit reached` 로 죽는다(inotify 상향 권한 없음). `next dev --webpack -p 3100` 으로 우회해 검증했다. 이 사실을 인계 문서에 남긴다.
 - 프로덕션 빌드 검증 추가: `npm run build` 성공(Compiled successfully 38.4s, EXIT=0), `.next/standalone` 산출물(server.js·next-server.js·BUILD_ID·public/assets) 완비. standalone 서버를 3200 포트에 띄워 HTTP 200 확인 후 **배포 산출물에서 동일한 대사 검증을 재실행해 51/51 표시 성공, pageerror 0** 을 확인했다. 개발 서버가 아닌 실제 빌드 결과로 검증한 것이다.
+
+## Task — 새 온라인 세대와 운영 서버 복구 (2026-11-04)
+
+- 사용자가 APK·웹 모두의 서버 오류를 보고했고, 기존 키 복구 대신 새 키로 온라인 데이터를 새로 시작하도록 승인했다.
+- 운영 기본 주소 sertz.vercel.app 프로젝트의 GitHub 토큰/암호화키 누락과 잘못된 SERTZ 코드 연결을 확인했다. 유효 토큰과 새384비트 키를 Production 암호화 변수에 설정하고 코드 연결을 CERTZ/main으로 수정했다.
+- 비공개 CERTZ-DB의 db-backup/lilac-v1 아래 계정·채팅·파티를 초기화했다. 새 키 복호화 검증과 기존 accounts.enc SHA 불변을 확인했다. 계정/클라우드/거래소/랭킹은 새로 시작하되 이전 DB와 기기 내 오프라인 저장은 보관한다.
+- accounts/storage.json의 세대를 Node 계정 서버와 serverless 계정/릴레이에서 공유한다. 옛 DB 자동이관을 제거하고 운영 키 누락/잘못된 키/404/권한 오류를 빈 DB로 숨기지 않는다. 새 세대 공개 관리자 ID 선점 차단, 옛 APK 세션401 만료를 적용했다.
+- 전체 자동 검사96/96, tsc, strict lint 통과. 운영 재배포 후 가입/저장/거래/비공개 파티/정리 재검증 스크립트 scripts/verify_online.py를 추가했다. 실제 운영 재검증 결과는 배포 완료 후 별도로 기록한다. 공개 채팅 메시지 전송과 실제 결제 테스트는 포함하지 않는다.

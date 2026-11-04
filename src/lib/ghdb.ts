@@ -5,9 +5,9 @@
  *  세이브를 Vercel serverless API 라우트로 옮긴다. 소켓 멀티플레이는 제외(오프라인 모드).
  *
  *  저장소 구조:
- *   - DB 파일 = apple01234/CERTZ-DB (private) :: db-backup/accounts.enc
- *   - 기존 accounts/index.js의 GitHub 백업과 "동일 파일·동일 포맷"(SZBK1 AES-256-GCM,
- *     기본 키 "sertz-accounts-backup::v1") → 기존 계정·세이브·거래소 데이터 무손실 계승
+ *   - DB 파일 = apple01234/CERTZ-DB (private) :: db-backup/<generation>/accounts.enc
+ *   - 2026-11-04 사용자 승인으로 새 온라인 세대 시작. 이전 파일은 보관하고 자동 이관하지 않는다.
+ *   - accounts/storage.json을 Node 계정 서버·릴레이와 공유한다(SZBK1 포맷 유지).
  *   - CERTZ(게임 코드 저장소)에 두면 계정 쓰기마다 커밋 → Vercel 재배포 폭주라
  *     반드시 전용 저장소에 둔다. ghSeed 스크립트(scripts/ghdb_seed.js)로 이식 완료.
  *
@@ -18,6 +18,7 @@
  */
 
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import storage from "../../accounts/storage.json" with { type: "json" };
 
 /* ---------------- 데이터 형태 (accounts/index.js 파일 DB와 동일) ---------------- */
 export type UserRec = { id: string; name: string; provider: string; salt: string; hash: string; createdAt: number; role?: string };
@@ -35,7 +36,7 @@ export type SaveRec = {
 export type ListingRec = { id: string; seller: string; sellerName: string; itemKey: string; up: number; price: number; qty?: number; ts: number };
 export type PayoutRec = { gold: number; count: number };
 /** v1.0.13 피드백#8 — 전역 닉네임 레지스트리 레코드.
- *  주의: node 서버(accounts/index.js)와 같은 SZBK1 백업 파일(db-backup/accounts.enc)을 공유하므로
+ *  주의: node 서버(accounts/index.js)와 같은 세대의 SZBK1 백업 파일을 공유하므로
  *  값 형태를 node({by, at, kind})와 다르게 쓰면 node의 nickTaken(reg.by)이 오판한다.
  *  읽기 정규화에서 구형/이형 값(문자열 uid)은 node 호환 형태로 흡수한다. */
 export type CharNameRec = { by: string; at: number; kind?: string };
@@ -54,16 +55,11 @@ export type DbShape = {
   iapUsed?: Record<string, { uid: string; sku: string; gems: number; at: number; orderId: string }>;
 };
 
-function emptyDb(): DbShape {
-  return { users: {}, tokens: {}, saves: {}, market: { nextId: 1, listings: {} }, payouts: {}, rank: {}, charNames: {}, iapUsed: {} };
-}
-
 /* ---------------- 환경 ---------------- */
 const DB_REPO = (process.env.SERTZ_GH_REPO || "apple01234/CERTZ-DB").replace(/^\/+|\/+$/g, "");
-const FALLBACK_REPO = "apple01234/CERTZ"; // 이식 전 구 백업 위치 (읽기 폴백만)
-const DB_PATH = "db-backup/accounts.enc";
+const DB_PATH = `db-backup/${storage.generation}/accounts.enc`;
 const BRANCH = "main";
-const SUPPORT_PATH = "db-backup/support-inbox.json";
+const SUPPORT_PATH = `db-backup/${storage.generation}/support-inbox.json`;
 
 function ghToken(): string {
   return (process.env.GITHUB_TOKEN || "").trim();
@@ -101,6 +97,7 @@ function deriveKey(secret: string): Buffer {
 function currentKeySecret(): string {
   const env = process.env.SERTZ_BACKUP_KEY;
   if (env) return env;
+  if (process.env.NODE_ENV === "production") throw new Error("SERTZ_BACKUP_KEY 미설정 — 온라인 서버 설정 오류");
   if (!warnedDefaultKey) {
     warnedDefaultKey = true;
     console.warn(
@@ -170,7 +167,8 @@ async function ghGetFrom(repo: string): Promise<RawFile | null> {
     signal: AbortSignal.timeout(8000),
     cache: "no-store",
   });
-  if (r.status === 404) return null;
+  // The new generation is explicitly provisioned; missing/inaccessible data is never a reset.
+  if (r.status === 404) throw new Error("온라인 DB 미초기화 또는 저장소 접근 거부");
   if (!r.ok) throw new Error(`gh GET ${r.status}`);
   const j = (await r.json()) as { sha?: string; content?: string };
   return { sha: j.sha ?? null, enc: j.content ? Buffer.from(j.content, "base64").toString("utf8") : "" };
@@ -240,7 +238,7 @@ function normalizeDb(db: DbShape): DbShape {
 }
 
 function parseDbRaw(raw: RawFile | null): { db: DbShape; sha: string | null } {
-  if (!raw || !raw.enc) return { db: emptyDb(), sha: raw?.sha ?? null };
+  if (!raw || !raw.enc) throw new Error("온라인 DB가 비어 있음 — 자동 초기화하지 않음");
   const json = backupDecrypt(raw.enc);
   if (!json) throw new Error("DB 복호화 실패 — 키 불일치?");
   const parsed = JSON.parse(json) as DbShape;
@@ -255,35 +253,8 @@ const CACHE_TTL_MS = 8000;
 export async function loadDb(force = false): Promise<{ db: DbShape; sha: string | null }> {
   if (!force && cache && Date.now() - cache.at < CACHE_TTL_MS) return { db: cache.db, sha: cache.sha };
   if (!ghToken()) throw new Error("GITHUB_TOKEN 미설정 — 서버 설정 오류");
-  let raw: RawFile | null = null;
-  let primaryFailed = false;
-  try {
-    raw = await ghGetFrom(DB_REPO);
-  } catch (e) {
-    /* 전용 저장소 조회 실패 시 구 백업 폴백(읽기만) — 이식 전 전환 안전망.
-     *  v1.0.15 — 공개 저장소의 db-backup/accounts.enc는 보안상 추적 해제됐으므로
-     *  이 폴백은 이제 사실상 비어 있다(404). 그래서 아래 가드가 그 자리를 대신한다. */
-    primaryFailed = true;
-    console.error(`[SERTZ-db] ${DB_REPO} 조회 실패 → ${FALLBACK_REPO} 폴백`, e);
-    raw = await ghGetFrom(FALLBACK_REPO).catch(() => null);
-  }
-  /* 전용 저장소가 비어 있고 구 백업이 있으면 이식 (최초 1회 자동 마이그레이션) */
-  if (!raw) {
-    const legacy = await ghGetFrom(FALLBACK_REPO).catch(() => null);
-    if (legacy && legacy.enc) {
-      const put = await ghPutRaw(legacy.enc, null);
-      if (put.ok) raw = { sha: put.sha, enc: legacy.enc };
-      else raw = legacy; // 쓰기 실패해도 읽기는 진행
-    }
-  }
-  /* v1.0.15 — 일시 오류를 빈 DB로 둔갑시키지 않는다.
-   *  종전엔 전용 저장소 조회가 오류여도 폴백까지 비면 parseDbRaw(null) → emptyDb()가 되어
-   *  "계정이 사라진 것처럼" 보였다(로그인 실패 → 재가입 유혹). 쓰기는 sha 없는 PUT이라
-   *  GitHub이 422로 거부하므로 데이터 유실은 아니지만, 사용자에게는 똑같이 참혹하다.
-   *  부트스트랩(파일이 아직 없는 404 = primaryFailed 아님)은 그대로 emptyDb()로 진행한다. */
-  if (primaryFailed && (!raw || !raw.enc)) {
-    throw new Error("DB 로드 실패 — GitHub 조회 일시 오류(빈 DB로 진행하지 않음)");
-  }
+  currentKeySecret();
+  const raw = await ghGetFrom(DB_REPO);
   const out = parseDbRaw(raw);
   cache = { db: out.db, sha: out.sha, at: Date.now() };
   return out;

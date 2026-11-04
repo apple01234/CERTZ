@@ -14,6 +14,7 @@ import { scryptSync, randomBytes, timingSafeEqual, createHash } from "node:crypt
 import type { DbShape, UserRec, ListingRec } from "./ghdb";
 import { ITEMS } from "@/game/data"; // vc146 (#9) — 거래 가능 품목 동적 구성 (gmOnly만 제외)
 import { clsToBranch } from "@/game/classes"; // v1.0.14 피드백#2 — 클래스키 → 계열(8 기본 직업) 정규화
+import storage from "../../accounts/storage.json" with { type: "json" };
 
 export const COOKIE = "sertz_auth";
 /* v1.0.16 (S4) — 세션 TTL 30일 → 14일 단축. 해시 저장과 함께 토큰 유출 시의 실효 창을 절반으로 줄인다. */
@@ -77,7 +78,7 @@ export function corsHeaders(req: NextRequest): Record<string, string> {
 export function json(req: NextRequest, status: number, body: unknown, headers: Record<string, string> = {}): NextResponse {
   return NextResponse.json(body as object, {
     status,
-    headers: { "Cache-Control": "no-store", ...corsHeaders(req), ...headers },
+    headers: { "Cache-Control": "no-store", "X-CERTZ-Online-Generation": storage.generation, ...corsHeaders(req), ...headers },
   });
 }
 

@@ -4,12 +4,14 @@
  *  배경: ②안에서 소켓 멀티서버가 제거되어 채팅/파티가 죽었다. Vercel serverless에서
  *  WebSocket 불가 → HTTP 폴링 릴레이로 부활시킨다. 채팅/파티는 계정 DB(accounts.enc)와
  *  잠금 경쟁을 피해야 하므로(appendSupport 선례) 별도 파일로 저장한다:
- *   - db-backup/relay-chat.json   { global: Msg[], party: {code: Msg[]} }
- *   - db-backup/relay-parties.json { parties: {code: Party} }
+ *   - db-backup/<generation>/relay-chat.json   { global: Msg[], party: {code: Msg[]} }
+ *   - db-backup/<generation>/relay-parties.json { parties: {code: Party} }
  *  - 평문 JSON (민감정보 없음 — 닉네임·메시지·파티 명단)
  *  - 정합성: fresh GET(sha) → mutate → PUT(sha 낙관 잠금) → 409/422 재시도 (ghdb 동일)
  *  - 읽기 캐시: 파일별 인스턴스 메모리 TTL (폴링 GET 폭주 완화 — 엣지 캐시와 이중 방어)
  */
+
+import storage from "../../accounts/storage.json" with { type: "json" };
 
 const DB_REPO = (process.env.SERTZ_GH_REPO || "apple01234/CERTZ-DB").replace(/^\/+|\/+$/g, "");
 const BRANCH = "main";
@@ -33,7 +35,7 @@ type PutResult = { ok: true; sha: string } | { ok: false; conflict: boolean; sta
  *  종전엔 loadRelay가 어떤 실패든 data:null을 돌려주고 라우트가 그걸 빈 목록으로 반환해서,
  *  GITHUB_TOKEN이 죽어도 화면상 "채팅이 아직 없다"와 구분되지 않았다.
  *  실제로 2026-10-17 토큰 무효 장애가 하루 동안 이 위장에 가려졌다(ghdb만 500으로 드러남).
- *  파일이 아직 없는 404(부트스트랩)는 정상 상태이므로 계속 null로 진행한다. */
+ *  새 세대 파일은 운영 초기화 단계에서 생성한다. 404도 데이터 없음으로 숨기지 않는다. */
 export class RelayAccessError extends Error {
   readonly status: number;
   constructor(message: string, status: number) {
@@ -49,7 +51,6 @@ async function relayGet(path: string): Promise<{ sha: string | null; json: unkno
     signal: AbortSignal.timeout(8000),
     cache: "no-store",
   });
-  if (r.status === 404) return { sha: null, json: null };
   if (!r.ok) throw new RelayAccessError(`relay GET ${path} ${r.status}`, r.status);
   const j = (await r.json()) as { sha?: string; content?: string };
   let json: unknown = null;
@@ -88,7 +89,7 @@ const caches = new Map<string, CacheEnt>();
 export async function loadRelay<T>(path: string, ttlMs = 6000): Promise<{ data: T | null; sha: string | null }> {
   const c = caches.get(path);
   if (c && Date.now() - c.at < ttlMs) return { data: c.json as T, sha: c.sha };
-  if (!ghToken()) throw new Error("GITHUB_TOKEN 미설정");
+  if (!ghToken()) throw new RelayAccessError("GITHUB_TOKEN 미설정", 503);
   const raw = await relayGet(path);
   const ent: CacheEnt = { json: raw?.json ?? null, sha: raw?.sha ?? null, at: Date.now() };
   caches.set(path, ent);
@@ -162,8 +163,8 @@ export function emptyParties(): RelayPartyFile {
   return { parties: {} };
 }
 
-export const CHAT_PATH = "db-backup/relay-chat.json";
-export const PARTY_PATH = "db-backup/relay-parties.json";
+export const CHAT_PATH = `db-backup/${storage.generation}/relay-chat.json`;
+export const PARTY_PATH = `db-backup/${storage.generation}/relay-parties.json`;
 
 /* 상수 — 라우트와 공유 */
 export const CHAT_KEEP = 50; // 채널별 보관 상한

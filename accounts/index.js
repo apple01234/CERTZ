@@ -16,8 +16,9 @@
 const { scryptSync, randomBytes, timingSafeEqual, createHash, createCipheriv, createDecipheriv } = require("node:crypto");
 const { readFileSync, writeFileSync, mkdirSync, existsSync, renameSync } = require("node:fs");
 const path = require("node:path");
+const storage = require("./storage.json");
 
-const DB_DIR = path.join(process.cwd(), "db");
+const DB_DIR = path.join(process.cwd(), "db", storage.generation);
 const DB_FILE = path.join(DB_DIR, "accounts.json");
 const SUPPORT_INBOX = path.join(DB_DIR, "support-inbox.jsonl"); // v1.4.3 — 문의/삭제 요청 수집함 (JSONL)
 const TOKEN_TTL_MS = 30 * 24 * 3600 * 1000; // 30일
@@ -170,7 +171,7 @@ function persistDb() {
  *  · 암호화: AES-256-GCM(SERTZ_BACKUP_KEY env, 기본 상수) — 저장 내용은 솔트된
  *    해시라 파일 유출돼도 원 비밀번호는 노출되지 않는다
  *  · 모든 실패는 로그만 남기고 무시 — 백업이 게임 서비스를 절대 막지 않는다 */
-const BACKUP_PATH = "db-backup/accounts.enc";
+const BACKUP_PATH = `db-backup/${storage.generation}/accounts.enc`;
 let ghTokenCache = null;
 function ghToken() {
   if (ghTokenCache !== null) return ghTokenCache;
@@ -194,12 +195,7 @@ function ghToken() {
   return ghTokenCache;
 }
 function ghRepo() {
-  try {
-    const cfg = readFileSync(path.join(process.cwd(), ".git", "config"), "utf8");
-    const m = cfg.match(/github\.com\/([^/]+)\/([^\s.]+)/);
-    if (m) return `${m[1]}/${m[2]}`;
-  } catch { /* 무시 */ }
-  return "apple01234/CERTZ";
+  return process.env.SERTZ_GH_REPO || "apple01234/CERTZ-DB";
 }
 /* v1.0.15 — 키 회전 지원 (ghdb.ts와 동일 규약).
  *  암호화는 현재 키(SERTZ_BACKUP_KEY, 미설정 시 기본 상수)로만.
@@ -215,6 +211,7 @@ function deriveKey(secret) {
 function currentKeySecret() {
   const env = process.env.SERTZ_BACKUP_KEY;
   if (env) return env;
+  if (process.env.NODE_ENV === "production") throw new Error("SERTZ_BACKUP_KEY 미설정 — 온라인 서버 설정 오류");
   if (!warnedDefaultKey) {
     warnedDefaultKey = true;
     console.warn("[SERTZ-accounts] 경고: SERTZ_BACKUP_KEY 미설정 — 소스에 공개된 기본 키로 계정 백업을 암복호화하고 있습니다.");

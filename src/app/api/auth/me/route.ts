@@ -4,7 +4,7 @@
  */
 import { NextRequest } from "next/server";
 import { loadDb } from "@/lib/ghdb";
-import { currentUser, json, options, publicUser } from "@/lib/sapi";
+import { currentUser, extractToken, json, options, publicUser } from "@/lib/sapi";
 
 export function OPTIONS(req: NextRequest) { return options(req); }
 
@@ -13,7 +13,10 @@ export async function GET(req: NextRequest) {
     /* v1.4.22 — 항상 fresh 조회: 로그아웃/계정삭제 직후 다른 인스턴스의 8초 캐시로
      *  무효화된 세션이 살아있어 보이는 착시 제거 (세션 검증은 정합성 우선). */
     const { db } = await loadDb(true);
-    return json(req, 200, { user: publicUser(currentUser(db, req)) });
+    const user = currentUser(db, req);
+    // Old APK clients clear their cached login only on401 after the online reset.
+    if (!user && extractToken(req)) return json(req, 401, { user: null, error: "세션이 만료됐어요 — 다시 로그인해 주세요" });
+    return json(req, 200, { user: publicUser(user) });
   } catch (e) {
     console.error("[SERTZ-api] me 실패", e);
     return json(req, 500, { error: "서버 오류" });
