@@ -87,18 +87,7 @@ export function TitleScreen() {
           <h1 className="text-5xl font-black tracking-[0.14em] text-[#ffe49a] [text-shadow:0_2px_0_#9a6410,0_4px_0_#6b4a1c,0_6px_0_#3a2508,0_10px_18px_rgba(0,0,0,0.9)] sm:text-7xl">
             SERTZ
           </h1>
-          {/* 양피지 부제 칩 — 우드 프레임 */}
-          <p className="game-chip mx-auto mt-3 inline-block max-w-[min(94vw,560px)] px-4 py-1.5">
-            <span className="text-sm font-black tracking-[0.3em] text-[#f0e2c0] [text-shadow:0_1px_2px_#000] sm:text-base">
-              라일락 월드
-            </span>
-            {/* v1.0.3 (#글자짤림) — 버전 배지가 부모 폭 제한 없이 늘어나 화면 밖으로 잘리던 버그:
-             *  배지를 별도 줄 블록으로 분리 + 최대 폭 제한 + 2줄 클램프
-             *  v1.0.19 (#문구정리) — 패치노트를 타이틀에 늘어놓던 문구를 게임 소개 한 줄로 교체.
-             *  "3D VFX · 툰 셰이딩 · 30 FPS · 5분 자동저장" 같은 개발자 체크리스트는 첫 화면에서
-             *  완성도가 아니라 프로토타입 인상을 줬다. 기능 나열은 설정/패치노트로 보낸다. */}
-            <span className="mt-1 block rounded border border-[#8a6a34]/70 bg-black/45 px-1.5 py-0.5 text-center text-[9px] font-black leading-snug tracking-normal text-[#cbb88a] line-clamp-2">v{APP_VERSION} — 기억의 서약 · 왕국에서 별 너머까지</span>
-          </p>
+          {/* 부제목 없음 (유저 지시) — 본제목 SERTZ 만. 버전 배지도 부제 취급이라 함께 제거. */}
         </div>
 
       {/* v1.0.17 — 구버전 APK 사용자 필수 안내: 최신 수정(화살 방향 등)은 재설치 후에만 적용됨 */}
