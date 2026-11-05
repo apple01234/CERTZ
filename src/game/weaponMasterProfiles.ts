@@ -22,7 +22,16 @@ export const WEAPON_MASTER_PROFILES: Partial<Record<ClassKey, WeaponMasterProfil
   archmage: { style: "book", mentor: "제르", name: "마도서 · 삼중 술식", color: 0xbea1ff, element: "light", startup: 320, recovery: 180, pulses: [0] },
   sage: { style: "art", mentor: "란", name: "아트 장막 · 치유", color: 0x9be8ec, element: "light", startup: 300, recovery: 180, pulses: [0] },
   assassin: { style: "shadow", mentor: "페르온", name: "그림자 잔향", color: 0xb69aef, element: "dark", startup: 120, recovery: 120, pulses: [0, 140] },
-  swashbuckler: { style: "copy", mentor: "하루", name: "카피 · 원소 순환", color: 0xf6e8ae, element: "none", startup: 180, recovery: 140, pulses: [0] },
+  /* vc249 (지시 #4) — "라일락 등 스토리 NPC의 스킬을 일반 모험가 직업에 넣지 않기".
+   *  [문제] 이 칸만 mentor 를 **"하루"**(플레이어 본인)로 두고 기술명도 "카피 · 원소 순환"이었다.
+   *  카피/원소 순환은 기획서상 **하루의 고유 능력**(무의 원소·타인 능력 복사)이며,
+   *  스토리 캐릭터는 이후 시즌 픽업 캐릭터로 분리 예정이다. 일반 직업이 그 정체성을
+   *  가져가면 ① 픽업 캐릭터의 고유성이 사라지고 ② 플레이어가 자기 자신에게 배우는
+   *  자기참조가 된다(멘토가 플레이어).
+   *  → 스와시버클러(도적 계열 검객)의 정체성에 맞는 **쌍검 연격**으로 바꾸고,
+   *   멘토는 특정 스토리 NPC가 아니라 "검객의 길"(수련)로 둔다.
+   *   정본에서 도적 계열 전용 무기 멘토가 확정돼 있지 않으므로 인물을 새로 만들지 않는다. */
+  swashbuckler: { style: "copy", mentor: "검객의 길", name: "쌍검 · 연격 순환", color: 0xf6e8ae, element: "none", startup: 180, recovery: 140, pulses: [0] },
   corsair: { style: "water", mentor: "카르텔", name: "삼지창 · 물결 쇄도", color: 0x68c7fa, element: "water", startup: 230, recovery: 160, pulses: [0] },
   raider: { style: "hammer", mentor: "제이드", name: "공학망치 · 분신 타격", color: 0xf2ce83, element: "earth", startup: 260, recovery: 180, pulses: [0, 160] },
 };
