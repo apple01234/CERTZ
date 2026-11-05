@@ -122,11 +122,37 @@ export function renderAuthoredMapLayers(
     for (const map of maps) map.destroy();
   });
   const images: Phaser.GameObjects.Image[] = [];
+  /* vc253 (지시 #1 "오브젝트가 크기에 맞게 잘리지 않음") — 프롭을 **타일 배수**로 정규화한다.
+   *
+   *  [실측한 문제] 프롭 원본 크기가 제각각이고 타일(셀) 배수가 아니었다:
+   *    obj_dungeon_torch 28×52 / chest 48×40 / anvil 52×36 / bookshelf 64×128
+   *    obj_forest_tree_pink 65×80 / rock_monument 100×89 / town_house_blue 160×112
+   *  셀은 cellW≈144 · cellH≈128 이다. 52px 토치를 그대로 깔면 0.36칸짜리 오브젝트가
+   *  격자 사이에 어중간하게 걸려 "크기에 맞게 잘리지 않은" 것처럼 보인다(첨부 스크린샷의
+   *  자판기·화분·벤치가 정확히 이 증상).
+   *
+   *  [해결] 목표 점유 칸수를 정하고, 원본 크기를 그 칸에 **딱 맞는 배율**로 스케일한다.
+   *   - 프롭별 기본 점유(칸)는 원본이 셀보다 크면 1칸, 작으면 0.5칸 단위로 내림해 정한다.
+   *   - 결과 크기는 항상 셀 크기의 정수/반정수배 → 격자에 정렬된다.
+   *   픽셀아트이므로 정수 배율이 아니어도 nearest 이웃이라 뭉개지지 않지만,
+   *   너무 작아지는 것을 막기 위해 최소 배율을 둔다. */
+  const snapPropScale = (key: string, baseScale: number): number => {
+    if (!scene.textures.exists(key)) return baseScale;
+    const src = scene.textures.get(key).getSourceImage() as { width: number; height: number };
+    if (!src?.width || !src?.height) return baseScale;
+    /* 원본이 차지하는 칸 수(반올림) — 셀보다 크면 여러 칸, 작으면 1칸 */
+    const cellsW = Math.max(0.5, Math.round((src.width * baseScale) / lay.cellW * 2) / 2);
+    const cellsH = Math.max(0.5, Math.round((src.height * baseScale) / lay.cellH * 2) / 2);
+    /* 그 칸 수에 정확히 맞는 배율 (가로/세로 중 작은 쪽을 써서 셀을 넘지 않게) */
+    const fit = Math.min((cellsW * lay.cellW) / src.width, (cellsH * lay.cellH) / src.height);
+    /* 원본 대비 0.5~2.5배 범위로 제한 — 과확대/과축소 방지 */
+    return Math.max(0.5, Math.min(2.5, fit));
+  };
   const prop = (key: string, x: number, y: number, scale = 1, tint?: number) => {
     if (!scene.textures.exists(key)) return;
     // Match WorldScene.yDepthFor's9–10 band so canopies sort with actors' feet.
     const depth = 9 + Math.max(0, Math.min(1, y / height)) - 0.001;
-    const image = scene.add.image(x, y, key).setOrigin(0.5, 1).setScale(scale).setDepth(depth).setName(`rea:prop:${key}`);
+    const image = scene.add.image(x, y, key).setOrigin(0.5, 1).setScale(snapPropScale(key, scale)).setDepth(depth).setName(`rea:prop:${key}`);
     if (tint) image.setTint(tint);
     images.push(image);
     onDecor?.(image);
@@ -147,9 +173,10 @@ export function renderAuthoredMapLayers(
      *  [함정] 여기서 자체 식(y / height)을 쓰면 height 가 타일맵 높이라
      *   WorldScene.yDepthFor(y) (= perspDepthOf(y, stageH)) 와 값이 미세하게
      *   어긋나고, 그 오차 때문에 지면/구조 레이어에 깔려 안 보였다(브라우저에서 확인:
-     *   depth 30 으로 강제하면 보이고 9.15 에서는 안 보임). */
+     *   depth 30 으로 강제하면 보이고 9.15 에서는 안 보임).
+     *  vc253 — 스케일도 prop() 과 같은 타일 배수 정규화를 쓴다(크기 제각각 방지). */
     const depth = 9 + Math.max(0, Math.min(1, y / height)) - 0.001;
-    const image = scene.add.image(x, y, key).setOrigin(0.5, 1).setScale(scale).setDepth(depth).setName(`rea:edge:${key}`);
+    const image = scene.add.image(x, y, key).setOrigin(0.5, 1).setScale(snapPropScale(key, scale)).setDepth(depth).setName(`rea:edge:${key}`);
     images.push(image);
   };
   const structuralProp = theme === "library" ? "obj_dungeon_bookshelf"
@@ -245,6 +272,25 @@ export function renderAuthoredMapLayers(
         else if (sides.includes("s")) py += lay.cellH * nudge;
         if (sides.includes("w")) px -= lay.cellW * nudge;
         else if (sides.includes("e")) px += lay.cellW * nudge;
+        /* vc253 (지시 #1) — 밀어낸 좌표를 **반 칸 격자**에 스냅한다.
+         *  종전엔 0.28셀 밀어낸 임의 좌표에 그대로 놓아 오브젝트가 격자 사이에
+         *  어중간하게 걸렸다(첨부 스크린샷의 벤치·화분·자판기).
+         *
+         *  [함정] 단순 반올림은 앵커를 **다음 셀로 넘긴다**. 0.78셀 위치는
+         *   (c+1.0)으로 반올림되어 Math.floor(y/cellH) 가 c+1(벽)이 되고,
+         *   `edge decor must sit on walkable ground` 불변식이 깨졌다.
+         *   → 셀 경계를 넘으면 그 셀의 **중앙**(역시 반 칸 격자점)으로 당긴다. */
+        const snapInCell = (v: number, cell: number, idx: number) => {
+          const half = cell * 0.5;
+          const snapped = Math.round(v / half) * half;
+          /* 셀 경계에 정확히 걸치면 부동소수 오차로 floor 가 아래/위 셀로 떨어진다.
+           *  (idx*cell 은 나눗셈 round-trip 이 보장되지 않는다.) 경계값은 쓰지 않고
+           *  넘칠 때는 그 셀 중앙으로 당긴다 — 중앙도 반 칸 격자점이다. */
+          if (snapped >= (idx + 1) * cell || snapped <= idx * cell) return idx * cell + half;
+          return snapped;
+        };
+        px = snapInCell(px, lay.cellW, c);
+        py = snapInCell(py, lay.cellH, r);
         /* 발밑 충돌 훅(onDecor)을 타지 않는 경로 — 통행을 줄이지 않는다. */
         propNoCollide(pick.key, px, py, pick.scale);
         placed++;
