@@ -212,11 +212,25 @@ function currentKeySecret() {
   const env = process.env.SERTZ_BACKUP_KEY;
   if (env) return env;
   if (process.env.NODE_ENV === "production") throw new Error("SERTZ_BACKUP_KEY 미설정 — 온라인 서버 설정 오류");
+  /* vc245 — 개발 모드 폴백이 **원격 DB 를 소스 공개 키로 덮어쓰는 사고**를 냈다.
+   *  (2026-11-04 21:50Z: 키 없이 로컬 서버를 띄운 세션이 lilac-v2/accounts.enc 를 기본 키로
+   *   재암호화 → 운영 Vercel 키와 불일치 → /api/auth/me·login 전면 500.)
+   *  공개 키는 누구나 알 수 있어 원격 백업의 기밀성을 0으로 만든다.
+   *  따라서 **원격(GitHub) 백업에 쓰기**를 할 때는 개발 모드에서도 키를 강제한다.
+   *  키가 없으면 로컬 전용(원격 미러 끔)으로만 동작한다. */
   if (!warnedDefaultKey) {
     warnedDefaultKey = true;
-    console.warn("[SERTZ-accounts] 경고: SERTZ_BACKUP_KEY 미설정 — 소스에 공개된 기본 키로 계정 백업을 암복호화하고 있습니다.");
+    console.warn(
+      "[SERTZ-accounts] 경고: SERTZ_BACKUP_KEY 미설정 — 원격 백업 쓰기를 비활성화합니다(로컬 전용). " +
+        "원격 DB 를 쓰려면 .env.local 에 SERTZ_BACKUP_KEY 를 설정하세요."
+    );
   }
   return DEFAULT_KEY_SECRET;
+}
+
+/** 원격 백업에 쓸 키가 안전한가 — 공개 기본 키면 원격 쓰기를 막는다. */
+function isRemoteSafeKey() {
+  return Boolean((process.env.SERTZ_BACKUP_KEY || "").trim());
 }
 function decryptSecrets() {
   const current = currentKeySecret();
@@ -282,6 +296,13 @@ async function ghGetFile() {
 async function ghPutFile(contentB64, sha) {
   const tok = ghToken();
   if (!tok) return false;
+  /* vc245 — 키 없이(공개 기본 키로) 원격 백업을 덮어쓰는 것을 막는다.
+   *  공개 키로 암호화된 DB 가 원격에 올라가면 ① 기밀성 0 ② 운영 키와 불일치로
+   *  서버 전체가 500 이 된다(실제 사고). 쓰기 직전에 한 번 더 확인한다. */
+  if (!isRemoteSafeKey()) {
+    console.warn("[SERTZ-accounts] 원격 백업 쓰기 차단 — SERTZ_BACKUP_KEY 미설정(공개 키 사용 중)");
+    return false;
+  }
   /* API content 필드 = "파일 내용"의 base64. 파일 내용 자체가 base64 텍스트라 이중 인코딩 필요 */
   const fileB64 = Buffer.from(contentB64, "utf8").toString("base64");
   const r = await fetch(`https://api.github.com/repos/${ghRepo()}/contents/${BACKUP_PATH}`, {
