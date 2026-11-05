@@ -283,7 +283,7 @@ export default function SupportPage() {
       </section>
 
       <footer className="mt-10 text-center text-[10px] leading-relaxed text-white/55">
-        SERTZ — 기억의 서약 · v1.4.5<br />
+        SERTZ<br />
         이 페이지는 게임과 같은 서버에서 동작합니다. 문의 데이터는 서버에만 저장되며 전송은 HTTPS로 암호화됩니다.
       </footer>
     </main>

@@ -574,15 +574,9 @@ export class BootScene extends Phaser.Scene {
           .setStroke("#3a2508", Math.max(6, Math.round(W * 0.012)))
           .setShadow(0, 5, "#000000", 0, true, true),
       );
-      container.add(
-        this.add
-          .text(W / 2, H * 0.34 + Math.max(30, Math.round(W * 0.055)), "라일락 월드", {
-            fontFamily: "Galmuri11, sans-serif",
-            fontSize: `${Math.max(12, Math.round(W * 0.02))}px`,
-            color: "#cbb88a",
-          })
-          .setOrigin(0.5),
-      );
+      /* vc244 — 로딩 화면 부제목("라일락 월드") 제거.
+       *  타이틀은 본제목 SERTZ 만 쓴다(사용자 지시: 부제목 없음).
+       *  BootScene 이 앱 셸(Overlays.tsx)과 별개로 부제목을 직접 그려 남아 있었다. */
       /* 진행바 프레임 (우드 프레임 + 금 채움) — 채움은 progress 핸들러가 갱신 */
       const barW = Math.min(340, W * 0.6);
       const barH = 18;

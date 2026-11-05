@@ -133,11 +133,21 @@ const ok = (name, cond) => { assert.ok(cond, `✗ ${name}`); checks++; };
   ok("usable 이 isRecoveryPotionItem 사용", pn.includes("isBasicPot || isRecoveryPotionItem(it)"));
 }
 
-/* ── ④ 부제목: 하울르스톤 → 이그드라실 ── */
+/* ── ④ 타이틀: 본제목 SERTZ 만 (부제목 없음) ──
+ *  vc244 — 사용자 지시 "본제목: SERTZ / 부제목: 없음". 종전엔 "기억의 서약" 부제목을
+ *  요구했지만, 그 지시에 맞춰 타이틀 표면에서 부제목을 전부 제거했다.
+ *  BootScene 이 앱 셸과 별개로 로딩 화면에 "라일락 월드"를 직접 그려 남아 있었으므로 함께 검사한다. */
 {
   const lay = read("src/app/layout.tsx");
-  ok("부제목이 새 캠페인 기억의 서약", lay.includes("기억의 서약") && !lay.includes("9개의 바다"));
-  ok("부제목에 '하울르스톤:' 없음", !/하울르스톤\s*:\s*이그드라실/.test(lay));
+  const boot = read("src/game/scenes/BootScene.ts");
+  const page = read("src/app/page.tsx");
+  ok("문서 title 이 SERTZ", /title:\s*"SERTZ"/.test(lay));
+  ok("layout title 에 부제목 없음", !/title:\s*"[^"]*—/.test(lay) && !/title:\s*"SERTZ\s/.test(lay));
+  ok("page.tsx 로딩 제목이 SERTZ", page.includes("SERTZ"));
+  /* 로딩/타이틀 화면의 실제 text() 노드에 부제목 문자열이 없어야 한다(주석 설명은 제외) */
+  ok("BootScene 에 '라일락 월드' 부제목 없음", !/\.text\([^)]*["'`]라일락 월드["'`]/.test(boot));
+  ok("BootScene 에 '기억의 서약' 부제목 없음", !/\.text\([^)]*["'`]기억의 서약["'`]/.test(boot));
+  ok("옛 부제목 '하울르스톤: 이그드라실' 없음", !/하울르스톤\s*:\s*이그드라실/.test(lay));
 }
 
 /* ── ⑤ 직업별 전용 무기: clsOnly 무기의 아이콘이 무기 종류와 맞아야 한다 ── */
