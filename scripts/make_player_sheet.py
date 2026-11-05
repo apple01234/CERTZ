@@ -112,11 +112,14 @@ def draw_legs(cv, g, y0, stride=0, side=False):
         cv.rect(lx - 2, y0 + LEG_H - 5, lx + 2, y0 + LEG_H - 1, "boot")
         cv.hline(lx - 3, lx + 2, y0 + LEG_H, "boot_sh")
     if g == "f":
-        # 치마 — 다리 위쪽을 덮어 여캐 실루엣 확보
-        for i in range(5):
-            half = 8 + i // 2
+        # 치마 — 다리 위쪽을 덮어 여캐 실루엣 확보.
+        #  [vc256] 밑단을 좌우로 더 퍼뜨려 "치마"로 확실히 읽히게 하고 남캐와 실루엣을 분리한다.
+        for i in range(6):
+            half = 8 + (i * 4) // 5          # 8 → 11px 로 점점 퍼짐
             cv.hline(CX - half, CX + half, y0 - 3 + i, "cloth")
-        cv.hline(CX - 9, CX + 9, y0 + 2, "cloth_sh")
+        cv.hline(CX - 12, CX - 9, y0 + 3, "cloth_sh")   # 밑단 그늘(좌)
+        cv.hline(CX + 9, CX + 12, y0 + 3, "cloth_sh")   # 밑단 그늘(우)
+        cv.hline(CX - 9, CX + 9, y0 + 3, "cloth_sh")
 
 
 def draw_body(cv, g, y0, side=False, facing="down"):
@@ -189,9 +192,17 @@ def draw_head(cv, g, top, facing="down"):
     # 앞머리
     cv.rect(CX - 7, top + 4, CX + 7, top + 7, "hair")
     cv.hline(CX - 5, CX + 5, top + 8, "hair_hi")
-    # 옆머리
-    cv.vline(CX - 10, top + 5, top + HEAD_H - 4, "hair")
-    cv.vline(CX + 10, top + 5, top + HEAD_H - 4, "hair")
+    # 옆머리 — [vc256] 여캐는 어깨 아래까지 길게 늘려 실루엣만으로도 구별되게 한다.
+    #  지적: "실루엣이 100% 동일해서 흑백으로 보면 성별 구분 불가"
+    hair_bottom = top + HEAD_H - 4 if g == "m" else top + HEAD_H + 8
+    cv.vline(CX - 10, top + 5, hair_bottom, "hair")
+    cv.vline(CX + 10, top + 5, hair_bottom, "hair")
+    if g == "f":
+        # 긴 머리 끝 — 1px 넓게 퍼뜨려 흐름을 만든다
+        cv.vline(CX - 11, top + HEAD_H - 2, hair_bottom, "hair_sh")
+        cv.vline(CX + 11, top + HEAD_H - 2, hair_bottom, "hair_sh")
+        cv.hline(CX - 11, CX - 9, hair_bottom, "hair_sh")
+        cv.hline(CX + 9, CX + 11, hair_bottom, "hair_sh")
     # 이목구비
     eye_y = top + 12
     if facing == "side":
@@ -272,6 +283,11 @@ def main():
                     img = img.transform(img.size, Image.AFFINE, (1, 0, 0, 0, 1, 1), resample=Image.NEAREST)
                 p = os.path.join(OUT, f"{prefix}_{anim}{i}.png")
                 img.save(p)
+                # 게임 런타임은 `.webp` 를 읽는다(characterAppearance.ts 의
+                # `/assets/${prefix}_idle0.webp`). PNG 만 저장하면 게임에는
+                # **낡은 webp 가 계속 쓰여** 스프라이트를 고쳐도 화면이 안 바뀐다.
+                # -> 같은 프레임을 webp 로도 저장해 둔다(무손실).
+                img.save(os.path.join(OUT, f"{prefix}_{anim}{i}.webp"), lossless=True, quality=100)
                 total += 1
         # 대표 프레임 검증
         im = Image.open(os.path.join(OUT, f"{prefix}_idle0.png"))
