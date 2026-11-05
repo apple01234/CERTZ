@@ -20,7 +20,7 @@ import { loadUnion, buySlotExpand } from "@/game/union";
 import { loadSlots, writeSlots, createCharacter, deleteCharacter, readCharSave, setActiveChar, getActiveCharId, BASE_SLOTS, type CharMeta } from "@/game/slots";
 import { loadSave, writeSave } from "@/game/config";
 import { authMe, nameTaken, claimName, releaseName } from "@/game/account"; // v1.2.0 (#7) — GM 외형 옵션은 admin 롤에만 노출 · v1.0.6 — 닉네임 중복 방지
-import { classDef, isClassKey, classLabel, familyOf, type ClassKey } from "@/game/classes";
+import { classDef, isClassKey, classLabel, familyOf, FIFTH_LEVEL, type ClassKey } from "@/game/classes";
 import type { SaveData } from "@/game/config";
 import { resolveCharacterPreview, type CharacterAppearance } from "@/game/characterAppearance";
 
@@ -282,7 +282,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                         className="otaku-badge absolute left-1 top-1 rounded px-1 py-0.5 text-[8px] font-black backdrop-blur-sm"
                         style={{ color, background: `${color}33`, border: `1px solid ${color}55` }}
                       >
-                        {classLabel(m.cls as ClassKey) || "모험가"}
+                        {classLabel(m.cls as ClassKey, m.lv >= FIFTH_LEVEL) || "모험가"}
                       </span>
                     </div>
 
@@ -455,7 +455,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                   <div className="min-w-0">
                     <p className="truncate text-[13px] font-black text-white">{sel.name}</p>
                     <p className="text-[10px] font-bold" style={{ color: clsColor(sel.cls) }}>
-                      {classLabel(sel.cls as ClassKey) || "모험가"} · Lv. {sel.lv} · 환생 {sel.rebirths}회
+                      {classLabel(sel.cls as ClassKey, sel.lv >= FIFTH_LEVEL) || "모험가"} · Lv. {sel.lv} · 환생 {sel.rebirths}회
                     </p>
                   </div>
                 </div>

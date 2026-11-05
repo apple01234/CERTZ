@@ -1385,10 +1385,41 @@ export const FIFTH_LEVEL = 200;
 export const FIFTH1_MULT = 3.0;
 export const FIFTH2_MULT = 5.0;
 
-/** HUD 표기용 — "전사 · 검사" / 2차 이상 "버서커" */
-export function classLabel(key?: string | null): string {
+/** HUD 표기용 — "전사 · 검사" / 2차 이상은 4차 직업명으로 고정하고 **차수만** 올린다.
+ *
+ *  vc246 (지시 #2) — "2차 전직 이후 각 분기별 4차 직업 이름으로 이름을 고정하고 차수만 올리기
+ *  (예: 3차 워브링어, 5차 워브링어)".
+ *
+ *  [왜] 종전엔 `chain[마지막].name` = **실제 현재 직업명**을 그대로 썼다. 그래서 같은 분기에서
+ *  승급할 때마다 이름이 바뀌어(버서커→워로드→워브링어) 유저가 "내 직업이 뭐지"를 매번 다시
+ *  읽어야 했다. 이제 분기의 **종착 이름(4차)** 하나로 고정하고, 단계는 괄호/숫자로만 표현한다.
+ *
+ *  [차수 계산] 실제 전직 단계가 아니라 **2차 전직 이후 몇 번째 각성인지**를 센다:
+ *    2차 = 2차, 3차 = 3차, 4차 = 4차, 그리고 Lv200 오각성 = 5차.
+ *  5차는 새 ClassDef 가 아니라 `fifth` 플래그(레벨 200)로만 존재하므로,
+ *  호출부가 5차 여부를 알려주면 이름은 그대로 두고 차수만 5로 올린다.
+ */
+export function classLabel(key?: string | null, fifth?: boolean): string {
   const chain = chainOf(key);
   if (chain.length === 0) return "";
   if (chain.length === 1) return `${chain[0].name} · ${chain[0].title}`;
-  return `${chain[chain.length - 1].name}`;
+  /* 분기의 종착(4차) 이름 — 이 이름으로 고정한다.
+   *  [함정 1] `tier2RootOf()` 는 **2차** 루트를 준다(외형 승계용). 그 루트에서 체인을 뽑으면
+   *   2차에서 끊겨 4차를 못 찾고 2차 이름이 찍힌다.
+   *  [함정 2] `chainOf()` 는 **위(부모)로만** 올라간다. 3차에서 호출하면 4차 후손이 체인에 없다.
+   *   → 현재 단계에서 `jobOptions()` 로 아래로 내려가며 4차를 찾는다(각 단계 분기가 1개뿐). */
+  const finalDef = (() => {
+    if (chain[chain.length - 1].tier === 4) return chain[chain.length - 1];
+    let cur: ClassDef | null = chain[chain.length - 1];
+    for (let guard = 0; cur && cur.tier < 4 && guard < 4; guard++) {
+      const next = jobOptions(cur.key)[0] ?? null;
+      if (!next) break;
+      cur = next;
+    }
+    return cur && cur.tier === 4 ? cur : chain[chain.length - 1];
+  })();
+  const cur = chain[chain.length - 1];
+  /* 차수: 실제 단계(2~4) + 5차 각성 1단계 */
+  const step = fifth ? 5 : Math.min(4, Math.max(2, cur.tier));
+  return `${finalDef.name} ${step}차`;
 }

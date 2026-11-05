@@ -217,7 +217,7 @@ export function HUD({
                 className="game-chip w-fit px-1.5 py-0.5 text-[10px] font-black"
                 style={{ color: d.color }}
               >
-                {classLabel(hud.cls)}
+                {classLabel(hud.cls, hud.fifth)}
               </span>
             ) : null;
           })()}

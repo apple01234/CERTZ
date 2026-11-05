@@ -26,6 +26,8 @@ export type HudState = {
   critRate: number;
   /** 전직 클래스 (미전직 null) — HUD 배지 */
   cls: string | null;
+  /** vc246 (지시 #2) — 5차 각성(레벨 200). 직업명은 4차 이름으로 고정하고 차수만 5로 표기. */
+  fifth?: boolean;
   /* ----- v1.9 ----- */
   /** 활성 버프 목록 (남은 시간 바 표시) */
   buffs: HudBuff[];

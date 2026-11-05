@@ -16832,6 +16832,9 @@ export class WorldScene extends Phaser.Scene {
       /* v1.3.1 (#7 능력치 소수 정리) — 소수 둘째 자리에서 반올림해 표시 (크리티컬 %/이동속도) */
       critRate: Math.round(this.player.critRate * 10) / 10,
       cls: this.player.cls,
+      /* vc246 (지시 #2) — 5차 각성 여부. 직업명은 4차 이름으로 고정하고 차수만 5로 올린다.
+       *  5차는 별도 ClassDef 가 아니라 레벨 200 플래그라 HUD 가 알 방법이 없었다. */
+      fifth: this.player.isFifth,
       /* vc179 (지시 #5 DDD) — 연속킬(콤보)을 HUD에 상시 노출.
        *  종전엔 킬 순간의 플로팅 텍스트뿐이라 "지금 콤보가 몇이고 몇 초 남았는지"를
        *  알 수 없었다. DDD의 핵심은 유지 중인 보상 상태를 계속 보이게 하는 것이다. */
