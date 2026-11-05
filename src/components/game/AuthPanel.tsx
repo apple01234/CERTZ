@@ -307,10 +307,31 @@ export function AuthPanel() {
                 </div>
                 {/* v1.0.3 (#GM안내) — 관리자 계정 상태 표시: GM 로그인 방법을 패널에서 바로 알려준다 */}
                 {user.role === "admin" && (
-                  <p className="mt-2 rounded-lg border border-amber-300/40 bg-amber-400/10 px-2.5 py-2 text-[10px] font-black text-amber-200">
-                    ✨ 관리자 계정 — 마을 우물 오른쪽의 GM NPC와 대화하면 운영자 패널이 열려요
-                    <br />접속 서버: {getApiServerHost()}
-                  </p>
+                  <>
+                    <p className="mt-2 rounded-lg border border-amber-300/40 bg-amber-400/10 px-2.5 py-2 text-[10px] font-black text-amber-200">
+                      ✨ 관리자 계정 — 마을 우물 오른쪽의 GM NPC와 대화하면 운영자 패널이 열려요
+                      <br />접속 서버: {getApiServerHost()}
+                    </p>
+                    {/* [vc263] 제작 도구 진입점 — 사용자 지적 "타일맵&스킬에디터는 어디감?".
+                     *
+                     *  vc262 에서 Lobby 에 링크를 넣었지만 그 화면은 타이틀 → 게임 시작 →
+                     *  로비까지 들어가야 닿아서 여전히 찾기 어렵다. 로그인만 하면 바로 보이는
+                     *  이 패널이 실제 진입점이어야 한다. admin 에게만 노출한다. */}
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <a
+                        href="/editor"
+                        className="flex items-center justify-center gap-1 rounded-xl border-2 border-amber-200/60 bg-amber-500/20 px-2 py-2.5 text-[11px] font-black text-amber-100 transition-transform hover:bg-amber-500/35 active:scale-95"
+                      >
+                        🗺 맵 에디터
+                      </a>
+                      <a
+                        href="/skill-editor"
+                        className="flex items-center justify-center gap-1 rounded-xl border-2 border-emerald-200/50 bg-emerald-500/20 px-2 py-2.5 text-[11px] font-black text-emerald-100 transition-transform hover:bg-emerald-500/35 active:scale-95"
+                      >
+                        ✨ 스킬 메이커
+                      </a>
+                    </div>
+                  </>
                 )}
                 <p className="mt-2 text-[9px] font-bold leading-relaxed text-white/55">
                   백업은 3분마다 자동 실행돼요 · 복원하면 이 기기의 세이브가 교체돼요
