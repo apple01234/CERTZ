@@ -2,6 +2,8 @@ import type Phaser from "phaser";
 import type { RoomLayout } from "../mapgen";
 import { isSolidDecor } from "../decorObjects";
 import { groundAtlasOf, GROUND_ATLAS_FRAMES } from "../tileThemes"; // vc252 (지시 #1) — 바닥 변형 아틀라스
+/* vc257 — 에디터와 **동일한** 순수 로직을 공유한다(단일 출처). */
+import * as core from "../tilemapEditorCore";
 
 /** Verified seamless floor textures in assets/ground/manifest.json. Native tiles
  * are sliced/reassembled in the Tilemap, without a raster copy or a prop fallback. */
@@ -136,31 +138,14 @@ export function renderAuthoredMapLayers(
    *   - 결과 크기는 항상 셀 크기의 정수/반정수배 → 격자에 정렬된다.
    *   픽셀아트이므로 정수 배율이 아니어도 nearest 이웃이라 뭉개지지 않지만,
    *   너무 작아지는 것을 막기 위해 최소 배율을 둔다. */
+  /* [vc257 — 단일 출처] 프롭 배율 계산은 `tilemapEditorCore.snapPropScale` 로 옮겼다.
+   *  에디터와 게임이 같은 함수를 쓰지 않으면 미리보기와 실제가 반드시 갈라진다
+   *  (치수·프롭 상한·클램프 범위가 두 곳에 복제되면 한쪽만 고치는 사고가 난다). */
   const snapPropScale = (key: string, baseScale: number): number => {
     if (!scene.textures.exists(key)) return baseScale;
     const src = scene.textures.get(key).getSourceImage() as { width: number; height: number };
     if (!src?.width || !src?.height) return baseScale;
-    /* 프롭별 최대 점유 칸수 — 큰 구조물이 통로를 덮지 않게 제한한다.
-     *  bookshelf(64×128)를 1.5칸으로 맞추면 세로 192px = 1.5칸이 되어 벽을 뚫는다. */
-    const MAX_CELLS: Record<string, number> = {
-      obj_dungeon_bookshelf: 1,   // 세로 1칸 고정 (실내 벽면 선반)
-      obj_forest_tree_pink: 1.5,  // 나무는 살짝 크게
-      obj_town_house_blue: 2,     // 집은 2칸
-      obj_forest_rock_monument: 1,
-      obj_dungeon_torch: 0.5,
-      obj_dungeon_chest: 0.5,
-      obj_dungeon_anvil: 0.5,
-    };
-    const capCells = MAX_CELLS[key] ?? 1;
-    /* 원본이 차지하는 칸 수(반 칸 단위) — 셀보다 크면 여러 칸, 작으면 1칸 */
-    const rawCellsW = (src.width * baseScale) / lay.cellW;
-    const rawCellsH = (src.height * baseScale) / lay.cellH;
-    const cellsW = Math.max(0.5, Math.min(capCells, Math.round(rawCellsW * 2) / 2));
-    const cellsH = Math.max(0.5, Math.min(capCells, Math.round(rawCellsH * 2) / 2));
-    /* 그 칸 수에 정확히 맞는 배율 (가로/세로 중 작은 쪽을 써서 셀을 넘지 않게) */
-    const fit = Math.min((cellsW * lay.cellW) / src.width, (cellsH * lay.cellH) / src.height);
-    /* 원본 대비 0.5~2.5배 범위로 제한 — 과확대/과축소 방지 */
-    return Math.max(0.5, Math.min(2.5, fit));
+    return core.snapPropScale(src.width, src.height, baseScale, lay.cellW, lay.cellH, key);
   };
   const prop = (key: string, x: number, y: number, scale = 1, tint?: number) => {
     if (!scene.textures.exists(key)) return;
@@ -306,17 +291,11 @@ export function renderAuthoredMapLayers(
          *   (c+1.0)으로 반올림되어 Math.floor(y/cellH) 가 c+1(벽)이 되고,
          *   `edge decor must sit on walkable ground` 불변식이 깨졌다.
          *   → 셀 경계를 넘으면 그 셀의 **중앙**(역시 반 칸 격자점)으로 당긴다. */
-        const snapInCell = (v: number, cell: number, idx: number) => {
-          const half = cell * 0.5;
-          const snapped = Math.round(v / half) * half;
-          /* 셀 경계에 정확히 걸치면 부동소수 오차로 floor 가 아래/위 셀로 떨어진다.
-           *  (idx*cell 은 나눗셈 round-trip 이 보장되지 않는다.) 경계값은 쓰지 않고
-           *  넘칠 때는 그 셀 중앙으로 당긴다 — 중앙도 반 칸 격자점이다. */
-          if (snapped >= (idx + 1) * cell || snapped <= idx * cell) return idx * cell + half;
-          return snapped;
-        };
-        px = snapInCell(px, lay.cellW, c);
-        py = snapInCell(py, lay.cellH, r);
+        /* [vc257] 셀 내 스냅은 에디터와 같은 함수(core.edgeDecorPlacement)를 쓴다.
+         *  여기서 인라인으로 복제하면 에디터 미리보기와 좌표가 갈라진다. */
+        const snappedTo = core.edgeDecorPlacement({ c, r, cellW: lay.cellW, cellH: lay.cellH, sides });
+        px = snappedTo.x;
+        py = snappedTo.y;
         /* 발밑 충돌 훅(onDecor)을 타지 않는 경로 — 통행을 줄이지 않는다. */
         propNoCollide(pick.key, px, py, pick.scale);
         placed++;
