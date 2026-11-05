@@ -136,7 +136,8 @@ test('Auto skip during long dialogue immediately releases actors, letterbox, eff
   assert.equal(fake.cam.zoom, 2.8);
   assert.equal(fake.cam.pans[0].x, 900, 'camera focuses actual actor landmark');
   assert.equal(playStoryCutscene(fake.scene, { shots: [{ x: 10, y: 10 }] }), false);
-  fake.scene.input.emit('pointerdown');
+  /* 하루 v2 — 전체 스킵은 우상단 '건너뛰기' 영역(또는 ESC)뿐이다. 화면 아무 곳 터치는 '다음 단계'. */
+  fake.scene.input.emit('pointerdown', { x: 790, y: 10 });
   assertReleased(fake); assert.equal(completed, 1);
   assert.equal(fake.pending(), 0);
   fake.advance(300000);
@@ -242,4 +243,97 @@ test('interrupted camera event has bounded healing, and every authored sequence 
     assert.ok(sprites.length > 0, `${scenario.id} has animated preloaded actors`);
     assert.ok(sprites.some((sprite) => sprite.played.some((key) => key.includes('-walk'))), `${scenario.id} walks during direction`);
   }
+});
+
+/* ───────── 하루 v2 — 연출 입력/대사 통합 회귀 ───────── */
+/** 실제 Phaser 는 한 번의 키 입력에 'keydown-<NAME>' 과 'keydown' 을 둘 다 내보낸다(종전 스텁은 후자만 흉내냈다). */
+function pressLikePhaser(fake, name, code) {
+  fake.scene.input.keyboard.emit(`keydown-${name}`, { code });
+  fake.scene.input.keyboard.emit('keydown', { code });
+}
+
+test('Space (default interact key) advances exactly one shot and never skips the whole cutscene', () => {
+  const fake = fakeScene(); let completed = 0;
+  playStoryCutscene(fake.scene, {
+    shots: [{ x: 100, y: 100, panMs: 120, holdMs: 100 }, { x: 200, y: 200, panMs: 120, holdMs: 100 }, { x: 300, y: 300, panMs: 120, holdMs: 100 }],
+    onDone: () => completed++,
+  });
+  fake.advance(500);
+  const before = fake.cam.pans.length;
+  pressLikePhaser(fake, 'SPACE', 'Space');
+  fake.advance(30);
+  assert.equal(completed, 0, 'Space must not end the cutscene');
+  assert.equal(sceneCinematicPlaying(fake.scene), true);
+  assert.equal(fake.cam.pans.length, before + 1, 'Space = next shot');
+});
+
+test('Tap outside the skip zone advances one step; tap in the top-right skip zone skips', () => {
+  const fake = fakeScene(); let completed = 0;
+  playStoryCutscene(fake.scene, {
+    shots: [{ x: 100, y: 100, panMs: 120, holdMs: 100 }, { x: 200, y: 200, panMs: 120, holdMs: 100 }],
+    onDone: () => completed++,
+  });
+  fake.advance(500);
+  const before = fake.cam.pans.length;
+  fake.scene.input.emit('pointerdown', { x: 400, y: 300 });
+  fake.advance(30);
+  assert.equal(fake.cam.pans.length, before + 1, 'tap = next shot');
+  assert.equal(completed, 0);
+  fake.advance(500);
+  fake.scene.input.emit('pointerdown', { x: 790, y: 10 });
+  assertReleased(fake); assert.equal(completed, 1, 'skip zone ends the cutscene');
+});
+
+test('Story dialogue plays while its shot is on screen, next shot waits for the player, skip closes the box', () => {
+  const fake = fakeScene(); const log = []; let doneCb; let cancelled = 0; let completed = 0;
+  playStoryCutscene(fake.scene, {
+    shots: [{ x: 100, y: 100, panMs: 120, holdMs: 100, dialogue: 'a' }, { x: 200, y: 200, panMs: 120, holdMs: 100, dialogue: 'b' }],
+    onDone: () => completed++,
+    showDialogue: (key) => { log.push(`late:${key}`); return true; },
+    playDialogue: (key, done) => { log.push(`play:${key}@pans=${fake.cam.pans.length}`); doneCb = done; return () => { cancelled++; }; },
+  });
+  fake.advance(300);
+  assert.deepEqual(log, ['play:a@pans=1'], '대사는 첫 컷 카메라 도착 직후, 연출 도중에 재생');
+  assert.equal(sceneCinematicPlaying(fake.scene), true);
+  fake.advance(600000); /* 읽는 시간에는 상한이 없다 */
+  assert.equal(sceneCinematicPlaying(fake.scene), true, 'idle watchdog must not cut a slow reader');
+  assert.equal(fake.cam.pans.length, 1, 'next shot waits for the dialogue to end');
+  doneCb(); fake.advance(300);
+  assert.deepEqual(log, ['play:a@pans=1', 'play:b@pans=2']);
+  fake.scene.input.keyboard.emit('keydown-ESC');
+  assertReleased(fake);
+  assert.equal(cancelled, 1, '스킵하면 열려 있던 대사창을 닫는다');
+  assert.equal(completed, 1);
+  assert.deepEqual(log.filter((l) => l.startsWith('late:')), [], '연출 뒤 몰아서 재생하지 않는다');
+});
+
+test('Auto cutscene routes say() to the shared dialogue window and waits for the player', () => {
+  const fake = fakeScene(); const said = []; let doneCb; let cancelled = 0; let completed = 0;
+  playAutoCutscene(fake.scene, spec([
+    { t: 'enter', id: 'lilac', actor },
+    { t: 'say', speaker: '라일락', lines: ['첫째 줄', '둘째 줄'] },
+    { t: 'cam', rx: 0.5, ry: 0.5, panMs: 120 },
+  ]), () => completed++, {
+    say: (speaker, lines, done) => { said.push({ speaker, lines, pans: fake.cam.pans.length }); doneCb = done; return () => { cancelled++; }; },
+  });
+  fake.advance(400);
+  assert.equal(said.length, 1);
+  assert.deepEqual(said[0].lines, ['첫째 줄', '둘째 줄']);
+  fake.advance(600000);
+  assert.equal(sceneCinematicPlaying(fake.scene), true, 'no auto-advance and no watchdog while the dialogue box is open');
+  assert.equal(fake.cam.pans.length, 0, 'next step waits');
+  doneCb(); fake.advance(400);
+  assert.equal(fake.cam.pans.length, 1, 'after the player finishes reading, direction continues');
+  fake.advance(30000);
+  assertReleased(fake); assert.equal(completed, 1);
+});
+
+test('skip while the shared dialogue box is open closes it', () => {
+  const fake = fakeScene(); let cancelled = 0;
+  playAutoCutscene(fake.scene, spec([{ t: 'enter', id: 'lilac', actor }, { t: 'say', speaker: '라일락', lines: ['x'] }]), undefined, {
+    say: () => () => { cancelled++; },
+  });
+  fake.advance(400);
+  fake.scene.input.keyboard.emit('keydown-ESC');
+  assertReleased(fake); assert.equal(cancelled, 1); assert.equal(fake.pending(), 0);
 });

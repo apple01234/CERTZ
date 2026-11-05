@@ -2487,7 +2487,8 @@ export class WorldScene extends Phaser.Scene {
     if (!scen) return false;
     const seenKey = `lilacCut_rea1_${scen.id}`;
     if (this.cutsceneSeen.includes(seenKey)) return false;
-    return playAutoCutscene(this, {
+    EventBus.emit("cinematic:state", { active: true });
+    const started = playAutoCutscene(this, {
       id: scen.id,
       stageW: this.stageW,
       stageH: this.stageH,
@@ -2498,7 +2499,27 @@ export class WorldScene extends Phaser.Scene {
         this.cutsceneSeen = [...this.cutsceneSeen, seenKey];
         this.saveSoon();
       }
+    }, {
+      onFinish: () => EventBus.emit("cinematic:state", { active: false }),
+      /* 하루 v2 — 연출 대사도 NPC 대화와 같은 공용 대사창(DialogueBox)으로 보낸다. */
+      say: (speaker, lines, done) => {
+        const cancel = this.onCutsceneDialogueEnd(done);
+        EventBus.emit("dialogue:show", { speaker, lines });
+        return cancel;
+      },
     });
+    if (!started) EventBus.emit("cinematic:state", { active: false });
+    return started;
+  }
+
+  /** 하루 v2 — 연출 중 띄운 대사창이 끝나면 done 을 한 번만 부른다. 반환: 취소(스킵 시 상자를 닫는다).
+   *  반드시 dialogue:show 를 내보내기 *전에* 등록한다. */
+  private onCutsceneDialogueEnd(done: () => void): () => void {
+    let open = true;
+    const off = () => { open = false; EventBus.off("dialogue:done", onDone); };
+    const onDone = () => { if (open) { off(); done(); } };
+    EventBus.on("dialogue:done", onDone);
+    return () => { if (open) { off(); EventBus.emit("dialogue:hide"); } };
   }
 
   private playChapterIntroCutscene(stageKey: StageKey): boolean {
@@ -2510,9 +2531,18 @@ export class WorldScene extends Phaser.Scene {
     const shots = resolveChapterIntroShots(spec, {
       width: this.stageW, height: this.stageH, entry: this.entryHome, feature: this.portalHome, player: this.player,
     });
-    return playStoryCutscene(this, {
+    EventBus.emit("cinematic:state", { active: true });
+    const started = playStoryCutscene(this, {
       shots,
+      onFinish: () => EventBus.emit("cinematic:state", { active: false }),
       showDialogue: (key) => this.showDialogueOnce(key),
+      /* 하루 v2 — 그 컷이 화면에 있는 동안 대사 재생(이미 본 대사는 null → 키 대기로 폴백). */
+      playDialogue: (key, done) => {
+        if (!DIALOGUES[key] || this.seenSet.has(key)) return null;
+        const cancel = this.onCutsceneDialogueEnd(done);
+        this.showDialogueOnce(key);
+        return cancel;
+      },
       onDone: () => {
         if (!this.cutsceneSeen.includes(parsed.ch)) {
           this.cutsceneSeen = [...this.cutsceneSeen, parsed.ch];
@@ -2520,6 +2550,8 @@ export class WorldScene extends Phaser.Scene {
         }
       },
     });
+    if (!started) EventBus.emit("cinematic:state", { active: false });
+    return started;
   }
 
   private applyManualCameraFollow(dt: number) {
@@ -17594,6 +17626,13 @@ export class WorldScene extends Phaser.Scene {
   }
 
   resumeFromDialogue() {
+    /* 하루 v2 — 연출(컷씬) 중에 띄운 대사는 카메라·물리 소유권이 연출에 있다. 대사가 끝나도 여기서
+     *  조작/물리를 풀면 연출 도중 플레이어와 적이 움직인다 → 대사창만 닫고, 복원은 연출 종료(세션)에 맡긴다. */
+    if (sceneCinematicPlaying(this)) {
+      this.dialogueSince = 0;
+      EventBus.emit("dialogue:hide");
+      return;
+    }
     this.restoreBossIntroCam(); // v1.0.2 (#보스컷씬) — 대사 종료 후에만 플레이어 시점 복귀
     // 일반 NPC 대화는 어느 세계의 엔딩도 대신하지 않는다.
     // 다음 세계 포탈은 해당 세계의 엔딩 기록으로만 개방한다.

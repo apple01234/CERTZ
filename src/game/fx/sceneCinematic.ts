@@ -45,15 +45,18 @@ export class CinematicSession {
     scene.input.keyboard?.resetKeys();
     const skip = () => this.finish("skip");
     const shutdown = () => this.finish("shutdown");
-    scene.input.keyboard?.on("keydown-SPACE", skip);
+    /* 하루 v2 (지시 "연출도 NPC/채집 키로 대사 넘김") — 전체 스킵은 ESC 와 우상단 '건너뛰기' 영역뿐이다.
+     *  종전엔 Space·화면 어디든 터치가 전체 스킵이었다. 기본 interact 키가 Space 라서, Phaser 가
+     *  한 번의 Space 입력에 keydown-SPACE(스킵)와 keydown(waitForKey 다음 단계)을 둘 다 내보내
+     *  "한 단계씩 넘기기"는 항상 스킵에 먼저 막혔다(Space 한 번에 연출 전체 종료). */
+    const onPointer = (p?: { x?: number; y?: number }) => { if (this.inSkipZone(p)) skip(); };
     scene.input.keyboard?.on("keydown-ESC", skip);
-    scene.input.on("pointerdown", skip);
+    scene.input.on("pointerdown", onPointer);
     scene.events.once("shutdown", shutdown);
     scene.events.once("destroy", shutdown);
     this.own(() => {
-      scene.input.keyboard?.off("keydown-SPACE", skip);
       scene.input.keyboard?.off("keydown-ESC", skip);
-      scene.input.off("pointerdown", skip);
+      scene.input.off("pointerdown", onPointer);
       scene.events.off("shutdown", shutdown);
       scene.events.off("destroy", shutdown);
     });
@@ -62,6 +65,29 @@ export class CinematicSession {
 
   get active(): boolean { return !this.ended; }
   own(cleanup: () => void): void { this.cleanups.push(cleanup); }
+
+  /** 화면(캔버스) 좌표 기준 우상단 '건너뛰기' 영역. 좌표가 없으면(키보드 합성 입력 등) 스킵이 아니다. */
+  private inSkipZone(p?: { x?: number; y?: number }): boolean {
+    if (!p || typeof p.x !== "number" || typeof p.y !== "number") return false;
+    const w = this.scene.cameras.main?.width ?? 0;
+    return p.x >= w - 170 && p.y <= 54;
+  }
+
+  private hint?: Phaser.GameObjects.Text;
+  private watchdog?: Phaser.Time.TimerEvent;
+  /** 단계가 넘어갈 때마다 부른다: 한 단계가 ms 이상 멈춰 있으면 연출 전체를 끝낸다(영구 정지 방지).
+   *  종전 '전체 길이' 워치독은 키 대기(단계당 최대 ~15초)가 늘어난 뒤 느린 독자를 중간에 끊을 수 있었다. */
+  watch(ms: number): void {
+    this.unwatch();
+    if (this.active) this.watchdog = this.delay(ms, () => this.finish());
+  }
+  /** 플레이어 입력을 기다리는 대사창 동안은 끈다(읽는 시간에는 상한이 없다 — ESC 로 언제든 스킵). */
+  unwatch(): void {
+    if (!this.watchdog) return;
+    this.watchdog.remove(false);
+    this.timers.delete(this.watchdog);
+    this.watchdog = undefined;
+  }
   delay(ms: number, fn: () => void): Phaser.Time.TimerEvent {
     const timer = this.scene.time.delayedCall(Math.max(0, ms), () => {
       this.timers.delete(timer);
@@ -95,9 +121,16 @@ export class CinematicSession {
       if (done || !this.active) return;
       done = true;
       this.scene.input.keyboard?.off("keydown", onAny);
+      this.scene.input.off("pointerdown", onTap);
+      this.hint?.setVisible(false);
       timer?.remove(false);
       if (timer) this.timers.delete(timer);
       fn();
+    };
+    /* 화면 터치(모바일)도 '다음 단계' — 우상단 건너뛰기 영역은 세션 쪽이 스킵으로 처리한다. */
+    const onTap = (p?: { x?: number; y?: number }) => {
+      if (this.scene.time.now - started < minMs || this.inSkipZone(p)) return;
+      finish();
     };
     /* 아무 키나 받되 최소 시간 전에는 무시 — 실수로 넘겨 읽을 기회를 뺏기지 않게. */
     const onAny = (ev: KeyboardEvent) => {
@@ -113,7 +146,12 @@ export class CinematicSession {
     };
     const timer: Phaser.Time.TimerEvent = this.delay(maxMs, finish);
     this.scene.input.keyboard?.on("keydown", onAny);
-    this.cleanups.push(() => this.scene.input.keyboard?.off("keydown", onAny));
+    this.scene.input.on("pointerdown", onTap);
+    this.hint?.setVisible(true);
+    this.cleanups.push(() => {
+      this.scene.input.keyboard?.off("keydown", onAny);
+      this.scene.input.off("pointerdown", onTap);
+    });
   }
 
   tween(config: Phaser.Types.Tweens.TweenBuilderConfig): void {
@@ -158,10 +196,15 @@ export class CinematicSession {
     const h = Math.round(cam.height * 0.1);
     const top = scene.add.rectangle(0, 0, cam.width, h, 0x000000).setOrigin(0, 0);
     const bottom = scene.add.rectangle(0, cam.height - h, cam.width, h, 0x000000).setOrigin(0, 0);
-    const skip = scene.add.text(cam.width - 16, 14, "SPACE / ESC · 화면 터치로 건너뛰기", {
-      fontFamily: "sans-serif", fontSize: "12px", color: "#eeeeee",
+    /* 하루 v2 — 전체 스킵은 ESC·우상단 영역(inSkipZone). 다음 단계 안내는 키를 기다리는 동안만 아래 막대에 뜬다. */
+    const skip = scene.add.text(cam.width - 16, 14, "건너뛰기 ▸▸  ESC", {
+      fontFamily: "sans-serif", fontSize: "13px", color: "#eeeeee",
     }).setOrigin(1, 0);
-    ui.add([top, bottom, skip]);
+    const hint = scene.add.text(cam.width / 2, cam.height - h / 2, "Space · 탭 ▸ 다음", {
+      fontFamily: "sans-serif", fontSize: "12px", color: "#bbbbbb",
+    }).setOrigin(0.5, 0.5).setVisible(false);
+    this.hint = hint;
+    ui.add([top, bottom, skip, hint]);
     this.pinScreen(ui);
     this.own(() => ui.destroy(true));
   }
