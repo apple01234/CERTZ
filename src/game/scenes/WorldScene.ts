@@ -192,6 +192,7 @@ const NPC_BODY_OF: Record<string, string> = {
   spum_scout: "npcbody_scout",
   spum_mystic: "npcbody_mystic",
   spum_butler: "npcbody_butler",
+  spum_priest: "npcbody_priest",
   spum_merchant: "npcbody_merchant",
 };
 

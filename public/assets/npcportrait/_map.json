@@ -339,5 +339,16 @@
       46
     ],
     "sha256": "ca55660e397bc78647d3b2073e061594c5262ce448e74b550af3e41ecdd48e2b"
+  },
+  "spum_priest": {
+    "src": "/assets/npcportrait/npcbody_priest.png",
+    "source": "/assets/npcbody/npcbody_priest.png",
+    "crop": [
+      6,
+      6,
+      90,
+      90
+    ],
+    "sha256": "dbb2f36e74c280b80bd30b73e302f5cc93d69b29cffd81376a7a9b15e6b663ca"
   }
 }

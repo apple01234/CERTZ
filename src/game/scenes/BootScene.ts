@@ -403,6 +403,7 @@ const SPUM_TO_BODY: Record<string, string> = {
   spum_scout: "npcbody_scout",
   spum_mystic: "npcbody_mystic",
   spum_butler: "npcbody_butler",
+  spum_priest: "npcbody_priest",
 };
 
 /* vc179 (지시 #11) — 사용자 제공 UNI VFX 팩에서 추출한 전투 이펙트 6종.

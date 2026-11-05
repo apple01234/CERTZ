@@ -2770,8 +2770,8 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
   forest: {
     houseTint: 0xbfe4a8,
     signColor: "#b8f0a0",
-    npcA: { name: "허브 채집가 베르", tex: "spum_forager", dlg: "vlgForestA" },
-    npcB: { name: "신전 관리인 노아", tex: "spum_mage", dlg: "vlgForestB" },
+    npcA: { name: "허브 채집가 베르", tex: "spum_mystic", dlg: "vlgForestA" },
+    npcB: { name: "신전 관리인 노아", tex: "spum_priest", dlg: "vlgForestB" },
   },
   kingdom: {
     houseTint: 0xe8d0a0,
@@ -2885,7 +2885,7 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
   dlcnovel: {
     houseTint: 0xb8e8a8,
     signColor: "#c8f0b8",
-    npcA: { name: "정원사", tex: "spum_forager", dlg: "vlgDlcNovelA" },
+    npcA: { name: "정원사", tex: "spum_mystic", dlg: "vlgDlcNovelA" },
     npcB: { name: "꽃지기 소녀", tex: "spum_elf", dlg: "vlgDlcNovelB" },
   },
   dlcsernium: {
