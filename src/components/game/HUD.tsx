@@ -9,6 +9,8 @@ import { loadKeyMap } from "@/game/keymap"; // v1.0.5 — HUD 키 배지가 키�
 import { fmt, fmtC } from "@/game/fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { Volume2, VolumeX, ScrollText, Backpack, Sparkles, Gauge, ListChecks, Settings, Crown, Gift, Swords, Users, UsersRound, Repeat, Trophy, Ellipsis, UserRound, KeyRound, HelpCircle, GraduationCap, UserRoundPen } from "lucide-react";
 import { GameIcon } from "./GameIcon"; // vc185 (#7) — 사람이 그린 RPG 아이콘으로 교체
+import { LockBadge } from "./LockBadge"; // vc247 (지시 #11) — 레벨 잠금 표시 공용 컴포넌트
+import { unlockLevel, type FeatureKey } from "@/game/unlocks";
 import { EventBus } from "./EventBus";
 import * as audio from "@/game/audio"; // v1.4.8 — 더보기 소셜 버튼 클릭음
 
@@ -153,6 +155,11 @@ export function HUD({
     : 1;
   /* v1.0.5 — 키맵 재배치 시 HUD 키 배지·aria도 함께 갱신 (I/T/J/K/O 하드코딩 제거) */
   const km = loadKeyMap();
+  /* vc247 (지시 #11) — 레벨 잠금 표시. 규칙은 unlocks.ts 한 곳에서 온다.
+   *  잠겨 있어도 클릭은 허용한다 — 패널 라우터가 "Lv.N에 열립니다" 안내를 띄우므로
+   *  왜 안 열리는지 알 수 있다(참고 UI 와 동일: 차단이 아니라 예고). */
+  const isLocked = (f: FeatureKey) => hud.lv < unlockLevel(f);
+  const lockLv = (f: FeatureKey) => unlockLevel(f);
   const expPct = Math.min(100, (hud.exp / Math.max(1, hud.expNext)) * 100);
   /* v1.1.6 — 골드 카운트업 (증가 시에만 굴림) */
   const rollingGold = useRollingNumber(hud.gold);
@@ -342,19 +349,27 @@ export function HUD({
            *  자동 줄바꿈하므로 앵커/zoom 시스템 변경 없이 겹침 없이 수용된다 */}
           <button
             onClick={onOpenQuest}
-            aria-label={`퀘스트 로그 열기 (${km.quest})`}
-            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-white/70 active:scale-95"
+            aria-label={isLocked("quest") ? `퀘스트 로그 — Lv${lockLv("quest")}에 열립니다` : `퀘스트 로그 열기 (${km.quest})`}
+            className={`game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center active:scale-95 ${isLocked("quest") ? "text-white/40" : "text-white/70"}`}
           >
-            <GameIcon name="inventory" size={18} />
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">퀘스트</span>
+            <GameIcon name="inventory" size={18} dim={isLocked("quest")} />
+            {isLocked("quest") ? (
+              <LockBadge lv={lockLv("quest")} />
+            ) : (
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-white/50">퀘스트</span>
+            )}
           </button>
           <button
             onClick={onOpenContent}
-            aria-label="콘텐츠 열기 (심연의 탑/일일 시련/제작/심연 상점/환생)"
-            className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#d0b0ff] active:scale-95"
+            aria-label={isLocked("content") ? `콘텐츠 — Lv${lockLv("content")}에 열립니다` : "콘텐츠 열기 (심연의 탑/일일 시련/제작/심연 상점/환생)"}
+            className={`game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center active:scale-95 ${isLocked("content") ? "text-white/40" : "text-[#d0b0ff]"}`}
           >
-            <GameIcon name="boss" size={18} />
-            <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-purple-300/80">콘텐츠</span>
+            <GameIcon name="boss" size={18} dim={isLocked("content")} />
+            {isLocked("content") ? (
+              <LockBadge lv={lockLv("content")} />
+            ) : (
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-purple-300/80">콘텐츠</span>
+            )}
           </button>
           {jobAvail && (
             <button
@@ -443,11 +458,15 @@ export function HUD({
             </button>
             <button
               onClick={onOpenBoss}
-              aria-label="보스 재도전 창 열기"
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffb0b0] active:scale-95"
+              aria-label={isLocked("boss") ? `보스 재도전 — Lv${lockLv("boss")}에 열립니다` : "보스 재도전 창 열기"}
+              className={`game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center active:scale-95 ${isLocked("boss") ? "text-white/40" : "text-[#ffb0b0]"}`}
             >
-              <GameIcon name="honor" size={18} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-rose-300/80">보스</span>
+              <GameIcon name="honor" size={18} dim={isLocked("boss")} />
+              {isLocked("boss") ? (
+                <LockBadge lv={lockLv("boss")} />
+              ) : (
+                <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-rose-300/80">보스</span>
+              )}
             </button>
             <button
               onClick={onOpenBenefit}
@@ -460,19 +479,27 @@ export function HUD({
             {/* v1.0.14 피드백#3 — 콘텐츠 버튼은 가방 오른쪽 상단 행으로 이동 (위 참조) */}
             <button
               onClick={onOpenUnion}
-              aria-label="유니온 열기 (캐릭터 배치/상점/레이드)"
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffd98a] active:scale-95"
+              aria-label={isLocked("union") ? `유니온 — Lv${lockLv("union")}에 열립니다` : "유니온 열기 (캐릭터 배치/상점/레이드)"}
+              className={`game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center active:scale-95 ${isLocked("union") ? "text-white/40" : "text-[#ffd98a]"}`}
             >
-              <GameIcon name="trade" size={18} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-indigo-300/90">유니온</span>
+              <GameIcon name="trade" size={18} dim={isLocked("union")} />
+              {isLocked("union") ? (
+                <LockBadge lv={lockLv("union")} />
+              ) : (
+                <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-indigo-300/90">유니온</span>
+              )}
             </button>
             <button
               onClick={onOpenTrade}
-              aria-label="유저 거래소 열기 (보스 드롭 사고팔기)"
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#9be8dd] active:scale-95"
+              aria-label={isLocked("trade") ? `거래소 — Lv${lockLv("trade")}에 열립니다` : "유저 거래소 열기 (보스 드롭 사고팔기)"}
+              className={`game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center active:scale-95 ${isLocked("trade") ? "text-white/40" : "text-[#9be8dd]"}`}
             >
-              <GameIcon name="inventory" size={18} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-teal-300/90">거래소</span>
+              <GameIcon name="inventory" size={18} dim={isLocked("trade")} />
+              {isLocked("trade") ? (
+                <LockBadge lv={lockLv("trade")} />
+              ) : (
+                <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-teal-300/90">거래소</span>
+              )}
             </button>
             {/* v1.4.29 (#멀티입구복원) — v1.4.24에 철거됐던 파티 입구 복원:
              *  vc134(공개 릴레이 멀티 복원)로 채팅·파티·공동 토벌전이 다시 동작하므로
@@ -496,11 +523,15 @@ export function HUD({
             </button>
             <button
               onClick={onOpenRank}
-              aria-label="랭킹창 열기 (전투력/레벨/콘텐츠 + 주간 랭커 보상)"
-              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffe08a] active:scale-95"
+              aria-label={isLocked("rank") ? `랭킹 — Lv${lockLv("rank")}에 열립니다` : "랭킹창 열기 (전투력/레벨/콘텐츠 + 주간 랭커 보상)"}
+              className={`game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center active:scale-95 ${isLocked("rank") ? "text-white/40" : "text-[#ffe08a]"}`}
             >
-              <GameIcon name="skull" size={18} />
-              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">랭킹</span>
+              <GameIcon name="skull" size={18} dim={isLocked("rank")} />
+              {isLocked("rank") ? (
+                <LockBadge lv={lockLv("rank")} />
+              ) : (
+                <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">랭킹</span>
+              )}
             </button>
             <button
               onClick={() => { audio.sfx.uiClick(); EventBus.emit("friends:toggle"); }}

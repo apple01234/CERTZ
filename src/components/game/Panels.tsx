@@ -16,6 +16,8 @@ import {
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey, type EnemyKey, type BossKey, type BossDiffKey,
 } from "@/game/data";
 import { UNLOCKS, unlockLevel, unlockDef, type FeatureKey } from "@/game/unlocks"; // vc178 (지시 #1·#2) — 레벨 개방 표 + 튜토리얼 다시보기
+import { GameIcon } from "./GameIcon"; // vc247 (지시 #11) — 잠금 자물쇠 표시
+import { LockReason } from "./LockBadge"; // vc247 (지시 #11) — 잠금 사유 문구 공용
 import { GATHER_DEFS, COOK_RECIPES } from "@/game/gathering"; // v1.1.9 (#개편 A47·A48) // v1.1.8 (#개편 A46) 낚시 도감
 import { CLASS_LIST, CLASSES, BRANCH_KEYS, classDef, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 import { BOSS_ATLAS } from "@/game/textures"; // v1.4.31 — 보스 도감 아틀라스 초상화
@@ -3787,15 +3789,21 @@ const LOCKED_PANELS = {
   home: "home",
 } satisfies Partial<Record<NonNullable<PanelKind>, FeatureKey>>;
 
-/* 잠긴 기능을 눌렀을 때의 안내 — "언제 열리는지"를 명시해 막다른 느낌을 없앤다 */
+/* 잠긴 기능을 눌렀을 때의 안내 — "언제 열리는지"를 명시해 막다른 느낌을 없앤다.
+ *  vc247 (지시 #11) — 참고 UI(컨텐츠 2차)의 패턴으로 맞췄다:
+ *   자물쇠 아이콘 + "Lv.N에 열립니다"(긍정형) + 레벨 숫자만 노란색 강조. */
 function LockedPanelNotice({ name, lv, onClose }: { name: string; lv: number; onClose: () => void }) {
   useEscClose(onClose);
   return (
     <div className="pointer-events-auto fixed inset-0 z-40 flex items-center justify-center bg-black/70 px-6" onClick={onClose}>
       <div className="w-[min(88vw,320px)] rounded-xl border border-white/20 bg-[#101a26] p-4 text-center" onClick={(e) => e.stopPropagation()}>
-        <p className="text-[13px] font-black text-white/85">{name} 잠김</p>
+        <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-black/45 ring-1 ring-amber-300/40">
+          <GameIcon name="lock" size={22} className="opacity-95" />
+        </div>
+        <p className="text-[13px] font-black text-white/85">{name}</p>
         <p className="mt-1.5 text-[11px] leading-relaxed text-white/60">
-          레벨 <span className="font-black text-amber-300">Lv{lv}</span> 에 열립니다.<br />
+          <LockReason lv={lv} />
+          <br />
           지금은 사냥과 퀘스트로 레벨을 올려 보세요.
         </p>
         <button
@@ -4115,11 +4123,20 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
                       key={d.name}
                       disabled={locked}
                       onClick={() => EventBus.emit("rpg:parkEnter", { diff: i })}
-                      className={`rounded-lg border px-2 py-2.5 text-center transition-transform enabled:active:scale-95 ${locked ? "border-white/10 bg-white/5 opacity-50" : ""}`}
+                      className={`relative rounded-lg border px-2 py-2.5 text-center transition-transform enabled:active:scale-95 ${locked ? "border-white/10 bg-white/5 opacity-50" : ""}`}
                       style={!locked ? { borderColor: `${d.color}88`, background: `${d.color}14` } : undefined}
                     >
+                      {/* vc247 (지시 #11) — 잠금은 자물쇠로 표시한다(종전엔 문구만 있어 딤 처리만으로는
+                       *  왜 못 누르는지 알기 어려웠다). 참고 UI 와 동일하게 카드 외형·난이도명은 유지. */}
+                      {locked && (
+                        <span className="absolute right-0.5 top-0.5 opacity-90">
+                          <GameIcon name="lock" size={11} />
+                        </span>
+                      )}
                       <p className="text-[11px] font-black" style={{ color: d.color }}>{d.name}</p>
-                      <p className="mt-0.5 text-[8px] font-bold text-white/50">{locked ? `Lv ${d.minLv} 해금` : d.desc}</p>
+                      <p className="mt-0.5 flex items-center justify-center gap-0.5 text-[8px] font-bold text-white/50">
+                        {locked ? <><LockReason lv={d.minLv} compact /> 해금</> : d.desc}
+                      </p>
                     </button>
                   );
                 })}
