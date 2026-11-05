@@ -522,6 +522,34 @@ export function Lobby({ onExit }: { onExit: () => void }) {
         </div>
       </div>
 
+      {/* [vc262] 제작 도구 진입점 — 사용자 지적 "타일맵&스킬에디터는 어디감?".
+       *
+       *  에디터 자체는 vc257·vc259 에서 완성돼 `/editor`·`/skill-editor` 로 서빙되고
+       *  있었지만, **게임 안에 링크가 하나도 없었다.** URL 을 직접 입력해야만 닿았으므로
+       *  사실상 없는 것과 같았다. 라우트는 정상(HTTP 200)인데 진입 경로만 빠진 상태.
+       *
+       *  관리자에게만 노출한다 — 제작 도구라 일반 플레이어에게 의미가 없고,
+       *  `gmOk` 는 이 화면에서 이미 GM 판정으로 쓰고 있어 새 인증을 만들지 않는다. */}
+      {gmOk && (
+        <div className="mt-3 rounded-lg border border-amber-400/25 bg-amber-400/[0.06] p-2.5">
+          <p className="text-[9px] font-black tracking-wide text-amber-200/80">제작 도구 (운영자)</p>
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+            <a
+              href="/editor"
+              className="game-btn-ghost flex items-center justify-center gap-1 px-2 py-2 text-[10px] font-black active:scale-95"
+            >
+              맵 에디터
+            </a>
+            <a
+              href="/skill-editor"
+              className="game-btn-ghost flex items-center justify-center gap-1 px-2 py-2 text-[10px] font-black active:scale-95"
+            >
+              스킬 메이커
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* 삭제 확인 모달 — v1.1.3 (#모달스크롤버그) 루트가 overflow-y-auto 스크롤 컨테이너라
           absolute면 스크롤과 함께 밀려난다. fixed로 뷰포트 고정. */}
       {delId && (
