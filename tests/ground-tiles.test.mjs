@@ -19,6 +19,12 @@ for (const [stage,theme] of Object.entries(STAGE_THEME)) {
 }
 for (const [key, entry] of Object.entries(manifest)) {
   assert.ok(fs.existsSync(new URL(`../public/assets/ground/${key}.png`,import.meta.url)),key);
-  assert.ok(entry.source && entry.crop && entry.license, `${key} provenance`);
+  /* vc252 — 두 종류의 출처를 모두 인정한다:
+   *  ① 팩 크롭(원본 타일셋에서 잘라낸 것)      → source + crop + license
+   *  ② 생성물(기존 검증 타일의 팔레트만 변환)  → source + generatedBy + license
+   *  ground_slate/ground_ash 는 원본 팩 크롭이 **회색 노이즈**여서 팔레트 변환으로 교체했다.
+   *  출처 추적(source·license)은 그대로 요구하되 crop 유무로 형식을 구분한다. */
+  assert.ok(entry.source && entry.license, `${key} provenance`);
+  assert.ok(entry.crop || entry.generatedBy, `${key} provenance: crop 또는 generatedBy 필요`);
 }
 console.log(`ALL CHECKS PASS: ${n} terrain references / ${Object.keys(manifest).length} native floor cells / object-or-border fills 0`);

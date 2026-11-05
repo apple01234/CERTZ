@@ -1,6 +1,7 @@
 import type Phaser from "phaser";
 import type { RoomLayout } from "../mapgen";
 import { isSolidDecor } from "../decorObjects";
+import { groundAtlasOf, GROUND_ATLAS_FRAMES } from "../tileThemes"; // vc252 (지시 #1) — 바닥 변형 아틀라스
 
 /** Verified seamless floor textures in assets/ground/manifest.json. Native tiles
  * are sliced/reassembled in the Tilemap, without a raster copy or a prop fallback. */
@@ -76,16 +77,36 @@ export function renderAuthoredMapLayers(
   for (const role of roles) {
     const { size, unit } = AUTHORED_GROUND_SOURCES[role.key];
     const sourceCols = size / unit;
+    /* vc252 (지시 #1) — 변형 아틀라스가 있으면 **4프레임 tileset** 으로 쓴다.
+     *  같은 팔레트의 회전·반전이라 톤은 그대로면서 반복 주기가 4배로 늘어난다.
+     *  아틀라스는 96×384 로 세로로 4장 이어 붙인 것이므로 tileset 높이 = size*4. */
+    const atlasKey = groundAtlasOf(role.key);
+    const useAtlas = !!atlasKey && scene.textures.exists(atlasKey);
+    const tilesetKey = useAtlas ? (atlasKey as string) : role.key;
     const cols = Math.ceil(width / unit), rows = Math.ceil(height / unit);
     const data = Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => {
       const x = Math.min(lay.cols - 1, Math.floor((c + 0.5) * unit / lay.cellW));
       const y = Math.min(lay.rows - 1, Math.floor((r + 0.5) * unit / lay.cellH));
       const cell = y * lay.cols + x;
       const show = role.name === "ground" || (role.name === "paths" ? art.paths[cell] : !lay.open[cell]);
-      return show ? 1 + (r % sourceCols) * sourceCols + c % sourceCols : -1;
+      if (!show) return -1;
+      /* 기본 타일 인덱스(1-based) — 원본 텍스처를 32px 조각 9개로 순환 배치하던 규칙 그대로 */
+      const base = 1 + (r % sourceCols) * sourceCols + c % sourceCols;
+      if (!useAtlas) return base;
+      /* 변형 선택: 셀 좌표 해시로 고른다(연속된 줄무늬가 생기지 않게). */
+      const v = (((c * 7 + r * 13) >>> 0) % 2 === 0)
+        ? (((c * 3 + r * 5) >>> 0) % GROUND_ATLAS_FRAMES)
+        : (((c + r * 3) >>> 0) % GROUND_ATLAS_FRAMES);
+      /* 아틀라스 프레임 레이아웃: 가로 sourceCols 조각 × 세로 GROUND_ATLAS_FRAMES 장.
+       *  프레임 번호 = 행(v) * sourceCols + 열(원본 조각). */
+      return 1 + v * sourceCols + (base - 1) % sourceCols;
     }));
     const map = scene.make.tilemap({ data, tileWidth: unit, tileHeight: unit });
-    const tiles = map.addTilesetImage(role.key, role.key, unit, unit, 0, 0, 1);
+    /* [주의] Phaser4 `addTilesetImage(tilesetName, key, tw, th, margin, spacing, gid, tileOffset)` —
+     *  8번째 인자는 **tileOffset 객체**이지 프레임 수가 아니다.
+     *  프레임은 Tileset 이 이미지 크기로 `updateTileData` 를 호출해 자동 계산하므로
+     *  (96×384 아틀라스 → 3열 × 12행) 넘길 필요가 없다. */
+    const tiles = map.addTilesetImage(tilesetKey, tilesetKey, unit, unit, 0, 0, 1);
     // Phaser4's fifth argument explicitly selects the regular, tintable layer.
     const layer = tiles && map.createLayer(0, tiles, 0, 0, false);
     if (!layer || !("setTint" in layer)) {

@@ -60,34 +60,22 @@
     "height": 96
   },
   "ground_slate": {
-    "source": "assets_dl/tilesets/simple_tiles_32px.png",
-    "sourceSha256": "2a7977993c48191dbad9095305d8c886142037d01be1f4ebf7cf711fdfe30ce5",
-    "crop": [
-      224,
-      32,
-      32,
-      32
-    ],
-    "integerScale": 3,
-    "pack": "Simple tiles",
-    "license": "CC0-1.0",
+    "source": "public/assets/ground/ground_violet.png",
+    "generatedBy": "scripts/make_stone_floors.py",
+    "note": "ground_violet 의 돌 구조(줄눈·하이라이트)를 유지하고 팔레트만 석재로 변환",
     "width": 96,
-    "height": 96
+    "height": 96,
+    "pack": "SERTZ (generated)",
+    "license": "CC0-1.0"
   },
   "ground_ash": {
-    "source": "assets_dl/tilesets/simple_tiles_32px.png",
-    "sourceSha256": "2a7977993c48191dbad9095305d8c886142037d01be1f4ebf7cf711fdfe30ce5",
-    "crop": [
-      224,
-      0,
-      32,
-      32
-    ],
-    "integerScale": 3,
-    "pack": "Simple tiles",
-    "license": "CC0-1.0",
+    "source": "public/assets/ground/ground_violet.png",
+    "generatedBy": "scripts/make_stone_floors.py",
+    "note": "ground_violet 의 돌 구조(줄눈·하이라이트)를 유지하고 팔레트만 석재로 변환",
     "width": 96,
-    "height": 96
+    "height": 96,
+    "pack": "SERTZ (generated)",
+    "license": "CC0-1.0"
   },
   "ground_violet": {
     "source": "assets_dl/tilesets/buch_outdoor_32px.png",
