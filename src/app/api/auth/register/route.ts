@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       const role = "user";
       const user = { id, name, provider: "local", salt, hash: hashPw(pw, salt), createdAt: Date.now(), role };
       db.users[id] = user;
-      const { token, cookie } = issueToken(db, user);
+      const { token, cookie } = issueToken(db, user, req);
       /* vc228 (감사 #5) — audit 를 return **위**로 옮겼다.
        *  종전엔 return 다음 줄이라 영원히 실행되지 않았다 — 가입 감사 로그가
        *  통째로 비어 있었고, 뒤따른 중복 return 이 그 사실을 가렸다. */

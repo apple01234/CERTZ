@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
         const r = await mutateDb((fdb) => {
           const fu = fdb.users[id];
           if (!fu || fu.provider !== "local") return { status: 401, body: { error: LOGIN_FAIL_MSG } };
-          const { token, cookie } = issueToken(fdb, fu);
+          const { token, cookie } = issueToken(fdb, fu, req);
           audit("login", { ip: "serverless", uid: id, role: fu.role === "admin" ? "admin" : "user" });
           return { resp: { status: 200, body: { user: publicUser(fu), token }, headers: { "Set-Cookie": cookie } } };
         });

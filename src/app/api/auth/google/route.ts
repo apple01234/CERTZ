@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
         /* 아이디가 겹치는 일은 없지만(provider 접두) 방어적 차단 */
         return { status: 409, body: { error: "이 아이디는 다른 로그인 방식으로 사용 중이에요" } };
       }
-      const { token, cookie } = issueToken(db, user);
+      const { token, cookie } = issueToken(db, user, req);
       audit("login", { ip: "serverless", uid, provider: "google" });
       return { resp: { status: 200, body: { user: publicUser(user), token }, headers: { "Set-Cookie": cookie } } };
     });

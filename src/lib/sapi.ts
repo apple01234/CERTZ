@@ -15,10 +15,13 @@ import type { DbShape, UserRec, ListingRec } from "./ghdb";
 import { ITEMS } from "@/game/data"; // vc146 (#9) — 거래 가능 품목 동적 구성 (gmOnly만 제외)
 import { clsToBranch } from "@/game/classes"; // v1.0.14 피드백#2 — 클래스키 → 계열(8 기본 직업) 정규화
 import storage from "../../accounts/storage.json" with { type: "json" };
+/* vc251 — 쿠키 직렬화는 순수 모듈에서(이 파일은 next/server 의존이라 Node 테스트 불가) */
+import { COOKIE as COOKIE_NAME, TOKEN_TTL_MS as TTL_MS, isHttpsRequest, sessionCookieString, clearCookieString } from "./sessionCookie";
 
-export const COOKIE = "sertz_auth";
-/* v1.0.16 (S4) — 세션 TTL 30일 → 14일 단축. 해시 저장과 함께 토큰 유출 시의 실효 창을 절반으로 줄인다. */
-export const TOKEN_TTL_MS = 14 * 24 * 3600 * 1000; // 14일
+export const COOKIE = COOKIE_NAME;
+/* v1.0.16 (S4) — 세션 TTL 30일 → 14일 단축. 해시 저장과 함께 토큰 유출 시의 실효 창을 절반으로 줄인다.
+ *  vc251 — 값은 sessionCookie.ts 단일 출처(쿠키 Max-Age 와 일치해야 함). */
+export const TOKEN_TTL_MS = TTL_MS;
 
 /** v1.0.16 (S4) — 세션 토큰 DB 저장 키. 원문을 절대 저장하지 않고 SHA-256 hex 64자로만 보관한다.
  *  · 클라는 여전히 원문 토큰을 받아 Bearer/쿠키/?token= 으로 제시하고, 서버가 검증 시점에 해시해 대조한다
@@ -113,11 +116,33 @@ export function extractToken(req: NextRequest): string {
   return "";
 }
 
-export function sessionCookie(token: string): string {
-  return `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=${TOKEN_TTL_MS / 1000}`;
+/* vc251 (PC 클라이언트 로그인 불가 수리)
+ *
+ * [증상] Electron(PC) 클라이언트에서 로그인이 안 된다.
+ * [원인] Electron 은 내장 서버를 `http://127.0.0.1:<port>` 로 띄우고 그 오리진에서 게임을 실행한다.
+ *   그런데 세션 쿠키에 **항상 `Secure`** 가 붙어 있었다. Chromium 은 `Secure` 쿠키를
+ *   https(또는 localhost 예외)에서만 저장하므로 127.0.0.1 오리진에서는 Set-Cookie 가 조용히 버려지고,
+ *   새로고침·재실행마다 세션이 사라져 "로그인이 안 되는" 상태가 된다.
+ *
+ * [수리] `Secure` 를 실제 서빙 스킴에 따라 붙인다.
+ *   · 운영(Vercel https) → 종전과 동일하게 Secure 유지
+ *   · APK(Capacitor https://localhost) → 유지
+ *   · Electron 로컬(http://127.0.0.1) → 제거 (루프백이라 평문 위험 없음.
+ *     앱은 토큰을 localStorage + Authorization Bearer 로도 보내므로 쿠키는 보조 경로다)
+ *
+ *  판정·직렬화 로직은 `sessionCookie.ts`(순수 모듈)로 분리했다 —
+ *  이 파일은 next/server 를 import 해 Node 테스트에서 로드할 수 없기 때문이다.
+ */
+function cookieHttps(req?: NextRequest): boolean {
+  if (!req) return true; // 요청 정보가 없으면 안전한 쪽(종전 동작) 유지
+  return isHttpsRequest((n) => req.headers.get(n), req.url);
 }
-export function clearCookie(): string {
-  return `${COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=0`;
+
+export function sessionCookie(token: string, req?: NextRequest): string {
+  return sessionCookieString(token, cookieHttps(req));
+}
+export function clearCookie(req?: NextRequest): string {
+  return clearCookieString(cookieHttps(req));
 }
 
 /* ---------------- 유저/세션 ---------------- */
@@ -145,14 +170,15 @@ export function isAdminUser(u: UserRec | null): boolean {
   return !!u && (u.role === "admin" || ADMIN_USERS.includes(String(u.id || "").toLowerCase()));
 }
 
-export function issueToken(db: DbShape, user: UserRec): { token: string; cookie: string } {
+export function issueToken(db: DbShape, user: UserRec, req?: NextRequest): { token: string; cookie: string } {
   const token = randomBytes(32).toString("hex");
   db.tokens[tokenHash(token)] = { userId: user.id, expiresAt: Date.now() + TOKEN_TTL_MS }; // v1.0.16 (S4) — 해시 키 저장
   if (Object.keys(db.tokens).length > 4000) {
     const now = Date.now();
     for (const k of Object.keys(db.tokens)) if (db.tokens[k].expiresAt < now) delete db.tokens[k];
   }
-  return { token, cookie: sessionCookie(token) };
+  /* vc251 — req 를 넘겨 https 요청에만 Secure 쿠키를 붙인다(Electron http 오리진 수리). */
+  return { token, cookie: sessionCookie(token, req) };
 }
 
 /* ---------------- 레이트리밋 (인스턴스 단위 베스트에포트) ---------------- */

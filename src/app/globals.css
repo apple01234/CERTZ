@@ -224,6 +224,16 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .game-panel { animation: none; }
 }
+/* vc250 (지시 #5) — 대화창 진행 표시. 텍스트 편집기 커서(▌) 대신 게임식 진행 화살표.
+ *  위아래로 살짝 떠오르게 해 "다음으로 넘어갈 수 있다"만 전달한다(문장 설명 없음). */
+@keyframes dialogueNudge {
+  0%, 100% { transform: translateY(0); opacity: 0.55; }
+  50%      { transform: translateY(-2px); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [style*="dialogueNudge"] { animation: none !important; opacity: 1 !important; }
+}
+
 /* 패널 제목 — 앰버 좌정렬 그라디언트 네임플레이트 */
 .game-panel h2 {
   @apply mb-2.5 rounded border-l-4 border-amber-500 bg-gradient-to-r from-amber-900/70 via-amber-900/25 to-transparent

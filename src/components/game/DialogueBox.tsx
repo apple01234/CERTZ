@@ -253,12 +253,14 @@ export function DialogueBox({
       onPointerLeave={stopHold}
       onPointerCancel={stopHold}
     >
-      {/* v1.0.20 — 대화창: 게임형 프레임 (우드 프레임 + 금 스피커 네임플레이트) */}
-      <div className="game-panel flex w-full max-w-2xl cursor-pointer touch-none items-stretch gap-2.5 p-3 sm:gap-3 sm:p-4">
+      {/* v1.0.20 — 대화창: 게임형 프레임 (우드 프레임 + 금 스피커 네임플레이트)
+       *  vc250 (지시 #5) — 초상화와 텍스트의 기준선을 맞추고(self-start → stretch),
+       *   패딩을 좌우 비대칭으로 줘 이름표가 프레임에 붙어 보이게 했다(사람이 손본 느낌). */}
+      <div className="game-panel flex w-full max-w-2xl cursor-pointer touch-none items-stretch gap-2.5 py-2.5 pl-2.5 pr-3 sm:gap-3 sm:py-3.5 sm:pl-3.5 sm:pr-4">
         {/* v3.0.24 — 화자 초상화 (클래식 RPG 대화창 레이아웃: 좌측 초상 프레임) */}
         {portrait && (
           <div
-            className="game-chip relative h-14 w-14 shrink-0 self-start overflow-hidden sm:h-20 sm:w-20"
+            className="game-chip relative w-14 shrink-0 self-stretch overflow-hidden sm:w-20"
             style={{ borderColor: `${portrait.tone}88` }}
           >
             {/* v3.0.25 (#비율 찌그러짐) — object-cover + object-top: 원본 비율 유지하며
@@ -293,7 +295,11 @@ export function DialogueBox({
           </div>
           <p className="min-h-[2.6em] text-[13px] leading-relaxed text-[#f5ecd6] sm:min-h-[2.4em] sm:text-[15px]">
             {shown}
-            <span className="animate-pulse text-[#ffd98a]">{shown.length < line.length ? "▌" : ""}</span>
+            {/* vc250 (지시 #5) — 텍스트 편집기 커서(▌) → 얇은 세로 막대. 두께·색을 낮춰
+             *  "입력 중"이 아니라 "말하는 중"으로 읽히게 한다. */}
+            {shown.length < line.length && (
+              <span className="ml-0.5 inline-block h-[1em] w-[2px] translate-y-[0.12em] bg-[#ffd98a]/70" />
+            )}
           </p>
           {/* vc143 (#10) — 선택형 대화: 마지막 줄 완료 시 선택지 버튼 (보스전 퇴장 관리인 등).
            *  클릭 시 dialogue:choice 발신 + dialogue:done으로 종료 — 컨테이너 홀드 진행과 충돌 없게 stopPropagation */}
@@ -315,12 +321,28 @@ export function DialogueBox({
               ))}
             </div>
           )}
-          <div className="mt-1 text-right text-[10px] font-bold text-white/50 sm:text-[11px]">
-            {shown.length < line.length
-              ? "스페이스·탭으로 건너뛰기 (꾹 누르면 빠르게)"
-              : idx < dialogue.lines.length - 1
-                ? "스페이스·탭으로 계속 ▸ (꾹 누르면 빠르게)"
-                : "스페이스·탭으로 닫기"}
+          <div className="mt-1.5 flex items-end justify-between gap-2">
+            {/* vc250 (지시 #5) — "AI 티 나지 않게".
+             *  종전엔 "스페이스·탭으로 건너뛰기 (꾹 누르면 빠르게)" 같은 **조작 설명문**이
+             *  매 줄마다 깔려 있었다. 이게 AI 생성 UI 특유의 티를 만든다:
+             *   ① 사람이 쓴 게임은 조작법을 문장으로 설명하지 않는다(이미 아는 것을 반복)
+             *   ② 문장 길이가 줄마다 달라져 하단 정렬이 흔들린다
+             *   ③ 게임 세계관 텍스트 옆에 UI 메타 설명이 붙어 몰입이 끊긴다
+             *  → 게임 문법인 **깜빡이는 진행 화살표**로 바꾼다. 키 힌트는 첫 줄에서 한 번만,
+             *    그마저도 아이콘 없이 짧게(모바일은 탭, PC는 Space) 표기한다. */}
+            <span className="text-[10px] font-bold text-white/25 sm:text-[11px]">
+              {idx === 0 && shown.length >= line.length ? "Space / 탭" : ""}
+            </span>
+            {shown.length >= line.length && (
+              <span
+                className="ml-auto inline-flex items-center gap-1 text-[11px] font-black text-[#ffd98a] sm:text-xs"
+                style={{ animation: "dialogueNudge 1.1s ease-in-out infinite" }}
+                aria-hidden="true"
+              >
+                {/* 마지막 줄이면 닫기(×), 아니면 계속(▸) — 문장 대신 기호로 의도를 전달 */}
+                {idx < dialogue.lines.length - 1 ? "▸" : "✕"}
+              </span>
+            )}
           </div>
         </div>
       </div>

@@ -11,10 +11,10 @@ export function OPTIONS(req: NextRequest) { return options(req); }
 export async function POST(req: NextRequest) {
   try {
     const token = extractToken(req);
-    if (!token) return json(req, 200, { ok: true }, { "Set-Cookie": clearCookie() });
+    if (!token) return json(req, 200, { ok: true }, { "Set-Cookie": clearCookie(req) });
     const r = await mutateDb((db) => {
       delete db.tokens[tokenHash(token)]; // v1.0.16 (S4) — 키가 해시로 저장됨
-      return { resp: { status: 200, body: { ok: true }, headers: { "Set-Cookie": clearCookie() } } };
+      return { resp: { status: 200, body: { ok: true }, headers: { "Set-Cookie": clearCookie(req) } } };
     });
     return json(req, r.status, r.body, r.headers);
   } catch (e) {
