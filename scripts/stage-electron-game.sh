@@ -29,7 +29,7 @@ cd "$ROOT"
 
 HOLD="$ROOT/.apk-hold"
 GAME="$ROOT/electron/game"
-ROUTE_DIRS="admin auth market rank support chat party"
+ROUTE_DIRS="admin auth market rank support chat party campaign iap"
 
 restore() {
   for d in $ROUTE_DIRS; do
