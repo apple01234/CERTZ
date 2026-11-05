@@ -87,17 +87,36 @@ function portraitOf(speaker: string, portraitId?: string): { tex: string; tone: 
   /* v1.0.2 (#초상화) — portraitId 명시 > 화자명 직접 매핑 > 보스 토큰 자동 매칭 순 */
   if (portraitId) {
     if (NPC_PORTRAITS[portraitId]) return NPC_PORTRAITS[portraitId];
+    /* [vc260] portraitId 가 `_map.json` 의 키일 수 있다(AI 생성 초상화) */
+    const byId = portraitCrops[portraitId];
+    if (byId?.src) return { tex: portraitId, tone: "#c9b3ff" };
     return { tex: portraitId, tone: "#e2e8f0" };
   }
+  /* [vc260 — 지시 "NPC들이 너무 서양 그림체"] AI 생성 초상화를 **1순위**로 둔다.
+   *  종전 순서는 NPC_PORTRAITS(하드코딩 표) → bossPortrait 였고, 표에는 spum_* 스프라이트가
+   *  들어 있어 그것들이 서양풍 지적의 원인이었다. `_map.json` 은 생성 파이프라인이 자동
+   *  갱신하므로 1순위로 두면 매핑 누락과 서양풍 스프라이트가 동시에 해결된다.
+   *  생성 초상화가 없을 때만 표/보스로 폴백한다. */
+  const gen = portraitCrops[speaker];
+  if (gen?.src && String(gen.src).includes("/npc_")) return { tex: speaker, tone: "#c9b3ff" };
   if (NPC_PORTRAITS[speaker]) return NPC_PORTRAITS[speaker];
   return bossPortrait(speaker);
 }
 
 /** 현재 월드의 npcbody/SPUM 원본을 그대로 crop한 파일만 사용한다.
- * 기존 npcface 절차 생성 얼굴은 더 이상 참조하지 않는다. 라고스는 현재 외형 보존일 뿐 확정 디자인이 아니다. */
+ * 기존 npcface 절차 생성 얼굴은 더 이상 참조하지 않는다. 라고스는 현재 외형 보존일 뿐 확정 디자인이 아니다.
+ *
+ * [vc260] AI 생성 초상화(`npc_*.png`)는 **이미 84×84 얼굴 크롭**이라 그대로 쓰면 된다.
+ *  종전엔 이 함수가 `_map.json` 의 `src` 를 반환했지만, `portraitOf` 가 화자명을 tex 로
+ *  주면서 `_map.json` 키와 일치하지 않는 경우가 있어(예: "아리" vs "npc_ari") 매칭이 깨졌다.
+ *  여기서 `npc_<key>` 형태를 직접 조회해 경로를 확정한다. */
 function faceFor(tex: string): string | null {
   const crops: Record<string, { src: string }> = portraitCrops;
-  return crops[tex]?.src ?? null;
+  const direct = crops[tex]?.src;
+  if (direct && String(direct).includes("/npc_")) return direct;
+  /* 화자명이 그대로 키인 경우 (mapped_as 로 등록된 별칭) */
+  const byAlias = crops[tex];
+  return byAlias?.src ?? direct ?? null;
 }
 
 /** 기존 대사 데이터 호환 타입. 원본 crop에 없는 표정은 합성하지 않는다. */

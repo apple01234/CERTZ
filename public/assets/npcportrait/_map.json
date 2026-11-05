@@ -350,5 +350,305 @@
       90
     ],
     "sha256": "dbb2f36e74c280b80bd30b73e302f5cc93d69b29cffd81376a7a9b15e6b663ca"
+  },
+  "스칼렛": {
+    "src": "/assets/npcportrait/npc_scarlet.png",
+    "source": "/assets/npcportrait/_raw/npc_scarlet_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "e23db481c017d91d73f19d4fb9b0a336b704d7ba1dcd110efc6f88319f5c7f6f",
+    "canon": "4.txt '에델리오나(스칼렛): 레이피어 같은 카타나를 쓰며 빛과 어둠의 원소가 있고 빛과 어둠을 융합해서 사용할 수 있다. 승탑 전 기준 각성한 초월자 4명 "
+  },
+  "라일락": {
+    "src": "/assets/npcportrait/npc_lilac.png",
+    "source": "/assets/npcportrait/_raw/npc_lilac_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "996549585d1c1d800aa80dc877567ebc5ed04366f1c06b0b9da48e988d9b89ab",
+    "canon": "1.txt:11 '연보라색 머리와 눈동자를 지닌 여자', '전혀 칼을 쓰지 않을 것처럼 보이는 아름다운 외모'"
+  },
+  "리엘": {
+    "src": "/assets/npcportrait/npc_riel.png",
+    "source": "/assets/npcportrait/_raw/npc_riel_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "c8c046f28ff4d3ccc56d7e3514230b016611a0abd4ebfe31708f4d858beed8c7",
+    "canon": "4.txt:78 '리엘(도사): 도술을 배워서 도술을 쓸 줄 알고 도술로만 봤을 때 세 손가락 안에 들 만큼 강하다. 리엘의 원력은 초월자의 힘'"
+  },
+  "도사": {
+    "src": "/assets/npcportrait/npc_riel.png",
+    "source": "/assets/npcportrait/_raw/npc_riel_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "c8c046f28ff4d3ccc56d7e3514230b016611a0abd4ebfe31708f4d858beed8c7",
+    "canon": "4.txt:78 '리엘(도사): 도술을 배워서 도술을 쓸 줄 알고 도술로만 봤을 때 세 손가락 안에 들 만큼 강하다. 리엘의 원력은 초월자의 힘'"
+  },
+  "리엘의 스승": {
+    "src": "/assets/npcportrait/npc_riel.png",
+    "source": "/assets/npcportrait/_raw/npc_riel_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "c8c046f28ff4d3ccc56d7e3514230b016611a0abd4ebfe31708f4d858beed8c7",
+    "canon": "4.txt:78 '리엘(도사): 도술을 배워서 도술을 쓸 줄 알고 도술로만 봤을 때 세 손가락 안에 들 만큼 강하다. 리엘의 원력은 초월자의 힘'"
+  },
+  "하루": {
+    "src": "/assets/npcportrait/npc_haru.png",
+    "source": "/assets/npcportrait/_raw/npc_haru_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "addb6187d26084e3f1e5f509b59c0971791a72f0b617fb89e96c4b9b62de7f86",
+    "canon": "4.txt '하루(주인공): 카타나를 쓰며 원소가 없고 다른 사람의 능력을 복사해서 자신이 사용할 수 있다'. 1.txt 고아 출신"
+  },
+  "리안": {
+    "src": "/assets/npcportrait/npc_rian.png",
+    "source": "/assets/npcportrait/_raw/npc_rian_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "99cda558c77b7ddd573345246fab7d77949756fb2466fd7b93ad9298067c0749",
+    "canon": "4.txt '그래스트(리안): 차크람을 사용하고 바람의 원소를 사용하며 리안을 상징하는 건 라일락 꽃이다'"
+  },
+  "루시": {
+    "src": "/assets/npcportrait/npc_lucy.png",
+    "source": "/assets/npcportrait/_raw/npc_lucy_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "715a5c649da027477243ef3ba0e09b7978ac995fab0b272e5da1213eba24d632",
+    "canon": "4.txt '에크레디트(루시): 작은 나무 지팡이를 쓰며 생명과 제작의 힘을 사용한다. 에크레디트 가문의 원력인 자연의 힘이 있고 라일락 월드의 생명의 [초월자]"
+  },
+  "루시페르": {
+    "src": "/assets/npcportrait/npc_lucy.png",
+    "source": "/assets/npcportrait/_raw/npc_lucy_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "715a5c649da027477243ef3ba0e09b7978ac995fab0b272e5da1213eba24d632",
+    "canon": "4.txt '에크레디트(루시): 작은 나무 지팡이를 쓰며 생명과 제작의 힘을 사용한다. 에크레디트 가문의 원력인 자연의 힘이 있고 라일락 월드의 생명의 [초월자]"
+  },
+  "생명의 초월자 루시페르": {
+    "src": "/assets/npcportrait/npc_lucy.png",
+    "source": "/assets/npcportrait/_raw/npc_lucy_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "715a5c649da027477243ef3ba0e09b7978ac995fab0b272e5da1213eba24d632",
+    "canon": "4.txt '에크레디트(루시): 작은 나무 지팡이를 쓰며 생명과 제작의 힘을 사용한다. 에크레디트 가문의 원력인 자연의 힘이 있고 라일락 월드의 생명의 [초월자]"
+  },
+  "아리": {
+    "src": "/assets/npcportrait/npc_ari.png",
+    "source": "/assets/npcportrait/_raw/npc_ari_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "637c9d6dbb8ffab28c1a81b5028704e2b211c665bc9714665462206554862a09",
+    "canon": "4.txt '데스티니(아리): 솔라플래임이그니션소드(일연화도)를 사용하며 태양의 빛과 무기의 힘을 사용한다. 계약형 웨폰마스터'. 대사 '근위대장 아리스텔라 데스"
+  },
+  "페르온": {
+    "src": "/assets/npcportrait/npc_feron.png",
+    "source": "/assets/npcportrait/_raw/npc_feron_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "9da0f32850f79b605c1e29dc0d52e455aaf85c9ecf861a5f68752f283ebea1d3",
+    "canon": "4.txt '카르리온(페르온): 다크엑스칼리버를 쓰며 암흑의 원소를 쓴다. 암흑은 시야를 가리거나 그림자를 소환해서 공격'"
+  },
+  "아이리스": {
+    "src": "/assets/npcportrait/npc_iris.png",
+    "source": "/assets/npcportrait/_raw/npc_iris_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "36d6c3667fa3f6b052b725e3c37fb5fe49e80dfff175b0c1bbc639c3d6ba2d8a",
+    "canon": "5.txt '마법공학 연구소'의 NPC. 능력·무기 정본 미기재 → 마법공학 연구소 소속으로만 유도(외형은 정본에 없음)"
+  },
+  "카이엔": {
+    "src": "/assets/npcportrait/npc_kayen.png",
+    "source": "/assets/npcportrait/_raw/npc_kayen_raw.png",
+    "crop": [
+      3,
+      3,
+      81,
+      81
+    ],
+    "sha256": "e9a1bfbacc89bbfff87365e7e0e029d8a95ab47096c149176f3860128b3d3fab",
+    "generated": "higgsfield/soul_2"
+  },
+  "엘버트": {
+    "src": "/assets/npcportrait/npc_elbert.png",
+    "source": "/assets/npcportrait/_raw/npc_elbert_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "c89b709d69d06313d24acc3a3ed6b6abfe001e6b2985d62a098d01f49eb238e6",
+    "canon": "4.txt '엘버트는 얼음 원소가 고유 능력이지만 리버스 가문은 반전이 고유 능력, 즉 원력이다'"
+  },
+  "란": {
+    "src": "/assets/npcportrait/npc_ran.png",
+    "source": "/assets/npcportrait/_raw/npc_ran_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "d7a83f58f4141128bdc65730906e2c2ec9c3fbdd5784d3d934cbdf32ead92883",
+    "canon": "2.txt:68 '아트메이커인 란'. 4.txt '아리아노(란)라고 하는 아트메이커(그림과 관련된 능력) 웨폰마스터'"
+  },
+  "아덴": {
+    "src": "/assets/npcportrait/npc_aden.png",
+    "source": "/assets/npcportrait/_raw/npc_aden_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "1de88b3699fee908b55f5d948708871778beb7cfe859dc976387e463184b6ae8",
+    "canon": "4.txt '이덴미르(아덴): 긴 스태프가 무기이다. 눈의 원소를 사용하며 눈의 결정이나 눈덩이를 만들어 공격한다. 아덴이 클로체스가의 후손인 이덴미르'"
+  },
+  "카르텔": {
+    "src": "/assets/npcportrait/npc_cartel.png",
+    "source": "/assets/npcportrait/_raw/npc_cartel_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "1803a6c63cf2f17852e7857750eee7df28724f44c0e504658e3d2506c1f8326a",
+    "canon": "4.txt '에스테반(카르텔): 삼지창을 사용하며 물의 원소를 쓴다. 가문이 에스테반의 물의 원력이 있으며'"
+  },
+  "빛의 아이온": {
+    "src": "/assets/npcportrait/npc_ion.png",
+    "source": "/assets/npcportrait/_raw/npc_ion_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "19a8c5440fce872ce9e3365804d5d31960322b9f60b07379bdb41f4dbe511aeb",
+    "canon": "8.txt '빛의 아이온과 어둠에 알다바오트가'"
+  },
+  "제이드": {
+    "src": "/assets/npcportrait/npc_jade.png",
+    "source": "/assets/npcportrait/_raw/npc_jade_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "37c4721e9969cd285e91b27d28a4e297bfd24a84a6bbbb3107af6a12a77a7f2f",
+    "canon": "PDF 3p '제이드: 망치, 마법공학, 공학망치, 분신소환'"
+  },
+  "아리스텔라": {
+    "src": "/assets/npcportrait/npc_ari.png",
+    "source": "/assets/npcportrait/_raw/npc_ari_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "637c9d6dbb8ffab28c1a81b5028704e2b211c665bc9714665462206554862a09",
+    "canon": "4.txt '데스티니(아리): 솔라플래임이그니션소드(일연화도)를 사용하며 태양의 빛과 무기의 힘을 사용한다. 계약형 웨폰마스터'. 대사 '근위대장 아리스텔라 데스"
+  },
+  "리틀스타": {
+    "src": "/assets/npcportrait/npc_littlestar.png",
+    "source": "/assets/npcportrait/_raw/npc_littlestar_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "51167d7eaa6b3282643321d275d56c40d47388197456ccea505364c544dda66d",
+    "canon": "8.txt '난 스타게이트의 관리자이자 그랜드플래닛의 문지기인 리틀스타이다'"
+  },
+  "제니퍼": {
+    "src": "/assets/npcportrait/npc_jenifer.png",
+    "source": "/assets/npcportrait/_raw/npc_jenifer_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "8ba0b6c46cfe84cf86a9751d62136d2cc77db3425caf9827b35f42b039a4e82b",
+    "canon": "8.txt '니시아의 5대 가문중 하나이자 가주인 엘리자베스는 자력 초월자... 제니퍼의 가문, 불' — 니시아 5대 가문 사람"
+  },
+  "이현": {
+    "src": "/assets/npcportrait/npc_ihyun.png",
+    "source": "/assets/npcportrait/_raw/npc_ihyun_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "ae9b4fb5e60069a7dcde5217ad23ecafb14ae25b103781649df5d28562bc9c24",
+    "canon": "4.txt '이현선인: 부채를 쓰며 도술을 사용한다. 이현선인이 가지고 있는 고유 특성은 꽃'"
+  },
+  "이현선인": {
+    "src": "/assets/npcportrait/npc_ihyun.png",
+    "source": "/assets/npcportrait/_raw/npc_ihyun_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "ae9b4fb5e60069a7dcde5217ad23ecafb14ae25b103781649df5d28562bc9c24",
+    "canon": "4.txt '이현선인: 부채를 쓰며 도술을 사용한다. 이현선인이 가지고 있는 고유 특성은 꽃'"
   }
 }

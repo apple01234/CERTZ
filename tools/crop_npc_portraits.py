@@ -58,7 +58,24 @@ for key in ['npc_gm', 'spum_priest']:
     manifest[key] = {'src': f'/assets/npcportrait/{key}.png', 'source': f'/assets/{key}.webp',
                      'crop': list(rect), 'sha256': hashlib.sha256(src.read_bytes()).hexdigest()}
 if '--check' in sys.argv:
-    assert json.loads((OUT / '_map.json').read_text()) == manifest
+    # [vc258] AI 생성 초상화(`npc_<key>.png`)가 `_map.json` 에 추가되면서
+    #  "전체 일치" 비교가 실패했다. 이 도구가 책임지는 범위는 npcbody/spum 크롭뿐이므로,
+    #  **이 도구가 만든 키만** 비교하고 나머지(생성 초상화)는 무시한다.
+    #  생성 초상화는 `scripts/build_portraits.py` 가 검증 없이 sha256 으로 기록한다.
+    actual_raw = json.loads((OUT / '_map.json').read_text())
+    actual = {k: v for k, v in actual_raw.items() if k in manifest}
+    assert actual == manifest, (
+        f'크롭 불일치: 누락 {sorted(set(manifest) - set(actual))} '
+        f'/ 여분 {sorted(set(actual) - set(manifest))}'
+    )
 else:
-    (OUT / '_map.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
+    # 기존 생성 항목은 보존한다(덮어쓰면 AI 초상화 매핑이 사라진다).
+    prev = {}
+    try:
+        prev = json.loads((OUT / '_map.json').read_text())
+    except Exception:
+        prev = {}
+    merged = dict(prev)
+    merged.update(manifest)
+    (OUT / '_map.json').write_text(json.dumps(merged, ensure_ascii=False, indent=2) + '\n')
 print(f'ALL CHECKS PASS: {len(set(e["src"] for e in manifest.values()))} crops / {len(manifest)} mapped keys; exact source pixels')

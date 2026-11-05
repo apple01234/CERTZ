@@ -1,0 +1,121 @@
+{
+  "_note": "초상화 생성 명세 — **오직 docs/handoff/evernote-approved 1~8 문서에 나오는 인물만**. 사용자 지시: '1~8 항목에 없는것들 지어내지마'.",
+  "_rule": [
+    "각 인물의 외형·무기·원소는 canon 인용에 근거한다.",
+    "정본에 외형 기술이 없으면 무기/원소/가문에서만 유도하고, 그 사실을 canon 에 명시한다.",
+    "이전 명세에서 제거한 것: kayen(문서에 없음), aristella(아리와 동일인 — 별개 인물로 만든 오류)",
+    "정본 대조로 수정한 것: 아리=태양검(일연화도), 리안=차크람+바람, 아덴=눈 스태프, 란=아리아노 아트메이커, 제이드=망치+분신, 카르텔=삼지창+물"
+  ],
+  "_style": "portrait_style.STYLE_CORE — 1980~90년대 일본 셀 애니 + 픽셀블록, 크로마키 마젠타 배경",
+  "characters": [
+    {
+      "key": "lilac", "name": "라일락", "priority": 1,
+      "canon": "1.txt:11 '연보라색 머리와 눈동자를 지닌 여자', '전혀 칼을 쓰지 않을 것처럼 보이는 아름다운 외모'",
+      "prompt": "beautiful gentle woman, pale lavender hair, lavender eyes, long flowing hair, soft serene kind smile, elegant pale lavender and cream robe with gold trim, no weapon, saintly aura",
+      "mapped_as": ["라일락"]
+    },
+    {
+      "key": "riel", "name": "리엘", "priority": 1,
+      "canon": "4.txt:78 '리엘(도사): 도술을 배워서 도술을 쓸 줄 알고 도술로만 봤을 때 세 손가락 안에 들 만큼 강하다. 리엘의 원력은 초월자의 힘'",
+      "prompt": "wise taoist sage man, dark hair with grey streaks tied back, sharp calm eyes, traditional eastern robe with talisman paper charms, wooden staff, mystical blue-white energy, mature composed expression",
+      "mapped_as": ["리엘", "도사", "리엘의 스승"]
+    },
+    {
+      "key": "haru", "name": "하루", "priority": 1,
+      "canon": "4.txt '하루(주인공): 카타나를 쓰며 원소가 없고 다른 사람의 능력을 복사해서 자신이 사용할 수 있다'. 1.txt 고아 출신",
+      "prompt": "young man hero, short black hair, determined dark eyes, simple dark traveller coat with leather straps, holding a plain katana, resolute expression, humble orphan",
+      "mapped_as": ["하루"]
+    },
+    {
+      "key": "scarlet", "name": "스칼렛", "priority": 1,
+      "canon": "4.txt '에델리오나(스칼렛): 레이피어 같은 카타나를 쓰며 빛과 어둠의 원소가 있고 빛과 어둠을 융합해서 사용할 수 있다. 승탑 전 기준 각성한 초월자 4명 중 한명'. 1.txt '몰락한 왕조의 마지막 후예'",
+      "prompt": "regal woman, long crimson red hair, piercing amber eyes, dark red and black royal gown with gold crown, rapier-like slender katana, blending light and shadow aura, cold proud expression, fallen queen",
+      "mapped_as": ["스칼렛"]
+    },
+    {
+      "key": "lucy", "name": "루시", "priority": 1,
+      "canon": "4.txt '에크레디트(루시): 작은 나무 지팡이를 쓰며 생명과 제작의 힘을 사용한다. 에크레디트 가문의 원력인 자연의 힘이 있고 라일락 월드의 생명의 [초월자]'",
+      "prompt": "gentle girl, long mint green hair, emerald eyes, nature themed white and green dress with leaf motifs, small wooden staff, warm nurturing smile, life and creation power, flowers",
+      "mapped_as": ["루시", "루시페르", "생명의 초월자 루시페르"]
+    },
+    {
+      "key": "ari", "name": "아리 (아리스텔라 데스티니)", "priority": 1,
+      "canon": "4.txt '데스티니(아리): 솔라플래임이그니션소드(일연화도)를 사용하며 태양의 빛과 무기의 힘을 사용한다. 계약형 웨폰마스터'. 대사 '근위대장 아리스텔라 데스티니(아리)'",
+      "prompt": "strong woman knight captain, long fiery red hair, fierce golden amber eyes, ornate golden and crimson guard armor, holding a blazing sun-blade sword, confident commanding smirk",
+      "mapped_as": ["아리", "아리스텔라"]
+    },
+    {
+      "key": "rian", "name": "리안", "priority": 1,
+      "canon": "4.txt '그래스트(리안): 차크람을 사용하고 바람의 원소를 사용하며 리안을 상징하는 건 라일락 꽃이다'",
+      "prompt": "noble young man, silver blond hair, blue eyes, elegant blue and white noble attire with lilac flower motif, holding a spinning chakram, wind swirling around him, dignified calm expression",
+      "mapped_as": ["리안"]
+    },
+    {
+      "key": "feron", "name": "페르온", "priority": 1,
+      "canon": "4.txt '카르리온(페르온): 다크엑스칼리버를 쓰며 암흑의 원소를 쓴다. 암흑은 시야를 가리거나 그림자를 소환해서 공격'",
+      "prompt": "dark brooding man, black hair, crimson eyes, black and dark purple armor with silver trim, huge dark greatsword radiating shadow, summoning shadows, menacing",
+      "mapped_as": ["페르온"]
+    },
+    {
+      "key": "cartel", "name": "카르텔", "priority": 2,
+      "canon": "4.txt '에스테반(카르텔): 삼지창을 사용하며 물의 원소를 쓴다. 가문이 에스테반의 물의 원력이 있으며'",
+      "prompt": "diplomatic man, dark tan skin, short black hair, teal and white envoy robe with silver trim, holding a trident, water swirling, confident composed smile",
+      "mapped_as": ["카르텔"]
+    },
+    {
+      "key": "aden", "name": "아덴", "priority": 2,
+      "canon": "4.txt '이덴미르(아덴): 긴 스태프가 무기이다. 눈의 원소를 사용하며 눈의 결정이나 눈덩이를 만들어 공격한다. 아덴이 클로체스가의 후손인 이덴미르'",
+      "prompt": "calm man, short pale silver hair, cold pale blue eyes, white and ice-blue formal robe with silver clasps, long staff topped with a snow crystal, snowflakes and ice shards floating, composed expression",
+      "mapped_as": ["아덴"]
+    },
+    {
+      "key": "ran", "name": "란", "priority": 2,
+      "canon": "2.txt:68 '아트메이커인 란'. 4.txt '아리아노(란)라고 하는 아트메이커(그림과 관련된 능력) 웨폰마스터'",
+      "prompt": "artistic young man, messy warm auburn hair, bright green eyes, paint stained light tunic with painter sash, floating glowing magic brush and palette, colorful art magic swirling, energetic smile",
+      "mapped_as": ["란"]
+    },
+    {
+      "key": "elbert", "name": "엘버트", "priority": 2,
+      "canon": "4.txt '엘버트는 얼음 원소가 고유 능력이지만 리버스 가문은 반전이 고유 능력, 즉 원력이다'",
+      "prompt": "young man, light blue hair, cool grey eyes, white and pale blue coat with frost patterns, ice crystals forming around his hand, reversed mirror like aura, quiet determined expression",
+      "mapped_as": ["엘버트"]
+    },
+    {
+      "key": "iris", "name": "아이리스", "priority": 3,
+      "canon": "5.txt '마법공학 연구소'의 NPC. 능력·무기 정본 미기재 → 마법공학 연구소 소속으로만 유도(외형은 정본에 없음)",
+      "prompt": "young woman engineer mage, deep blue hair tied back, violet eyes, practical navy blue coat with brass gears and tool belt, magic tech goggles on forehead, holding a small glowing gadget, focused expression",
+      "mapped_as": ["아이리스"]
+    },
+    {
+      "key": "ion", "name": "빛의 아이온", "priority": 3,
+      "canon": "8.txt '빛의 아이온과 어둠에 알다바오트가'",
+      "prompt": "radiant figure, long white gold hair, glowing golden eyes, white and gold flowing robe, halo of pure light, serene divine expression, holy light aura",
+      "mapped_as": ["빛의 아이온"]
+    },
+    {
+      "key": "jade", "name": "제이드", "priority": 3,
+      "canon": "PDF 3p '제이드: 망치, 마법공학, 공학망치, 분신소환'",
+      "prompt": "sturdy woman blacksmith, short dark hair, sharp amber eyes, leather forge apron over work clothes, holding a heavy engineering hammer with magic gears, duplicate afterimages of herself, confident grin",
+      "mapped_as": ["제이드"]
+    },
+    {
+      "key": "littlestar", "name": "리틀스타", "priority": 3,
+      "canon": "8.txt '난 스타게이트의 관리자이자 그랜드플래닛의 문지기인 리틀스타이다'",
+      "prompt": "small cute star spirit guardian, fluffy pale yellow hair, huge sparkling eyes, tiny floating star shaped body with sparkles, gatekeeper of worlds, cheerful glowing",
+      "mapped_as": ["리틀스타"]
+    },
+    {
+      "key": "jenifer", "name": "제니퍼", "priority": 3,
+      "canon": "8.txt '니시아의 5대 가문중 하나이자 가주인 엘리자베스는 자력 초월자... 제니퍼의 가문, 불' — 니시아 5대 가문 사람",
+      "prompt": "noble young woman, dark auburn hair in an elegant braid, warm amber eyes, refined crimson and gold aristocrat dress, small flame magic in her palm, poised graceful expression",
+      "mapped_as": ["제니퍼"]
+    },
+    {
+      "key": "ihyun", "name": "이현", "priority": 3,
+      "canon": "4.txt '이현선인: 부채를 쓰며 도술을 사용한다. 이현선인이 가지고 있는 고유 특성은 꽃'",
+      "prompt": "eastern hermit sage, long black hair tied loosely, calm dark eyes, flowing white and pale green traditional robe, holding an ornate folding fan, flower petals floating, serene mysterious",
+      "mapped_as": ["이현", "이현선인"]
+    }
+  ],
+  "_negative": "western realistic face, western oil painting, thick eyebrows, big nose, disney style, photorealistic, 3d render"
+}

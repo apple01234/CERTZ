@@ -48,6 +48,25 @@ const PROPS: PropKey[] = [
   "obj_town_barrel", "obj_town_planter", "obj_town_vending", "obj_town_waterfall",
 ];
 
+/** 반영 가능한 스테이지 시드 — `authoredLayouts` 가 실제로 인식하는 키만.
+ *  [중요] 게임은 `howlrstone{장}x{구역}` 과 `dlc{행성}{n}` 만 authored 로 처리한다.
+ *  목록에 없는 seed 를 저장하면 게임이 무시하므로, 반영 가능한 것만 노출한다. */
+const STAGE_SEEDS: { seed: string; label: string }[] = [
+  { seed: "howlrstone1x1", label: "1장 1구역" },
+  { seed: "howlrstone1x2", label: "1장 2구역" },
+  { seed: "howlrstone1x3", label: "1장 3구역" },
+  { seed: "howlrstone1x4", label: "1장 4구역" },
+  { seed: "howlrstone2x1", label: "2장 1구역" },
+  { seed: "howlrstone2x2", label: "2장 2구역" },
+  { seed: "howlrstone3x1", label: "3장 1구역" },
+  { seed: "howlrstone4x1", label: "4장 1구역" },
+  { seed: "howlrstone5x1", label: "5장 1구역" },
+  { seed: "howlrstone6x1", label: "6장 1구역" },
+  { seed: "howlrstone7x1", label: "7장 1구역" },
+  { seed: "howlrstone8x1", label: "8장 1구역" },
+  { seed: "howlrstone9x1", label: "9장 1구역" },
+];
+
 /** 테마 프리셋 — `authoredLayouts.THEMES` 와 동일한 조합을 노출한다. */
 const THEME_PRESETS = [
   { theme: "library", label: "도서관", ground: "ground_ash", path: "ground_slate", structure: "ground_cavern" },
@@ -106,6 +125,8 @@ export default function TilemapEditor() {
   const [status, setStatus] = useState<string>("");
   const [showProps, setShowProps] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
+  /* 반영 대상 스테이지 — 저장/반영 시 이 시드로 게임에 알린다. */
+  const [seed, setSeed] = useState<string>("howlrstone1x2");
 
   const history = useRef<EdState[]>([]);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -123,18 +144,27 @@ export default function TilemapEditor() {
   }, []);
 
   /* ── 편집 ── */
-  const setCell = useCallback((cell: number, on: boolean) => {
+  /* [vc258 버그 수정] 벽 도구의 의미가 반전돼 있었다.
+   *  종전엔 `wall + add` 가 `open[cell] = true` 로 **셀을 열었다**. 새 맵은 내부가
+   *  전부 개방 상태라, 벽 도구로 클릭해도 아무 변화가 없었다(브라우저 실측: 4회 클릭 후
+   *  개방 91 / 벽 44 그대로). 도구 이름과 동작이 반대였던 것.
+   *  이제 `mode` 를 그대로 받아 도구별로 해석한다:
+   *    wall  : add → 벽으로 막기(open=false), del → 열기(open=true)
+   *    path  : add → 길 칠하기, del → 지우기
+   *    entry/exit : add → 그 셀을 입구/출구로 */
+  const paintCell = useCallback((cell: number, mode: "add" | "del") => {
     setSc((prev) => {
       const next = clone(prev);
-      if (tool === "path") next.paths[cell] = on;
-      else if (tool === "wall") {
-        next.open[cell] = on;
+      if (tool === "wall") {
+        next.open[cell] = mode === "del";
         /* 벽으로 만들면 그 위 프롭은 제거 — 벽 안에 뜬 오브젝트 방지 */
-        if (!on) next.props = next.props.filter((p) => p.cell !== cell);
-      } else if (tool === "entry" && on) {
+        if (mode === "add") next.props = next.props.filter((p) => p.cell !== cell);
+      } else if (tool === "path") {
+        next.paths[cell] = mode === "add";
+      } else if (tool === "entry" && mode === "add") {
         next.open[cell] = true;
         next.entry = cell;
-      } else if (tool === "exit" && on) {
+      } else if (tool === "exit" && mode === "add") {
         next.open[cell] = true;
         next.exit = cell;
       }
@@ -144,9 +174,8 @@ export default function TilemapEditor() {
 
   const paint = useCallback((cell: number, mode: "add" | "del") => {
     if (cell < 0) return;
-    if (tool === "entry" || tool === "exit") { if (mode === "add") setCell(cell, true); return; }
-    setCell(cell, mode === "add");
-  }, [setCell, tool]);
+    paintCell(cell, mode);
+  }, [paintCell]);
 
   /* 프롭 놓기 */
   const placeProp = useCallback((cell: number) => {
@@ -330,16 +359,44 @@ export default function TilemapEditor() {
   const onUp = () => { painting.current = null; };
 
   /* 저장 — 단축키(Ctrl+S)에서도 참조하므로 선언을 effect 앞에 둔다. */
+  /* ── 게임 스테이지에 반영 ──
+   * [왜 필요한가] 에디터가 JSON 다운로드만 하면 "에디터에서 만들고 게임에서 확인"이
+   *  한 흐름이 되지 않는다. "맵메이커 최종 완성"은 저장 → 게임 반영이 이어져야 완성이다.
+   *  서버가 읽기 전용인 배포(서버리스)에서는 503 이 오므로, 그때는 다운로드로 폴백한다. */
+  const publish = useCallback(async () => {
+    if (!seed) { setStatus("반영할 스테이지를 먼저 고르세요"); return; }
+    const c = validateLayout(sc);
+    if (!c.ok) { setStatus(`반영 불가 — ${c.errors[0]}`); return; }
+    const doc = serializeLayout({ ...sc, props: sc.props, name: seed });
+    try {
+      const res = await fetch("/api/maps", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ seed, map: doc }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setStatus(`반영 실패(${res.status}): ${body.error ?? "알 수 없는 오류"}`);
+        return;
+      }
+      setStatus(`${seed} 에 반영 완료 · ${body.bytes ?? 0}B · 총 ${body.total ?? "?"}개 맵`);
+    } catch (e) {
+      setStatus(`반영 실패: ${String((e as Error).message).slice(0, 80)}`);
+    }
+  }, [sc, seed]);
+
+  /* 저장 — 단축키(Ctrl+S)에서도 참조하므로 선언을 effect 앞에 둔다. */
   const save = useCallback(() => {
-    const json = serializeLayout({ ...sc, props: sc.props, name: `map_${Date.now()}` });
+    const json = serializeLayout({ ...sc, props: sc.props, name: seed || `map_${Date.now()}` });
     const blob = new Blob([JSON.stringify(json, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `sertz-map-${Date.now()}.json`;
+    a.download = `${seed || "sertz-map"}-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
     setStatus(`저장 완료 · 개방 ${sc.open.filter(Boolean).length}칸 · 프롭 ${sc.props.length}개`);
-  }, [sc]);
+  }, [sc, seed]);
 
   /* ── 단축키 ── */
   useEffect(() => {
@@ -397,7 +454,19 @@ export default function TilemapEditor() {
           <label className="cursor-pointer rounded border border-white/15 px-2 py-1 text-[11px] hover:bg-white/10">
             불러오기<input type="file" accept=".json" onChange={load} className="hidden" />
           </label>
-          <button onClick={save} className="rounded border border-amber-300/50 bg-amber-400/15 px-2 py-1 text-[11px] font-bold text-amber-100 hover:bg-amber-400/25">저장</button>
+          <button onClick={save} className="rounded border border-white/15 px-2 py-1 text-[11px] hover:bg-white/10">JSON 저장</button>
+          <button onClick={publish} className="rounded border border-emerald-300/50 bg-emerald-400/15 px-2 py-1 text-[11px] font-bold text-emerald-100 hover:bg-emerald-400/25">게임에 반영</button>
+        </div>
+        {/* 반영 대상 스테이지 — 게임이 인식하는 시드만 노출한다 */}
+        <div className="flex w-full items-center gap-1.5 border-t border-white/5 pt-1.5">
+          <span className="text-[10px] font-bold text-white/40">반영 스테이지</span>
+          <select value={seed} onChange={(e) => setSeed(e.target.value)}
+            className="rounded border border-white/15 bg-[#151922] px-1.5 py-0.5 text-[10px]">
+            {STAGE_SEEDS.map((s) => <option key={s.seed} value={s.seed}>{s.label} ({s.seed})</option>)}
+          </select>
+          <span className="text-[9px] text-white/30">
+            저장 후 게임을 새로고침하면 이 구역 레이아웃이 바뀝니다
+          </span>
         </div>
       </header>
 

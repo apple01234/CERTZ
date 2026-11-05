@@ -5,6 +5,7 @@ import { DECOR_SETS } from "../decorObjects";
 import { TILE_PNG_KEYS } from "../tilePng"; // vc206 (#11) — PNG 원본 우선 로드
 import { buildAllAnims, registerBossAnims, BOSS_ATLAS } from "../textures";
 import { CORE_BODY_PREFIXES } from "../data";
+import { loadMapOverrides } from "../mapOverrides"; // vc258 — 에디터 저장 맵
 import { BGM_PRELOAD_TRACKS, SKILL_SFX_TRACKS } from "../audio";
 import { hookLoaderForGuard, runTexGuardCycle, getTexGuardStats, installEngineFrameGuard } from "../texGuard";
 
@@ -966,6 +967,10 @@ export class BootScene extends Phaser.Scene {
     /* v1.4.31 (#4) — 아틀라스 보스 9종 풀애니 부팅 즉시 등록 (시트가 preload에 포함되어 바로 가능 —
      *  기존은 Boss 스폰 시점 등록이라 E2E·첫 스폰 직전까지 애니 부재). 구형 폴백 애니는 등록하지 않는다. */
     for (const tex of Object.keys(BOSS_ATLAS)) registerBossAnims(this, tex);
+    /* [vc258 — 맵에디터] 에디터로 저장한 맵 오버라이드를 메모리에 올린다.
+     *  월드 씬이 레이아웃을 만들기 **전**에 끝나야 한다(부팅은 타이틀보다 앞).
+     *  실패해도 throw 하지 않으므로 오프라인/APK 첫 실행에서도 게임은 뜬다. */
+    void loadMapOverrides();
     /* vc142 (#9/#12) — vx_ 플립북 애니 등록 (유저 에셋팩 크롭분 — 보스 고유 패턴/3D 오버레이 공용) */
     const VX_ANIMS: [string, string, number, number, number][] = [
       ["vx-fire", "vx_fire", 0, 8, 14],

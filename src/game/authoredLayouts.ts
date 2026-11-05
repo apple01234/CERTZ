@@ -1,5 +1,6 @@
 import { HOWLRSTONE_CHAPTERS } from "./howlrstone";
 import type { RoomLayout } from "./mapgen";
+import { overrideToLayout } from "./mapOverrides";
 
 export type AuthoredTheme = "library" | "coast" | "grove" | "citadel" | "town" | "ruins" | "conduit" | "arena";
 export type AuthoredPresentation = {
@@ -45,6 +46,25 @@ export function authoredOpenXY(lay: RoomLayout, x: number, y: number, pad: numbe
  * Bloodkeeper's distinct ground/collision layers. No reference-game map is copied.
  * Evidence: docs/campaign/REFERENCE_DEEP_ANALYSIS.md sections 7–8. */
 export function authoredRoomLayout(seed: string, mapW: number, mapH: number): RoomLayout | null {
+  /* [vc258 — 맵에디터] 에디터로 저장한 맵이 있으면 프리셋보다 **우선**한다.
+   *  사용자가 직접 배치한 맵을 게임이 무시하면 도구가 무의미해진다.
+   *  단 레이아웃이 불변식(입구/출구 개방, 서로 다름)을 어기면 프리셋으로 폴백한다
+   *  — 잘못된 맵 하나 때문에 스테이지에 진입할 수 없으면 안 된다. */
+  const ov = overrideToLayout(seed);
+  if (ov?.ok) {
+    const { layout } = ov;
+    /* [vc258 주의] 저장된 맵의 open 배열 크기는 **에디터에서 만든 cols×rows** 다.
+     *  필드가 다른 크기로 만들어졌다고 여기서 cols/rows 만 바꾸면 배열과 어긋나
+     *  인덱스가 깨진다(개방 셀이 엉뚱한 위치로 밀리고 도달 불가 방이 생긴다).
+     *  그래서 저장된 맵의 격자를 **그대로** 쓰고, 렌더러가 필드 크기에 맞춰
+     *  타일을 늘려 그리게 둔다. 셀 크기만 필드에 맞춰 늘린다. */
+    return {
+      ...layout,
+      cellW: mapW / layout.cols,
+      cellH: mapH / layout.rows,
+    };
+  }
+
   const story = /^howlrstone(\d+)x(\d+)$/.exec(seed);
   const planet = /^dlc([a-z]+)([1-9]|10)$/.exec(seed);
   let theme: AuthoredTheme;
