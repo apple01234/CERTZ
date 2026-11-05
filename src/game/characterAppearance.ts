@@ -28,6 +28,19 @@ export function resolveBodyPrefix(
     const own = `job${gender}_${look.cls}`;
     return hasBody(own) ? own : `job${gender}_${root}`;
   }
+  /* vc255 (지시 #7) — 기본 남캐도 이제 전용 시트를 쓴다.
+   *
+   *  [종전] `gender === "f" || skin !== 2 ? ch{g}{skin} : ""` —
+   *   남캐 + 기본 피부(2)만 `""`(FA 아틀라스)로 떨어졌다. 그런데 FA idle 프레임은
+   *   64×85 안에 캐릭터가 **18×36px** 이고, 실제로는 사람이 아니라 "청보라색 외계 생물"
+   *   (큰 원형 머리 + 1px 촉수 팔다리 + 노란 사각 눈)로 보인다. 사용자가 지적한
+   *   "남캐 디자인 꼬라지"가 이것이다.
+   *  [수리] `scripts/make_player_sheet.py` 가 npcbody 규격(96×64 캔버스, 캐릭터 23×56,
+   *   2.2등신, 실제 이목구비)으로 `chm2_*`/`chf2_*` 전 세트(7동작 × 4프레임 = 56장)를
+   *   생성했다. 이제 기본 남캐도 자기 시트를 갖고, FA 폴백은 시트가 **없을 때만** 쓴다. */
+  const own = `ch${gender}${skin}`;
+  if (hasBody(own)) return own;
+  /* 시트가 없는 구 배포/신규 피부 조합만 FA 로 폴백(깨짐 방지) */
   return gender === "f" || skin !== 2 ? `ch${gender}${skin}` : "";
 }
 

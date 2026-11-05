@@ -8,12 +8,22 @@ const { resolveBodyPrefix, resolveCharacterPreview } = await import(pathToFileUR
 const { CLASSES } = await import("../src/game/classes.ts");
 let checks = 0;
 const eq = (actual, expected, label) => { assert.deepEqual(actual, expected, label); checks++; };
+/* vc255 (지시 #7) — 기본 남캐도 전용 시트(chm2)를 쓴다.
+ *  종전엔 남캐+기본피부(2)만 ""(FA 아틀라스)로 폴백했는데, 그 프레임이
+ *  18×36px 의 "청보라색 외계 생물"이라 기본 외형이 사용자 지적 대상이었다. */
+const BASE_PREFIX = (gender) => `ch${gender}2`;
 for (const gender of ["m", "f"]) {
   for (const cls of Object.values(CLASSES)) {
     const prefix = resolveBodyPrefix({ gender, cls: cls.key, skinIdx: 2 });
-    const expected = cls.tier >= 2 ? `job${gender}_${cls.key}` : gender === "f" ? "chf2" : "";
+    const expected = cls.tier >= 2 ? `job${gender}_${cls.key}` : BASE_PREFIX(gender);
     eq(prefix, expected, `${gender} ${cls.key}: 현재 전직 외형 사용`);
-    if (prefix) assert.ok(fs.existsSync(new URL(`../public/assets/${prefix}_idle0.webp`, import.meta.url)), prefix);
+    if (prefix) {
+      /* 시트가 png 로만 있는 경우도 있으므로 둘 다 확인한다 */
+      const ok =
+        fs.existsSync(new URL(`../public/assets/${prefix}_idle0.webp`, import.meta.url)) ||
+        fs.existsSync(new URL(`../public/assets/${prefix}_idle0.png`, import.meta.url));
+      assert.ok(ok, `${prefix}_idle0(.webp|.png) 없음`);
+    }
   }
 }
 eq(resolveBodyPrefix({ cls: "warbringer", gender: "f", outfit: "outfit_royal" }), "cost_royal", "코스튬은 직업보다 우선");
@@ -21,12 +31,17 @@ eq(resolveBodyPrefix({ cls: "warbringer", gender: "m", outfit: "outfit_royal", g
 eq(resolveBodyPrefix({ cls: "warbringer", gmSkin: true, gmApproved: false }), "jobm_warbringer", "미승인 GM 외형은 사용하지 않음");
 eq(resolveBodyPrefix({ cls: "warbringer" }, p => p !== "jobm_warbringer"), "jobm_berserker", "실제 전용 외형이 없을 때만 2차 폴백");
 eq(resolveBodyPrefix({ cls: "not-a-job", gender: "f", skinIdx: 4 }), "chf4", "구 세이브 무효 직업은 피부 외형");
-eq(resolveBodyPrefix({ skinIdx: 999 }), "", "무효 피부는 기본 외형");
+eq(resolveBodyPrefix({ skinIdx: 999 }), "chm2", "무효 피부는 기본 인덱스(2)로 정규화되어 chm2 를 쓴다");
+/* vc255 — 기본 남성의 미리보기도 이제 FA 아틀라스가 아니라 자기 시트를 가리킨다.
+ *  FA 는 시트가 실제로 없을 때만 폴백이다. */
 const fa = resolveCharacterPreview({});
-eq(fa.src, "/assets/fa/p1.png", "기본 남성은 Player.faActive와 같은 기존 FA 아틀라스");
+eq(fa.src, "/assets/chm2_idle0.webp", "기본 남성은 chm2 전용 시트 (FA 폴백 아님)");
+/* FA 아틀라스 자체는 여전히 유효한 폴백 자산이다 — 메타가 온전한지만 확인한다
+ * (기본 외형이 FA 를 가리키지 않게 바뀌었으므로 크롭 일치 단언은 대상이 사라졌다). */
 const atlas = JSON.parse(fs.readFileSync(new URL("../public/assets/fa/p1.json", import.meta.url)));
-eq(fa.crop, atlas.frames.fa_p1_idle__0.frame, "FA 크롭은 실제 아틀라스 메타와 일치");
-eq(fa.sheet, atlas.meta.size, "FA 시트 크기 일치");
+assert.ok(atlas.frames.fa_p1_idle__0?.frame, "FA 아틀라스 메타 유지");
+assert.ok(atlas.meta?.size, "FA 시트 메타 유지");
+checks++;
 eq(resolveCharacterPreview({ cls: "arclord", gender: "f" }).src, "/assets/jobf_arclord_idle0.webp", "전직 카드도 인게임 idle 텍스처");
 eq(Object.keys(resolveCharacterPreview({ cls: "arclord", isFifth: true })).includes("aura"), false, "선택창 아우라 없음");
 // Phaser를 부팅하지 않고 실제 Player 메서드를 실행: 미로드와 파일 부재는 다르다.

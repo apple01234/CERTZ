@@ -856,7 +856,10 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
  *  v1.1.1 (#7 성별 치장 분리) — cost_* = 여성형 10종 / costm_* = 남성형 10종.
  *  같은 코스튬 키라도 캐릭터 성별에 따라 대응 실루엣 시트가 적용된다 (applyBodyLook). */
 export const BODY_PREFIXES = [
-  "chm0", "chm1", "chm3", "chm4", "chm5",
+  /* vc255 (지시 #7) — chm2 추가. 종전엔 남캐 기본 피부(2)만 목록에 없어
+   *  `resolveBodyPrefix` 가 ""(FA 아틀라스)로 폴백했고, 그 시트가 "청보라색 외계 생물"이라
+   *  기본 남캐 외형이 사용자 지적의 대상이 됐다. 이제 chm2 전용 시트(56프레임)를 쓴다. */
+  "chm0", "chm1", "chm2", "chm3", "chm4", "chm5",
   "chf0", "chf1", "chf2", "chf3", "chf4", "chf5",
   "cost_royal", "cost_shadow", "cost_spring", "cost_navy",
   "cost_silver", "cost_crimson", "cost_seraph", "cost_abyss", "cost_nightmare", "cost_gilded",
@@ -1112,7 +1115,7 @@ export function isPremiumPet(k: string): boolean {
 /** v1.2.1 (#4 최적화) — 부팅 지연 로드 분할: 기본 성별/피부 시트만 부팅에서 즉시 로드하고
  *  코스튬/직업/GM 시트(37종 × 28프레임 ≈ 1036장)는 타이틀 화면에서 백그라운드 로드.
  *  모바일 첫 부팅 요청 수가 절반 이하로 줄어든다. */
-export const CORE_BODY_PREFIXES = ["chm0", "chm1", "chm3", "chm4", "chm5", "chf0", "chf1", "chf2", "chf3", "chf4", "chf5"] as const;
+export const CORE_BODY_PREFIXES = ["chm0", "chm1", "chm2", "chm3", "chm4", "chm5", "chf0", "chf1", "chf2", "chf3", "chf4", "chf5"] as const;
 export const DEFERRED_BODY_PREFIXES = BODY_PREFIXES.filter((p) => !(CORE_BODY_PREFIXES as readonly string[]).includes(p));
 
 /* ================= v4.3.0 — 도파민 시스템 (가챠 상자/패키지/일일 특가/출석 보상) =================
