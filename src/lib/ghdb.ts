@@ -19,6 +19,7 @@
 
 import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } from "node:crypto";
 import storage from "../../accounts/storage.json" with { type: "json" };
+import { allowRemoteWrite } from "./dbShrinkGuard";
 
 /* ---------------- 데이터 형태 (accounts/index.js 파일 DB와 동일) ---------------- */
 export type UserRec = { id: string; name: string; provider: string; salt: string; hash: string; createdAt: number; role?: string };
@@ -177,7 +178,19 @@ async function ghGetFrom(repo: string): Promise<RawFile | null> {
 /** 쓰기 결과 — ok(새 sha) 또는 conflict(재시도) */
 type PutResult = { ok: true; sha: string } | { ok: false; conflict: boolean; status: number };
 
-async function ghPutRaw(enc: string, sha: string | null): Promise<PutResult> {
+async function ghPutRaw(enc: string, sha: string | null, prevBytes?: number): Promise<PutResult> {
+  /* [vc261] 축소 가드 — 사고 재발 방지.
+   *  2026-11-05 05:37 의 14,100B DB 가 07:31 에 964B 로 덮여 운영 전체가 500 이 됐다.
+   *  원인은 **키가 다른 서버**가 시드 계정만 든 DB 를 써서 원격을 갈아치운 것.
+   *  vc245 의 isRemoteSafeKey 는 '키 부재'만 막아 이 경우를 통과시켰다.
+   *  키 일치 여부는 쓰기 전에 알 수 없으므로 **크기 급감**을 신호로 삼는다. */
+  if (prevBytes && prevBytes > 0) {
+    const chk = allowRemoteWrite(prevBytes, enc);
+    if (!chk.ok) {
+      console.error(`[SERTZ-db] 쓰기 차단 — ${chk.reason}`);
+      return { ok: false, conflict: false, status: 409 };
+    }
+  }
   const fileB64 = Buffer.from(enc, "utf8").toString("base64"); // 파일 내용(base64 텍스트)의 재인코딩
   const r = await fetch(`https://api.github.com/repos/${DB_REPO}/contents/${DB_PATH}`, {
     method: "PUT",
@@ -237,12 +250,14 @@ function normalizeDb(db: DbShape): DbShape {
   return db;
 }
 
-function parseDbRaw(raw: RawFile | null): { db: DbShape; sha: string | null } {
+function parseDbRaw(raw: RawFile | null): { db: DbShape; sha: string | null; encBytes: number } {
   if (!raw || !raw.enc) throw new Error("온라인 DB가 비어 있음 — 자동 초기화하지 않음");
   const json = backupDecrypt(raw.enc);
   if (!json) throw new Error("DB 복호화 실패 — 키 불일치?");
   const parsed = JSON.parse(json) as DbShape;
-  return { db: normalizeDb(parsed), sha: raw.sha };
+  /* encBytes = 원격 파일의 **base64 텍스트 길이** — 축소 가드의 기준값.
+   *  바이트가 아니라 문자 수로 세는 이유: ghPutRaw 에 넘기는 enc 도 같은 텍스트다. */
+  return { db: normalizeDb(parsed), sha: raw.sha, encBytes: raw.enc.length };
 }
 
 /* vc238 — serverless 관리자 복구 경로.
@@ -294,18 +309,19 @@ export function ensureAdminAccount(db: DbShape): boolean {
   return changed;
 }
 
-type Cache = { db: DbShape; sha: string | null; at: number } | null;
+type Cache = { db: DbShape; sha: string | null; at: number; encBytes: number } | null;
 let cache: Cache = null;
 const CACHE_TTL_MS = 8000;
 
 /** DB 로드 — force=false면 8초 캐시(공개 읽기 절감), true면 항상 fresh(쓰기 직전 필수) */
-export async function loadDb(force = false): Promise<{ db: DbShape; sha: string | null }> {
-  if (!force && cache && Date.now() - cache.at < CACHE_TTL_MS) return { db: cache.db, sha: cache.sha };
+export async function loadDb(force = false): Promise<{ db: DbShape; sha: string | null; encBytes: number }> {
+  if (!force && cache && Date.now() - cache.at < CACHE_TTL_MS)
+    return { db: cache.db, sha: cache.sha, encBytes: cache.encBytes };
   if (!ghToken()) throw new Error("GITHUB_TOKEN 미설정 — 서버 설정 오류");
   currentKeySecret();
   const raw = await ghGetFrom(DB_REPO);
   const out = parseDbRaw(raw);
-  cache = { db: out.db, sha: out.sha, at: Date.now() };
+  cache = { db: out.db, sha: out.sha, at: Date.now(), encBytes: out.encBytes };
   return out;
 }
 
@@ -330,7 +346,7 @@ export async function mutateDb(fn: (db: DbShape) => MutateResult): Promise<Resp>
   const busy: Resp = { status: 503, body: { error: "서버가 바빠요 — 잠시 후 다시 시도해 주세요" } };
   const MAX_TRY = 6;
   for (let i = 0; i < MAX_TRY; i++) {
-    const { db, sha } = await loadDb(true);
+    const { db, sha, encBytes: prevBytes } = await loadDb(true);
     /* vc228 (감사 #2) — **작업 사본**에서 변형한다.
      *  종전엔 `loadDb(true)` 가 준 객체가 곧 `cache.db` 와 동일 참조라
      *  `fn(db)` 가 캐시를 직접 고쳤다. PUT 이 6회 모두 실패하면 캐시에는
@@ -341,9 +357,10 @@ export async function mutateDb(fn: (db: DbShape) => MutateResult): Promise<Resp>
     const out = fn(working);
     /* Resp 를 그대로 주면 "쓰기 없이 이 응답" (검증 실패 등) */
     if (!("resp" in out)) return out;
-    const put = await ghPutRaw(backupEncrypt(JSON.stringify(working)), sha);
+    const encNew = backupEncrypt(JSON.stringify(working));
+    const put = await ghPutRaw(encNew, sha, prevBytes);
     if (put.ok) {
-      cache = { db: working, sha: put.sha, at: Date.now() };
+      cache = { db: working, sha: put.sha, at: Date.now(), encBytes: encNew.length };
       return out.resp; // mutator 가 준 응답 그대로 — 클로저 부수효과 없음
     }
     /* 일시 오류(5xx/네트워크) 도 재시도 — 지수 백오프로 GitHub 부하를 피한다 */
