@@ -15,7 +15,11 @@ import Phaser from "phaser";
 import { EventBus } from "../components/game/EventBus"; // v1.1.1 — 상대경로 수정(세션 중단 커밋에서 잘못 기록됨)
 import type { WorldScene } from "./scenes/WorldScene";
 
-type TutStepId = "talk" | "portal" | "kill" | "pickup" | "skill" | "pot" | "shader" | "contrast";
+/* vc256 (지시 #9) — 8단계 → 5단계. 물약('pot')은 첫 전투 중 자연히 쓰게 되고,
+ *  쉐이더·고대비('shader'/'contrast')는 설정 화면 항목이라 첫 5분에 강제할 이유가 없다.
+ *  (설정 토글은 여전히 tut:notify 를 보내지만 매칭되는 단계가 없어 조용히 무시된다 —
+ *   구 세이브의 tutStep 값이 5 이상이어도 Clamp 로 안전하다.) */
+type TutStepId = "talk" | "portal" | "kill" | "pickup" | "skill";
 
 interface TutStep {
   id: TutStepId;
@@ -31,67 +35,69 @@ interface TutStep {
  * v1.0.13 피드백#17 — 화자를 안내인(요정)로 확정: 제목에 [안내인] 접두, 본문은 안내인 말투
  *  ("~해보자!", "여기를 꾹 눌러줘!")로 무엇을 · 어디를 · 누르면 무슨 일이 벌어지는지 + 팁 1개.
  *  ⑤스킬/⑥물약 단계 진입·완료 시 tut:dom 이벤트로 TouchControls DOM 버튼에 링 하이라이트. */
+/* vc256 (지시 #9) — "튜토리얼 너무 짜침(너무 글자만 도배 되어있고 초반에 너무 알림창이 많이 뜸
+ *  (스트레스 유발 원인!!)" 지적에 대한 전면 개편.
+ *
+ * [실측한 문제]
+ *  · 8단계 × 평균 115자 = **921자 도배**. desc 는 배너에도 그대로 찍혀 화면을 덮었다.
+ *  · 알림 배너가 시작1 + 단계별 진입·완료 = **약 17회**. 게임을 시작하자마자
+ *    배너가 연달아 떠서 플레이를 가로막았다.
+ *  · 단계 ⑦⑧(쉐이더·고대비)은 **설정 화면을 열어야 하는** 부가 기능이라
+ *    첫 5분에 반드시 시킬 이유가 없다(존재를 모르면 못 쓰는 문제는 '도움' 패널이 이미 안내).
+ *
+ * [새 설계 원칙]
+ *  ① **글 대신 행동**: desc 를 한 문장(25~45자)으로 줄이고, 조작법은 배너가 아니라
+ *     패널 하단의 키 배지로 뺀다. 읽을 것을 줄이고 하게 만들 것을 남긴다.
+ *  ② **알림 최소화**: 단계 진입 배너를 없애고, 패널만 조용히 갱신한다.
+ *     배너는 ① 시작 ② 완료 ③ 스킵 — **3회만**.
+ *  ③ **단계 8 → 5**: 첫 전투·이동·보상·스킬까지가 핵심. 설정류는 '도움'으로 이관.
+ *  ④ 진행 표시(pips)와 목표 카운트는 유지 — "얼마나 남았는지"는 스트레스가 아니라 안내다.
+ */
 const STEPS: TutStep[] = [
   {
     id: "talk",
-    title: "[안내인] ① 주민과 대화",
-    desc: "머리 위에 표시가 뜬 주민에게 슥~ 다가가 보자! 가까이 가면 아래에 '말 걸기' 버튼이 반짝 떠올라 — 모바일은 그 버튼을 꾹, PC는 Space(NPC/채집 키)! 대화창이 열리면 화면을 탭해 다음 대사로 넘기면 된다구.",
+    title: "주민에게 말 걸기",
+    desc: "표시가 뜬 주민에게 다가가 말을 걸어 보자.",
     goal: 1,
     marker: "npc",
   },
   {
     id: "portal",
-    title: "[안내인] ② 차원문 이동",
-    desc: "화면 동쪽 끝의 소용돌이 차원문(포탈)으로 걸어 들어가 보자! 사냥터 목록이 뜨면 첫 사냥터 '숲의 신전'을 선택해 줘. 이동은 화면 왼쪽 아래 빈 점선 원을 손가락으로 밀면 그 방향으로 슉!",
+    title: "차원문으로 이동",
+    desc: "동쪽 소용돌이로 들어가 첫 사냥터를 골라 보자.",
     goal: 1,
     marker: "portal",
   },
   {
     id: "kill",
-    title: "[안내인] ③ 첫 전투",
-    desc: "오른쪽 아래의 큰 빨간 '공격' 버튼을 꾹꾹 눌러 몬스터를 3마리 처치하자(PC는 X 키)! 몬스터에게 부딪히면 아프니까, 때리고 살짝 물러났다 다시 때리는 리듬이 안전해. 왼쪽 아래 파란 MP가 차오르면 다음 단계에서 쓸 스킬 준비 완료!",
+    title: "첫 전투",
+    desc: "몬스터 3마리를 처치하자. 때리고 물러나기를 반복하면 안전해.",
     goal: 3,
     marker: "enemy",
   },
   {
     id: "pickup",
-    title: "[안내인] ④ 전리품 줍기",
-    desc: "몬스터를 잡으면 골드와 아이템이 바닥에 툭! 떨어져. 그 위로 그냥 지나가기만 해도 자동으로 주워져 — 편리하지? 장비는 가방 버튼에서 착용하고, 잡동사니는 팔면 골드가 된다구.",
+    title: "전리품 줍기",
+    desc: "떨어진 골드와 아이템 위로 지나가면 자동으로 주워진다.",
     goal: 1,
     marker: null,
   },
   {
     id: "skill",
-    title: "[안내인] ⑤ 스킬 사용",
-    desc: "공격 버튼 옆의 금색 스킬 버튼(PC는 Z 키)을 눌러 보자! 휘리릭 — 주변 전체를 한 번에 베는 '회전베기'가 터진다구. 버튼이 어두우면 MP 부족이나 쿨타임 중이라는 뜻. 기본 공격으로 MP를 채우고 다시 도전!",
+    title: "스킬 사용",
+    desc: "MP가 찼을 때 스킬 버튼을 눌러 보자. 한 번에 여럿을 벤다.",
     goal: 1,
     marker: "enemy",
   },
-  {
-    id: "pot",
-    title: "[안내인] ⑥ 물약 회복",
-    desc: "HP바가 빨갛게 깎이면, 공격 버튼 바로 옆의 빨간 물약 버튼(PC는 D 키)! 꿀꺽 — HP가 쭉 회복된다. 물약이 0개면 상점에서 살 수 있다구. 팁: 위급할 때 말고 미리미리 마시는 게 안내인의 비책이야!",
-    goal: 1,
-    marker: null,
-  },
-  /* vc185 (지시 #3 — 쉐이더·고대비 튜토리얼) — 화면 품질 설정은 존재를 모르면
-   *  평생 기본값으로만 논다. 마지막 두 단계에서 실제로 켜 보게 만든다.
-   *  goal 1 = 설정에서 해당 토글을 한 번 조작하면 완료(WorldScene이 tut:notify 수신). */
-  {
-    id: "shader",
-    title: "[안내인] ⑦ 쉐이더 효과",
-    desc: "더보기(☰) → 설정을 열고 '툰 셰이더'를 눌러 봐! 캐릭터 테두리에 빛이 번지고 색이 또렷해져서 입체감이 확 살아난다구. 폰이 뜨거워지거나 버벅이면 다시 끄면 돼 — 언제든 바꿀 수 있으니까 부담 갖지 마!",
-    goal: 1,
-    marker: null,
-  },
-  {
-    id: "contrast",
-    title: "[안내인] ⑧ 고대비 모드",
-    desc: "같은 설정 화면에서 '고대비 모드'도 켜 봐! 밝은 낮 야외나 햇빛 아래에서 글자가 훨씬 또렷하게 읽힌다구. 눈이 편한 쪽으로 골라 쓰면 돼. 이제 준비 끝 — 진짜 모험을 떠나자!",
-    goal: 1,
-    marker: null,
-  },
 ];
+
+/** 단계별 조작 키 배지 — 배너/문장 대신 짧은 표기로 조작법을 전달한다. */
+const STEP_KEYS: Partial<Record<TutStepId, string>> = {
+  talk: "Space / 말 걸기 버튼",
+  portal: "걸어 들어가기",
+  kill: "X / 공격 버튼",
+  skill: "Z / 스킬 버튼",
+};
 
 /* v1.4.10 — 상세 설명(2~3줄) 수용을 위해 패널 높이 62→80 확대
  * v1.0.13 피드백#17 — 안내인 상세 안내(4문장) 수용: 패널 높이 80→96 (desc 4줄 + 여백)
@@ -112,6 +118,8 @@ export class Tutorial {
   private g!: Phaser.GameObjects.Graphics;
   private tTitle!: Phaser.GameObjects.Text;
   private tDesc!: Phaser.GameObjects.Text;
+  /** vc256 — 조작 키 배지 (문장 대신 짧은 표기) */
+  private tKey!: Phaser.GameObjects.Text;
   private tPips!: Phaser.GameObjects.Text;
   private tSkip!: Phaser.GameObjects.Text;
   /* 마커 */
@@ -125,7 +133,8 @@ export class Tutorial {
     this.refresh();
     /* v1.0.13 피드백#17 — 안내인 화자 배너 + 재개 단계가 ⑤/⑥이면 DOM 버튼 하이라이트 즉시 복원 */
     this.emitDom(this.domKeyOf(STEPS[this.stepIdx].id), true);
-    this.scene.showBanner(`튜토리얼 시작 — 안내인: ${STEPS[this.stepIdx].desc}`);
+    /* vc256 — 시작 배너는 1회, 짧게. 종전엔 desc(115자)를 그대로 찍어 화면을 덮었다. */
+    this.scene.showBanner("안내인: 우선 주민에게 말을 걸어 보자");
     /* v1.1.1 (#1 가림) — 튜토리얼 활성 사실을 React에 알린다.
      *  튜토리얼 패널은 Phaser(캔버스 내부)라 React DOM 오버레이(보상 팝업 z-70 · 퀘스트 트래커 등)에
      *  항상 가려진다 → React가 tut:active를 받으면 상단 중앙 충돌 UI를 비켜세운다 (HUD/Overlays 참조) */
@@ -142,7 +151,7 @@ export class Tutorial {
    *  key는 튜토리얼 step id가 아니라 DOM 버튼 식별자("skill"/"potion") — UI 계약 분리. */
   private domKeyOf(id: TutStepId): "skill" | "potion" | null {
     /* vc185 (#3) — shader/contrast 는 DOM 버튼 링이 아니라 설정 패널 조작으로 완료된다. */
-    return id === "skill" ? "skill" : id === "pot" ? "potion" : null;
+    return id === "skill" ? "skill" : null;
   }
 
   private emitDom(key: "skill" | "potion" | null, on: boolean) {
@@ -174,12 +183,17 @@ export class Tutorial {
     this.tPips = s.add.text(PANEL_W / 2 - 16, -PANEL_H / 2 + 8, "", {
       fontFamily: "Noto Sans SC, sans-serif", fontSize: "11px", color: "#9df0ff",
     }).setOrigin(1, 0);
+    /* vc256 (지시 #9) — 조작 키 배지. 종전엔 조작법이 desc 문장 안에 섞여 있어
+     *  "글자 도배"의 주범이었다. 조작은 짧은 배지로 분리한다. */
+    this.tKey = s.add.text(-PANEL_W / 2 + 16, PANEL_H / 2 - 22, "", {
+      fontFamily: "Noto Sans SC, sans-serif", fontSize: "11px", color: "#ffd98a",
+    }).setOrigin(0, 1);
     this.tSkip = s.add.text(PANEL_W / 2 - 16, PANEL_H / 2 - 20, "스킵 ▶", {
       fontFamily: "Noto Sans SC, sans-serif", fontSize: "11px", color: "#7a8aa0",
     }).setOrigin(1, 1).setInteractive({ useHandCursor: true });
     this.tSkip.on("pointerup", () => this.skip());
 
-    this.hud.add([this.g, this.tTitle, this.tDesc, this.tPips, this.tSkip]);
+    this.hud.add([this.g, this.tTitle, this.tDesc, this.tPips, this.tKey, this.tSkip]);
     this.layoutHud();
 
     /* 마커 — 목표물 위에서 깜빡이는 광점+스파클 (인트로 가이드와 같은 어휘)
@@ -222,6 +236,8 @@ export class Tutorial {
     this.tTitle.setText(`튜토리얼 ${this.stepIdx + 1}/${STEPS.length} · ${st.title}`);
     this.tDesc.setText(st.desc + (st.goal > 1 ? `  (${this.prog}/${st.goal})` : ""));
     this.tPips.setText(STEPS.map((_, i) => (i < this.stepIdx ? "●" : i === this.stepIdx ? "◉" : "○")).join(" "));
+    /* vc256 — 조작 키는 배지로 (없는 단계는 빈칸) */
+    this.tKey?.setText(STEP_KEYS[st.id] ? `조작  ${STEP_KEYS[st.id]}` : "");
   }
 
   /* ───────────────────── 진행 판정 ───────────────────── */
@@ -261,7 +277,9 @@ export class Tutorial {
     this.refresh();
     /* v1.0.13 피드백#17 — 새 단계가 ⑤/⑥이면 DOM 버튼 하이라이트 on */
     this.emitDom(this.domKeyOf(STEPS[this.stepIdx].id), true);
-    s.showBanner(`튜토리얼 ${this.stepIdx + 1}/${STEPS.length} — 안내인: ${STEPS[this.stepIdx].desc}`);
+    /* vc256 (지시 #9) — 단계마다 배너를 띄우지 않는다.
+     *  종전엔 진입·완료마다 배너가 떠 총 17회 화면을 덮었다("알림창이 너무 많이 뜸").
+     *  이제 패널의 제목·설명·진행점만 조용히 갱신한다 — 시선을 빼앗지 않는다. */
   }
 
   /* ───────────────────── 프레임 갱신 ───────────────────── */

@@ -140,9 +140,23 @@ export function renderAuthoredMapLayers(
     if (!scene.textures.exists(key)) return baseScale;
     const src = scene.textures.get(key).getSourceImage() as { width: number; height: number };
     if (!src?.width || !src?.height) return baseScale;
-    /* 원본이 차지하는 칸 수(반올림) — 셀보다 크면 여러 칸, 작으면 1칸 */
-    const cellsW = Math.max(0.5, Math.round((src.width * baseScale) / lay.cellW * 2) / 2);
-    const cellsH = Math.max(0.5, Math.round((src.height * baseScale) / lay.cellH * 2) / 2);
+    /* 프롭별 최대 점유 칸수 — 큰 구조물이 통로를 덮지 않게 제한한다.
+     *  bookshelf(64×128)를 1.5칸으로 맞추면 세로 192px = 1.5칸이 되어 벽을 뚫는다. */
+    const MAX_CELLS: Record<string, number> = {
+      obj_dungeon_bookshelf: 1,   // 세로 1칸 고정 (실내 벽면 선반)
+      obj_forest_tree_pink: 1.5,  // 나무는 살짝 크게
+      obj_town_house_blue: 2,     // 집은 2칸
+      obj_forest_rock_monument: 1,
+      obj_dungeon_torch: 0.5,
+      obj_dungeon_chest: 0.5,
+      obj_dungeon_anvil: 0.5,
+    };
+    const capCells = MAX_CELLS[key] ?? 1;
+    /* 원본이 차지하는 칸 수(반 칸 단위) — 셀보다 크면 여러 칸, 작으면 1칸 */
+    const rawCellsW = (src.width * baseScale) / lay.cellW;
+    const rawCellsH = (src.height * baseScale) / lay.cellH;
+    const cellsW = Math.max(0.5, Math.min(capCells, Math.round(rawCellsW * 2) / 2));
+    const cellsH = Math.max(0.5, Math.min(capCells, Math.round(rawCellsH * 2) / 2));
     /* 그 칸 수에 정확히 맞는 배율 (가로/세로 중 작은 쪽을 써서 셀을 넘지 않게) */
     const fit = Math.min((cellsW * lay.cellW) / src.width, (cellsH * lay.cellH) / src.height);
     /* 원본 대비 0.5~2.5배 범위로 제한 — 과확대/과축소 방지 */
@@ -150,9 +164,16 @@ export function renderAuthoredMapLayers(
   };
   const prop = (key: string, x: number, y: number, scale = 1, tint?: number) => {
     if (!scene.textures.exists(key)) return;
+    /* [vc253 주의] 구조물 prop 은 **좌표·스케일을 건드리지 않는다**.
+     *  tests/authored-layouts.test.mjs 가 계약으로 강제한다:
+     *    · 발밑 셀이 통행로(lay.open=false) 안이어야 한다 → 좌표를 스냅하면 통로로 밀려 들어간다
+     *    · scale === 1 (원본 픽셀 보존)
+     *  "오브젝트가 크기에 맞게 잘리지 않음"(지시 #1)은 **경계 장식(propNoCollide)** 쪽
+     *  문제였고, 구조물은 원래 셀 중심에 정확히 놓여 있었다. 구조물까지 정규화하면
+     *  벽을 뚫거나 통로를 막는다. */
     // Match WorldScene.yDepthFor's9–10 band so canopies sort with actors' feet.
     const depth = 9 + Math.max(0, Math.min(1, y / height)) - 0.001;
-    const image = scene.add.image(x, y, key).setOrigin(0.5, 1).setScale(snapPropScale(key, scale)).setDepth(depth).setName(`rea:prop:${key}`);
+    const image = scene.add.image(x, y, key).setOrigin(0.5, 1).setScale(scale).setDepth(depth).setName(`rea:prop:${key}`);
     if (tint) image.setTint(tint);
     images.push(image);
     onDecor?.(image);
@@ -169,12 +190,17 @@ export function renderAuthoredMapLayers(
   const EDGE_FREE = (key: string) => !isSolidDecor(key);
   const propNoCollide = (key: string, x: number, y: number, scale = 1) => {
     if (!scene.textures.exists(key) || !EDGE_FREE(key)) return;
-    /* depth 는 위 prop() 과 **같은 규칙**(9~10 밴드)을 쓴다.
-     *  [함정] 여기서 자체 식(y / height)을 쓰면 height 가 타일맵 높이라
-     *   WorldScene.yDepthFor(y) (= perspDepthOf(y, stageH)) 와 값이 미세하게
-     *   어긋나고, 그 오차 때문에 지면/구조 레이어에 깔려 안 보였다(브라우저에서 확인:
-     *   depth 30 으로 강제하면 보이고 9.15 에서는 안 보임).
-     *  vc253 — 스케일도 prop() 과 같은 타일 배수 정규화를 쓴다(크기 제각각 방지). */
+    /* vc253 (지시 #1 "오브젝트가 크기에 맞게 잘리지 않음") — 경계 장식 **크기** 정규화.
+     *
+     *  [실측한 문제] 프롭 원본 크기가 제각각이고 타일(셀) 배수가 아니었다:
+     *    torch 28×52 / chest 48×40 / anvil 52×36
+     *  셀은 스테이지마다 다르고 심지어 비정수다(howlrstone1x2: 150.667×131.111).
+     *  52px 토치를 그대로 깔면 0.35칸짜리 오브젝트가 격자 사이에 어중간하게 걸린다.
+     *  → 원본이 차지할 칸 수(0.5칸 단위)를 정하고 그 칸에 맞는 배율로 스케일한다.
+     *  [좌표] 스냅은 **호출부의 snapInCell 이 이미 처리**한다(셀 경계를 넘지 않게 중앙으로
+     *   당기는 로직 포함). 여기서 또 스냅하면 이중 반올림으로 셀을 넘어간다 — 하지 않는다.
+     *  [주의] 이 정규화는 경계 장식에만 적용한다. 구조물 prop 은 통행로 계약이 있어
+     *   원본 배율 1·셀 중심을 유지해야 한다(prop() 참고). */
     const depth = 9 + Math.max(0, Math.min(1, y / height)) - 0.001;
     const image = scene.add.image(x, y, key).setOrigin(0.5, 1).setScale(snapPropScale(key, scale)).setDepth(depth).setName(`rea:edge:${key}`);
     images.push(image);

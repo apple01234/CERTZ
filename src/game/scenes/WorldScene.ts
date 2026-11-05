@@ -15839,6 +15839,7 @@ export class WorldScene extends Phaser.Scene {
       if (closed) return;
       closed = true;
       this.input.keyboard?.off("keydown-SPACE", next); // 잔여 리스너 해제 (파괴된 Text 접근 차단)
+      this.input.keyboard?.off("keydown-ENTER", next); // vc256 — Enter 도 진행키로 받는다
       this.tweens.killTweensOf(t1);
       overlay.destroy(); deco.destroy(); t0.destroy(); t1.destroy(); t2.destroy(); tSkip.destroy();
       this.input.keyboard?.removeCapture("SPACE");
@@ -15856,7 +15857,19 @@ export class WorldScene extends Phaser.Scene {
     t2.on("pointerdown", next);
     tSkip.on("pointerdown", () => { cleanup(); onDone(); });
     this.input.keyboard?.addCapture("SPACE");
-    this.input.keyboard?.once("keydown-SPACE", next);
+    /* vc256 (지시 #9 — "초반 알림 스트레스" 조사 중 발견한 실제 버그)
+     *  [버그] `once("keydown-SPACE", next)` 였다. Phaser 의 `once` 는 **첫 호출 뒤 리스너를
+     *   스스로 제거**하므로, 두 번째 비트부터는 Space 를 눌러도 진행되지 않았다.
+     *   프롤로그는 비트 4개인데 입력은 1회만 먹혔다 → `dialoguing=true` + `physics.pause()`
+     *   인 채로 영구 고정. 20초 자가치유 워치독도 `dialoguing` 을 되돌리지만 프롤로그
+     *   오버레이는 그대로 남아 화면을 덮고, 무엇보다 **튜토리얼 시작 게이트
+     *   (`!this.dialoguing`)가 영원히 막혀 신규 유저가 튜토리얼을 아예 못 봤다.**
+     *   실측: 새 캐릭터로 입장 후 Space 12회를 눌러도 `dialoguing=true` 유지,
+     *   `tut=null`, `tutStep=0` 인 채 변화 없음.
+     *  [수리] `on` 으로 바꾸고 cleanup 에서 off 한다(이미 off 코드가 있었다 — 즉 원래
+     *   의도는 `on` 이었다). `closed` 플래그가 파괴된 Text 접근도 막아 준다. */
+    this.input.keyboard?.on("keydown-SPACE", next);
+    this.input.keyboard?.on("keydown-ENTER", next);
     showBeat();
   }
 

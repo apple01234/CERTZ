@@ -19,9 +19,22 @@ import path from 'node:path';
 const ROOT = path.resolve(import.meta.dirname, '..');
 
 /** AuthoredMapLayers.snapPropScale 과 동일한 식 (순수 함수로 복제 — 렌더 없이 검증) */
-function snapPropScale(srcW, srcH, baseScale, cellW, cellH) {
-  const cellsW = Math.max(0.5, Math.round((srcW * baseScale) / cellW * 2) / 2);
-  const cellsH = Math.max(0.5, Math.round((srcH * baseScale) / cellH * 2) / 2);
+const MAX_CELLS = {
+  obj_dungeon_bookshelf: 1,
+  obj_forest_tree_pink: 1.5,
+  obj_town_house_blue: 2,
+  obj_forest_rock_monument: 1,
+  obj_dungeon_torch: 0.5,
+  obj_dungeon_chest: 0.5,
+  obj_dungeon_anvil: 0.5,
+};
+
+function snapPropScale(srcW, srcH, baseScale, cellW, cellH, key) {
+  const cap = MAX_CELLS[key] ?? 1;
+  const rawW = (srcW * baseScale) / cellW;
+  const rawH = (srcH * baseScale) / cellH;
+  const cellsW = Math.max(0.5, Math.min(cap, Math.round(rawW * 2) / 2));
+  const cellsH = Math.max(0.5, Math.min(cap, Math.round(rawH * 2) / 2));
   const fit = Math.min((cellsW * cellW) / srcW, (cellsH * cellH) / srcH);
   return Math.max(0.5, Math.min(2.5, fit));
 }
@@ -46,7 +59,7 @@ test('정규화 후 프롭의 주축이 셀의 반 칸 배수에 맞는다', () 
    *  비율에 따라 따라온다. 둘 다 강제로 맞추면 픽셀아트가 늘어난다. */
   const bad = [];
   for (const p of PROPS) {
-    const s = snapPropScale(p.w, p.h, 1, CELL_W, CELL_H);
+    const s = snapPropScale(p.w, p.h, 1, CELL_W, CELL_H, p.key);
     const outW = p.w * s;
     const outH = p.h * s;
     /* 주축 = 셀 대비 점유가 큰 축 */
@@ -64,7 +77,7 @@ test('정규화 후 프롭의 주축이 셀의 반 칸 배수에 맞는다', () 
 test('프롭이 셀을 넘지 않는다', () => {
   const over = [];
   for (const p of PROPS) {
-    const s = snapPropScale(p.w, p.h, 1, CELL_W, CELL_H);
+    const s = snapPropScale(p.w, p.h, 1, CELL_W, CELL_H, p.key);
     /* 2칸을 넘는 프롭은 없다 — 넘으면 맵을 덮어 통행 판정과 어긋난다 */
     if (p.w * s > CELL_W * 2 + 1 || p.h * s > CELL_H * 2 + 1) {
       over.push(`${p.key}: ${(p.w * s).toFixed(0)}×${(p.h * s).toFixed(0)}`);
@@ -76,7 +89,7 @@ test('프롭이 셀을 넘지 않는다', () => {
 test('프롭이 너무 작아지지 않는다 (가시성)', () => {
   /* 0.5배 미만으로 줄면 점처럼 보인다 — 최소 배율 보장 확인 */
   for (const p of PROPS) {
-    const s = snapPropScale(p.w, p.h, 1, CELL_W, CELL_H);
+    const s = snapPropScale(p.w, p.h, 1, CELL_W, CELL_H, p.key);
     assert.ok(s >= 0.5, `${p.key} 배율 ${s.toFixed(2)} < 0.5`);
     const px = Math.max(p.w * s, p.h * s);
     assert.ok(px >= 30, `${p.key} 최대변 ${px.toFixed(0)}px — 너무 작다`);
@@ -86,7 +99,7 @@ test('프롭이 너무 작아지지 않는다 (가시성)', () => {
 test('원본 크기가 변해도 계산이 깨지지 않는다 (경계값)', () => {
   /* 아주 작은/큰 프롭, baseScale 이 다른 경우 */
   for (const [w, h, bs] of [[8, 8, 1], [400, 300, 1], [64, 128, 2], [28, 52, 0.7]]) {
-    const s = snapPropScale(w, h, bs, CELL_W, CELL_H);
+    const s = snapPropScale(w, h, bs, CELL_W, CELL_H, "unknown");
     assert.ok(Number.isFinite(s) && s > 0, `(${w}×${h}, ${bs}) → ${s}`);
     assert.ok(s >= 0.5 && s <= 2.5, `(${w}×${h}, ${bs}) 배율 범위 밖: ${s}`);
   }
@@ -125,11 +138,15 @@ test('배치 좌표가 반 칸 격자에 스냅되고 셀 경계를 넘지 않�
   }
 });
 
-test('구현이 실제로 정규화를 쓰고 있다(회귀 방지)', () => {
+test('구현이 실제로 경계 장식 스케일을 정규화한다(회귀 방지)', () => {
   const src = fs.readFileSync(path.join(ROOT, 'src/game/fx/AuthoredMapLayers.ts'), 'utf8');
   assert.ok(src.includes('snapPropScale'), 'snapPropScale 이 없다');
-  /* prop 과 propNoCollide 둘 다 적용해야 한쪽만 남아 크기가 갈라지지 않는다 */
-  const uses = (src.match(/setScale\(snapPropScale\(/g) || []).length;
-  assert.ok(uses >= 2, `setScale(snapPropScale(...)) 적용 지점이 ${uses}개 — prop/propNoCollide 둘 다 필요`);
-  assert.ok(src.includes('snapInCell'), '좌표 스냅이 없다');
+  /* [vc253 범위] 크기 정규화는 **경계 장식(propNoCollide)** 에만 적용한다.
+   *  구조물 prop 은 tests/authored-layouts.test.mjs 계약(scale===1, 발밑 셀 비통행)을
+   *  지켜야 하므로 건드리지 않는다. */
+  assert.match(src, /propNoCollide[\s\S]{0,1200}setScale\(snapPropScale\(/, '경계 장식에 크기 정규화가 없다');
+  /* 구조물 prop 은 원본 배율 1 을 유지해야 한다 */
+  assert.match(src, /const image = scene\.add\.image\(x, y, key\)[^;]*setScale\(scale\)/, '구조물 prop 이 원본 배율을 안 쓴다');
+  /* 좌표 스냅은 호출부 snapInCell 이 담당 — propNoCollide 안에서 또 스냅하지 않는다 */
+  assert.ok(!/propNoCollide[\s\S]{0,1200}snapHalf/.test(src), 'propNoCollide 에 이중 좌표 스냅이 있다');
 });
