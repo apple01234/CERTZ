@@ -4930,3 +4930,10 @@ Stage Summary:
 - 비공개 CERTZ-DB의 db-backup/lilac-v1 아래 계정·채팅·파티를 초기화했다. 새 키 복호화 검증과 기존 accounts.enc SHA 불변을 확인했다. 계정/클라우드/거래소/랭킹은 새로 시작하되 이전 DB와 기기 내 오프라인 저장은 보관한다.
 - accounts/storage.json의 세대를 Node 계정 서버와 serverless 계정/릴레이에서 공유한다. 옛 DB 자동이관을 제거하고 운영 키 누락/잘못된 키/404/권한 오류를 빈 DB로 숨기지 않는다. 새 세대 공개 관리자 ID 선점 차단, 옛 APK 세션401 만료를 적용했다.
 - 전체 자동 검사96/96, tsc, strict lint 통과. 운영 재배포 후 가입/저장/거래/비공개 파티/정리 재검증 스크립트 scripts/verify_online.py를 추가했다. 실제 운영 재검증 결과는 배포 완료 후 별도로 기록한다. 공개 채팅 메시지 전송과 실제 결제 테스트는 포함하지 않는다.
+
+## Task — 보스 구역 치유의 샘 (2026-11-06, 하루 v2 / 참고작 분석)
+
+- 참고작(Endless Wander, 로그라이크 RPG)의 공개 정보(스토어 설명·리뷰)에서 "보스 뒤 분수방" 아이디어만 가져왔다. 참고작의 APK(376MB)·JENNY 압축본(256MB)은 이 세션이 내려받을 수 없어 **열어 보지 못했고**, 에셋·코드는 복사하지 않았다. 균열 변형·런 수정자·무한 티어는 CERTZ에 이미 있어(`infinite.ts`, `data.ts`) 건너뛰었다.
+- 보스 구역(`stageDef.boss`)에서 차원문이 열릴 때(`activatePortal`, 저장 복원 포함) 포탈 곁 개방 셀에 "치유의 샘"을 세운다(`spawnRestFountain`). 마을 우물의 근접 회복(`wellPos`/`wellCd` 8초)을 그대로 재사용해 새 필드·세이브 변경은 없다. 샘은 충돌 없는 장식이고 `init` 에서 스테이지마다 초기화된다.
+- 검증: `tsc --noEmit` 통과, `eslint WorldScene.ts --max-warnings 0` 통과, `npm test` 227/227(`tests/rest-fountain.test.mjs` 소스 계약 3건 추가). Chromium 에서 forest10·cave10 보스 구역에 샘 1개씩 생성(개방 셀 true), 일반 구역(forest1)에선 없음, pageerror 0. forest10 에서 HP 40→100 회복 확인. **cave10 회복은 시험 중 보스에게 맞아 HP 0 이 되어 미검증**(스폰·위치만 확인). 보스 도입 대사 중(`dialoguing`)에는 회복이 막히는 것이 정상이라 시험에서 잠금을 풀었다.
+- 미완료: 푸시(세션에 이 저장소 푸시 권한 없음 — `push_check: refused`), 직전 커밋 `a9fba72`(연출 입력·대사 통합)는 `backup/haru-v2-cutscene` 에만 있다.

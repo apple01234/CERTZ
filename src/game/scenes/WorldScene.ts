@@ -3972,6 +3972,34 @@ export class WorldScene extends Phaser.Scene {
       repeat: -1,
     });
     if (!silent) this.showBanner("차원문이 열렸다!");
+    this.spawnRestFountain(silent);
+  }
+
+  /** 하루 v2 (참고작 분석: 보스 뒤 분수방) — 보스 구역은 격파 후 차원문 곁에 회복 샘을 세워
+   *  다음 구역으로 넘어가기 전 숨 돌릴 자리를 만든다. 마을 우물(wellPos)의 근접 회복을 그대로 재사용한다.
+   *  ponytail: 샘은 충돌 없는 장식 — 벽 위에 놓이지 않게 개방 셀만 고른다. 자리가 없으면 만들지 않는다. */
+  private spawnRestFountain(silent: boolean) {
+    if (!this.stageDef.boss || this.stageDef.isVillage || this.wellPos || !this.portal) return;
+    const px = this.portal.x, py = this.portal.y;
+    const spot = [[-100, 0], [100, 0], [0, 90], [0, -90]]
+      .map(([dx, dy]) => ({ x: px + dx, y: py + dy }))
+      .find(({ x, y }) => [[-30, -24], [30, -24], [-30, 24], [30, 24]].every(([ox, oy]) => this.inOpenArea(x + ox, y + oy)));
+    if (!spot) return;
+    this.wellPos = new Phaser.Math.Vector2(spot.x, spot.y);
+    const fountain = this.add.image(spot.x, spot.y, "well").setDepth(this.yDepthFor(spot.y));
+    const label = this.add
+      .text(spot.x, spot.y - 44, "치유의 샘", {
+        fontFamily: "Galmuri11, sans-serif", fontSize: "11px", color: "#bfe8ff", stroke: "#000000", strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(this.yDepthFor(spot.y));
+    this.lighting.addLight(spot.x, spot.y, { tint: 0x6ae8ff, scale: 0.6, alpha: 0.18, flicker: 0.04 });
+    if (!silent) {
+      fountain.setAlpha(0);
+      label.setAlpha(0);
+      this.tweens.add({ targets: [fountain, label], alpha: 1, duration: 700, ease: "Sine.easeOut" });
+      this.spawnBurstAt(spot.x, spot.y, 10, 0x7de8ff);
+    }
   }
 
   /**
@@ -12052,8 +12080,8 @@ export class WorldScene extends Phaser.Scene {
       this.wellCd = Math.max(0, this.wellCd - dt);
       this.restCd = Math.max(0, this.restCd - dt);
 
-      // 마을 우물 샘물 — 근접 시 풀회복 (HP/MP가 꽉 차 있으면 미발동, 8초 쿨다운)
-      if (this.wellPos && this.stageDef.isVillage && this.wellCd <= 0) {
+      // 마을 우물 샘물 / 보스 구역 치유의 샘 — 근접 시 풀회복 (HP/MP가 꽉 차 있으면 미발동, 8초 쿨다운)
+      if (this.wellPos && this.wellCd <= 0) {
         const nearWell = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.wellPos.x, this.wellPos.y) < 86;
         if (nearWell && (this.player.hp < this.player.maxHp || this.player.mp < this.player.maxMp)) {
           this.wellCd = 8000;
