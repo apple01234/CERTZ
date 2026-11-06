@@ -181,7 +181,6 @@ export default function AssetBrowser({
           <div className="max-h-[132px] space-y-1 overflow-y-auto">
             {imported.map((im) => (
               <div key={im.url} className="flex items-center gap-1">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={im.url} alt={im.name} className="h-7 w-7 shrink-0 rounded bg-black/30 object-contain" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[8px] text-white/70">{im.name} · {kB(im.bytes)}</p>
@@ -214,7 +213,6 @@ export default function AssetBrowser({
             title={`${a.url}${a.w ? ` · ${a.w}×${a.h}` : ""}`}
             className="group flex flex-col items-center gap-0.5 rounded border border-white/10 bg-black/30 p-0.5 hover:border-amber-300/60 hover:bg-amber-400/10"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={a.url}
               alt={assetLabel(a)}
