@@ -5064,3 +5064,20 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
   BGM 은 이미 lazy fetch + LRU 디코드 캐시라 런타임 비용은 작다.
 - a/p2·a/p3 180프레임(0.37MB)은 미사용이지만 vc238 에서 "캐릭터 선택에 붙일 때 로드" 로
   의도적으로 남긴 것이라 유지.
+### vc250 빌드 결과 (2026-11-07)
+커밋 64643cf4 푸시 → GitHub Actions 두 워크플로우 모두 success.
+
+| 산출물 | vc249 이전 | vc250 | 감소 |
+|---|---|---|---|
+| SERTZ-vc250.apk | 375.2 MB | **234.0 MB** | **-141.2 MB (-37.6%)** |
+| SERTZ-vc250-setup.exe | 474.6 MB | **332.9 MB** | **-141.7 MB (-29.9%)** |
+| SERTZ-vc250-mapping.txt | 28.6 MB | 28.6 MB | 0 |
+
+미사용 에셋 제거(142.4MB)가 산출물 크기에 거의 그대로 반영됐다
+(에셋은 압축 없이 APK/EXE 에 그대로 들어간다).
+
+- 릴리스: https://github.com/apple01234/CERTZ/releases/tag/v2.1.4
+- Vercel 배포 완료 — /api/version → latest 2.1.4 / code 250,
+  apk·exe 링크가 v2.1.4 로 자동 갱신됨(파생 방식이라 수동 수정 불필요)
+- 라이브 확인: / /editor /api/version /apk-guide.html 전부 200
+- /apk-guide.html 배지도 2.1.4 / vc250 로 갱신 확인
