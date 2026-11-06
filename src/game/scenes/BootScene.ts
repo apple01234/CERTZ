@@ -30,8 +30,7 @@ import { hookLoaderForGuard, runTexGuardCycle, getTexGuardStats, installEngineFr
 /** v3.0.2 — 신규 외부 에셋 정의 (CC0) */
 /** vc239 (지시 #2·#12) — PixelLab 생성 에셋. 게임이 실제로 쓰는 이름만 등록한다. */
 const VC239_VFX = ["vfx_holy_judgement", "vfx_void_collapse", "vfx_tidal_wave"] as const;
-const VC239_MONSTERS = ["mob_slime", "mob_goblin", "mob_swampbeast", "boss_harold"] as const;
-const VC239_DIRS = ["south", "north", "east", "west"] as const;
+/* vc240 — VC239_MONSTERS / VC239_DIRS 상수 제거. 몬스터 16장을 로드했지만 참조 0곳이었다. */
 const X2_MONSTERS = [
   "x2_frog", "x2_rat", "x2_bat", "x2_firebird", "x2_frostfly",
   "x2_snail", "x2_stonegolem", "x2_darkhound", "x2_reeffish",
@@ -734,15 +733,14 @@ export class BootScene extends Phaser.Scene {
     this.load.atlas("fa_p1", "fa/p1.png", "fa/p1.json");
     /* vc239 — PixelLab 생성 에셋 (지시 #2·#12).
      *  · VFX 3종: 성광 심판 / 공허 붕괴 / 조류 파도 — Phaser 아틀라스(프레임 다수).
-     *  · 몬스터 4종 × 4방향: 남/북/동/서 단일 프레임.
      *  경로를 `vc239/` 하위 폴더로 분리해 기존 팩과 섞이지 않게 한다.
-     *  로드 실패해도 게임이 멈추지 않도록 존재 확인 후 쓰는 쪽(StudioFX)에서 가드한다. */
+     *  로드 실패해도 게임이 멈추지 않도록 존재 확인 후 쓰는 쪽(StudioFX)에서 가드한다.
+     *
+     *  [vc240 최적화] 종전엔 몬스터 4종×4방향(16장)과 Wang 타일셋 16장까지 여기서
+     *  로드했지만 **쓰는 코드가 0곳**이었다 — 부팅 HTTP 요청 32개가 순수 낭비.
+     *  에셋 파일은 `public/assets/vc239/` 에 그대로 남겨두었으니, 실제로 붙일 때
+     *  아래 두 줄을 되살리면 된다. (`tests/boot-loads.test.mjs` 가 회귀를 막는다) */
     for (const k of VC239_VFX) this.load.atlas(k, `vc239/${k}.png`, `vc239/${k}.json`);
-    for (const k of VC239_MONSTERS)
-      for (const d of VC239_DIRS) this.load.image(`${k}_${d}`, `vc239/${k}_${d}.png`);
-    /* vc239 — 타일셋 16장 (Wang, lower/upper 2지형). 32×32 원본 그대로 로드하고
-     *  쓰는 쪽에서 setScale 로 맞춘다. */
-    for (let i = 0; i < 16; i++) this.load.image(`vc239_tile_${i}`, `vc239/tileset/wang_${i}.png`);
     for (const key of TILE_PNG_KEYS) this.load.image(key, `${key}.png`);
     /* vc179 (지시 #11) — 사용자 제공 UNI VFX 팩에서 추출한 이펙트 6종.
      *  ASSET_LIST는 `assets/<key>.webp` 평면 경로를 쓰므로 하위 폴더(vfx/)는 별도 로드. */

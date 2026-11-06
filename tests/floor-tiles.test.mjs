@@ -68,8 +68,9 @@ test('렌더러가 아틀라스를 쓰고 프레임을 섞는다', () => {
   assert.ok(src.includes('GROUND_ATLAS_FRAMES'), '프레임 수 참조가 없다');
   /* 프레임 선택이 셀 좌표 기반이어야 한다(고정값이면 변형이 안 섞인다) */
   assert.match(src, /const v = .*c \* 7 \+ r \* 13/s);
-  /* 프레임 번호 = 변형행 * sourceCols + 원본조각 */
-  assert.match(src, /return 1 \+ v \* sourceCols \+ \(base - 1\) % sourceCols/);
+  /* 프레임 번호 = (변형행 * sourceCols + 원본 조각행) * sourceCols + 원본 조각열
+   *  [vc240] 종전 식은 원본 조각의 **행**을 버려서 36장 중 12장만 쓰는 버그였다. */
+  assert.match(src, /return 1 \+ \(v \* sourceCols \+ Math\.floor\(\(base - 1\) \/ sourceCols\)\) \* sourceCols/);
 });
 
 test('Phaser4 addTilesetImage 8번째 인자를 프레임 수로 쓰지 않는다', () => {

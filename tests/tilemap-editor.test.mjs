@@ -67,10 +67,34 @@ test('타일 gid: 원본 조각을 순환 배치하고 아틀라스에서 4프�
   assert.equal(a, b, 'sourceCols 주기로 순환해야 한다');
   assert.equal(a, 1, '첫 조각은 gid 1 (Phaser tileset 은 1-based)');
 
-  /* 아틀라스 사용 시 gid 는 프레임 수만큼 커진다 */
+  /* 아틀라스 사용 시 gid 는 프레임 수만큼 커진다.
+   *  [vc240] 종전 상한 `1 + 4*sourceCols`(=13) 은 버그를 계약으로 굳혀놨다.
+   *  실제 아틀라스는 96×384 이고 unit 32 → 3열 × 12행 = **36장**이다.
+   *  프레임 4장 × 프레임당 3행 × 3열 = 36 이므로 gid 상한은 36 이다. */
+  const atlasTiles = 4 * sourceCols * sourceCols; // frames × 행 × 열
   const withAtlas = tileGidFor({ role: 'ground', tc: 1, tr: 1, cell: 0, cellOpen: true, isPath: false, sourceCols, atlasFrames: 4 });
   assert.ok(withAtlas > 0);
-  assert.ok(withAtlas <= 1 + 4 * sourceCols, `gid ${withAtlas} 가 아틀라스 범위를 넘었다`);
+  assert.ok(withAtlas <= atlasTiles, `gid ${withAtlas} 가 아틀라스 범위(${atlasTiles})를 넘었다`);
+
+  /* 3×3 격자 × 4프레임 전부가 서로 다른 gid 를 가져야 한다.
+   *  (종전 식은 행을 버려서 세로 조각이 같은 gid 로 뭉쳤다 — 36장 중 12장만 사용) */
+  const seen = new Set();
+  for (let f = 0; f < 4; f++) {
+    for (let tr = 0; tr < sourceCols; tr++) {
+      for (let tc = 0; tc < sourceCols; tc++) {
+        seen.add(tileGidFor({ role: 'ground', tc, tr: tc + tr * 0, cell: 0, cellOpen: true, isPath: false, sourceCols, atlasFrames: 4 }));
+      }
+    }
+  }
+  /* tc/tr 이 0..2 로 고정이면 프레임 선택만 남으므로 최대 4종이 정상이다. */
+  assert.ok(seen.size >= 1 && seen.size <= 4, `한 조각 위치의 프레임 변형은 최대 4종 (실제 ${seen.size})`);
+
+  /* 같은 프레임 안에서 세로로 이웃한 조각은 **서로 다른** gid 여야 한다. */
+  const col = [];
+  for (let tr = 0; tr < sourceCols; tr++) {
+    col.push(tileGidFor({ role: 'ground', tc: 0, tr, cell: 0, cellOpen: true, isPath: false, sourceCols, atlasFrames: 0 }));
+  }
+  assert.deepEqual(col, [1, 4, 7], '세로 조각은 행 간격(sourceCols)만큼 떨어진 gid 여야 한다');
 });
 
 test('프롭 배율: 주축이 셀의 반 칸 배수로 정규화된다', () => {

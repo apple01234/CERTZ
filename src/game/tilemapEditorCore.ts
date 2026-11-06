@@ -74,7 +74,11 @@ export function tileGidFor(opts: {
   const v = (((tc * 7 + tr * 13) >>> 0) % 2 === 0)
     ? (((tc * 3 + tr * 5) >>> 0) % atlasFrames)
     : (((tc + tr * 3) >>> 0) % atlasFrames);
-  return 1 + v * sourceCols + (base - 1) % sourceCols;
+  /* 아틀라스 인덱스 — 프레임 v 안의 **행·열을 모두** 반영해야 한다.
+   *  [vc240 수정] 종전 `1 + v*sourceCols + (base-1)%sourceCols` 는 행 성분을 버려서
+   *  세로로 늘어선 조각이 전부 같은 타일을 가리켰다(36장 중 12장만 사용, 나머지 24장 폐기).
+   *  결과적으로 바닥이 한 줄 패턴으로 눌려 보였고 변형 4종이 사실상 1종처럼 보였다. */
+  return 1 + (v * sourceCols + Math.floor((base - 1) / sourceCols)) * sourceCols + ((base - 1) % sourceCols);
 }
 
 /** 지면/길/구조 3개 레이어의 타일 배열을 만든다 — 에디터 미리보기용.

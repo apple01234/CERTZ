@@ -4994,3 +4994,73 @@ CERTZ 에 적용 가능한 시스템을 뽑았다. 상세 분석은 `docs/RE_end
 - `data.ts:setOfItem()` 이 원래부터 고장(프리픽스 슬라이스 어긋남). 호출처 0곳이라
   죽은 함수이고 `activeSetBonus()` 는 정상. 이번에 건드리지 않음.
 - 환경: `node_modules/typescript/lib/_tsc.js` 가 NUL 로 손상돼 있어 재설치했다.
+
+## vc240 (2026-11-06) — 타일맵 렌더 버그 수정 + 미사용 에셋 208개 정리
+
+### 타일맵 버그 (지시 #3 "타일맵 ㅈ 버그남")
+**증상**: 바닥이 한 줄 패턴으로 눌려 보이고, 변형 아틀라스 4종이 사실상 1종처럼 보였다.
+**원인**: 아틀라스 프레임 인덱스에서 **원본 조각의 행(row) 성분이 누락**.
+1 + v*sourceCols + (base-1)%sourceCols — (base-1)%sourceCols 가 열만 남기고
+행을 버려서, 세로로 이웃한 조각이 전부 같은 gid 를 가리켰다.
+- 96×384 아틀라스 = 3열 × 12행 = **36장**인데 **12장만 사용**, 나머지 24장 폐기.
+- 결과: 바닥이 스트라이프 형태로 반복되고 변형이 안 섞였다.
+**수정**: 1 + (v*sourceCols + floor((base-1)/sourceCols)) * sourceCols + (base-1)%sourceCols
+- 같은 복제 버그가 두 곳에 있었다 — 	ilemapEditorCore.tileGidFor(단일 출처) +
+  AuthoredMapLayers.renderAuthoredMapLayers(인라인 복제). 둘 다 수정.
+
+### 테스트가 버그를 계약으로 굳혀놓고 있었다
+- 	ests/tilemap-editor.test.mjs 상한이 1 + 4*sourceCols(=13) 이었다. 실제 아틀라스는 36장.
+  → 상한을 4*sourceCols*sourceCols(=36) 로 고치고, "세로 조각은 행 간격만큼 떨어진 gid" 검증 추가.
+- 	ests/floor-tiles.test.mjs 가 정규식으로 **버그 공식 자체**를 검사하고 있었다 → 수정된 공식으로 갱신.
+- 수정 전/후를 실제 아틀라스로 렌더해 픽셀 비교 확인 (gid 범위 1–12 → 1–36).
+
+### 미사용 에셋 208개 제거 — 142.4MB 확보
+전수 감사 스크립트로 "src/electron/scripts 에서 **정확한 경로 문자열**이 0회 등장" 만 삭제 대상으로 삼았다
+(editorAssetManifest.ts 는 전 자산을 나열하므로 신호에서 제외). 삭제 162개 전부 참조 0건 재확인.
+
+| 대상 | 개수 | 용량 |
+|---|---|---|
+| public/assets/npcportrait/_raw/ (2048×2048 원본, 게임은 파생본만 사용) | 20 | 109.3 MB |
+| public/assets/atl_boss*.webp (런타임 키는 oss_*.png 스프라이트시트에서 옴) | 13 | 17.2 MB |
+| public/assets/fx/ 미사용 아틀라스 18종 × png+json | 36 | 14.8 MB |
+| .tile_backup / .tile_pack_backup / .vfx_alpha_backup (개발 백업) | 92 | 1.1 MB |
+| 	ilesets/_preview_all.png (개발용 컨택트시트) | 1 | 0.4 MB |
+| public/download/SERTZ-vc238-debug.apk (gitignore 대상, 로컬 잔재) | 1 | 380.9 MB |
+
+### 부팅 요청 32개 감소 (지시 #4 "최적화")
+BootScene.preload 가 c239 몬스터 4종×4방향(16장)과 Wang 타일셋 16장을 로드했지만
+**쓰는 코드가 0곳**이었다 — 콘솔 에러도 테스트 실패도 없이 조용히 낭비.
+- 로드문과 VC239_MONSTERS/VC239_DIRS 상수 제거. 에셋 파일은 public/assets/vc239/ 에 보존
+  (나중에 실제로 붙일 때 두 줄만 되살리면 됨 — 주석에 명시).
+- **회귀 방지 테스트 신설**: 	ests/boot-loads.test.mjs — "로드한 키는 쓰는 곳이 있어야 한다".
+  일부러 낭비 로드문을 재주입해 테스트가 실제로 잡는 것까지 확인.
+
+### "수련 원정 맵"은 미사용이 아니다 (지시 #2 확인 결과)
+TRAINING_REGIONS 9개 지역(forest·kingdom·alfheim·muspelheim·niflheim·cave·nidavellir·hel·abyss)은
+- WorldScene 이 isTrainingStage() 로 **실시간 판정** (L2550, L9917)
+- stages.ts 에 9개 스테이지 정의가 살아 있음
+- 	ests/retired-story-removal.test.mjs 가 **존재를 강제** (없어지면 테스트 실패)
+즉 플레이 가능한 선택 콘텐츠다. 에셋을 지우면 게임이 깨지므로 손대지 않았다.
+용량은 위 표의 아뜰란티스/보스/백업 잔재에서 확보했다.
+
+### PR-Agent 제거 (지시 #1)
+pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭제.
+- site-packages 385.4 MB → **96.5 MB** (289 MB 회수)
+- litellm(154MB)·otocore(21MB)·nthropic(14MB)·openai(11MB) 등 pr-agent 전용 전부 제거
+- DSH 필수 패키지(docx/pptx/openpyxl/PIL/numpy/pandas/lxml) 생존 확인
+
+### 검증
+- 	sc --noEmit → **0 에러**
+- eslint src --max-warnings 0 → **0**
+- 테스트 **233 total / 223 pass / 10 fail** — 10개는 전부 기존 환경 문제
+  (python3 미설치: character-appearance 2 · howlrstone 1 · story-portraits-audio 1 ·
+   floor-tiles 3, Windows ESM 경로 3). 이번 작업으로 **새 실패 0**.
+- 신규 테스트 2개 추가: oot-loads (2 checks), tilemap/floor-tiles 계약 갱신.
+
+### 남은 것 / 후속
+- python3 심링크가 없어 10개 테스트가 계속 실패한다. 하네스 파이썬에 python3.exe 를
+  추가하면 해결되지만 **DSH 설치를 건드리는 일**이라 이번엔 하지 않고 되돌렸다.
+- public/assets/audio 152.5MB(ogg 114곡)는 손대지 않았다 — ffmpeg 부재로 재인코딩 불가,
+  BGM 은 이미 lazy fetch + LRU 디코드 캐시라 런타임 비용은 작다.
+- a/p2·a/p3 180프레임(0.37MB)은 미사용이지만 vc238 에서 "캐릭터 선택에 붙일 때 로드" 로
+  의도적으로 남긴 것이라 유지.

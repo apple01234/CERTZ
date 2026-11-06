@@ -100,8 +100,10 @@ export function renderAuthoredMapLayers(
         ? (((c * 3 + r * 5) >>> 0) % GROUND_ATLAS_FRAMES)
         : (((c + r * 3) >>> 0) % GROUND_ATLAS_FRAMES);
       /* 아틀라스 프레임 레이아웃: 가로 sourceCols 조각 × 세로 GROUND_ATLAS_FRAMES 장.
-       *  프레임 번호 = 행(v) * sourceCols + 열(원본 조각). */
-      return 1 + v * sourceCols + (base - 1) % sourceCols;
+       *  프레임 번호 = 행(v) * sourceCols + 열(원본 조각).
+       *  [vc240 수정] 종전엔 원본 조각의 **행**을 버려서(`(base-1)%sourceCols` 만 사용)
+       *  세로 조각이 전부 같은 타일을 가리켰다 — 96×384 아틀라스 36장 중 12장만 쓰였다. */
+      return 1 + (v * sourceCols + Math.floor((base - 1) / sourceCols)) * sourceCols + ((base - 1) % sourceCols);
     }));
     const map = scene.make.tilemap({ data, tileWidth: unit, tileHeight: unit });
     /* [주의] Phaser4 `addTilesetImage(tilesetName, key, tw, th, margin, spacing, gid, tileOffset)` —
