@@ -64,7 +64,7 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=4096
         run: |
           set -e
-          ROUTE_DIRS="admin auth market rank support chat party campaign iap"
+          ROUTE_DIRS="admin auth market rank support chat party campaign iap maps"
           mkdir -p .apk-hold/api-routes
           for d in $ROUTE_DIRS; do
             if [ -d "src/app/api/$d" ]; then mv "src/app/api/$d" ".apk-hold/api-routes/"; fi
