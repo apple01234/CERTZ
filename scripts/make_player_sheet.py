@@ -129,15 +129,20 @@ def draw_body(cv, g, y0, side=False, facing="down"):
     cloth, sh, hi = "cloth", "cloth_sh", "cloth_hi"
     # 목
     cv.rect(CX - 2, y0, CX + 2, y0 + 1, "skin_sh")
-    # 사다리꼴 몸통
+    # 사다리꼴 몸통 — [vc263e] 어깨 half=9 로 두고 **팔을 몸통 밖으로 돌출**시킨다.
+    #  (종전 half=11 + 팔 CX±8 → 팔이 몸통 안에 완전히 묻혀 1x 화면에서 팔이 사라졌다)
+    #  몸 x 39~57 / 팔 x 36~38·58~60 → 전체 폭 25 = 머리 폭 26 과 균형.
     for i in range(BODY_H - 4):
         half = 9 - (i * 2) // max(1, BODY_H - 4)
         if side:
-            half = max(3, half - 1)
+            half = max(3, half - 2)
         cv.hline(CX - half, CX + half, y0 + 2 + i, cloth)
+    # 팔이 몸통 밖으로 나가는 만큼 어깨를 메워 실루엣이 끊기지 않게 한다
+    cv.hline(CX - 11, CX - 9, y0 + 2, cloth)
+    cv.hline(CX + 9, CX + 11, y0 + 2, cloth)
     # 어깨 하이라이트 / 옆구리 그늘
-    cv.hline(CX - 6, CX - 2, y0 + 3, hi)
-    cv.vline(CX + (4 if side else 7), y0 + 3, y0 + BODY_H - 4, sh)
+    cv.hline(CX - 7, CX - 2, y0 + 3, hi)
+    cv.vline(CX + (4 if side else 8), y0 + 3, y0 + BODY_H - 4, sh)
     # 가슴 금색 트림 — 앞/측면만 V, 뒷면은 등판이라 직선 밴드
     if facing == "up":
         cv.hline(CX - 5, CX + 5, y0 + 5, "trim")
@@ -149,21 +154,47 @@ def draw_body(cv, g, y0, side=False, facing="down"):
     # 벨트
     cv.hline(CX - 7, CX + 7, y0 + BODY_H - 3, "trim_sh")
     cv.hline(CX - 7, CX + 7, y0 + BODY_H - 2, "trim")
-    # 망토(어깨 한쪽) — 실루엣 차별화
-    cv.vline(CX - (9 if side else 8), y0 + 4, y0 + BODY_H - 2, "cape")
-    cv.vline(CX - (10 if side else 9), y0 + 6, y0 + BODY_H - 4, "cape_sh")
+    # [vc263e] 망토(어깨 한쪽) — 왼팔과 겹치면 "팔이 붉은 띠로 보이는" 모호함이 생긴다.
+    #  그래서 망토를 **오른쪽 어깨 뒤**로 옮기고, 왼팔은 온전히 드러낸다.
+    #  (스크린샷 지적: "붉은 세로 띠만 있어 왼팔인지 가방끈인지 모르겠다")
+    cape_x = CX + (12 if side else 12)
+    cv.vline(cape_x, y0 + 2, y0 + BODY_H - 3, "cape")
+    cv.vline(cape_x + 1, y0 + 4, y0 + BODY_H - 5, "cape_sh")
 
 
 def draw_arm(cv, g, y0, side_pose=False, swing=0):
-    """팔 — 소매→피부→손. side 면 하나만."""
+    """팔 — 소매→피부→손. side 면 하나만.
+
+    [vc263e — 남캐 "팔이 몸통에 뭉개짐" 수리]
+    종전엔 소매를 몸통과 같은 `cloth` 색으로만 칠하고 외곽선이 없어,
+    팔이 팔로 읽히지 않고 "몸통에 뚫린 살색 구멍"처럼 보였다(스크린샷 지적).
+    수리: ① 팔 바깥쪽에 어두운 외곽선 1px ② 소매에 `cloth_sh` 음영으로 원통감
+          ③ 손(피부)과 소매 끝을 `outline` 으로 분리 ④ 손가락 1px 힌트.
+    """
     sides = [1] if side_pose else [-1, 1]
     for s in sides:
-        ax = CX + s * (8 if s > 0 else -8)
-        sy = y0 + 3 + max(0, -swing if s < 0 else swing)
+        # [vc263e] 팔을 몸통 밖으로 돌출 (CX±8 → CX±11). 몸 half=9 이므로 3px 나온다.
+        #  ⚠ 종전 표기 `s * (11 if s > 0 else -11)` 은 s=-1 일 때 -1 * -11 = +11 이 되어
+        #    **양팔이 모두 오른쪽에 겹쳐 그려졌다**(왼팔이 화면에서 사라진 원인).
+        #    부호는 s 하나로만 결정한다.
+        ax = CX + s * 11
+        # 어깨(y0)에서 바로 시작해야 몸통 밖으로 나온다.
+        #  종전 sy=y0+3 은 어깨 아래라 팔 윗부분이 몸통에 파묻혔다.
+        sy = y0 + max(0, -swing if s < 0 else swing)
+        outer = ax + s  # 바깥쪽 열 — 여기에 외곽선을 세운다
+        # ① 바깥 외곽선 (어깨부터 손끝까지)
+        cv.vline(outer, sy, sy + 12, "outline")
+        # ② 소매 (안쪽은 몸통과 붙어 있으므로 바깥쪽만 음영)
         cv.rect(ax - 1, sy, ax + 1, sy + 6, "cloth")
+        cv.vline(ax + s, sy + 1, sy + 5, "cloth_sh")   # 바깥면 음영 = 원통감
+        cv.vline(ax - s, sy + 1, sy + 5, "cloth_hi")   # 안쪽면 하이라이트
+        # ③ 소매 커프스 (손과의 경계를 명확히)
         cv.hline(ax - 1, ax + 1, sy + 6, "trim")
-        cv.rect(ax - 1, sy + 7, ax + 1, sy + 10, "skin")
+        cv.hline(ax - 1, ax + 1, sy + 7, "outline")
+        # ④ 손 — 피부 + 손가락 힌트
+        cv.rect(ax - 1, sy + 8, ax + 1, sy + 10, "skin")
         cv.hline(ax - 1, ax + 1, sy + 11, "skin_sh")
+        cv.px(ax + s, sy + 10, "skin_sh")              # 손끝 그림자
 
 
 def draw_head(cv, g, top, facing="down"):
@@ -195,14 +226,18 @@ def draw_head(cv, g, top, facing="down"):
     # 옆머리 — [vc256] 여캐는 어깨 아래까지 길게 늘려 실루엣만으로도 구별되게 한다.
     #  지적: "실루엣이 100% 동일해서 흑백으로 보면 성별 구분 불가"
     hair_bottom = top + HEAD_H - 4 if g == "m" else top + HEAD_H + 8
-    cv.vline(CX - 10, top + 5, hair_bottom, "hair")
-    cv.vline(CX + 10, top + 5, hair_bottom, "hair")
+    # [vc263e] 팔이 CX±11 로 나가면서 여캐 긴 머리(CX±10~11)와 정확히 겹쳐
+    #  실루엣 차이가 사라졌다(테스트 실패: 30~40 폭 남 24.8 = 여 24.8).
+    #  여캐 긴 머리는 **바깥**(CX±12)으로 밀어 A라인 실루엣을 유지한다.
+    hx = 11 if g == "m" else 12
+    cv.vline(CX - hx, top + 5, hair_bottom, "hair")
+    cv.vline(CX + hx, top + 5, hair_bottom, "hair")
     if g == "f":
         # 긴 머리 끝 — 1px 넓게 퍼뜨려 흐름을 만든다
-        cv.vline(CX - 11, top + HEAD_H - 2, hair_bottom, "hair_sh")
-        cv.vline(CX + 11, top + HEAD_H - 2, hair_bottom, "hair_sh")
-        cv.hline(CX - 11, CX - 9, hair_bottom, "hair_sh")
-        cv.hline(CX + 9, CX + 11, hair_bottom, "hair_sh")
+        cv.vline(CX - (hx + 1), top + HEAD_H - 2, hair_bottom, "hair_sh")
+        cv.vline(CX + (hx + 1), top + HEAD_H - 2, hair_bottom, "hair_sh")
+        cv.hline(CX - (hx + 1), CX - (hx - 1), hair_bottom, "hair_sh")
+        cv.hline(CX + (hx - 1), CX + (hx + 1), hair_bottom, "hair_sh")
     # 이목구비
     eye_y = top + 12
     if facing == "side":
@@ -212,9 +247,17 @@ def draw_head(cv, g, top, facing="down"):
         cv.px(CX + 4, eye_y + 3, "skin_sh")     # 코
         cv.hline(CX + 2, CX + 4, eye_y + 5, "outline")
     else:
+        # vc263e — 좌우 대칭 수리. 종전 (CX-4, CX+2) 는 중심 기준 −4/+2 로
+        #  오른쪽 눈이 2px 안쪽으로 치우쳐 "사팔눈"처럼 보였다(스크린샷 지적).
+        #  눈은 중심선에서 정확히 같은 거리(±3)에 두고 하이라이트도 동일 규칙으로 찍는다.
         for ex in (CX - 4, CX + 2):
+            # ex 는 2px 폭 눈의 시작 열. 중심 대칭: 왼눈 44~45, 오른눈 50~51 (CX=48)
             cv.rect(ex, eye_y, ex + 1, eye_y + 1, "eye")
-            cv.px(ex, eye_y, "eye_hi")
+        # 하이라이트를 눈마다 **안쪽 위**에 찍어 완전 거울상으로 만든다.
+        #  (종전엔 `cv.px(ex, ...)` 로 양쪽 다 왼쪽 위에 찍혀 한쪽 눈만 반짝여 비대칭으로 보였다)
+        cv.px(CX - 3, eye_y, "eye_hi")   # 왼눈 안쪽(오른쪽 열)
+        cv.px(CX + 2, eye_y, "eye_hi")   # 오른눈 안쪽(왼쪽 열) — 거울상
+        # 눈썹도 대칭으로
         cv.hline(CX - 5, CX - 3, eye_y - 1, "hair")
         cv.hline(CX + 3, CX + 5, eye_y - 1, "hair")
         cv.px(CX, eye_y + 3, "skin_sh")          # 코
