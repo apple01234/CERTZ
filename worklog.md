@@ -4937,3 +4937,60 @@ Stage Summary:
 - 보스 구역(`stageDef.boss`)에서 차원문이 열릴 때(`activatePortal`, 저장 복원 포함) 포탈 곁 개방 셀에 "치유의 샘"을 세운다(`spawnRestFountain`). 마을 우물의 근접 회복(`wellPos`/`wellCd` 8초)을 그대로 재사용해 새 필드·세이브 변경은 없다. 샘은 충돌 없는 장식이고 `init` 에서 스테이지마다 초기화된다.
 - 검증: `tsc --noEmit` 통과, `eslint WorldScene.ts --max-warnings 0` 통과, `npm test` 227/227(`tests/rest-fountain.test.mjs` 소스 계약 3건 추가). Chromium 에서 forest10·cave10 보스 구역에 샘 1개씩 생성(개방 셀 true), 일반 구역(forest1)에선 없음, pageerror 0. forest10 에서 HP 40→100 회복 확인. **cave10 회복은 시험 중 보스에게 맞아 HP 0 이 되어 미검증**(스폰·위치만 확인). 보스 도입 대사 중(`dialoguing`)에는 회복이 막히는 것이 정상이라 시험에서 잠금을 풀었다.
 - 미완료: 푸시(세션에 이 저장소 푸시 권한 없음 — `push_check: refused`), 직전 커밋 `a9fba72`(연출 입력·대사 통합)는 `backup/haru-v2-cutscene` 에만 있다.
+
+## Task — Endless Wander v4.2.1 역공학 → 정예 어픽스·상태이상·시너지 이식 (2026-11-06, vc236~237)
+
+배경: `Endless-Wander-v4.2.1-mod-apkvision.apk` (Unity IL2CPP, 358MB) 를 REA 로 분석해
+CERTZ 에 적용 가능한 시스템을 뽑았다. 상세 분석은 `docs/RE_endless_wander_analysis.md`.
+
+### 분석 방법
+- APK 내부 `global-metadata.dat` (v31, 14.5MB) 추출 → REA `inspect_il2cpp_metadata`
+- 18,381 타입 / 119,050 메서드 / 20,182 문자열 디코딩
+- 게임 로직은 `Assembly-CSharp.dll` (타입 1693–4373) 에 집중
+
+### 원본에서 확인한 것
+- `Run.CombatEffectsAppliers` 4계층 합성 (SkillCore 67 / StatusCore 41 / AffixCore 23)
+- `StatusBehaviour` 파생 20종의 **트리거 기반 발동** (ApplyOnDamageDealt 등)
+- 정예 어픽스 8원소 (combustion/cosmos/ice/light/mist/reinforcement/sharpness/water)
+- `RunBonus` 시너지 컨트롤러 6종
+- `SerializableFractureModeState` 누적 난이도 트랙
+
+### 이식한 것
+- **`src/game/combat/eliteAffix.ts` (신규)** — 정예 어픽스 6종
+  volatile / warded / swift / thorned / regenerating / splitting.
+  기존 `hp×7.5 / atk×1.5` 를 **대체하지 않고 곱한다**(0개면 정확히 1.0 = 종전 동일).
+  상한은 `Math.min` 구조적 보장 (반사 8% / 폭발 12% / 재생 2%/s).
+  챕터별 개수 1→3. `global-metadata` 만으로는 밸런스 수치를 못 얻어 **CERTZ 기준으로 새로 설계**했다.
+- **`src/game/combat/statusEffects.ts` (신규)** — chill/shock/mark/weaken 추가
+  (+ 기존 slow/stun/dot 유지). 받는 피해 배율 상한 1.6.
+- **`src/game/synergy.ts` (신규)** — 시너지 태그 6종, 2/4/6 단계 누적
+- **`src/game/synergyBridge.ts` (신규)** — 기존 `SET_GEAR`/`CHAPTER_ELEM`/`ItemDef.kind`
+  에서 태그를 **유도**. 아이템 222개에 새 필드를 추가하지 않았다(YAGNI).
+- **`Enemy.ts`** — 어픽스 소비(재생/가속/보호막/반사/폭발/분열),
+  원소 반응 → `applyDebuff` 연결, `receivedDamageMult` 적용
+- **`WorldScene.ts`** — 정예 스폰 시 어픽스 굴림(결정론 rng 스트림 재사용),
+  배너 표기, `spawnAffixSplits` 스폰 통로, extBonus 에 시너지 합산
+- **`EventBus.ts` / `HUD.tsx`** — 시너지 칩 (텍스트만, 파티클 없음)
+
+### 적용하지 않은 것 (이유)
+- 8원소 어픽스 전체 → CERTZ 는 이미 원소 상성 9종 + 반응 7종이 있어 겹치면 읽을 수 없다
+- 로그라이트 방 선택 → CERTZ 는 선형 스테이지 장르 (180개 스테이지 구조 보존)
+- Fracture 난이도 트랙 → 보스 4단계 + 무한의 탑 깊이 스케일링이 같은 역할
+- SaveUpgrade → `migrateSave()` + `SAVE_VERSION` 이 이미 처리
+
+### 검증
+- `tsc --noEmit` → **에러 1개**, 기존 `src/game/fx/DeathSlash.ts(255,42) CatmullRomCurve3`.
+  신규/수정 파일에는 에러 0.
+- 테스트 **213 total / 203 pass / 10 fail**. 실패 3파일(character-appearance /
+  howlrstone / story-portraits-audio)은 전부 **기존 환경 문제**(typescript 미해결,
+  Windows ESM 경로)이며 이번 작업 전과 동일. 신규 스위트 3개 추가: 68 + 91 + 37 checks.
+- 신규 파일 한글 인코딩 무결 (NUL 0, U+FFFD 0).
+
+### 남은 리스크 / 후속
+- **브라우저 플레이테스트 미실시** — 어픽스 로직은 `tick`/`takeDamage`/`die` 안에 있어
+  정적 테스트가 실행하지 못한다. 4챕터 이상 정예 1회 플레이 확인 권장.
+- `cdrPct` 미적용 — Player 에 쿨감 채널이 없다(frost 3단계 표시만 됨). `ponytail:` 표기됨.
+- `applyDebuff` 는 원소 반응 발동 시에만 걸린다. 일반 공격에는 아직 안 붙음.
+- `data.ts:setOfItem()` 이 원래부터 고장(프리픽스 슬라이스 어긋남). 호출처 0곳이라
+  죽은 함수이고 `activeSetBonus()` 는 정상. 이번에 건드리지 않음.
+- 환경: `node_modules/typescript/lib/_tsc.js` 가 NUL 로 손상돼 있어 재설치했다.

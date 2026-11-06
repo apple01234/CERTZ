@@ -10,6 +10,18 @@ import { FSM, type FSMState } from "../ai/FSM";
 import { spawnDissolve } from "../fx/DissolveFX"; // vc214 — 소멸 dissolve 셰이더
 import { decideMorale } from "../ai/morale"; // vc214 — Utility AI 사기 판단
 import { EnemyBrain, type BrainAction } from "../ai/enemyBrain"; // vc234 — BT 우선순위 분기
+/* vc236 — 정예 어픽스/확장 상태이상 순수 코어 (Phaser 무관 계산만 여기서 import) */
+import {
+  regenPerTick, swiftSpeedMult, thornReflect, wardedShield, volatileDamage, splitSpawnCount,
+  hasAffix, WARDED_TRIGGER_HP01, type EliteAffixRoll, type EliteAffixKey,
+} from "../combat/eliteAffix";
+import { receivedDamageMult, applyStatus, tickStatuses, type ActiveStatus } from "../combat/statusEffects";
+
+/* vc236 — 사망 폭발 반경(px). 코어는 피해량만 export 하고 반경은 연출 소관이라 여기 둔다.
+ * 정예 스케일(1.55) 기준 몸통 2~3배 — 눈에 보이는 폭발 범위와 판정이 어긋나지 않게. */
+const VOLATILE_RADIUS = 150;
+/** 분열 자식의 HP 비율(부모 최대 HP 대비). */
+const SPLIT_CHILD_HP01 = 0.35;
 /** 종별 물리/판정 크기 + 리스폰 버스트 색 */
 const BODY_CFG: Record<EnemyKey, { bw: number; bh: number; hw: number; hh: number; burst: number }> = {
   wolf: { bw: 36, bh: 20, hw: 56, hh: 30, burst: 0x9aa0b4 },
@@ -158,12 +170,44 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     } catch { this.dotDps = 0; }
   }
 
+  /* ═══ vc236 — 정예 어픽스 (계산은 combat/eliteAffix.ts, 적용만 여기) ═══
+   *
+   *  여기는 "언제 호출하는가"만 담당한다. 수치·상한은 순수 코어가 갖고 있으므로
+   *  밸런스를 고칠 때 이 파일을 건드릴 일이 없다.
+   *  어픽스가 없는 개체(일반 몹·황금몹·보스)는 affixes.length === 0 이고,
+   *  아래 모든 분기가 그 검사로 즉시 빠져나가므로 **수치가 종전과 완전히 동일**하다. */
+  private affixes: readonly EliteAffixRoll[] = [];
+  /** 보호막은 개체당 1회. 이 플래그가 발동 후 재발동을 막는다. */
+  private wardedUsed = false;
+  /** 반사 피해로 인한 2차 반사를 막는 가드 (뮤테이션 중 재귀 방지 — noReact 와 같은 역할). */
+  private noThorn = false;
+  /** 반사 방향 재사용 벡터 (피격마다 Vector2 를 새로 만들면 GC 스파이크) */
+  private readonly thornDir = new Phaser.Math.Vector2();
+
+  /** 어픽스 magnitude 조회 — 없으면 0. 각 계산 함수는 0 을 무해하게 처리한다. */
+  private affixMag(key: EliteAffixKey): number {
+    for (const a of this.affixes) if (a.key === key) return a.magnitude;
+    return 0;
+  }
+
+  /* vc236 — 적에게 거는 확장 상태이상(chill/shock/mark).
+   *  기존 applySlow/applyStun/applyDot 은 그대로 두고 **추가**한다(호출부 계약 보존).
+   *  ponytail: 지금은 부여 통로만 열어 둔 상태다 — 플레이어 공격 측 연결은 다음 작업.
+   *  업그레이드 경로: Player 의 원소 스킬 판정에서 이 메서드를 부르면 받는 피해 배율이 자동 반영된다. */
+  private debuffs: ActiveStatus[] = [];
+  applyDebuff(kind: "chill" | "shock" | "mark", stacks = 1, durMs?: number) {
+    this.debuffs = applyStatus(this.debuffs, kind, stacks, durMs);
+  }
+
   /* vc150 (#신규5) — 도주형 개체 (황금 몬스터): 공격하지 않고 플레이어로부터 빠른 속도로 도망간다 */
   flee = false;
 
   /** 감속 반영 실효 속도 */
   private get effSpeed(): number {
-    return this.def.speed * this.spdMul * (this.scene.time.now < this.slowUntil ? this.slowMult : 1);
+    const base = this.def.speed * this.spdMul * (this.scene.time.now < this.slowUntil ? this.slowMult : 1);
+    /* vc236 — swift: HP 가 낮을수록 빨라진다. 어픽스가 없으면 곱셈 자체를 건너뛴다. */
+    if (this.affixes.length === 0) return base;
+    return base * swiftSpeedMult(this.affixes, this.hp / Math.max(1, this.maxHp), this.affixMag("swift"));
   }
 
   private modeTimer = 0;
@@ -230,7 +274,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     x: number,
     y: number,
     key: EnemyKey,
-    opts?: { hp?: number; atk?: number; exp?: number; gold?: number; scale?: number; tint?: number; displayName?: string; dummy?: boolean; abs?: boolean; spd?: number; flee?: boolean }
+    opts?: { hp?: number; atk?: number; exp?: number; gold?: number; scale?: number; tint?: number; displayName?: string; dummy?: boolean; abs?: boolean; spd?: number; flee?: boolean; affixes?: readonly EliteAffixRoll[] }
   ) {
     /* vc213 (#2 유령 애니메이션 복원) — 심연 유령은 10프레임 시트(wraith_spirit)를 쓴다.
      *  기존 `${key}_idle0` 정적 텍스처는 프레임 합성본이라 모션이 없었다. 시트가
@@ -245,6 +289,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (opts?.spd) this.spdMul = Phaser.Math.Clamp(opts.spd, 0.5, 2);
     /* vc150 (#신규5) — 도주형 플래그 */
     if (opts?.flee) this.flee = true;
+    /* vc236 — 어픽스는 dummy 가 아닐 때만 유효: 허수아비는 훈련용 정적 개체라 어픽스 로직을 전부 건너뛴다. */
+    if (opts?.affixes && opts.affixes.length > 0 && !opts.dummy) this.affixes = opts.affixes;
     /* vc142 (쿠소디아 프리즈 ②·탑 밸런스) — abs 플래그: hp/atk/exp/gold를 절대값으로 직접 사용.
      * 기존엔 opts.hp를 무조건 base.hp의 배수로 해석해 탑/황금몬스터가 절대값을 넘기면
      * base.hp × 절대값 = 수만 HP 괴물이 spawn → "게임이 멈춘 것처럼" 보였다. */
@@ -513,6 +559,15 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (!this.alive) return;
     /* vc183 — 지속 피해(출혈/중독) 틱. 허수아비 포함 모든 개체에 적용된다. */
     this.tickDot(this.scene.time.now);
+    /* vc236 — 어픽스 재생(regenerating) + 상태이상 만료. 어픽스/디버프가 없으면 즉시 통과.
+     *  살아있는 동안만 회복하고 maxHp 로 상한을 둔다(오버힐 방지).
+     *  허수아비(dummy)는 hp 를 9e15 로 고정한 훈련용이라 어픽스 로직을 적용하지 않는다. */
+    if (!this.dummy && this.affixes.length > 0) {
+      const regen = regenPerTick(this.affixes, this.affixMag("regenerating"), this.maxHp, dt);
+      if (regen > 0 && this.hp > 0) this.hp = Math.min(this.maxHp, this.hp + regen);
+    }
+    /* vc236 — 확장 상태이상(chill/shock/mark) 만료. tickStatuses 는 입력을 변형하지 않는다. */
+    if (this.debuffs.length > 0) this.debuffs = tickStatuses(this.debuffs, dt).statuses;
     /* v3.3.0 (지시 #6) — 허수아비: AI 전면 비활성 (제자리 정지, 애니도 idle 고정) */
     if (this.dummy) {
       this.setVelocity(0, 0);
@@ -791,7 +846,14 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
      *  최소 1 보장 — 방어력이 공격력을 넘어 0피해(무적 벽)가 되는 것을 막는다. */
     const raw = reacted && R ? Math.max(1, Math.round(dmg * adv * R.dmgMul))
       : adv === 1 ? dmg : Math.max(1, Math.round(dmg * adv));
-    const dealt = mitigateEnemyDamage(raw, { def: this.defDef, defPct: this.defPctVal });
+    /* vc236 — chill/shock/mark 는 **방어력 계산 후** 받는 피해에 곱한다(최소 1 보장).
+     *  상태이상이 없으면 raw 를 **가공 없이** 넘긴다 — 미리 반올림하면 정액 방어 감산
+     *  순서가 달라져 소수 피해에서 1 이 어긋난다(무상태 개체의 수치 보존). */
+    const rcvd = this.debuffs.length > 0 ? receivedDamageMult(this.debuffs) : 1;
+    const dealt = mitigateEnemyDamage(
+      rcvd === 1 ? raw : Math.max(1, Math.round(raw * rcvd)),
+      { def: this.defDef, defPct: this.defPctVal },
+    );
     trackDamage(dealt); // v1.4.30 (#9) — 교실 모드: 공유 보스 레이드 딜 합산 (교실 밖 no-op)
     this.hp -= dealt;
     this.hitFlash = 90;
@@ -809,6 +871,14 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       if (R.stunMs) this.applyStun(R.stunMs);
       if (R.slowMult && R.slowMs) this.applySlow(R.slowMult, R.slowMs);
       this.scene.applyReactionSplash(this.x, this.y, dealt, R.splashMul, this, atkElem);
+      /* vc237 — 원소 반응 → 디버프. applyDebuff 는 vc236 에서 통로만 열려 있었고 호출처가
+       * 없었다. 반응 종류를 그대로 상태에 대응시킨다(새 밸런스 수치 없음):
+       *   frostbite → chill / shock → shock / 나머지 반응 → mark
+       * chill·shock 은 이미 위에서 stun·slow 를 걸므로 **받는 피해** 쪽 기여가 새로 붙는다.
+       * 받는 피해 반영은 takeDamage 상단의 receivedDamageMult 가 이미 처리한다. */
+      if (reactKey === "frostbite") this.applyDebuff("chill", 1);
+      else if (reactKey === "shock") this.applyDebuff("shock", 1);
+      else this.applyDebuff("mark", 1);
     }
     this.scene.spawnHitSpark(this.x, this.y, crit);
     /* v1.2.0 (#10 타격감) — 히트스톱: 일반 26ms · 크리티컬 55ms + 미세 카메라 흔들림.
@@ -831,7 +901,88 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.hpBarBg = this.scene.add.rectangle(this.x, this.y, 26, 4, 0x22262e).setDepth(20).setAlpha(0.88);
       this.hpBar = this.scene.add.rectangle(this.x, this.y, 24, 2, 0xe84a5a).setDepth(21);
     }
+    /* vc236 — 어픽스 후처리. 반사는 **실제로 들어간 피해(dealt)** 기준이고,
+     *  보호막은 hp 차감 직후에 판정한다. 어픽스가 없으면 두 함수 모두 첫 줄에서 반환한다. */
+    this.tryThornReflect(dealt);
+    this.tryWardedShield();
     if (this.hp <= 0) this.die();
+  }
+
+  /* ══════════════ vc236 — 어픽스 후처리 (보호막/반사) ══════════════
+   *
+   *  takeDamage 본문에 넣지 않고 분리한 이유: 보호막 흡수는 hp 를 **되돌리는** 동작이라
+   *  hp 차감 직후에만 의미가 있고, 반사는 플레이어 takeDamage 를 다시 호출하므로
+   *  재귀 가드가 필요한 별개의 흐름이다. 본문에 섞으면 두 규칙이 서로를 가린다.
+   */
+
+  /** 보호막(warded) — HP 가 임계 이하가 된 순간 1회 흡수. 어픽스 없으면 즉시 반환. */
+  private tryWardedShield() {
+    if (this.wardedUsed || !this.affixes.length) return;
+    if (this.hp <= 0 || this.hp / Math.max(1, this.maxHp) > WARDED_TRIGGER_HP01) return;
+    const shield = wardedShield(this.affixes, this.maxHp);
+    if (shield <= 0) return;
+    this.wardedUsed = true;
+    this.hp = Math.min(this.maxHp, this.hp + shield);
+    /* 별도 데미지 텍스트 대신 충격파로 알린다 — HP바가 이미 늘어난 것이 1차 피드백이고,
+     * 잦은 호출 지점에 텍스트를 하나 더 얹으면 화면이 지저분해진다(AGENTS.md 철칙). */
+    this.scene.spawnShockwave(this.x, this.y, 0x6fd3ff, 1.15);
+  }
+
+  /** 반사(thorned) — 받은 피해의 일부를 공격자(플레이어)에게 되돌린다. */
+  private tryThornReflect(dealt: number) {
+    /* noThorn: 반사 피해가 다시 반사를 유발하는 재귀를 막는다. noReact 와 같은 역할이나
+     * 플래그를 공유하지 않는다 — noReact 는 원소 반응만 끄고 반사는 살아 있어야 한다. */
+    if (this.noThorn || !this.affixes.length) return;
+    const reflect = thornReflect(this.affixes, this.affixMag("thorned"), dealt);
+    if (reflect <= 0) return;
+    /* 방향: 정예 → 플레이어로 향하는 벡터(플레이어가 밀려나는 방향). */
+    this.thornDir.set(
+      (this.scene.playerRef?.x ?? this.x) - this.x,
+      (this.scene.playerRef?.y ?? this.y) - this.y,
+    );
+    if (this.thornDir.lengthSq() === 0) this.thornDir.set(0, 1);
+    this.thornDir.normalize();
+    this.noThorn = true;
+    try {
+      /* hpPct 0 · trueDmg 미지정 — 반사는 방어력이 정상 적용되는 일반 피해로 둔다.
+       * 상한 8% 는 thornReflect 가 이미 구조적으로 보장한다. */
+      this.scene.playerRef?.takeDamage(reflect, this.thornDir, 0, 0);
+    } finally {
+      this.noThorn = false; // 예외가 나도 플래그가 켜진 채 남지 않게
+    }
+  }
+
+  /* vc236 — 사망 시 발동하는 어픽스 (폭발/분열). die() 에서 호출된다.
+   *
+   *  폭발 데미지의 기준 maxHp 는 **플레이어**의 것이다(코어 주석의 좌표계 규약).
+   *  정예 HP(×7.5)를 넣으면 12% 캡이 사실상 무력화되어 즉사기가 된다. */
+  private applyDeathAffixes() {
+    if (!this.affixes.length || this.dummy) return;
+    const px = this.x;
+    const py = this.y;
+
+    /* 폭발(volatile) — 반경 안에 플레이어가 있으면 1회 피해 */
+    const player = this.scene.playerRef;
+    if (player && hasAffix(this.affixes, "volatile")) {
+      const dist = Phaser.Math.Distance.Between(px, py, player.x, player.y);
+      if (dist <= VOLATILE_RADIUS) {
+        const dmg = volatileDamage(this.affixes, this.affixMag("volatile"), player.maxHp);
+        if (dmg > 0) {
+          const dir = this.thornDir.set(player.x - px, player.y - py);
+          if (dir.lengthSq() === 0) dir.set(0, 1);
+          dir.normalize();
+          try { player.takeDamage(dmg, dir, 0, 0); } catch { /* 플레이어 사망 연출 예외가 시체 정리를 막지 않게 */ }
+        }
+      }
+      this.scene.spawnShockwave(px, py, 0xff7a3c, 1.6);
+    }
+
+    /* 분열(splitting) — 어픽스 없는 하위 개체 2기. 각 자식의 HP = 부모 최대HP × 0.35.
+     *  ponytail: 코어의 magnitude(0.35~0.55) 대신 하한 0.35 를 쓴다 — 자식은 "잡몹 수준"이어야
+     *  화면이 막히지 않는다. 개체차가 필요해지면 magnitude 로 교체한다. */
+    if (splitSpawnCount(this.affixes) > 0) {
+      this.scene.spawnAffixSplits(px, py, this.def.key, Math.max(1, Math.round(this.maxHp * SPLIT_CHILD_HP01)));
+    }
   }
 
   private die() {
@@ -876,6 +1027,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
     // 2D MMORPG 기본 요소: 골드/물약 드롭
     this.scene.dropLoot(this.x, this.y, this.def);
+    /* vc236 — 어픽스 사망 발동 (폭발/분열). 어픽스가 없으면 아래 두 if 모두 즉시 거짓이다.
+     *  dropLoot 뒤에 두는 이유: 폭발로 플레이어가 죽어도 드롭은 이미 굴려져 있어야 한다
+     *  (플레이어 사망 연출이 로드를 유발해도 아이템이 증발하지 않게). */
+    this.applyDeathAffixes();
     if (this.hpBar) this.hpBar.destroy();
     if (this.hpBarBg) this.hpBarBg.destroy();
     this.hpBar = null;

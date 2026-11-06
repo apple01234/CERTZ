@@ -101,6 +101,12 @@ import * as partyContent from "../partyContent"; // v1.4.3 (작업4) — 파티 
 import * as audio from "../audio";
 /* vc178 (지시 #1·#2) — 레벨 개방 표 + 기능별 튜토리얼 스크립트 */
 import { UNLOCKS, unlockDef, unlockLevel, tutSeenKey, TUTORIAL_SCRIPTS, type FeatureKey } from "../unlocks";
+/* vc236 — 정예 어픽스 순수 코어 (굴림/배율/표시). 파티클·배너는 이 파일 소관. */
+import { rollEliteAffixes, affixHpMult, affixAtkMult, describeAffixes } from "../combat/eliteAffix";
+/* vc237 — 시너지 태그. 장비에서 유도(countSynergyTags)하고 HUD 문구로 환산(describeSynergies)한다.
+ * 이 파일은 **호출만** 한다 — 태그 매핑과 밸런스는 synergyBridge/synergy 몫이다. */
+import { countSynergyTags, applySynergy } from "../synergyBridge";
+import { synergyTotals, describeSynergies, type SynergyTotals } from "../synergy";
 import {
   generateRoomLayout, cellIndexOf, cellCenterOf, isOpenXY, nextStepToward,
   type RoomLayout,
@@ -2003,21 +2009,33 @@ export class WorldScene extends Phaser.Scene {
       const ep = this.openPointRng(rng, { minDist: 520, avoidEntry: true });
       const ex = ep.x;
       const ey = ep.y;
+      /* vc236 — 정예 어픽스. 챕터가 오를수록 개수가 는다(1~3개).
+       *  rng 는 위 스폰과 **같은 결정론 스트림**을 이어 쓴다 — 같은 시드 → 같은 어픽스.
+       *  배율은 기존 hpMult/atkMult 를 대체하지 않고 **곱한다**(어픽스 0개면 정확히 1.0).
+       *  챕터 번호: 본편은 CHAPTERS 인덱스, 영프 편은 키의 숫자(howlrstone12 → 12).
+       *  둘 다 아니면(마을 등) 1개 — 정예가 있는 스테이지에만 닿는 분기라 안전한 기본값. */
+      const chKey = parseStage(this.stageDef.key).ch;
+      const chIdx = CHAPTERS.findIndex((c) => c.key === chKey);
+      const chapNo = chIdx >= 0 ? chIdx + 1 : Number(chKey.replace("howlrstone", "")) || 0;
+      const affixes = rollEliteAffixes(() => rng.frac(), chapNo >= 7 ? 3 : chapNo >= 4 ? 2 : 1);
       const e = new Enemy(this, ex, ey, el.key, {
-        hp: el.hpMult * sc.hp,
-        atk: el.atkMult * sc.atk,
+        hp: el.hpMult * sc.hp * affixHpMult(affixes),
+        atk: el.atkMult * sc.atk * affixAtkMult(affixes),
         exp: 8 * sc.exp,
         gold: 9 * sc.gold,
         scale: 1.55,
         tint: 0xff9090,
         displayName: el.name,
+        affixes,
       });
       e.dmgPct = DMG_PCT.elite; // v3.0.6 — 정예 % 피해 상향
       this.eliteEnemy = e;
       this.enemies.push(e);
       this.spawnRecords.push({ key: el.key, x: ex, y: ey });
       this.physics.add.collider(e, this.solidGroup);
-      this.showBanner(`${el.name} 출현!`);
+      /* vc236 — 어픽스가 있으면 배너에 이름을 덧붙인다. 없으면 종전 문구 그대로. */
+      const affixDesc = describeAffixes(affixes);
+      this.showBanner(affixDesc ? `${el.name} 출현! (${affixDesc})` : `${el.name} 출현!`);
       audio.sfx.roar();
       /* vc180 — 실제 녹음 괴수 포효를 겹쳐 보스 등장의 무게를 올린다 */
       audio.sfx.beastGrowl();
@@ -3014,6 +3032,35 @@ export class WorldScene extends Phaser.Scene {
           this.add.rectangle(x + lay.cellW - SH, y, SH, lay.cellH, 0x000000, 0.14).setOrigin(0).setDepth(2.5);
       }
     }
+  }
+
+  /* vc236 — 정예 분열(splitting) 자식 스폰. Enemy.die() 가 호출하는 얇은 통로.
+   *
+   *  Enemy 가 직접 new Enemy 를 하지 않는 이유: 스폰은 씬 소관(충돌체 등록·enemies 배열)이라
+   *  씬에 두어야 기존 스폰 경로와 규칙이 갈라지지 않는다.
+   *  자식은 **어픽스를 물려받지 않는다**(무한 분열 방지 — 코어 주석의 규약).
+   *  hp 는 **절대값**이다(abs: true). 배수로 주면 base.hp 기준이 되어, 정예의 실제 최대HP
+   *  (base × 7.5 × 스테이지 × 어픽스)와 무관한 괴물/종이몸이 나온다.
+   *  atk/exp/gold 는 넘기지 않아 base 정의값으로 떨어진다 — 자식은 잡몹 수준이어야 한다. */
+  spawnAffixSplits(x: number, y: number, key: EnemyKey, hp: number) {
+    if (!this.player || this.transitioning) return; // 씬 종료 중 스폰 방지
+    /* 두 마리를 좌우로 벌려 스폰 — 같은 지점에 겹치면 한 덩어리로 보인다. */
+    for (let i = 0; i < 2; i++) {
+      const dir = i === 0 ? -1 : 1;
+      const sx = Phaser.Math.Clamp(x + dir * 46, 40, this.stageW - 40);
+      const sy = Phaser.Math.Clamp(y + 26, 40, this.stageH - 40);
+      const child = new Enemy(this, sx, sy, key, {
+        abs: true, hp,
+        scale: 0.95, tint: 0xc9a6ff,
+        spd: 0.9,
+      });
+      child.setAlpha(0);
+      this.tweens.add({ targets: child, alpha: 1, duration: 220 });
+      this.enemies.push(child);
+      this.spawnRecords.push({ key, x: sx, y: sy });
+      this.physics.add.collider(child, this.solidGroup);
+    }
+    this.spawnBurstAt(x, y, 12, 0xc9a6ff); // 잦은 호출 지점 — 파티클은 12개로 억제
   }
 
   /** 레이아웃 내 무작위 개방 지점 — 적/오브젝트 스폰 공용 (결정적 rng 주입) */
@@ -6759,18 +6806,55 @@ export class WorldScene extends Phaser.Scene {
     /* v1.0.18 — 유니온 효과 병합 (그리드 배치 + 등급 + 아티팩트 + 시간제 버프 — 계정 전체 적용) */
     const ue = unionEffects(loadUnion(), loadSlots());
     const uv = activeBuffValues(loadUnion());
+    /* vc237 — 시너지. 장비에서 태그를 유도해 **기존 extBonus 채널**에 얹는다(새 세이브 필드 없음).
+     *  ExtBonus 에는 % 방어/HP 통로가 없으므로 def·hp 는 바닥값에서 flat 으로 환산한다.
+     *  바닥값을 "extBonus 를 뺀 값"으로 잡아야 재계산해도 누적되지 않는다:
+     *   · maxHp - bonusHpAppliedVal — 세트/컬렉션/가호/ext 를 모두 뺀 시너지 무관 바닥
+     *   · defTotal - extBonus.def   — defTotal 은 extBonus.def 를 그대로 더하므로 정확히 상쇄
+     * 태그가 0개면 applySynergy 가 전부 0 을 돌려주므로 종전 수치와 완전히 동일하다.
+     * ponytail: cdrPct 는 반영하지 않는다 — Player 에 쿨타임 % 통로가 없어 이번 범위 밖이다.
+     *  업그레이드 경로: Player.skill1Cd 계산에 (1 - cdrPct) 를 곱하는 지점을 만들고 여기서 넘긴다. */
+    const synTotals = this.synergyTotals();
+    const syn = applySynergy(synTotals, {
+      atk: 0, // 공격력은 % 채널(atkPct)로만 반영 — 절대값 기준이 필요 없다
+      crit: 0, // 치명타는 critAdd 가 이미 %p 라 그대로 더한다
+      def: Math.max(0, this.player.defTotal - this.player.extBonus.def),
+      maxHp: Math.max(0, this.player.maxHp - this.player.bonusHpAppliedVal),
+      cdr: 0,
+    });
     this.player.setExtBonus({
       atk: base.atk + ib.atk + ue.atk,
-      hp: base.hp + ib.hp + ue.hp,
-      def: base.def + ib.def + ue.def + (uv.defPct > 0 ? 40 : 0),
-      crit: base.crit + ib.crit + ue.crit,
-      atkPct: base.atkPct + ib.atkPct + ue.atkPct + uv.atkPct,
+      hp: base.hp + ib.hp + ue.hp + syn.maxHp,
+      def: base.def + ib.def + ue.def + (uv.defPct > 0 ? 40 : 0) + syn.def,
+      crit: base.crit + ib.crit + ue.crit + syn.crit,
+      atkPct: base.atkPct + ib.atkPct + ue.atkPct + uv.atkPct + synTotals.atkPct * 100,
       speedPct: base.speedPct + ue.speedPct,
       goldPct: base.goldPct + ib.goldPct + ue.goldPct + uv.goldPct,
       critDmg: (base.critDmg ?? 0) + ue.critDmg, // v1.0.19 (B-2) — 유니온 도적 계열 크리뎀
     });
     /* v1.0.18 — 유니온 경험치 버프 훅 주입 */
     this.player.expBonusPct = () => activeBuffValues(loadUnion()).expPct;
+  }
+
+  /* vc237 — 시너지 태그 집계 (장착 중인 무기/방어구/장신구에서 유도).
+   *  세이브에 저장하지 않는다 — 장착 상태에서 언제든 파생되는 값이라 저장하면
+   *  "세이브 필드 3곳 싱크" 규칙(AGENTS.md)만 늘고 어긋날 위험만 생긴다. */
+  private synergyCounts() {
+    if (!this.player) return {};
+    const p = this.player;
+    return countSynergyTags([
+      { key: p.weapon }, { key: p.armor }, ...p.accessories.map((k) => ({ key: k })),
+    ]);
+  }
+
+  /** 스탯 반영용 합계 (syncExtBonus 전용). */
+  private synergyTotals(): SynergyTotals {
+    return synergyTotals(this.synergyCounts());
+  }
+
+  /** HUD 표시용 문구 — 문구 조립은 synergy.ts 단일 출처. 태그가 없으면 빈 배열. */
+  private synergyLines(): string[] {
+    return describeSynergies(this.synergyCounts());
   }
 
   /* ---------------- 데일리 (출석/일일 퀘스트/티켓/오프라인 보상) ---------------- */
@@ -10054,6 +10138,9 @@ export class WorldScene extends Phaser.Scene {
         notice(dup ? "같은 장신구는 1개만 장착할 수 있어요" : "장착할 수 없어요");
         return;
       }
+      /* vc237 — 장착이 바뀌면 시너지 태그도 바뀐다. extBonus 재계산 경로를 그대로 탄다
+       * (새 파이프라인을 만들지 않는다 — 시너지는 syncExtBonus 안에서 합산된다). */
+      this.syncExtBonus();
       this.emitRpgState(true);
       this.saveSoon();
     };
@@ -10061,6 +10148,7 @@ export class WorldScene extends Phaser.Scene {
     const onUnequip = (v: { key: ItemKey }) => {
       if (!this.player || this.dialoguing) return;
       this.player.unequipAccessory(v.key);
+      this.syncExtBonus(); // vc237 — 해제도 태그 감소 → 재계산
       this.emitRpgState(true);
       this.saveSoon();
     };
@@ -16932,6 +17020,9 @@ export class WorldScene extends Phaser.Scene {
         if (d.slow) out.push({ kind: "slow", remain: Math.max(0, d.slow.until - now), total: 4000 });
         return out;
       })(),
+      /* vc237 — 시너지 문구. 장착에서 유도한 태그 개수를 describeSynergies 에 그대로 넘긴다.
+       * 문구 조립 규칙은 synergy.ts 단일 출처 — 여기서 문자열을 만들지 않는다. */
+      synergies: this.synergyLines(),
       /* v1.1.5 (#개편 통계) — 스탯 창 실시간 표시 */
       lockedItems: [...this.player.lockedItems], // v1.1.7 (#개편 A87)
       gatherBag: { ...this.player.gatherBag }, // v1.1.9 (#개편 A48)

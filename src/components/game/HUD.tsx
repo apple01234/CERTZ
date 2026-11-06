@@ -308,6 +308,20 @@ export function HUD({
               })}
             </div>
           )}
+          {/* vc237 — 시너지 칩. 텍스트만 — 잦은 리렌더 지점이라 파티클/애니메이션 금지(AGENTS.md).
+           *  문구는 WorldScene 이 describeSynergies 로 완성해서 넘긴다(여기서 조립하지 않는다). */}
+          {hud.synergies && hud.synergies.length > 0 && (
+            <div className="mt-0.5 flex flex-wrap items-center gap-1">
+              {hud.synergies.map((s) => (
+                <span
+                  key={s}
+                  className="rounded border border-amber-300/50 bg-black/60 px-1 py-px text-[10px] leading-tight text-amber-100"
+                >
+                  {s}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
