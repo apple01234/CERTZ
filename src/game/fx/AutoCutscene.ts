@@ -34,7 +34,13 @@ export type AutoCutsceneSpec = {
   stageH: number;
   anchors?: Partial<Record<CutAnchor, Point>>;
 };
-export type AutoCutsceneOptions = { onFinish?: (reason: CinematicEnd) => void };
+export type AutoCutsceneOptions = {
+  onFinish?: (reason: CinematicEnd) => void;
+  /** 하루 v2 — 연출 대사를 게임 공용 대사창(DialogueBox)으로 재생한다(NPC 대화와 같은 창·초상화).
+   *  `done` 은 플레이어가 마지막 줄을 넘겼을 때 부른다. 반환값은 취소 함수(스킵 시 대사창을 닫는다).
+   *  없으면 아래 Phaser 패널로 폴백 — 씬 없이 도는 단위 테스트와 호환. */
+  say?: (speaker: string, lines: string[], done: () => void) => (() => void) | void;
+};
 export const autoCutscenePlaying = (scene: Phaser.Scene): boolean => sceneCinematicPlaying(scene);
 
 /** Direction stays in data; one shared owner prevents opening/dialogue cameras racing. */
@@ -78,6 +84,8 @@ export function playAutoCutscene(scene: Phaser.Scene, spec: AutoCutsceneSpec, on
     if (!session.active) return;
     const step = spec.steps[index++];
     if (!step) { session.finish(); return; }
+    /* 단계마다 20초 idle 워치독을 다시 건다(단계가 멈춰 조작이 영구히 잠기는 것 방지). */
+    session.watch(20000);
     switch (step.t) {
       case "cam": {
         dialogue.setVisible(false);
@@ -131,6 +139,14 @@ export function playAutoCutscene(scene: Phaser.Scene, spec: AutoCutsceneSpec, on
         break;
       }
       case "say": {
+        if (opts.say) {
+          /* 공용 대사창: 읽는 시간에는 상한이 없다(플레이어가 키/탭으로 넘김). 워치독은 끄고 ESC 스킵만 둔다. */
+          session.unwatch();
+          let settled = false;
+          const cancel = opts.say(step.speaker, step.lines, () => { if (!settled) { settled = true; next(); } });
+          if (typeof cancel === "function") session.own(() => { if (!settled) { settled = true; cancel(); } });
+          break;
+        }
         // Re-show the existing box after a camera/movement step hid it.
         name.setText(step.speaker); body.setText(step.lines.join("\n")); dialogue.setVisible(true);
         const chars = step.lines.reduce((n, line) => n + line.length, 0);
@@ -170,8 +186,7 @@ export function playAutoCutscene(scene: Phaser.Scene, spec: AutoCutsceneSpec, on
       }
     }
   };
-  // A malformed step can never leave the player locked indefinitely.
-  session.delay(Math.max(14000, spec.steps.length * 6200), () => session.finish());
+  // A malformed step can never leave the player locked indefinitely: 단계별 idle 워치독(next 안)이 맡는다.
   next();
   return true;
 }

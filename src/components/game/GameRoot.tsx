@@ -199,6 +199,15 @@ export default function GameRoot() {
     };
   }, []);
 
+  /* 하루 v2 — 컷씬 중에는 HUD·조작 버튼·보상 팝업을 숨긴다(대사창·연출을 가리던 문제).
+   *  숨겨진 동안 도착한 팝업은 상태가 남아 있다가 연출이 끝나면 이어서 보인다. */
+  const [cinematic, setCinematic] = useState(false);
+  useEffect(() => {
+    const on = (e?: { active?: boolean }) => setCinematic(!!e?.active);
+    EventBus.on("cinematic:state", on);
+    return () => { EventBus.off("cinematic:state", on); };
+  }, []);
+
   return (
     <div className="game-root fixed inset-0 select-none overflow-hidden bg-[#05070d]">
       {/* Phaser 캔버스가 들어갈 부모 — FIT 스케일이 이 영역을 채움 */}
@@ -207,7 +216,7 @@ export default function GameRoot() {
       {/* 오버레이 UI 레이어 */}
       <div className="pointer-events-none absolute inset-0">
         {state === "playing" && (
-          <>
+          <div className={cinematic ? "hidden" : "contents"} data-cinematic={cinematic || undefined}>
             <div className="pointer-events-auto contents">
               <HUD
                 hud={hud}
@@ -278,7 +287,7 @@ export default function GameRoot() {
             <FriendsWidget />
             {/* 계정 위젯 (v4.9.0 — 자체 회원가입/로그인 + SNS 연동 + 클라우드 세이브) */}
             <AuthPanel />
-          </>
+          </div>
         )}
 
         {state === "title" && (

@@ -2487,7 +2487,8 @@ export class WorldScene extends Phaser.Scene {
     if (!scen) return false;
     const seenKey = `lilacCut_rea1_${scen.id}`;
     if (this.cutsceneSeen.includes(seenKey)) return false;
-    return playAutoCutscene(this, {
+    EventBus.emit("cinematic:state", { active: true });
+    const started = playAutoCutscene(this, {
       id: scen.id,
       stageW: this.stageW,
       stageH: this.stageH,
@@ -2498,7 +2499,27 @@ export class WorldScene extends Phaser.Scene {
         this.cutsceneSeen = [...this.cutsceneSeen, seenKey];
         this.saveSoon();
       }
+    }, {
+      onFinish: () => EventBus.emit("cinematic:state", { active: false }),
+      /* 하루 v2 — 연출 대사도 NPC 대화와 같은 공용 대사창(DialogueBox)으로 보낸다. */
+      say: (speaker, lines, done) => {
+        const cancel = this.onCutsceneDialogueEnd(done);
+        EventBus.emit("dialogue:show", { speaker, lines });
+        return cancel;
+      },
     });
+    if (!started) EventBus.emit("cinematic:state", { active: false });
+    return started;
+  }
+
+  /** 하루 v2 — 연출 중 띄운 대사창이 끝나면 done 을 한 번만 부른다. 반환: 취소(스킵 시 상자를 닫는다).
+   *  반드시 dialogue:show 를 내보내기 *전에* 등록한다. */
+  private onCutsceneDialogueEnd(done: () => void): () => void {
+    let open = true;
+    const off = () => { open = false; EventBus.off("dialogue:done", onDone); };
+    const onDone = () => { if (open) { off(); done(); } };
+    EventBus.on("dialogue:done", onDone);
+    return () => { if (open) { off(); EventBus.emit("dialogue:hide"); } };
   }
 
   private playChapterIntroCutscene(stageKey: StageKey): boolean {
@@ -2510,9 +2531,18 @@ export class WorldScene extends Phaser.Scene {
     const shots = resolveChapterIntroShots(spec, {
       width: this.stageW, height: this.stageH, entry: this.entryHome, feature: this.portalHome, player: this.player,
     });
-    return playStoryCutscene(this, {
+    EventBus.emit("cinematic:state", { active: true });
+    const started = playStoryCutscene(this, {
       shots,
+      onFinish: () => EventBus.emit("cinematic:state", { active: false }),
       showDialogue: (key) => this.showDialogueOnce(key),
+      /* 하루 v2 — 그 컷이 화면에 있는 동안 대사 재생(이미 본 대사는 null → 키 대기로 폴백). */
+      playDialogue: (key, done) => {
+        if (!DIALOGUES[key] || this.seenSet.has(key)) return null;
+        const cancel = this.onCutsceneDialogueEnd(done);
+        this.showDialogueOnce(key);
+        return cancel;
+      },
       onDone: () => {
         if (!this.cutsceneSeen.includes(parsed.ch)) {
           this.cutsceneSeen = [...this.cutsceneSeen, parsed.ch];
@@ -2520,6 +2550,8 @@ export class WorldScene extends Phaser.Scene {
         }
       },
     });
+    if (!started) EventBus.emit("cinematic:state", { active: false });
+    return started;
   }
 
   private applyManualCameraFollow(dt: number) {
@@ -3972,6 +4004,34 @@ export class WorldScene extends Phaser.Scene {
       repeat: -1,
     });
     if (!silent) this.showBanner("차원문이 열렸다!");
+    this.spawnRestFountain(silent);
+  }
+
+  /** 하루 v2 (참고작 분석: 보스 뒤 분수방) — 보스 구역은 격파 후 차원문 곁에 회복 샘을 세워
+   *  다음 구역으로 넘어가기 전 숨 돌릴 자리를 만든다. 마을 우물(wellPos)의 근접 회복을 그대로 재사용한다.
+   *  ponytail: 샘은 충돌 없는 장식 — 벽 위에 놓이지 않게 개방 셀만 고른다. 자리가 없으면 만들지 않는다. */
+  private spawnRestFountain(silent: boolean) {
+    if (!this.stageDef.boss || this.stageDef.isVillage || this.wellPos || !this.portal) return;
+    const px = this.portal.x, py = this.portal.y;
+    const spot = [[-100, 0], [100, 0], [0, 90], [0, -90]]
+      .map(([dx, dy]) => ({ x: px + dx, y: py + dy }))
+      .find(({ x, y }) => [[-30, -24], [30, -24], [-30, 24], [30, 24]].every(([ox, oy]) => this.inOpenArea(x + ox, y + oy)));
+    if (!spot) return;
+    this.wellPos = new Phaser.Math.Vector2(spot.x, spot.y);
+    const fountain = this.add.image(spot.x, spot.y, "well").setDepth(this.yDepthFor(spot.y));
+    const label = this.add
+      .text(spot.x, spot.y - 44, "치유의 샘", {
+        fontFamily: "Galmuri11, sans-serif", fontSize: "11px", color: "#bfe8ff", stroke: "#000000", strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(this.yDepthFor(spot.y));
+    this.lighting.addLight(spot.x, spot.y, { tint: 0x6ae8ff, scale: 0.6, alpha: 0.18, flicker: 0.04 });
+    if (!silent) {
+      fountain.setAlpha(0);
+      label.setAlpha(0);
+      this.tweens.add({ targets: [fountain, label], alpha: 1, duration: 700, ease: "Sine.easeOut" });
+      this.spawnBurstAt(spot.x, spot.y, 10, 0x7de8ff);
+    }
   }
 
   /**
@@ -12052,8 +12112,8 @@ export class WorldScene extends Phaser.Scene {
       this.wellCd = Math.max(0, this.wellCd - dt);
       this.restCd = Math.max(0, this.restCd - dt);
 
-      // 마을 우물 샘물 — 근접 시 풀회복 (HP/MP가 꽉 차 있으면 미발동, 8초 쿨다운)
-      if (this.wellPos && this.stageDef.isVillage && this.wellCd <= 0) {
+      // 마을 우물 샘물 / 보스 구역 치유의 샘 — 근접 시 풀회복 (HP/MP가 꽉 차 있으면 미발동, 8초 쿨다운)
+      if (this.wellPos && this.wellCd <= 0) {
         const nearWell = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.wellPos.x, this.wellPos.y) < 86;
         if (nearWell && (this.player.hp < this.player.maxHp || this.player.mp < this.player.maxMp)) {
           this.wellCd = 8000;
@@ -17566,6 +17626,13 @@ export class WorldScene extends Phaser.Scene {
   }
 
   resumeFromDialogue() {
+    /* 하루 v2 — 연출(컷씬) 중에 띄운 대사는 카메라·물리 소유권이 연출에 있다. 대사가 끝나도 여기서
+     *  조작/물리를 풀면 연출 도중 플레이어와 적이 움직인다 → 대사창만 닫고, 복원은 연출 종료(세션)에 맡긴다. */
+    if (sceneCinematicPlaying(this)) {
+      this.dialogueSince = 0;
+      EventBus.emit("dialogue:hide");
+      return;
+    }
     this.restoreBossIntroCam(); // v1.0.2 (#보스컷씬) — 대사 종료 후에만 플레이어 시점 복귀
     // 일반 NPC 대화는 어느 세계의 엔딩도 대신하지 않는다.
     // 다음 세계 포탈은 해당 세계의 엔딩 기록으로만 개방한다.
