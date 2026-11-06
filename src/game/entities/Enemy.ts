@@ -49,6 +49,13 @@ const BODY_CFG: Record<EnemyKey, { bw: number; bh: number; hw: number; hh: numbe
   x3_wogol: { bw: 22, bh: 20, hw: 36, hh: 32, burst: 0xd86a8a },
   x3_goblin: { bw: 20, bh: 16, hw: 32, hh: 26, burst: 0x8ade6a },
   x3_bigzombie: { bw: 30, bh: 26, hw: 46, hh: 44, burst: 0x9ab08a },
+
+  /* vc263c — Layer Lab 4종 (64px 변환본). 스프라이트 실높이에 맞춘 히트박스.
+   *  스켈레톤은 방패·검을 든 중장형이라 판정을 조금 크게, 비행눈은 부유체라 작게 잡았다. */
+  ll_goblin: { bw: 20, bh: 22, hw: 34, hh: 32, burst: 0x8ac46a },
+  ll_skeleton: { bw: 24, bh: 28, hw: 40, hh: 42, burst: 0xd8d8e0 },
+  ll_mushroom: { bw: 26, bh: 22, hw: 40, hh: 34, burst: 0xc86a5a },
+  ll_flyingeye: { bw: 22, bh: 18, hw: 40, hh: 30, burst: 0xe8b06a },
 };
 
 /**

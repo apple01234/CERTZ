@@ -194,6 +194,18 @@ export function buildAllAnims(scene: Phaser.Scene) {
     a.create({ key: `${k}-run`, ...fr(`${k}_run`, 4, 10, -1) });
     a.create({ key: `${k}-atk`, ...fr(`${k}_atk`, 1, 1, 0) });
   }
+  /* vc263c — Layer Lab "Monsters Creatures Fantasy" 4종 (드라이브 제공 에셋)
+   *  프레임 수가 종마다 다르다(원본 스트립: Idle 4 / Walk·Run 8 / Attack 8 / Death·Hit 4).
+   *  게임 규격에 맞춰 idle 4 · run 4(첫 4프레임만) · atk 1 로 등록한다.
+   *  (run 이 8프레임인 종은 4프레임만 써도 루프가 자연스럽다 — 2걸음 주기)
+   *  비행눈(Flying eye)은 원본에 보행이 없어 Flight 를 idle 로 쓰고 run 은 idle 복제본이다
+   *  (tools/import_lab_assets.py 가 생성). */
+  for (const k of ["ll_goblin", "ll_skeleton", "ll_mushroom", "ll_flyingeye"]) {
+    if (!scene.textures.exists(`${k}_idle0`)) continue; // 미변환 시 스킵(안전)
+    a.create({ key: `${k}-idle`, ...fr(`${k}_idle`, 4, 5, -1) });
+    a.create({ key: `${k}-run`, ...fr(`${k}_run`, 4, 10, -1) });
+    a.create({ key: `${k}-atk`, ...fr(`${k}_atk`, 1, 1, 0) });
+  }
   /* v3.0.2 — 마법 투사체/시전 이펙트 (Pixelart Spells, CC0) */
   a.create({ key: "fx-arcane", frames: Array.from({ length: 6 }, (_, i) => ({ key: "x2_sp_arcane", frame: i })), frameRate: 14, repeat: -1 });
   a.create({ key: "fx-magicorb", frames: Array.from({ length: 6 }, (_, i) => ({ key: "x2_sp_magicorb", frame: i })), frameRate: 12, repeat: -1 });

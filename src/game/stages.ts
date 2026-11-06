@@ -59,7 +59,11 @@ export type EnemyKey =
   | "x3_swampy" | "x3_imp" | "x3_icezombie" | "x3_tinyzombie"
   | "x3_ogre" | "x3_chort" | "x3_necromancer"
   /* v3.0.4 — itch.io 0x72 팩 추가 6종 (지시 #8): 오르크 부족/고블린/거대 좀비 */
-  | "x3_maskedorc" | "x3_orcwarrior" | "x3_orcshaman" | "x3_wogol" | "x3_goblin" | "x3_bigzombie";
+  | "x3_maskedorc" | "x3_orcwarrior" | "x3_orcshaman" | "x3_wogol" | "x3_goblin" | "x3_bigzombie"
+  /* vc263c — Layer Lab "Monsters Creatures Fantasy" 팩 4종 (드라이브 제공 에셋).
+   *  기존 x3_* 보다 도트 밀도가 촘촘하고 톤이 어두운 다크판타지 계열이라
+   *  밝은 카툰 톤인 본편 대신 **DLC/재림(고유 테마 유지 구간)** 전용으로 쓴다. */
+  | "ll_goblin" | "ll_skeleton" | "ll_mushroom" | "ll_flyingeye";
 
 export type EnemyDef = {
   key: EnemyKey;
@@ -693,6 +697,15 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
   x3_wogol: { key: "x3_wogol", name: "지옥견 워골", hp: 198, atk: 41, speed: 152, aggro: 400, exp: 103, gold: [19, 28], dropHp: 0.3, dropMp: 0.24, profile: { charge: { cd: 3800, speed: 460, time: 460 }, apply: { kind: "bleed", chance: 0.4, dps: 6, dur: 3500 } } },
   x3_goblin: { key: "x3_goblin", name: "고블린 약탈자", hp: 66, atk: 14, speed: 172, aggro: 360, exp: 35, gold: [6, 10], dropHp: 0.28, dropMp: 0.2, profile: { apply: { kind: "bleed", chance: 0.3, dps: 3, dur: 2500 } } },
   x3_bigzombie: { key: "x3_bigzombie", name: "거대 시체", hp: 320, atk: 47, speed: 62, aggro: 280, exp: 168, gold: [22, 33], dropHp: 0.4, dropMp: 0.3, scale: 1.2, profile: { apply: { kind: "poison", chance: 0.45, dps: 7, dur: 5000 }, fieldOnDeath: { kind: "poison", dps: 8, dur: 4000, radius: 100 } } },
+
+  /* ══ vc263c — Layer Lab 몬스터 4종 ══
+   *  출처: 드라이브 제공 "Monsters Creatures Fantasy" (150px 스트립 → 64px 변환, tools/import_lab_assets.py)
+   *  배치: DLC/재림(고유 테마 구간). 기존 x3_* 와 같은 티어대에 두되, 팩 고유의
+   *  역할(스켈레톤=방패 방어형, 버섯=독 포자, 비행눈=원거리 부유)을 부여했다. */
+  ll_goblin: { key: "ll_goblin", name: "그림자 고블린", hp: 88, atk: 17, speed: 178, aggro: 370, exp: 44, gold: [7, 12], dropHp: 0.28, dropMp: 0.2, profile: { apply: { kind: "bleed", chance: 0.32, dps: 4, dur: 2600 } } },
+  ll_skeleton: { key: "ll_skeleton", name: "무덤 수호 스켈레톤", hp: 132, atk: 21, speed: 96, aggro: 330, exp: 62, gold: [10, 16], def: 8, defPct: 0.12, dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "bleed", chance: 0.25, dps: 4, dur: 3000 } } },
+  ll_mushroom: { key: "ll_mushroom", name: "포자 버섯", hp: 104, atk: 15, speed: 68, aggro: 300, exp: 52, gold: [9, 14], dropHp: 0.34, dropMp: 0.26, profile: { apply: { kind: "poison", chance: 0.42, dps: 5, dur: 4200 }, fieldOnDeath: { kind: "poison", dps: 5, dur: 3000, radius: 86 } } },
+  ll_flyingeye: { key: "ll_flyingeye", name: "감시하는 눈", hp: 76, atk: 19, speed: 140, aggro: 400, exp: 48, gold: [8, 13], dropHp: 0.26, dropMp: 0.3, scale: 0.9, profile: { ranged: { projAnim: "fx-magicorb", projSpeed: 250, range: 300, cd: 2600 } } },
 };
 
 /* ================= 보스 정의 (v1.5 데이터 이관 + 챕터 보강) ================= */
@@ -1143,6 +1156,9 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
     x3_necromancer: "강령술사",
     x3_maskedorc: "가면 전사", x3_orcwarrior: "오르크 전사", x3_orcshaman: "오르크 주술사",
     x3_wogol: "지옥견 워골", x3_goblin: "고블린 약탈자", x3_bigzombie: "거대 시체",
+    /* vc263c — Layer Lab 4종 */
+    ll_goblin: "그림자 고블린", ll_skeleton: "무덤 수호 스켈레톤",
+    ll_mushroom: "포자 버섯", ll_flyingeye: "감시하는 눈",
   };
   const verbs = ["토벌", "소탕", "박멸", "정찰 지원", "제거"];
   /* v3.0.2 (버그 수정 — "퀘스트는 늑대 소탕인데 맵에는 유령만"):
@@ -1487,6 +1503,47 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
             expReward: Math.round((110 + sub * 20) * spec.scaleMul.exp * 0.5),
           }];
         }
+      }
+
+      /* ══ vc263c (버그 #2·#11) — 보스 스테이지에 보스 퀘스트 강제 주입 ══
+       *
+       * [증상] howlrstone3(크라켄·해롤드) 등에서 "퀘스트 완료 못함" 신고.
+       *        howlrstone7/8/10/14 는 보스전 자체가 시작되지 않았다.
+       *
+       * [원인] 이 생성기는 `buildQuests()` 를 쓰지 않고 위에서 quests 를 직접 채우는데,
+       *        보스 퀘스트 주입(`if (sub === 10 && spec.boss)`)이 **본편 전용 규칙**이라
+       *        영프 편(최대 5구역)에는 해당 사항이 없었다. 게다가:
+       *          · howlrstone7/8/10/14 : 보스 구역(sub5)에 beat 가 없어 레벨게이트/자동토벌만
+       *            들어갔다 → quests 에 type:"boss" 가 없어 spawnBoss() 호출 경로가 없음.
+       *            (WorldScene 은 currentQuest().type === "boss" 일 때만 보스를 스폰한다)
+       *          · howlrstone3 : beat 로 넣은 boss 퀘스트가 sub4 에 있는데 보스 스테이지는
+       *            sub5 라, sub4 에서 보스가 스폰되고(이 구역엔 bossKey 가 없어
+       *            BOSS_DEFS["guardian"] 폴백 = 엉뚱한 보스) sub5 는 보스 없이 진행 불가.
+       *
+       * [해결] 보스 스테이지(isBoss)면 데이터에 있든 없든 boss 퀘스트를 **마지막에 보장**하고,
+       *        보스 격파 후 나가는 reach 퀘스트까지 붙인다. 중복 주입은 타입 검사로 막는다.
+       *        (howlrstone3 의 sub4 보스 beat 는 아래에서 일반 토벌로 강등된다) */
+      if (isBoss) {
+        const bossName = BOSS_DEFS[spec.boss as BossKey]?.name ?? spec.boss;
+        /* 보스 스테이지가 아닌 구역에 박혀 있는 boss/reach 퀘스트는 스폰 경로를 오염시킨다. */
+        quests = quests.filter((q) => q.type !== "boss" && q.type !== "reach");
+        quests.push({
+          id: `${spec.key.slice(-1)}${sub}-boss`,
+          type: "boss",
+          title: bossName,
+          desc: `${spec.title}의 주인 — ${bossName}를 처치해라!`,
+          targetLabel: bossName,
+          reward: Math.round(320 * spec.scaleMul.gold * G),
+          expReward: Math.round(420 * spec.scaleMul.exp),
+        });
+        quests.push({
+          id: `${spec.key.slice(-1)}${sub}-next`,
+          type: "reach",
+          title: "다음 해역으로",
+          desc: "열린 차원문에 닿아 다음 해역으로 이동해라.",
+          targetLabel: "차원문",
+          dialogue: spec.bossDone,
+        });
       }
 
       STAGES[key] = {

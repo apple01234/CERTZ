@@ -34,7 +34,7 @@ import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, 
 import { requestTradeSnapshot } from "@/game/trade"; // vc147 (#5) — 거래 패널 마운트 시 현재 상태 스냅샷 복원
 import { STORE_PACKS } from "@/game/ads"; // v1.0.2 — 현금 패키지
 import { STORE_PACK_CONTENTS } from "@/game/data"; // v1.0.7 — 패키지 구성 미리보기
-import { chestOdds, eertOdds, POT_PITY_MAX, STAR_PITY_FROM, STAR_PITY_STEP, STAR_PITY_MAX } from "@/game/data"; // v4.5.0 — 확률 공시 (게임산업법) · v1.0.8 천장 공시
+import { chestOdds, eertOdds, POT_PITY_MAX, STAR_PITY_FROM, STAR_PITY_STEP, STAR_PITY_MAX, STAR_FALLBACK_STREAK } from "@/game/data"; // v4.5.0 — 확률 공시 (게임산업법) · v1.0.8 천장 공시 · vc263c 하락 규칙
 import type { BmGrant } from "@/game/data";
 import {
   CRAFT_RECIPES, canCraft, ABYSS_SHOP,
@@ -883,7 +883,8 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
                 ))}
               </div>
               <p className="mt-1 text-[8px] leading-snug text-white/55">
-                ★{UPGRADE_FALLBACK_FROM} 이상에서 실패하면 1성 하락합니다. 강화 주문서 1장당 +{STAR_BLESS_RATE}%p
+                ★{UPGRADE_FALLBACK_FROM} 이상에서 <b className="text-amber-200">{STAR_FALLBACK_STREAK}연속 실패</b>하면 1성 하락합니다
+                (연속 횟수는 결과 문구에 표시). 강화 주문서 1장당 +{STAR_BLESS_RATE}%p
                 (최대 {STAR_BLESS_MAX}장 = +{STAR_BLESS_RATE * STAR_BLESS_MAX}%p)가 가산되며, 주문서는 성공·실패와 무관하게 소모됩니다.
               </p>
             </div>
@@ -1214,7 +1215,7 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           <div className="mb-1.5 flex items-center gap-1.5">
             <img src="/assets/icon_hammer.webp" alt="" className="h-4 w-4" style={{ imageRendering: "pixelated" }} />
             <p className="text-[12px] font-black text-amber-200">스타포스 강화</p>
-            <p className="text-[10px] text-white/55">최대 ★{UPGRADE_MAX} · ★{UPGRADE_FALLBACK_FROM} 이상 실패 시 1성 하락</p>
+            <p className="text-[10px] text-white/55">최대 ★{UPGRADE_MAX} · ★{UPGRADE_FALLBACK_FROM} 이상 {STAR_FALLBACK_STREAK}연속 실패 시 1성 하락</p>
             {/* v3.0.7 — 강화 주문서 충전 현황 */}
             {(rpg.starBless ?? 0) > 0 && (
               <span className="ml-auto rounded-md border border-purple-300/50 bg-purple-400/15 px-1.5 py-0.5 text-[9px] font-black text-purple-200">

@@ -38,6 +38,9 @@ const X3_MONSTERS = [
   "x3_ogre", "x3_chort", "x3_necromancer",
   /* v3.0.4 — itch.io 0x72 팩 추가 6종 (지시 #8 — itch.io 에셋 확대) */
   "x3_maskedorc", "x3_orcwarrior", "x3_orcshaman", "x3_wogol", "x3_goblin", "x3_bigzombie",
+  /* vc263c — Layer Lab "Monsters Creatures Fantasy" 4종 (드라이브 제공, 64px 변환)
+   *  개별 프레임 파일(ll_<name>_<anim><i>.webp)로 로드한다. */
+  "ll_goblin", "ll_skeleton", "ll_mushroom", "ll_flyingeye",
 ] as const;
 /** [키, 시트폭, 프레임폭] — 프레임폭은 시트 높이와 동일 (가로 나열) */
 const X2_SPELLS: [string, number, number][] = [

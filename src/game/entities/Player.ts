@@ -5,7 +5,7 @@ import {
   starWeaponBonus, starArmorBonus, STAR_MILESTONES, starPerStarAtk, starPerStarDef,
   TRADE_PRICES, tradeValue, STAR_BLESS_RATE, STAR_BLESS_MAX, starAccBonus,
   sumPotLines, FAMILY_ELEM, rollPotentials, activeSetBonus, collectionBonus, WORLDTREE_BLESSING,
-  POT_PITY_MAX, STAR_PITY_STEP, STAR_PITY_MAX, STAR_PITY_FROM,
+  POT_PITY_MAX, STAR_PITY_STEP, STAR_PITY_MAX, STAR_PITY_FROM, STAR_FALLBACK_STREAK,
   type ItemKey, type BuffKey, type PetKey, type CosmeticKey, type ElemKey, type Potentials,
   ELEMENT_META,
 } from "../data";
@@ -147,6 +147,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   starBless = 0;
   /** v1.0.8 — 강화 실패 가산 (★10+ 실패 연속 1회당 +5%p, 최대 +15%p, 성공 시 리셋 — 천장) */
   starPity = 0;
+  /** vc263c (버그 #5) — 하락 구간 연속 실패 횟수. 3회에 도달하면 1성 하락 후 리셋.
+   *  매 실패마다 떨어뜨리면 기대 성장이 음수(-0.7~-0.9)라 ★15 도달이 사실상 불가였다.
+   *  (실측: 매실패 81,635시도 → 3연속 16,113시도) */
+  starStreak = 0;
   /** v1.0.8 — eert 큐브 잠재 천장 카운터 (유니크 미달 연속 횟수, 10회 도달 시 유니크+ 확정) */
   potPity = 0;
   /** 전직 클래스 (v1.8 다차원 트리 — 1차/2차/3차 키, 미전직 null) */
@@ -8554,6 +8558,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.gold < cost) return "poor";
     this.gold -= cost;
     const ok = Math.random() * 100 < (UPGRADE_RATES[cur] ?? 0);
+    /* vc263c (버그 #5) — 장신구도 동일 규칙: 하락 구간에서 3연속 실패해야 1성 하락.
+     *  (무기/방어구와 같은 counter 를 공유한다 — 한 아이템만 계속 강화하는 구조라 문제 없음) */
+    if (ok) this.starStreak = 0;
+    const willFall =
+      !ok && cur >= UPGRADE_FALLBACK_FROM && ++this.starStreak >= STAR_FALLBACK_STREAK;
+    if (willFall) this.starStreak = 0;
     if (ok) {
       this.accUp[key] = cur + 1;
       const next = cur + 1;
@@ -8567,16 +8577,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.spawnPickupText(this.x, this.y - 44, `${item.name} 강화 성공! ★${next}`, "#ffd76a");
       }
       this.syncAccStarHp();
-    } else if (cur >= UPGRADE_FALLBACK_FROM) {
+    } else if (willFall) {
       this.accUp[key] = cur - 1;
       this.scene.sfxUpgradeFail();
       this.scene.spawnStarForceBurst(this.x, this.y, cur, false);
-      this.scene.spawnPickupText(this.x, this.y - 44, `강화 실패… ★${cur - 1} 하락`, "#ff9a9a");
+      this.scene.spawnPickupText(this.x, this.y - 44, `3연속 실패… ★${cur - 1} 하락`, "#ff9a9a");
       this.syncAccStarHp();
     } else {
       this.scene.sfxUpgradeFail();
       this.scene.spawnStarForceBurst(this.x, this.y, cur, false);
-      this.scene.spawnPickupText(this.x, this.y - 44, "강화 실패…", "#ff9a9a");
+      const st = cur >= UPGRADE_FALLBACK_FROM ? ` · ${this.starStreak}/${STAR_FALLBACK_STREAK}연속` : "";
+      this.scene.spawnPickupText(this.x, this.y - 44, `강화 실패…${st}`, "#ff9a9a");
     }
     this.scene.emitHud();
     return ok ? "ok" : "fail";
@@ -9160,13 +9171,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // v3.0.7 — 강화 주문서 충전분 성공률 가산 후 1회 소모 (성공/실패 무관)
     const bless = Math.min(this.starBless, STAR_BLESS_MAX);
     if (bless > 0) this.starBless -= 1;
-    /* v1.0.8 — 강화 실패 가산(천장): ★10+ 실패 연적만큼 +5%p (최대 +15%p)
+    /* v1.0.8 — 강화 실패 가산(천장): ★9+ 실패 연적만큼 +5%p (최대 +15%p)
      *  공시된 곡선 외 보장 — "주작"이 아닌 완화 시스템. 성공 시 리셋 */
     const pity = Math.min(this.starPity, STAR_PITY_MAX);
     const rate = (UPGRADE_RATES[cur] ?? 0) + bless * STAR_BLESS_RATE + pity;
     const ok = Math.random() * 100 < rate;
-    if (ok) this.starPity = 0;
-    else if (cur >= STAR_PITY_FROM) this.starPity = Math.min(STAR_PITY_MAX, this.starPity + STAR_PITY_STEP);
+    if (ok) {
+      this.starPity = 0;
+      this.starStreak = 0; // vc263c — 성공하면 연속 실패 리셋
+    } else if (cur >= STAR_PITY_FROM) {
+      this.starPity = Math.min(STAR_PITY_MAX, this.starPity + STAR_PITY_STEP);
+    }
+    /* vc263c (버그 #5) — 하락 판정: 하락 구간에서 **3연속 실패**해야 1성 하락.
+     *  매 실패마다 떨어뜨리면 ★9 기대성장 −0.70 / ★14 −0.90 이라 ★15 도달이
+     *  사실상 불가(실측 81,635시도)였다. 3연속으로 바꾸면 16,113시도(5배)·
+     *  ★하락 2,510회(535배 감소). 규칙이 "3연속"이라 화면에서 예측 가능하다. */
+    const willFall =
+      !ok && cur >= UPGRADE_FALLBACK_FROM && ++this.starStreak >= STAR_FALLBACK_STREAK;
+    if (willFall) this.starStreak = 0; // 하락 발동 후 카운터 리셋
+    const streakTag =
+      !ok && cur >= UPGRADE_FALLBACK_FROM && this.starStreak > 0
+        ? ` · ${this.starStreak}/${STAR_FALLBACK_STREAK}연속`
+        : "";
     const slotName = slot === "weapon" ? "무기" : "방어구";
     const blessTag = bless > 0 ? ` · 주문서 +${bless * STAR_BLESS_RATE}%p` : "";
     const pityTag = pity > 0 ? ` · 실패가산 +${pity}%p` : "";
@@ -9183,17 +9209,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.spawnPickupText(this.x, this.y - 44, `강화 성공! ★${next}${blessTag}${pityTag}`, "#ffd76a");
       }
       if (slot === "armor") this.syncStarHp();
-    } else if (cur >= UPGRADE_FALLBACK_FROM) {
-      // +9 이상 실패 시 1성 하락 (스타포스식 리스크)
+    } else if (willFall) {
+      // ★9 이상 3연속 실패 → 1성 하락 (스타포스식 리스크, 완화됨)
       this.setStars(slot, cur - 1); // vc145 (#16) — 하락분도 해당 아이템에 기록
       this.scene.sfxUpgradeFail();
       this.scene.spawnStarForceBurst(this.x, this.y, cur, false);
-      this.scene.spawnPickupText(this.x, this.y - 44, `강화 실패… ★${cur - 1} 하락${blessTag}${pityTag}`, "#ff9a9a");
+      this.scene.spawnPickupText(this.x, this.y - 44, `3연속 실패… ★${cur - 1} 하락${blessTag}${pityTag}`, "#ff9a9a");
       if (slot === "armor") this.syncStarHp();
     } else {
       this.scene.sfxUpgradeFail();
       this.scene.spawnStarForceBurst(this.x, this.y, cur, false);
-      this.scene.spawnPickupText(this.x, this.y - 44, `강화 실패…${blessTag}${pityTag}`, "#ff9a9a");
+      this.scene.spawnPickupText(this.x, this.y - 44, `강화 실패…${blessTag}${pityTag}${streakTag}`, "#ff9a9a");
     }
     this.scene.emitHud();
     return ok ? "ok" : "fail";

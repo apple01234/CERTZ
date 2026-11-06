@@ -329,8 +329,11 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
     beats: [
       { sub: 2, dialogue: "", quest: { id: "hw4", type: "collect", title: "[사연] 제2의 성으로 가는 이동석", desc: "카르텔의 명령 — 폭풍지역을 넘어 제2의 성으로. 에벤트왕국으로 갈 수 있는 이동석을 찾아라.", targetLabel: "이동석의 좌표", reward: Math.round(3300 * G), expReward: 1183 } },
       { sub: 3, dialogue: "", quest: { id: "hw5", type: "collect", title: "[기믹] 크라켄의 먹물", desc: "저주받은 바다의 힘, 크라켄이 모든 것을 부수고 다녔다. 바다에 흩어진 크라켄의 먹물을 거둬 고대의 힘을 끊어라.", targetLabel: "크라켄의 먹물", reward: Math.round(3800 * G), expReward: 1183 } },
-      { sub: 4, dialogue: "", quest: { id: "hw5b", type: "boss", title: "바다의 군단장 해롤드", desc: "먹물의 근원을 끊었다. 이제 크라켄으로 변한 해롤드를 베어라.", targetLabel: "해롤드", reward: Math.round(4200 * G), expReward: 1183 } },
-      { sub: 4, dialogue: "howlrstone1Done", quest: { id: "hw5c", type: "reach", title: "다음 해역으로", desc: "열린 차원문에 닿아 다음 해역으로 이동해라.", targetLabel: "차원문" } }
+      /* vc263c (버그 #2) — 종전엔 sub4 에 boss/reach 퀘스트가 있었으나, 실제 보스 스테이지는
+       *  sub5(stages:5)다. 그 결과 sub4 에서 엉뚱한 보스(guardian 폴백)가 스폰되고
+       *  sub5 는 보스 없이 진행 불가 = "크라켄 퀘스트 완료 못함" 신고의 직접 원인.
+       *  보스·차원문 퀘스트는 이제 생성기가 보스 스테이지에 자동 주입하므로 여기서는 제거한다. */
+      { sub: 4, dialogue: "", quest: { id: "hw5b", type: "hunt", title: "해롤드의 호위대", desc: "먹물의 근원을 끊기 직전 — 크라켄으로 변한 해롤드를 지키는 호위대를 베어 길을 열어라.", need: 12, targetKey: "swampbeast", targetLabel: "해롤드의 호위", reward: Math.round(4200 * G), expReward: 1183 } }
     ],
     repeat: {need: 28, gold: Math.round(210 * G), exp: 210, title: "[반복] 해변 순찰", desc: "석양으로 물든 바다 — 해안선을 계속 지켜야 한다."},
     lvGate: {enter: 15, mid: 18},
@@ -493,7 +496,12 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
     flowers: 0, trees: 0, rocks: 12,
     enemies: [{ key: "wraith", count: 4 }, { key: "minion", count: 4 },
       { key: "helhound", count: 3 }, { key: "x3_necromancer", count: 3 },
-      { key: "x3_bigzombie", count: 3 }, { key: "x2_reeffish", count: 3 }],
+      { key: "x3_bigzombie", count: 3 }, { key: "x2_reeffish", count: 3 },
+      /* vc263c — Layer Lab 팩 4종 투입 (드라이브 제공 에셋).
+       *  "어둠의 성채"는 언데드·강령술사 톤이라 이 팩(어두운 다크판타지, 촘촘한 도트)이
+       *  기존 x3_* 카툰 톤보다 오히려 잘 맞는다. 밝은 본편에는 넣지 않는다. */
+      { key: "ll_skeleton", count: 3 }, { key: "ll_goblin", count: 3 },
+      { key: "ll_mushroom", count: 2 }, { key: "ll_flyingeye", count: 2 }],
     main: "wraith",
     beats: [
       { sub: 2, dialogue: "howlFourDoors", quest: { id: "hw16", type: "hunt", title: "첫 번째 문 — 물의 스칼렛", desc: "4개의 문을 클리어해야만 스칼렛이 있는 어둠의 왕좌로 갈 수 있다. 첫 번째 문의 수호자들을 처치하라.", need: 10, targetKey: "wraith", targetLabel: "물의 문 수호자", reward: Math.round(3600 * G), expReward: 252363 } },

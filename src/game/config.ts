@@ -112,6 +112,8 @@ export type SaveData = {
   starBless?: number;
   /** v1.0.8 — 강화 실패 가산 %p (★10+ 실패 연적 — 최대 15, 성공 시 리셋) */
   starPity?: number;
+  /** vc263c — 하락 구간 연속 실패 횟수 (3회 도달 시 1성 하락) */
+  starStreak?: number;
   /** v1.0.8 — 잠재 천장 카운터 (유니크 미달 연속 횟수) */
   potPity?: number;
   /** v3.0.7 — 장신구 스타포스 HP 마일스톤 가산 이력 (중복 가산 방지) */
@@ -417,6 +419,8 @@ export function loadSave(): SaveData | null {
     if (typeof d.starBless !== "number") d.starBless = 0;
     // v1.0.8 — 확률 천장 카운터 (구버전 세이브 호환)
     if (typeof d.starPity !== "number") d.starPity = 0;
+    // vc263c — 하락 연속 실패 카운터 (구버전 세이브 호환)
+    if (typeof d.starStreak !== "number") d.starStreak = 0;
     if (typeof d.potPity !== "number") d.potPity = 0;
     if (d.accessory === undefined) d.accessory = null;
     // v2.9 — 장신구 다중 슬롯 마이그레이션 (구 accessory 1개 → 배열)

@@ -219,12 +219,40 @@ export function DialogueBox({
     }
   };
 
+  /* ══ vc263c (버그 #7) — 상호작용 키가 대사창을 즉시 넘기던 버그 ══
+   *
+   * [증상] NPC/채집 키(Space)를 누르면 대사가 뜨자마자 사라지거나 첫 줄이 통째로
+   *        스킵된다. 사냥 중 Space 로 NPC 말을 걸면 "대사 스킵"으로 체감된다.
+   *
+   * [원인] 같은 물리 키다운 한 번이 두 컴포넌트에 동시에 전달된다:
+   *          ① Phaser WorldScene.update → JustDown(interact) → tryInteract() → 대사창 open
+   *          ② window keydown(DialogueBox) → advance() → 타이핑 즉시 완료/다음 줄
+   *        ②는 ①과 **같은 키 이벤트**인데, DialogueBox 가 그 사실을 알 방법이 없어
+   *        열리자마자 입력을 소비했다. (advanceThrottled 의 130ms 스로틀은 마우스 홀드
+   *        전용이라 키 경로엔 적용되지 않았고, 첫 호출은 항상 통과했다)
+   *
+   * [해결] 대사창이 열린 시각을 기록하고, 그로부터 OPEN_GUARD_MS 안에 들어온 키다운은
+   *        "대사를 연 그 입력"으로 간주해 무시한다. 이후 입력은 정상 진행된다.
+   *        (가드가 없으면 1프레임 만에 스킵되고, 있으면 사람이 인지할 수 있는 최소 시간 뒤
+   *         의도적으로 넘길 수 있다. 250ms 는 오탐 없이 체감상 즉시로 느껴지는 값) */
+  const OPEN_GUARD_MS = 250;
+  const openedAt = useRef(0);
+  useEffect(() => {
+    if (dialogue) openedAt.current = performance.now();
+  }, [dialogue]);
+
   /** 홀드 고속 진행 — 반복 키 입력/홀드 타이머가 일정 간격으로 advance 호출 */
   const advanceThrottled = () => {
     const now = performance.now();
     if (now - lastAdvance.current < 130) return;
     lastAdvance.current = now;
     advance();
+  };
+
+  /** 키/클릭 입력이 "대사를 연 그 입력"인지 판별 — 열림 직후 가드 */
+  const guardedAdvance = () => {
+    if (performance.now() - openedAt.current < OPEN_GUARD_MS) return;
+    advanceRef.current();
   };
 
   /* v1.1.1 (#1 대사 홀드) — 홀드 인터벌 stale closure 수정.
@@ -243,7 +271,9 @@ export function DialogueBox({
     const onKey = (e: KeyboardEvent) => {
       if (e.code === "Space" || e.code === "Enter" || e.code === "NumpadEnter") {
         e.preventDefault();
-        advanceRef.current();
+        /* vc263c (버그 #7) — 대사를 연 그 키다운은 advance 하지 않는다.
+         *  (열림 직후 250ms 가드 — 위 OPEN_GUARD_MS 주석 참조) */
+        guardedAdvance();
       }
     };
     window.addEventListener("keydown", onKey);

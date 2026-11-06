@@ -36,8 +36,67 @@ export type RoomLayout = {
 export function generateRoomLayout(seed: string, mapW: number, mapH: number): RoomLayout {
   const authored = authoredRoomLayout(seed, mapW, mapH);
   if (authored) return authored;
-  const cols = Math.max(4, Math.round(mapW / 400));
-  const rows = Math.max(3, Math.round(mapH / 310));
+
+  /* ══ vc263c (버그 #6) — 맵 구조가 전부 똑같던 문제 ══
+   *
+   * [실측] 9개 챕터 sub1 레이아웃 유사도(tools/measure_layouts.mjs) :
+   *        평균 쌍별 Jaccard 58.6%, 격자 크기 종류 4/9(5x4·5x3·4x3·6x4).
+   *        전부 같은 알고리즘(개미굴 랜덤워크) 하나로 생성돼 "구조가 다 똑같다"는
+   *        지적(#6)이 사실이었다. 맵 크기만 조금씩 달라 격자만 4종으로 갈렸을 뿐이다.
+   *
+   * [해결 1] 스테이지 키에서 챕터를 읽어 **구조 성격을 4종으로 분화**한다.
+   *          · grotto  : 기존 개미굴(터널 60% 연장) — 좁고 굽은 동굴
+   *          · cavern  : 넓은 방 위주(분기 55%) — 큰 홀 + 짧은 연결
+   *          · circuit : 회랑형(직선 관통 성향) — 긴 복도가 가로지르는 구조
+   *          · terrace : 계단식 — 행별로 개방 폭을 계단처럼 어긋나게
+   * [해결 2] **셀 밀도(cellTarget)를 성격별로 다르게** 해 격자 크기 자체를 벌린다.
+   *          (종전엔 전부 400px 고정 → 맵 크기가 비슷한 챕터는 격자까지 같아
+   *           floor plan 뼈대가 동일했다. 이게 "구조가 같다"의 가장 큰 원인)
+   *        시드 기반이라 같은 구역은 항상 같은 구조(리젠/멀티 안전) — 기존 계약 유지. */
+
+  type Style = "grotto" | "cavern" | "circuit" | "terrace";
+  /* 챕터 접두어 → 구조 성격. 인접 챕터가 같은 성격을 연속으로 쓰지 않게 배치한다. */
+  const CHAPTER_STYLE: Record<string, Style> = {
+    /* 본편 9챕터 */
+    forest: "grotto", kingdom: "cavern", alfheim: "terrace",
+    muspelheim: "circuit", niflheim: "cavern", cave: "grotto",
+    nidavellir: "terrace", hel: "circuit", abyss: "grotto",
+    /* DLC 10행성 */
+    dlcstargate: "circuit", dlcprisma: "terrace", dlcocean: "cavern",
+    dlcreverse: "circuit", dlcneocity: "terrace", dlcmech: "circuit",
+    dlcswallow: "cavern", dlcopinicia: "terrace", dlcnovel: "grotto",
+    dlcsernium: "circuit",
+    /* 재림 15구역 */
+    r1: "grotto", r2: "terrace", r3: "cavern", r4: "circuit", r5: "grotto",
+    r6: "terrace", r7: "cavern", r8: "circuit", r9: "grotto", r10: "terrace",
+    r11: "cavern", r12: "circuit", r13: "grotto", r14: "terrace", r15: "cavern",
+  };
+  /** 스테이지 키에서 챕터 접두어를 얻는다 (howlrstone12x3 → howlrstone12 → grotto) */
+  const styleOf = (s: string): Style => {
+    const hw = /^(howlrstone\d+)/.exec(s);
+    if (hw) {
+      /* 영프 15챕터 — 챕터 번호로 4종 순환 */
+      const n = parseInt(hw[1].replace("howlrstone", ""), 10);
+      return (["grotto", "terrace", "cavern", "circuit"] as Style[])[n % 4];
+    }
+    const rb = /^(r\d+)/.exec(s);
+    if (rb && CHAPTER_STYLE[rb[1]]) return CHAPTER_STYLE[rb[1]];
+    const base = /^([a-z]+?)\d/.exec(s)?.[1] ?? s;
+    return CHAPTER_STYLE[base] ?? "grotto";
+  };
+  const style = styleOf(seed);
+
+  /* 성격별 셀 목표 크기(px) — 격자 해상도 자체를 벌려 floor plan 뼈대를 다르게 한다.
+   *  작을수록 촘촘한 격자(좁은 굴·잔가지), 클수록 성긴 격자(큰 방). */
+  const CELL_TARGET: Record<Style, { w: number; h: number }> = {
+    grotto:  { w: 330, h: 250 }, // 촘촘 — 좁고 굽은 굴
+    cavern:  { w: 470, h: 380 }, // 성김 — 큰 홀
+    circuit: { w: 390, h: 300 }, // 중간 — 회랑
+    terrace: { w: 440, h: 270 }, // 가로로 긴 계단
+  };
+  const cell = CELL_TARGET[style];
+  const cols = Math.max(4, Math.round(mapW / cell.w));
+  const rows = Math.max(3, Math.round(mapH / cell.h));
   const cellW = mapW / cols;
   const cellH = mapH / rows;
   const total = cols * rows;
@@ -50,7 +109,20 @@ export function generateRoomLayout(seed: string, mapW: number, mapH: number): Ro
   const entry = idx(0, midRow);
   open[entry] = true;
 
-  const target = Phaser.Math.Clamp(Math.round(total * rng.realInRange(0.45, 0.62)), 8, total - 4);
+  /* 개방률·연장 확률·분기 편향을 성격별로 바꾼다 (구조가 실제로 달라지는 지점) */
+  const PROFILE: Record<Style, { openMin: number; openMax: number; extend: number; maxTarget?: number }> = {
+    grotto:  { openMin: 0.45, openMax: 0.62, extend: 0.60 }, // 좁고 긴 굴
+    cavern:  { openMin: 0.62, openMax: 0.80, extend: 0.30 }, // 넓은 방
+    circuit: { openMin: 0.34, openMax: 0.48, extend: 0.82 }, // 긴 회랑
+    terrace: { openMin: 0.52, openMax: 0.66, extend: 0.48 },
+  };
+  const prof = PROFILE[style];
+
+  const target = Phaser.Math.Clamp(
+    Math.round(total * rng.realInRange(prof.openMin, prof.openMax)),
+    8,
+    total - 4,
+  );
   let opened = 1;
   let tunnelTip = entry; // 터널을 길게 이어가는 팁
 
@@ -65,11 +137,41 @@ export function generateRoomLayout(seed: string, mapW: number, mapH: number): Ro
     return out;
   };
 
+  /* terrace — 행 단위 계단: 각 행의 개방 시작 열을 어긋나게 해 사선 지형을 만든다.
+   *  (굴 파기 전에 뼈대를 깔아 두면 이후 성장이 그 위를 따라가 계단 느낌이 남는다) */
+  if (style === "terrace") {
+    const shift = rng.between(0, 2);
+    for (let r = 0; r < rows; r++) {
+      const lead = Math.max(0, Math.min(cols - 2, Math.round((r + shift) * 0.8) - 1));
+      const width = 1 + rng.between(0, 1);
+      for (let w = 0; w < width; w++) {
+        const c = lead + w;
+        if (c >= 0 && c < cols) open[idx(c, r)] = true;
+      }
+    }
+    opened = open.filter(Boolean).length;
+    tunnelTip = bfsFarthest(open, cols, rows, entry);
+  }
+
+  /* circuit — 가로지르는 주 회랑을 먼저 깐다(입구 행 → 출구 측).
+   *  이후 성장이 회랑에 붙어 가지를 내므로 "긴 복도 + 곁방" 구조가 된다. */
+  if (style === "circuit") {
+    for (let c = 0; c < cols; c++) open[idx(c, midRow)] = true;
+    /* 세로 연결 회랑 1~2개 — 위치를 시드로 분산 */
+    const vCount = 1 + rng.between(0, 1);
+    for (let v = 0; v < vCount; v++) {
+      const vc = Phaser.Math.Clamp(rng.between(1, cols - 2), 1, cols - 2);
+      for (let r = 0; r < rows; r++) open[idx(vc, r)] = true;
+    }
+    opened = open.filter(Boolean).length;
+    tunnelTip = idx(cols - 1, midRow);
+  }
+
   let guard = total * 8;
   while (opened < target && guard-- > 0) {
-    // 60% — 마지막 셀에서 이어 굴착(터널) / 40% — 기존 개방 셀에서 분기
+    // 성격별 연장 확률 — 마지막 셀에서 이어 굴착(터널) vs 기존 개방 셀에서 분기
     let base = tunnelTip;
-    if (rng.frac() >= 0.6 || closedNeighbors(base).length === 0) {
+    if (rng.frac() >= prof.extend || closedNeighbors(base).length === 0) {
       const cands: number[] = [];
       for (let i = 0; i < total; i++) if (open[i] && closedNeighbors(i).length > 0) cands.push(i);
       if (cands.length === 0) break;
