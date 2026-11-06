@@ -137,7 +137,10 @@ const RANGER: ClassDef = {
   key: "ranger", tier: 1, parent: null,
   name: "궁수", title: "궁도",
   color: "#7dffa8", hex: 0x7dffa8,
-  atkPct: 8, critAdd: 12, defAdd: 0, hpAdd: 60, mpAdd: 20, speedPct: 15,
+  /* vc239 밸런스 — atkPct 8→12. 1차 화력 프록시가 티어 평균 대비 -8.7% 로 최하위였다
+   *  (크리 위주라 분산이 크고 기대딜이 낮음). 다른 1차를 올리면 상향 평준화가 되므로
+   *  최하위만 끌어올려 1차 스프레드를 1.16x → 1.07x 로 좁힌다. */
+  atkPct: 12, critAdd: 12, defAdd: 0, hpAdd: 60, mpAdd: 20, speedPct: 15,
   bossDmgPct: 0, mobDmgPct: 8,
   cdMult: 1, skillMult: 1,
   desc: "치명타와 기동성의 대가. 붓처럼 지도를 달린다.",
@@ -194,7 +197,7 @@ const GUARDIAN: ClassDef = {
   color: "#ffb08a", hex: 0xffb08a,
   atkPct: 6, critAdd: 0, defAdd: 8, hpAdd: 160, mpAdd: 0, speedPct: 5,
   bossDmgPct: 8, mobDmgPct: 0,
-  cdMult: 1, skillMult: 1,
+  cdMult: 1, skillMult: 1.16, // vc239 — 1→1.16 (2차 최하위 -19.4% 교정)
   desc: "아군의 방패. 무너지지 않는 성벽.",
 };
 const SNIPER: ClassDef = {
@@ -262,7 +265,7 @@ const WARLORD: ClassDef = {
   key: "warlord", tier: 3, parent: "berserker",
   name: "워로드", title: "전장의 지배자",
   color: "#ff5c3c", hex: 0xff5c3c,
-  atkPct: 20, critAdd: 8, defAdd: 0, hpAdd: 100, mpAdd: 0, speedPct: 5,
+  atkPct: 26, critAdd: 8, defAdd: 0, hpAdd: 100, mpAdd: 0, speedPct: 5,
   bossDmgPct: 12, mobDmgPct: 0,
   cdMult: 1, skillMult: 1.1,
   desc: "전장 그 자체가 무기. 최전선의 절대자.",
@@ -271,9 +274,9 @@ const PALADIN: ClassDef = {
   key: "paladin", tier: 3, parent: "guardian",
   name: "팔라딘", title: "성기사",
   color: "#ffd29a", hex: 0xffd29a,
-  atkPct: 8, critAdd: 4, defAdd: 12, hpAdd: 200, mpAdd: 20, speedPct: 5,
+  atkPct: 12, critAdd: 4, defAdd: 12, hpAdd: 200, mpAdd: 20, speedPct: 5,
   bossDmgPct: 8, mobDmgPct: 2,
-  cdMult: 1, skillMult: 1,
+  cdMult: 1, skillMult: 1.24, // vc239 — 1→1.24 (3차 최하위 -28.1% 교정)
   desc: "빛의 맹세로 서는 자. 불굴의 성벽.",
 };
 const EAGLEEYE: ClassDef = {
@@ -289,7 +292,7 @@ const TEMPEST: ClassDef = {
   key: "tempest", tier: 3, parent: "windrunner",
   name: "템페스트", title: "폭풍의 화신",
   color: "#b9ffe0", hex: 0xb9ffe0,
-  atkPct: 8, critAdd: 8, defAdd: 0, hpAdd: 80, mpAdd: 40, speedPct: 10,
+  atkPct: 14, critAdd: 8, defAdd: 0, hpAdd: 80, mpAdd: 40, speedPct: 10,
   bossDmgPct: 0, mobDmgPct: 14,
   cdMult: 0.85, skillMult: 1.05,
   desc: "폭풍처럼 몰아치는 화망.",
@@ -321,7 +324,7 @@ const ASSASSIN: ClassDef = {
   color: "#d89aff", hex: 0xd89aff,
   atkPct: 14, critAdd: 14, defAdd: 0, hpAdd: 40, mpAdd: 10, speedPct: 10,
   bossDmgPct: 12, mobDmgPct: 0,
-  cdMult: 0.85, skillMult: 1.1,
+  cdMult: 0.92, skillMult: 0.95, // vc239 — 과강 +20.1% 교정
   desc: "한 방의 치명타. 그림자 속의 죽음.",
 };
 const SWASHBUCKLER: ClassDef = {
@@ -339,7 +342,7 @@ const NIGHTBLADE: ClassDef = {
   color: "#c08aff", hex: 0xc08aff,
   atkPct: 18, critAdd: 16, defAdd: 0, hpAdd: 60, mpAdd: 30, speedPct: 10,
   bossDmgPct: 14, mobDmgPct: 2,
-  cdMult: 0.8, skillMult: 1.15,
+  cdMult: 0.8, skillMult: 1.02, // vc239 — 과강 +19.6% 교정
   desc: "어둠이 곧 무기. 베이고 나서 보이지 않는다.",
 };
 const DUELIST: ClassDef = {
@@ -366,7 +369,7 @@ const STORMCAPTAIN: ClassDef = {
   color: "#ffd88a", hex: 0xffd88a,
   atkPct: 26, critAdd: 6, defAdd: 4, hpAdd: 120, mpAdd: 40, speedPct: 8,
   bossDmgPct: 10, mobDmgPct: 16,
-  cdMult: 0.9, skillMult: 1.2,
+  cdMult: 0.9, skillMult: 1.1,  // vc239 — 1.2→1.1 (3차 과강 +12% 교정)
   desc: "폭풍을 등지고 항해한다. 배가 지나간 자리에 뇌우가 남는다.",
 };
 /* 파우더마스터 — 화약의 정점: 설치형 지뢰 + 광범위 폭발 */
@@ -384,7 +387,7 @@ const WARBRINGER: ClassDef = {
   key: "warbringer", tier: 4, parent: "warlord",
   name: "워브링어", title: "전쟁의 화신",
   color: "#ff3c1c", hex: 0xff3c1c,
-  atkPct: 30, critAdd: 10, defAdd: 5, hpAdd: 300, mpAdd: 0, speedPct: 5,
+  atkPct: 34, critAdd: 10, defAdd: 5, hpAdd: 300, mpAdd: 0, speedPct: 5,
   bossDmgPct: 18, mobDmgPct: 4,
   cdMult: 0.9, skillMult: 1.25,
   desc: "전쟁 그 자체. 세계를 가르는 일격.",
@@ -393,9 +396,9 @@ const CRUSADER: ClassDef = {
   key: "crusader", tier: 4, parent: "paladin",
   name: "크루세이더", title: "심판의 빛",
   color: "#ffe29a", hex: 0xffe29a,
-  atkPct: 15, critAdd: 8, defAdd: 20, hpAdd: 400, mpAdd: 40, speedPct: 5,
+  atkPct: 26, critAdd: 8, defAdd: 20, hpAdd: 400, mpAdd: 40, speedPct: 5,
   bossDmgPct: 12, mobDmgPct: 6,
-  cdMult: 0.9, skillMult: 1.15,
+  cdMult: 0.9, skillMult: 1.42,  // vc239 — 1.32→1.42 (4차 최하위 -13.7% 교정)
   desc: "불굴의 성벽이 심판의 검을 든다.",
 };
 const DEADEYE: ClassDef = {
@@ -435,7 +438,7 @@ const ETERNAL: ClassDef = {
   /* v1.4.30 (#7 이터널 실성능 강화) — skillMult 1.2→1.4·atkPct 18→24:
    *  특화는 사냥(mob)+보스 골고루 — 지속전 강점(짧은 쿨·CC·힐)이 실제 화력으로 이어지게. */
   bossDmgPct: 14, mobDmgPct: 14,
-  cdMult: 0.7, skillMult: 1.4, // v1.4.30 (#7) — 이터널 1.2→1.4 (실성능 강화 핵심 레버)
+  cdMult: 0.7, skillMult: 1.22, // vc239 — 1.4→1.22 (4차 과강 +19% 교정)
   desc: "모든 마법이 그의 이름 앞에 무릎 꿇는다.",
 };
 const SHADOWLORD: ClassDef = {
@@ -444,7 +447,7 @@ const SHADOWLORD: ClassDef = {
   color: "#a86aff", hex: 0xa86aff,
   atkPct: 25, critAdd: 25, defAdd: 0, hpAdd: 150, mpAdd: 60, speedPct: 15,
   bossDmgPct: 18, mobDmgPct: 2,
-  cdMult: 0.7, skillMult: 1.3,
+  cdMult: 0.7, skillMult: 1.13, // vc239 — 과강 +19.6% 교정
   desc: "그림자가 그를 따라 세계를 덮는다.",
 };
 const BLADEMASTER: ClassDef = {
@@ -476,7 +479,7 @@ const DREADNOUGHT: ClassDef = {
   color: "#ff6a3d", hex: 0xff6a3d,
   atkPct: 34, critAdd: 14, defAdd: 0, hpAdd: 180, mpAdd: 60, speedPct: 6,
   bossDmgPct: 26, mobDmgPct: 8,
-  cdMult: 0.85, skillMult: 1.45,
+  cdMult: 0.85, skillMult: 1.30, // vc239 — 1.45→1.30 (4차 최상위 +13.5% 교정)
   desc: "한 발의 포성이 전장을 침묵시킨다.",
 };
 

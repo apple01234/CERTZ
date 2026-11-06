@@ -28,6 +28,10 @@ import { hookLoaderForGuard, runTexGuardCycle, getTexGuardStats, installEngineFr
  */
 
 /** v3.0.2 — 신규 외부 에셋 정의 (CC0) */
+/** vc239 (지시 #2·#12) — PixelLab 생성 에셋. 게임이 실제로 쓰는 이름만 등록한다. */
+const VC239_VFX = ["vfx_holy_judgement", "vfx_void_collapse", "vfx_tidal_wave"] as const;
+const VC239_MONSTERS = ["mob_slime", "mob_goblin", "mob_swampbeast", "boss_harold"] as const;
+const VC239_DIRS = ["south", "north", "east", "west"] as const;
 const X2_MONSTERS = [
   "x2_frog", "x2_rat", "x2_bat", "x2_firebird", "x2_frostfly",
   "x2_snail", "x2_stonegolem", "x2_darkhound", "x2_reeffish",
@@ -728,6 +732,14 @@ export class BootScene extends Phaser.Scene {
      *  p2/p3 은 로드하지 않는다 — 참조하는 코드가 0곳이라 180프레임이 버려지고 있었다.
      *  아트는 `public/assets/fa/p2·p3` 에 남아 있고, 캐릭터 선택에 붙일 때 로드하면 된다. */
     this.load.atlas("fa_p1", "fa/p1.png", "fa/p1.json");
+    /* vc239 — PixelLab 생성 에셋 (지시 #2·#12).
+     *  · VFX 3종: 성광 심판 / 공허 붕괴 / 조류 파도 — Phaser 아틀라스(프레임 다수).
+     *  · 몬스터 4종 × 4방향: 남/북/동/서 단일 프레임.
+     *  경로를 `vc239/` 하위 폴더로 분리해 기존 팩과 섞이지 않게 한다.
+     *  로드 실패해도 게임이 멈추지 않도록 존재 확인 후 쓰는 쪽(StudioFX)에서 가드한다. */
+    for (const k of VC239_VFX) this.load.atlas(k, `vc239/${k}.png`, `vc239/${k}.json`);
+    for (const k of VC239_MONSTERS)
+      for (const d of VC239_DIRS) this.load.image(`${k}_${d}`, `vc239/${k}_${d}.png`);
     for (const key of TILE_PNG_KEYS) this.load.image(key, `${key}.png`);
     /* vc179 (지시 #11) — 사용자 제공 UNI VFX 팩에서 추출한 이펙트 6종.
      *  ASSET_LIST는 `assets/<key>.webp` 평면 경로를 쓰므로 하위 폴더(vfx/)는 별도 로드. */

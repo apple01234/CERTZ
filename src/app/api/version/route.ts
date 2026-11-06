@@ -54,8 +54,9 @@ const LATEST_CODE = androidVer.code;
  *  package.json 과 build.gradle versionName 이 다르면 APK 실제 위치를 따라간다. */
 const LATEST_TAG = androidVer.name || LATEST_VERSION;
 const VERSION_NOTE =
-  /* vc233 — 버전을 올릴 때 이 문구도 함께 갱신한다(업데이트 배너 본문). */
-  "v2.0.7 (vc243) — 정본 명칭 정리: 무기명 손상 표기(안내인션) 수정, 기본 이름을 하루로(플레이어 닉네임 변경 가능), CANON_NAMES 정본 문서.";
+  /* vc239 — 버전을 올릴 때 이 문구도 함께 갱신한다(업데이트 배너 본문).
+   *  v2.0.7(vc243) 에서 멈춰 있어 v2.1.3 배포 후에도 옛 내용이 배너에 떴다. */
+  "v2.1.3 (vc249) — 플레이어 외형 교체, 퀘스트 스폰 불가 12건+반복의뢰 462건 수정, 구역별 대사·컷씬 확장, 직업 밸런스 재조정.";
 const RELEASE_BASE = `https://github.com/apple01234/CERTZ/releases/download/v${LATEST_TAG}`;
 const APK_MIRROR =
   /* 파일명의 vc{code} 는 build.gradle versionCode 와 일치해야 한다(불일치 시 404).

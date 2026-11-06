@@ -909,3 +909,70 @@ export function spawnEnemyElemFx(
       break;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+ * vc239 (지시 #2·#12) — PixelLab 생성 VFX 재생.
+ *
+ * [왜 별도 함수인가] 위의 spawnEnemyElemFx / spawnClassAccent 는 기존 vfx2/vfx3
+ *  단일 이미지를 쓰는 경로다. 여기 3종은 **다중 프레임 아틀라스**(gif→시트 변환)라
+ *  Phaser animation 으로 재생해야 한다. 섞으면 기존 연출이 깨진다.
+ *
+ * [규격] public/assets/vc239/<key>.png + .json (프레임 이름 <key>__<n>)
+ *  프레임 수는 생성 시 자동 결정되므로 textures.json 으로 실측해 애니를 만든다.
+ *  캔버스 크기가 서로 달라(75x182 / 128x128 / 224x195) scale 로 정규화한다.
+ * ═══════════════════════════════════════════════════════════════ */
+const VC239_VFX_KEYS = ["vfx_holy_judgement", "vfx_void_collapse", "vfx_tidal_wave"] as const;
+export type Vc239FxKey = (typeof VC239_VFX_KEYS)[number];
+
+/** 아틀라스에서 프레임 이름 목록을 읽어 `<key>-anim` 을 1회 등록한다. */
+export function ensureVc239Anim(scene: SceneLike, key: Vc239FxKey): string | null {
+  const animKey = `${key}-anim`;
+  const anims = (scene as unknown as { anims?: Phaser.Animations.AnimationManager }).anims;
+  if (!anims) return null;
+  if (anims.exists(animKey)) return animKey;
+  let names: string[] = [];
+  try {
+    const tex = (scene as unknown as { textures: Phaser.Textures.TextureManager }).textures;
+    if (!tex.exists(key)) return null;
+    const t = tex.get(key);
+    names = t.getFrameNames().sort((a, b) => {
+      const na = Number(a.split("__").pop()), nb = Number(b.split("__").pop());
+      return na - nb;
+    });
+  } catch { return null; }
+  if (!names.length) return null;
+  try {
+    anims.create({
+      key: animKey,
+      frames: names.map((n) => ({ key, frame: n })),
+      frameRate: 14, // PixelLab 기본 fps
+      repeat: 0,
+    });
+  } catch { return null; }
+  return animKey;
+}
+
+/** VFX 재생 — targetScale 은 화면상 목표 크기(px). 캔버스가 달라 자동 정규화한다. */
+export function spawnVc239Fx(
+  scene: SceneLike, x: number, y: number, key: Vc239FxKey, targetScale = 1, tint?: number,
+) {
+  const animKey = ensureVc239Anim(scene, key);
+  if (!animKey) return null;
+  const s = scene as unknown as {
+    add: { sprite: (x: number, y: number, tex: string, frame?: string) => Phaser.GameObjects.Sprite };
+    time?: { delayedCall: (ms: number, cb: () => void) => unknown };
+  };
+  let spr: Phaser.GameObjects.Sprite;
+  try { spr = s.add.sprite(x, y, key, "0"); } catch { return null; }
+  if (!spr) return null;
+  spr.setDepth(24).setBlendMode(Phaser.BlendModes.ADD).setOrigin(0.5, 0.65);
+  if (tint !== undefined) spr.setTint(tint);
+  // 캔버스 최대변이 목표 크기에 맞도록 스케일 (기본 128px 기준)
+  const maxSide = Math.max(spr.width || 1, spr.height || 1);
+  spr.setScale((128 / maxSide) * targetScale);
+  try { spr.play(animKey); } catch { /* 애니 실패 → 정지 프레임 */ }
+  spr.once("animationcomplete", () => { try { spr.destroy(); } catch { /* noop */ } });
+  // 애니 완료 이벤트를 놓쳐도 누수되지 않게 안전 파괴
+  if (s.time) s.time.delayedCall(4000, () => { try { if (spr.active) spr.destroy(); } catch { /* noop */ } });
+  return spr;
+}
