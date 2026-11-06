@@ -740,6 +740,9 @@ export class BootScene extends Phaser.Scene {
     for (const k of VC239_VFX) this.load.atlas(k, `vc239/${k}.png`, `vc239/${k}.json`);
     for (const k of VC239_MONSTERS)
       for (const d of VC239_DIRS) this.load.image(`${k}_${d}`, `vc239/${k}_${d}.png`);
+    /* vc239 — 타일셋 16장 (Wang, lower/upper 2지형). 32×32 원본 그대로 로드하고
+     *  쓰는 쪽에서 setScale 로 맞춘다. */
+    for (let i = 0; i < 16; i++) this.load.image(`vc239_tile_${i}`, `vc239/tileset/wang_${i}.png`);
     for (const key of TILE_PNG_KEYS) this.load.image(key, `${key}.png`);
     /* vc179 (지시 #11) — 사용자 제공 UNI VFX 팩에서 추출한 이펙트 6종.
      *  ASSET_LIST는 `assets/<key>.webp` 평면 경로를 쓰므로 하위 폴더(vfx/)는 별도 로드. */

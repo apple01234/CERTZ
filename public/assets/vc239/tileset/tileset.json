@@ -1,0 +1,92 @@
+{
+ "tile_size": {
+  "width": 32,
+  "height": 32
+ },
+ "terrains": [
+  "lower",
+  "upper"
+ ],
+ "tiles": [
+  {
+   "id": "13",
+   "name": "wang_13",
+   "terrain": null
+  },
+  {
+   "id": "10",
+   "name": "wang_10",
+   "terrain": null
+  },
+  {
+   "id": "4",
+   "name": "wang_4",
+   "terrain": null
+  },
+  {
+   "id": "12",
+   "name": "wang_12",
+   "terrain": null
+  },
+  {
+   "id": "6",
+   "name": "wang_6",
+   "terrain": null
+  },
+  {
+   "id": "8",
+   "name": "wang_8",
+   "terrain": null
+  },
+  {
+   "id": "57bb97ab-8a0f-45a1-b69f-c58531dbff6b",
+   "name": "wang_0",
+   "terrain": null
+  },
+  {
+   "id": "1",
+   "name": "wang_1",
+   "terrain": null
+  },
+  {
+   "id": "11",
+   "name": "wang_11",
+   "terrain": null
+  },
+  {
+   "id": "3",
+   "name": "wang_3",
+   "terrain": null
+  },
+  {
+   "id": "2",
+   "name": "wang_2",
+   "terrain": null
+  },
+  {
+   "id": "5",
+   "name": "wang_5",
+   "terrain": null
+  },
+  {
+   "id": "ee65a421-0d0b-4ad5-b643-4a29ca1031af",
+   "name": "wang_15",
+   "terrain": null
+  },
+  {
+   "id": "14",
+   "name": "wang_14",
+   "terrain": null
+  },
+  {
+   "id": "9",
+   "name": "wang_9",
+   "terrain": null
+  },
+  {
+   "id": "7",
+   "name": "wang_7",
+   "terrain": null
+  }
+ ]
+}
