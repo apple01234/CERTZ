@@ -55,6 +55,9 @@ export type DamageInput = {
   sTier: number;
   /** 궁극기 슬롯 0=없음, 1=제1궁극기, 2=제2궁극기 */
   ultSlot: number;
+  /** 극딜 지속시간 보정 (지시 #9) — ultHold.ultBurstMultOf(). 미지정 = 1 (보정 없음).
+   *  궁극기 슬롯일 때만 의미가 있다: 짧은 시전 = 1 초과, 긴 시전 = 1 미만. */
+  ultBurst?: number;
   /** 분노/자기공격력 버프 배율 (1 = 없음) */
   rage: number;
   /** 환생 데미지 배율 (1 = 없음) */
@@ -100,7 +103,12 @@ export function damageMultiplier(d: Omit<DamageInput, "atkTotal" | "crit" | "cri
    *  폭락한다. 그래서 "궁극기 슬롯"을 1·2 로 **명시**해 판정한다. */
   const isUlt = d.ultSlot === 1 || d.ultSlot === 2;
   const fifth = d.isSkill && d.isFifth && !isUlt ? FIFTH_SKILL_MULT : 1;
-  const ultMult = d.ultSlot === 1 ? FIFTH1_MULT : d.ultSlot === 2 ? FIFTH2_MULT : 1;
+  /* 지시 #9 — 극딜 지속시간 보정. 궁극기에만 곱한다(일반 스킬 배율은 종전 그대로).
+   *  ultBurst 미지정(=undefined) → 1 → 종전과 **완전히 동일**하다.
+   *  근거·상수는 ultHold.ts 의 BURST_* 참고. */
+  const burst = isUlt ? (d.ultBurst ?? 1) : 1;
+  const ultMult =
+    (d.ultSlot === 1 ? FIFTH1_MULT : d.ultSlot === 2 ? FIFTH2_MULT : 1) * burst;
   const tierScl =
     d.isSkill && !isUlt ? (1 + TIER_LADDER * Math.max(0, d.sTier - 1)) * SKILL_PWR : 1;
 

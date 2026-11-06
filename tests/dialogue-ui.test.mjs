@@ -16,8 +16,12 @@ import path from 'node:path';
  *  3) 초상화가 `h-14 w-14 self-start` 로 고정 높이라, 긴 대사에서 텍스트 블록과
  *     기준선이 어긋나 프레임이 떠 보였다.
  *
+ * [vc270 정정 — 유저 지시 "NPC 초상화 크기가 자꾸 바뀜"] 위 3)의 처방(self-stretch)이
+ *  잘못이었다. stretch 는 초상화 높이를 대사 줄 수에서 가져와 **대사마다 크기가 바뀐다**.
+ *  기준선 문제는 초상화 고정 + 상단 정렬(self-start)로 푼다. 크기는 항상 같아야 한다.
+ *
  * [수정 원칙] 조작법은 **문장이 아니라 기호**로. 진행은 깜빡이는 화살표(▸/✕),
- *  키 힌트는 첫 줄에서 한 번만. 커서는 얇은 막대. 초상화는 stretch.
+ *  키 힌트는 첫 줄에서 한 번만. 커서는 얇은 막대. 초상화는 고정 크기.
  */
 
 const ROOT = path.resolve(import.meta.dirname, '..');
@@ -58,11 +62,23 @@ test('타이핑 커서가 텍스트 편집기 문자(▌)가 아니다', () => {
   assert.match(src, /w-\[2px\]/);
 });
 
-test('초상화가 텍스트 블록 높이에 맞춰 늘어난다', () => {
+test('초상화는 대사 길이와 무관하게 고정 크기다', () => {
   const src = read('src/components/game/DialogueBox.tsx');
-  /* self-start + 고정 h-14 는 긴 대사에서 어긋난다 */
-  assert.equal(/h-14 w-14 shrink-0 self-start/.test(src), false, '고정 높이 초상화가 남아 있다');
-  assert.match(src, /self-stretch/);
+  /* 주석에는 과거 사유가 적혀 있으므로 제외하고 실제 JSX 코드만 검사한다 */
+  const code = src
+    .split('\n')
+    .filter((l) => {
+      const t = l.trim();
+      return !t.startsWith('*') && !t.startsWith('/*') && !t.startsWith('//') && !t.startsWith('{/*');
+    })
+    .join('\n');
+  /* vc270 (유저 지시 "NPC 초상화 크기가 자꾸 바뀜") — vc250 의 self-stretch 계약을 뒤집는다.
+   *  stretch 는 초상화 높이를 행 높이(=대사 줄 수)에서 가져와, 긴 대사일수록 초상화가 커지고
+   *  짧으면 작아졌다. 초상화 프레임은 고정 h/w + self-start 여야 한다. */
+  assert.match(code, /h-14 w-14 shrink-0 self-start/, '고정 높이 초상화(h-14 w-14 self-start)가 없다');
+  assert.equal(/self-stretch/.test(code), false, 'self-stretch 가 남아 있다(대사 줄 수에 따라 초상화가 변함)');
+  /* 뷰포트에 따라 폭만 바뀌면 안 된다 — sm: 에서 높이도 함께 고정 */
+  assert.match(code, /sm:h-20 sm:w-20/);
 });
 
 test('조작 키 안내는 첫 줄에서 한 번만 나온다', () => {

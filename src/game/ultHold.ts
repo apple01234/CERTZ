@@ -18,6 +18,23 @@
  *   1차(쿨 60초)  : 5,000 ~ 30,000ms
  *   2차(쿨 120초) : 10,000 ~ 60,000ms
  *   → 4차로 갈수록 길고, 5차 최종 티어가 가장 길다. 쿨타임이 긴 쪽이 시전도 길다.
+ *     (이 규칙은 **시전 시간**에만 해당한다 — 딜배율은 아래 #9 규칙이 따로 정한다)
+ *
+ * ── 극딜 지속시간 ↔ 딜배율 (유저 지시 #9) ──────────────────────────────
+ * 종전 위 문장이 이 파일의 **유일한** 규칙처럼 적혀 있었지만, 사실은 반쪽이었다.
+ *   "직업별로 극딜 지속시간이 짧은 직업들은 딜 배율을 높게 하고,
+ *    긴 직업들은 짧은 직업에 비해 딜 배율을 좀 적게 해"
+ *
+ * 창이 길다 = 같은 배율로 더 오래 때린다 = 총 피해가 그냥 더 크다. 손대지 않으면
+ * 시전이 긴 4차 직업이 극딜 총량에서 항상 이기고, 짧은 창 직업(전사/궁수/도적 1차·
+ * 2차 라인)은 구조적으로 불리하다. 그래서 **창 길이의 역수**로 배율을 보정한다:
+ *
+ *   짧은 창 → 높은 배율 (몰아서 터뜨린다 · spiky)
+ *   긴 창   → 낮은 배율 (고르게 갈린다 · steady)
+ *   ⇒ 창 길이 × 배율 ≈ 일정 = "한 번의 극딜" 총량이 직업 간에 비슷해진다.
+ *
+ * 배율은 **궁극기 피해에만** 곱한다(일반 스킬·기본공격 불변). 1차·2차는 각자 자기
+ * 분포로 정규화하므로, 2차가 1차보다 센 기존 비율(×5 ÷ ×3 = 1.67배)은 그대로 남는다.
  */
 
 /** 1차 궁극기 시전 시간(ms). 계열 기본 → 3차 → 4차 순으로 길어진다. */
@@ -112,6 +129,55 @@ export const ULT5_MIN = 5000;
 export const ULT5_MAX = 30000;
 export const ULT5B_MIN = 10000;
 export const ULT5B_MAX = 60000;
+
+/* ================= 극딜 지속시간 → 딜배율 정규화 (유저 지시 #9) =================
+ *
+ *  mult(hold) = clamp( (REF / hold) ^ EXP , FLOOR, CEIL )
+ *
+ * 상수 근거 — 실제 분포(35직업, ULT5_HOLD_MS 실측):
+ *   1차: min 6,000 · 중앙 13,000 · 평균 14,557 · max 30,000
+ *   2차: min 12,000 · 중앙 26,000 · 평균 29,114 · max 60,000
+ *   → 2차는 **전 직업 예외 없이 정확히 1차의 2배**다. 그래서 REF 도 2배로 두면
+ *     두 슬롯이 **같은 배율표**를 공유한다(계산도, 검증도 한 벌).
+ *
+ * EXP = 0.5 (제곱근) — 시간은 선형, 체감 화력은 그만큼 아니다. 1.0(완전 반비례)이면
+ *   dreadnought(0.40배) → warrior(2.0배)로 5배 차이가 나 "긴 창 직업이 쓰레기"가 되고,
+ *   0.35면 1.76배로 너무 밋밋해 유저가 요구한 차등이 체감되지 않는다.
+ *   0.5 는 양 끝 2.2배 → 클램프 후 2.15배 — "확실히 다르지만 누구도 못 쓰는 직업은 없다".
+ *
+ * REF = 12,000 / 24,000 — 분포의 **기하평균(12,942 / 25,884)** 보다 살짝 아래.
+ *   REF 를 그대로 12,000 으로 두는 쪽이 읽기 쉽고, 클램프가 양 끝 4직업에서만
+ *   걸려 나머지 31직업은 순수 곡선을 탄다. 평균 배율 0.991 (−0.9%) — 전역 파워크리프 없음.
+ *
+ * FLOOR = 0.65 / CEIL = 1.40 — 이 이상 벌어지면 직업 선택이 "어떤 극딜을 쓰느냐"가
+ *   아니라 "얼마나 세게 때리느냐" 하나로 납작해진다. 10배 같은 배율은 금지.
+ *   (실제로 걸리는 곳: 천장 = warrior·ranger·thief 6,000ms / 바닥 = dreadnought 30,000ms)
+ *
+ * ponytail: 선형 곡선 1개로 충분하다. 지수·구간별 커브가 필요해지면
+ *   REF/EXP 를 늘리지 말고 표(per-class)로 바꾸는 게 낫다 — 그때는 테스트의
+ *   단조성 단언을 표 검증으로 교체할 것. */
+export const BURST_EXP = 0.5;
+export const BURST_REF1 = 12000;
+export const BURST_REF2 = 24000;
+export const BURST_FLOOR = 0.65;
+export const BURST_CEIL = 1.4;
+
+/** 시전 시간 → 극딜 배율. 짧을수록 높다 (단조 감소). */
+export function burstMultOf(holdMs: number, refMs: number): number {
+  const v = Math.pow(refMs / Math.max(1, holdMs), BURST_EXP);
+  return Math.max(BURST_FLOOR, Math.min(BURST_CEIL, v));
+}
+
+/** 궁극기 슬롯(1|2)의 극딜 배율. 슬롯 0/그 외는 1 (일반 스킬 불변). */
+export function ultBurstMultOf(
+  slot: number,
+  key: string | null | undefined,
+  fam?: string | null,
+): number {
+  if (slot === 1) return burstMultOf(ult5HoldOf(key, fam), BURST_REF1);
+  if (slot === 2) return burstMultOf(ult5bHoldOf(key, fam), BURST_REF2);
+  return 1;
+}
 
 /** 1차 시전 시간 조회. 미등록 직업은 계열 기본값으로 폴백하고, 결과는 항상 대역 안이다. */
 export function ult5HoldOf(key: string | null | undefined, fam?: string | null): number {

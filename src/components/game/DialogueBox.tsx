@@ -303,13 +303,15 @@ export function DialogueBox({
       onPointerCancel={stopHold}
     >
       {/* v1.0.20 — 대화창: 게임형 프레임 (우드 프레임 + 금 스피커 네임플레이트)
-       *  vc250 (지시 #5) — 초상화와 텍스트의 기준선을 맞추고(self-start → stretch),
-       *   패딩을 좌우 비대칭으로 줘 이름표가 프레임에 붙어 보이게 했다(사람이 손본 느낌). */}
+       *  vc250 (지시 #5) — 패딩을 좌우 비대칭으로 줘 이름표가 프레임에 붙어 보이게 했다(사람이 손본 느낌).
+       *  vc270 (버그 #2 "NPC 초상화 크기가 자꾸 바뀜") — vc250 의 self-stretch 를 되돌린다.
+       *   stretch 는 초상화 높이를 **행 높이(=대사 줄 수)** 에서 가져와서, 긴 대사일수록 초상화가
+       *   커지고 짧으면 작아졌다(sm: 에서 폰트/패딩이 바뀌어 폭까지 변함). 초상화는 고정 크기여야 한다. */}
       <div className="game-panel flex w-full max-w-2xl cursor-pointer touch-none items-stretch gap-2.5 py-2.5 pl-2.5 pr-3 sm:gap-3 sm:py-3.5 sm:pl-3.5 sm:pr-4">
         {/* v3.0.24 — 화자 초상화 (클래식 RPG 대화창 레이아웃: 좌측 초상 프레임) */}
         {portrait && (
           <div
-            className="game-chip relative w-14 shrink-0 self-stretch overflow-hidden sm:w-20"
+            className="game-chip relative h-14 w-14 shrink-0 self-start overflow-hidden sm:h-20 sm:w-20"
             style={{ borderColor: `${portrait.tone}88` }}
           >
             {/* v3.0.25 (#비율 찌그러짐) — object-cover + object-top: 원본 비율 유지하며

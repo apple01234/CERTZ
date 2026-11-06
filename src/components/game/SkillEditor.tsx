@@ -25,6 +25,7 @@ import {
   zoneFor,
   type SkillDef, type SkillSlot, type SkillZoneShape,
 } from "@/game/skillEditorCore";
+import AssetBrowser from "./AssetBrowser";
 
 /* ─────────────────────────── 상수 ─────────────────────────── */
 
@@ -60,6 +61,10 @@ export default function SkillEditor() {
   const [atkTotal, setAtkTotal] = useState(800);
   const [crit, setCrit] = useState(false);
   const [isFifth, setIsFifth] = useState(false);
+  /* vc236 — 판정 미리보기 위에 얹을 이펙트 이미지. 스킬 정의에 없는 **보기 전용** 값이라
+   *  문서(doc)에 넣지 않는다 — 넣으면 저장 포맷이 바뀌어 기존 JSON 과 호환이 깨진다. */
+  const [fxUrl, setFxUrl] = useState<string | null>(null);
+  const [fxName, setFxName] = useState("");
 
   const history = useRef<Doc[]>([]);
   const lastPushAt = useRef(0);
@@ -165,6 +170,21 @@ export default function SkillEditor() {
   const dps = dmg && cd > 0 ? Math.round((dmg.total / (cd / 1000)) * 10) / 10 : 0;
 
   /* ── 캔버스: 판정 미리보기 ── */
+  /* vc236 — 이펙트 썸네일 캐시. 스킬 메이커에서 지금까지 스킬의 "모양"은 판정 도형뿐이었고
+   *  실제 이펙트가 어떻게 보이는지는 확인할 수 없었다. 고른 FX 이미지를 판정 위에 얹는다.
+   *  파일이 1002개라 매 렌더 new Image() 는 금지 — key 로 캐시한다. */
+  const fxCache = useRef<Map<string, HTMLImageElement>>(new Map<string, HTMLImageElement>());
+  const [fxTick, setFxTick] = useState(0);
+  useEffect(() => {
+    if (!fxUrl) return;
+    const hit = fxCache.current.get(fxUrl);
+    if (hit?.complete) return;
+    const img = new Image();
+    img.onload = () => setFxTick((n) => n + 1);
+    img.src = fxUrl;
+    fxCache.current.set(fxUrl, img);
+  }, [fxUrl]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !cur) return;
@@ -244,7 +264,28 @@ export default function SkillEditor() {
     ctx.textAlign = "left";
     const reach = z.kind === "beam" ? z.length : z.radius;
     ctx.fillText(`${z.kind} · ${Math.round(reach)}px · ×${Math.round(VIEW_SCALE * 100)}%`, 8, 12);
-  }, [cur]);
+
+    /* vc236 — 고른 이펙트를 판정 영역 위에 반투명으로 얹는다.
+     *  판정 도형(reach)에 맞춰 크기를 정규화하므로, 이펙트가 판정보다 훨씬 크거나 작은지
+     *  한눈에 보인다 — 이게 이 미리보기의 목적이다. */
+    if (fxUrl) {
+      const img = fxCache.current.get(fxUrl);
+      if (img && img.complete && img.naturalWidth > 0) {
+        const target = Math.min(VIEW_W - 80, (reach * 2) * VIEW_SCALE);
+        const k = target / Math.max(img.naturalWidth, img.naturalHeight);
+        const w = img.naturalWidth * k, h = img.naturalHeight * k;
+        ctx.save();
+        ctx.globalAlpha = 0.55; // 판정 도형이 가려지지 않게
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, ox - w / 2, oy - h / 2, w, h);
+        ctx.restore();
+        ctx.fillStyle = "#ffffff66";
+        ctx.font = "8px system-ui, sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(`FX: ${fxName}`, 8, VIEW_H - 6);
+      }
+    }
+  }, [cur, fxUrl, fxName, fxTick]);
 
   /* ── 저장 / 불러오기 ── */
   const save = useCallback(() => {
@@ -274,6 +315,52 @@ export default function SkillEditor() {
       } catch { setStatus("불러오기 실패 — JSON 오류"); }
     };
     rd.readAsText(f);
+  };
+
+  /* vc236 — 묶음 단위 내보내기/가져오기.
+   *
+   * [왜 따로 두나] 위 save/load 는 이미 **전체 묶음**을 다룬다(문서 단위). 그런데 UI 상
+   *  "저장" 이 실행취소와 헷갈리고, 부분 묶음(선택한 스킬만)을 뽑을 방법이 없었다.
+   *  여기서는 (a) 현재 문서 전체를 명시적 "묶음 내보내기" 로 내려받고
+   *  (b) 다른 곳에서 만든 묶음을 "묶음 가져오기" 로 **병합**(ID 충돌 시 새 ID)한다.
+   *  기존 save/load 는 손대지 않는다 — 동작 보존. */
+  const [mergeInfo, setMergeInfo] = useState("");
+
+  const exportBundle = useCallback(() => {
+    const json = serializeSkills({ name: doc.name, skills: doc.skills });
+    const blob = new Blob([JSON.stringify(json, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${doc.name || "certz-skills"}-bundle-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setMergeInfo(`묶음 내보내기 — 스킬 ${doc.skills.length}개`);
+  }, [doc]);
+
+  const importBundle = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        const parsed = deserializeSkills(JSON.parse(String(rd.result)));
+        if (!parsed) { setMergeInfo("묶음 가져오기 실패 — 형식이 맞지 않습니다"); return; }
+        pushHistory(doc, true);
+        /* 병합 — 기존 ID 와 겹치면 새 ID 를 발급한다(저장 키 충돌로 묶음 전체가
+         *  검증 실패하는 것을 막는다). */
+        const taken = new Set(doc.skills.map((s) => s.id));
+        const incoming = parsed.skills.map((s) => {
+          if (!taken.has(s.id)) { taken.add(s.id); return s; }
+          const fresh = nextSkillId([...doc.skills, ...parsed.skills]);
+          taken.add(fresh);
+          return { ...s, id: fresh };
+        });
+        setDoc((prev) => ({ ...prev, skills: [...prev.skills, ...incoming] }));
+        setMergeInfo(`묶음 병합 — ${incoming.length}개 추가 (총 ${doc.skills.length + incoming.length}개)`);
+      } catch { setMergeInfo("묶음 가져오기 실패 — JSON 오류"); }
+    };
+    rd.readAsText(f);
+    e.target.value = "";
   };
 
   /* ── 단축키 ── */
@@ -308,7 +395,15 @@ export default function SkillEditor() {
             불러오기<input type="file" accept=".json" onChange={load} className="hidden" />
           </label>
           <button onClick={save} className="rounded border border-amber-300/50 bg-amber-400/15 px-2 py-1 text-[11px] font-bold text-amber-100 hover:bg-amber-400/25">저장</button>
+          {/* vc236 — 묶음 단위 이동. 저장/불러오기는 문서 교체, 이 둘은 묶음 내보내기·병합. */}
+          <button onClick={exportBundle} className="rounded border border-sky-300/40 px-2 py-1 text-[11px] text-sky-100 hover:bg-sky-400/15">묶음 내보내기</button>
+          <label className="cursor-pointer rounded border border-sky-300/40 px-2 py-1 text-[11px] text-sky-100 hover:bg-sky-400/15">
+            묶음 가져오기<input type="file" accept=".json" onChange={importBundle} className="hidden" />
+          </label>
         </div>
+        {mergeInfo && (
+          <span className="w-full text-[9px] text-sky-200/70">{mergeInfo}</span>
+        )}
       </header>
 
       <div className="flex min-h-0 flex-1">
@@ -507,6 +602,31 @@ export default function SkillEditor() {
             <Row k="DPS (이론)" v={dps ? dps.toLocaleString() : "—"} />
             <p className="mt-1 text-[9px] leading-tight text-white/30">
               차수 계단 −8%/단, 하한 68% · 5차 −15% (Player.skill1MaxEff 와 같은 식). 직업 cdMult 는 1 로 계산합니다.
+            </p>
+          </Section>
+
+          <Section title="이펙트 미리보기">
+            {/* vc236 — 스킬의 실제 이펙트를 눈으로 확인한다. 저장 문서에는 영향 없음. */}
+            <div className="mb-1 flex items-center justify-between text-[9px] text-white/45">
+              <span className="truncate">{fxName || "선택 안 함"}</span>
+              {fxUrl && (
+                <button onClick={() => { setFxUrl(null); setFxName(""); }}
+                  className="ml-1 shrink-0 rounded bg-white/10 px-1 py-0.5 text-[8px] hover:bg-white/20">
+                  해제
+                </button>
+              )}
+            </div>
+            <AssetBrowser
+              compact
+              initialCategory="fx"
+              onPick={(a) => {
+                /* 매니페스트에 원소 메타가 없으므로 이름 검색으로 원소 계열을 찾는다. */
+                setFxUrl(a.url);
+                setFxName(a.name);
+              }}
+            />
+            <p className="mt-1 text-[9px] leading-tight text-white/30">
+              판정 영역에 맞춰 축소해 겹쳐 그립니다 — 세이브 문서에는 저장되지 않습니다.
             </p>
           </Section>
 

@@ -82,7 +82,12 @@ for (const [setName, b] of Object.entries(DECOR_BUDGET)) {
 {
   const ws = fs.readFileSync(new URL('src/game/scenes/WorldScene.ts', root), 'utf8');
   assert.ok(ws.includes('placeDecorObjects('), 'WorldScene 에 오브젝트 배치 호출이 필요하다');
-  assert.ok(/this\.placeDecorObjects\(ch, rng, blocked\)/.test(ws), '배치 호출이 placeDecor 안에 있어야 한다');
+  /* vc238 — 배치 호출이 장식 점유 검사(freeAt/take)를 함께 넘긴다.
+   *  나무·바위·꽃과 겹치지 않게 하는 인자이므로, 인자가 빠지면 "아무렇게나 뿌린" 맵이
+   *  재발한다. 전체 인자 목록을 고정하지 않고(시그니처 진화 허용) 필수 인자만 확인한다. */
+  assert.ok(/this\.placeDecorObjects\(ch, rng, blocked,/.test(ws), '배치 호출이 placeDecor 안에 있어야 한다');
+  assert.ok(/freeAt/.test(ws), 'vc238 — 장식 겹침 방지용 freeAt 점유 검사가 필요하다');
+  assert.ok(/take\(x, y\)/.test(ws), 'vc238 — 배치한 자리를 점유 목록에 기록해야 한다');
   assert.ok(ws.includes('this.textures.exists(o.key)'), '로드 누락 시 __MISSING 글리치를 막는 가드가 필요하다');
 }
 

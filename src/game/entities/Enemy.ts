@@ -8,6 +8,7 @@ import { mitigateEnemyDamage } from "../combat/defense"; // vc183 — 적 방어
 import { actorStream, releaseActor } from "../sim/deterministic"; // vc183 — 액터별 결정론 난수
 import { FSM, type FSMState } from "../ai/FSM";
 import { spawnDissolve } from "../fx/DissolveFX"; // vc214 — 소멸 dissolve 셰이더
+import { spawnEnemyElemFx } from "../fx/StudioFX"; // vc238 (지시 #14) — 몬스터 속성별 반응 FX
 import { decideMorale } from "../ai/morale"; // vc214 — Utility AI 사기 판단
 import { EnemyBrain, type BrainAction } from "../ai/enemyBrain"; // vc234 — BT 우선순위 분기
 /* vc236 — 정예 어픽스/확장 상태이상 순수 코어 (Phaser 무관 계산만 여기서 import) */
@@ -868,6 +869,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     /* v1.4.16 — 반응 발동: 반응명 텍스트 + 반응 연출 + 상태이상/스플래시 */
     if (reacted && R && reactKey) {
       this.scene.spawnElementReaction(this.x, this.y, reactKey);
+      /* vc238 (지시 #14) — 반응 순간에만 **몬스터 속성에 맞는** FX를 얹는다.
+       *  [왜 여기만?] 이 블록은 원소 반응이 실제로 터진 드문 순간이다. 기본공격/피격
+       *  매 타격에 넣으면 AGENTS.md 규칙(고빈도 지점 과하게 금지) 위반이므로,
+       *  반응 순간으로 한정해 저비용(scale 0.5)으로만 깐다. */
+      spawnEnemyElemFx(this.scene, this.x, this.y, this.elem, ELEMENT_META[this.elem].hex, 0.5);
       if (R.stunMs) this.applyStun(R.stunMs);
       if (R.slowMult && R.slowMs) this.applySlow(R.slowMult, R.slowMs);
       this.scene.applyReactionSplash(this.x, this.y, dealt, R.splashMul, this, atkElem);

@@ -12,6 +12,7 @@
 import { CHAPTERS, ENEMIES, type ChapterKey } from "./stages";
 import { HOWLRSTONE_CHAPTERS } from "./howlrstone";
 import { LILAC_DIALOGUES } from "./lilacStory";
+import { stageDialogueLines } from "./stageDialogue"; /* vc237 — 구역별 걷는 대사 */
 import type { FamilyKey } from "./classes";
 
 /* ================= 스테이지/전투 데이터 (stages.ts 생성기) ================= */
@@ -2309,6 +2310,14 @@ for (const spec of CHAPTERS) {
       speaker: "연합 안내인",
       lines: [lines[i]],
     };
+  }
+  /* vc237 — 구역별 걷는 대사. 종전엔 서브 2~9 가 위 3개를 돌려썼다.
+   *  이제 stageDialogue 가 (챕터, 구역)마다 다른 3줄을 만든다 — 순수 데이터라
+   *  여기서는 키만 등록한다. 3개 순환 키(ch{num}Walk1~3)는 위에 그대로 남겨 둔다
+   *  (stageIntro 가 풀 없는 챕터에서 폴백으로 쓰고, 기존 세이브의 seenSet 키도 유효). */
+  for (let sub = 2; sub <= 9; sub++) {
+    const stageLines = stageDialogueLines(spec.key, sub);
+    if (stageLines.length) DIALOGUES[`ch${spec.num}WalkS${sub}`] = { speaker: "연합 안내인", lines: stageLines };
   }
   DIALOGUES[`eliteWarn${spec.num}`] = {
     speaker: "연합 안내인",

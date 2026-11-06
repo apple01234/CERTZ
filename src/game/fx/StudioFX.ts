@@ -11,6 +11,13 @@
  */
 import Phaser from "phaser";
 import { loadFx } from "../config";
+import {
+  classFxOf,
+  elemFxOf,
+  familyOfClass,
+  type ClassFxProfile,
+  type ElemFxProfile,
+} from "./classFxProfiles";
 
 type CamLike = {
   filters?: {
@@ -317,8 +324,10 @@ export function spawnGroundSig(scene: SceneLike, x: number, y: number, fam: FamK
 }
 
 /** 계열별 궁극기 인트로 — 공통 링/코어/스파크는 유지하되 지면 연출만 계열 시그니처로 교체.
- *  (vc147 #14 — 전 직업 동일 펜타클 "마법진 우려먹기" 해소) */
-export function spawnUltIntroSig(scene: SceneLike, x: number, y: number, tint: number, fam: FamKey | "pirate" | "default") {
+ *  (vc147 #14 — 전 직업 동일 펜타클 "마법진 우려먹기" 해소)
+ *  아이템 14 — `cls` 를 넘기면 계열 시그니처 **위에** 직업 고유 악센트를 한 겹 더한다
+ *  (궁극기는 최저빈도·최대연출 지점이라 여기만 풀 강도). 생략 시 종전과 완전 동일. */
+export function spawnUltIntroSig(scene: SceneLike, x: number, y: number, tint: number, fam: FamKey | "pirate" | "default", cls?: string | null) {
   spawnGroundSig(scene, x, y, fam, tint, 1.0);
   spawnRingPop(scene, x, y, "vf_ring", tint, 2.4, 720);
   spawnRingPop(scene, x, y, "vf_ring", 0xffffff, 1.6, 520);
@@ -336,6 +345,14 @@ export function spawnUltIntroSig(scene: SceneLike, x: number, y: number, tint: n
       alpha: 0, scale: 0.05, duration: 520, ease: "Cubic.out", onComplete: () => sp.destroy(),
     });
   }
+  /* 직업 고유 악센트 — 궁극기 전용. cls 미지정이면 씬 playerRef 에서 자동 보정. */
+  const clsKey = cls ?? (() => {
+    try {
+      const p = (scene as unknown as { playerRef?: { cls?: string | null } | null }).playerRef;
+      return p?.cls ?? null;
+    } catch { return null; }
+  })();
+  spawnClassAccent(scene, x, y, clsKey, tint, 1.0, 0);
 }
 
 
@@ -435,12 +452,20 @@ export type FamKey = "warrior" | "ranger" | "mage" | "thief";
  *       마법사=오브 마법진+수정 파편 / 도적=교차 참격날). angle: 조준 방향(라디안) */
 export function spawnTierFlair(
   scene: SceneLike, x: number, y: number, hex: number, tier: number,
-  fam?: FamKey, angle = 0, major = false,
+  fam?: FamKey, angle = 0, major = false, cls?: string | null,
 ) {
   if (tier < 2) return;
   /* v1.4.30 (#6 5차 공통 이펙트 축소) — major(중요 스킬: 4차기·필살기)일 때만 4·5차 풀 패키지.
    *  Z/C/V 일반 스킬은 5차여도 3차 수준 경량판 — "모든 스킬에 공통 이펙트가 과하다" 완화 */
   const full = tier >= 4 && major; // v1.0.13 — 4·5차만 풀 규모 → v1.4.30 major 게이트 추가
+  /* 아이템 14 — 직업 35종 고유 악센트. 계열 base 위에 한 겹만 얹는다(하위호환: cls 미지정 시 무동작).
+   *  호출부가 cls 를 넘기지 않아도, 씬의 playerRef 에서 읽어 자동 보정한다. */
+  const clsKey = cls ?? (() => {
+    try {
+      const p = (scene as unknown as { playerRef?: { cls?: string | null } | null }).playerRef;
+      return p?.cls ?? null;
+    } catch { return null; }
+  })();
   /* 2차+ — 광점 팝 (절제판은 희미하게) */
   spawnFlarePop(scene, x, y - 8, "gw_dot", {
     tint: hex, scale: full ? 0.85 : 0.5, duration: full ? 420 : 300, alpha: full ? 0.82 : 0.38,
@@ -581,6 +606,12 @@ export function spawnTierFlair(
       }
     }
   }
+
+  /* ══ 아이템 14 — 직업 고유 악센트 (계열 base 위 한 겹) ══
+   *  스킬 전용 경로에서만 호출된다(tierFlair 는 Z/V/B 스킬 4곳에서만 쓰임 —
+   *  기본공격/적 처치 경로에서는 호출되지 않는다). 강도는 티어에 비례해
+   *  3차 절제 / 4차+ 풀. 계열 base 연출은 위에서 이미 그려졌으므로 여기선 더하지 않고 얹기만 한다. */
+  spawnClassAccent(scene, x, y, clsKey, hex, full ? 1.0 : 0.62, angle);
 }
 
 /* ═══════════════ v1.4.0 (Task 3-1 — 유저 지시 #13) — 5차 궁극기 클래스별 고유 시그니처 ═══════════════
@@ -687,6 +718,194 @@ export function spawnUltFlourish(scene: SceneLike, x: number, y: number, key5: U
     default: // 궁극기 없는 직업의 안전 폴백(도달하지 않음) // 계열 폴백(전사/궁수/마법사/도적) — 계열색 코어 플래시 + 링
       flashSprite("vfx_explosion", 2.0, 620, tint);
       orbit("vfx_pt1", 4, 76, 0.6, 0.8, 1400);
+      break;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 아이템 14 — 직업 35종 / 몬스터 원소 9종 pixel FX 매칭
+ *
+ * [왜 계열 5종으로 부족한가]
+ *  위의 `spawnGroundSig`/`spawnTierFlair`/`spawnUltFlourish` 는 계열(warrior/ranger/
+ *  mage/thief/pirate) 또는 4차 직업 10종까지만 분기한다. 그런데 실제 직업은 35개이고
+ *  같은 계열 안에서도 warbringer(참격) ↔ crusader(심판의 빛),
+ *  arclord(크리스탈) ↔ eternal(시간) 처럼 정체성이 정반대다.
+ *
+ * [설계 — 기존 계열 시스템을 대체하지 않는다]
+ *  계열 base 연출은 **그대로 두고**, 그 위에 직업 고유 악센트를 한 겹 얹는다.
+ *  따라서 기존 exported 함수 시그니처는 하나도 바뀌지 않는다(하위 호환 100%).
+ *  새 호출부는 아래 두 함수만 쓰면 된다.
+ *
+ * [안전]
+ *  모든 텍스처는 `vfImage()` 를 거치며, 이 함수가 `textures.exists` 로 미로드 키를
+ *  걸러낸다(`StudioFX.ts:64`). 미로드 시 조용히 null → 연출 생략. 검은 __MISSING 박스 없음.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * 직업 고유 악센트를 계열 base 연출 위에 얹는다.
+ *
+ * **스킬 전용**이다. 기본공격/적 처치 등 고빈도 지점에서 호출하지 말 것
+ * (AGENTS.md: "자주 호출되는 지점은 절대 과하게").
+ *
+ * @param cls   직업 키 (`classes.ts` ClassKey). 미등록/null 이면 아무것도 안 한다.
+ * @param hex   직업 계통색 (미지정 시 프로파일 tint → 없으면 흰색)
+ * @param scale 강도 배율 (호출부 티어에 맞춰 0.6~1.2 권장)
+ */
+export function spawnClassAccent(
+  scene: SceneLike, x: number, y: number, cls: string | null | undefined,
+  hex: number, scale = 1, angle = 0,
+) {
+  const p = classFxOf(cls);
+  if (!p) return; // 계열 base 만으로 충분 — 중복 연출 금지
+  const tint = p.tint ?? hex;
+  const s = scale * p.weight;
+
+  /* 저사양 게이트 — 기존 spawnTierFlair 와 동일 규약(__sertzFxLevel===0 이면 생략) */
+  const fxLevel = (() => {
+    try { return (scene.game as unknown as { __sertzFxLevel?: number }).__sertzFxLevel ?? 2; } catch { return 2; }
+  })();
+  if (fxLevel === 0) return;
+
+  /* 형태별 궤적 — 같은 텍스처라도 움직임이 다르면 다르게 읽힌다 */
+  switch (p.shape) {
+    case "slash": {
+      const im = vfImage(scene, p.accent, x + Math.cos(angle) * 24, y - 6 + Math.sin(angle) * 24, tint);
+      if (im) {
+        im.setRotation(angle).setAlpha(0).setScale(s * 0.55);
+        scene.tweens.add({ targets: im, alpha: 0.85, scale: s * 1.05, duration: 160, ease: "Cubic.out" });
+        scene.tweens.add({ targets: im, alpha: 0, scale: s * 1.3, delay: 160, duration: 240, ease: "Sine.out", onComplete: () => im.destroy() });
+      }
+      break;
+    }
+    case "burst": {
+      spawnFlarePop(scene, x, y - 6, p.accent, { tint, scale: s * 0.95, duration: 420, alpha: 0.8 });
+      break;
+    }
+    case "ring": {
+      spawnRingPop(scene, x, y, p.accent, tint, 2.0 * s, 460, 0.6);
+      break;
+    }
+    case "beam": {
+      const im = vfImage(scene, p.accent, x, y - 8, tint);
+      if (im) {
+        const fly = 74 * s;
+        im.setRotation(angle).setAlpha(0).setScale(s * 0.6);
+        scene.tweens.add({ targets: im, alpha: 0.9, x: x + Math.cos(angle) * fly, y: y - 8 + Math.sin(angle) * fly, duration: 260, ease: "Cubic.out" });
+        scene.tweens.add({ targets: im, alpha: 0, delay: 240, duration: 200, onComplete: () => im.destroy() });
+      }
+      break;
+    }
+    case "orbit": {
+      /* 3~5개가 원을 그리며 퍼진다 — 소수만 쓴다(과밀 금지) */
+      const n = fxLevel >= 2 ? 4 : 2;
+      for (let i = 0; i < n; i++) {
+        const a = (Math.PI * 2 * i) / n + angle;
+        const im = vfImage(scene, p.accent, x, y - 6, tint);
+        if (!im) break;
+        im.setAlpha(0.9).setScale(s * 0.28);
+        scene.tweens.add({
+          targets: im, x: x + Math.cos(a) * 62 * s, y: y - 6 + Math.sin(a) * 44 * s,
+          alpha: 0, scale: s * 0.08, duration: 480, ease: "Cubic.out", onComplete: () => im.destroy(),
+        });
+      }
+      break;
+    }
+    case "pillar": {
+      const im = vfImage(scene, p.accent, x, y - 18, tint);
+      if (im) {
+        im.setAlpha(0).setScale(s * 0.5);
+        scene.tweens.add({ targets: im, alpha: 0.8, scaleY: s * 1.5, scaleX: s * 0.85, duration: 220, ease: "Cubic.out" });
+        scene.tweens.add({ targets: im, alpha: 0, scaleY: s * 1.9, delay: 220, duration: 380, ease: "Sine.out", onComplete: () => im.destroy() });
+      }
+      break;
+    }
+    case "shard": {
+      const n = fxLevel >= 2 ? 5 : 3;
+      for (let i = 0; i < n; i++) {
+        const a = (Math.PI * 2 * i) / n + 0.4;
+        const im = vfImage(scene, p.accent, x, y - 4, tint);
+        if (!im) break;
+        im.setAlpha(0.9).setScale(s * 0.26).setRotation(a);
+        scene.tweens.add({
+          targets: im, x: x + Math.cos(a) * 56 * s, y: y - 4 + Math.sin(a) * 42 * s,
+          alpha: 0, scale: s * 0.06, rotation: a + 1.4, duration: 500, ease: "Quad.out", onComplete: () => im.destroy(),
+        });
+      }
+      break;
+    }
+    case "wave": {
+      spawnRingPop(scene, x, y, p.accent, tint, 1.8 * s, 520, 0.55);
+      if (p.accent2) spawnRingPop(scene, x, y, p.accent2, tint, 2.4 * s, 620, 0.35);
+      break;
+    }
+  }
+
+  /* 보조 악센트 — 주 악센트가 끝나갈 때 한 번만(과밀 방지) */
+  if (p.accent2 && p.shape !== "wave" && fxLevel >= 2) {
+    const im2 = vfImage(scene, p.accent2, x, y - 4, tint);
+    if (im2) {
+      im2.setAlpha(0).setScale(s * 0.4).setBlendMode(Phaser.BlendModes.ADD);
+      scene.tweens.add({ targets: im2, alpha: 0.55, scale: s * 0.9, duration: 200, delay: 90, ease: "Cubic.out" });
+      scene.tweens.add({ targets: im2, alpha: 0, scale: s * 1.1, delay: 290, duration: 260, onComplete: () => im2.destroy() });
+    }
+  }
+}
+
+/**
+ * 몬스터 **원소**에 맞는 FX. `Enemy.elem` + `data.ts:1296 ELEMENT_META` 기반.
+ *
+ * `Enemy.ts` 는 편집 범위 밖이므로, 이 함수를 **호출부에서** 연결해야 한다.
+ * 권장 호출 지점(리드가 연결):
+ *   · `Enemy.ts:865`  — 속성 틴트 적용 지점 바로 옆
+ *   · `Enemy.ts:870-890` — 원소 반응(reaction) 발동 블록
+ *
+ * **적 피격/사망 지점은 강도를 낮게 유지한다** — `scale` 기본값 0.55 는
+ * 기본공격·처치가 초당 수 회 발생하는 것을 전제한 값이다. 스킬 수준으로 올리지 말 것.
+ *
+ * @param elem  `ElemKey` 또는 한글 별칭. 미지 값은 none 프로파일로 폴백.
+ * @param scale 강도 (기본 0.55 — 고빈도 지점 전제. 반드시 1.0 미만 유지 권장)
+ */
+export function spawnEnemyElemFx(
+  scene: SceneLike, x: number, y: number, elem: string | null | undefined,
+  tint: number, scale = 0.55,
+) {
+  const p: ElemFxProfile = elemFxOf(elem);
+
+  const fxLevel = (() => {
+    try { return (scene.game as unknown as { __sertzFxLevel?: number })?.__sertzFxLevel ?? 2; } catch { return 2; }
+  })();
+  if (fxLevel === 0) return;
+
+  const s = scale * p.weight;
+  switch (p.shape) {
+    case "burst":
+      spawnFlarePop(scene, x, y - 4, p.tex, { tint, scale: s * 0.8, duration: 300, alpha: 0.5 });
+      break;
+    case "ring":
+      spawnRingPop(scene, x, y, p.tex, tint, 1.3 * s, 340, 0.35);
+      break;
+    case "pillar": {
+      const im = vfImage(scene, p.tex, x, y - 14, tint);
+      if (im) {
+        im.setAlpha(0).setScale(s * 0.45);
+        scene.tweens.add({ targets: im, alpha: 0.55, scaleY: s * 1.2, duration: 180, ease: "Cubic.out" });
+        scene.tweens.add({ targets: im, alpha: 0, delay: 180, duration: 260, onComplete: () => im.destroy() });
+      }
+      break;
+    }
+    case "orbit": {
+      const im = vfImage(scene, p.tex, x, y - 4, tint);
+      if (im) {
+        im.setAlpha(0.7).setScale(s * 0.3);
+        scene.tweens.add({ targets: im, alpha: 0, scale: s * 0.6, y: y - 22, duration: 340, ease: "Cubic.out", onComplete: () => im.destroy() });
+      }
+      break;
+    }
+    case "wave":
+      spawnRingPop(scene, x, y, p.tex, tint, 1.5 * s, 380, 0.3);
+      break;
+    case "shard":
+      spawnRingPop(scene, x, y, p.tex, tint, 1.1 * s, 320, 0.3);
       break;
   }
 }

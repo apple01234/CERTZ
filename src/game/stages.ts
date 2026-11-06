@@ -11,6 +11,8 @@ import {
   type HowlrstoneBossKey,
   type HowlrstoneChapterSpec,
 } from "./howlrstone";
+/* vc237 — 구역별 걷는 대사 세트(3개 순환 폐지). 순수 데이터라 순환 import 없음. */
+import { hasStageDialogue } from "./stageDialogue";
 
 /* ================= 타입 ================= */
 
@@ -1241,6 +1243,31 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
   return quests;
 }
 
+/** 토벌 대상이 그 구역 스폰 조합에 없으면 mix 에 편입한다 — 본편(buildStage)과
+ *  영프 편 생성기가 **같은 함수**를 쓴다. 두 생성기가 갈라지면서 영프 편 12개
+ *  토벌 퀘스트의 대상 몬스터가 아예 스폰되지 않아 완료가 불가능했다(hw3 등).
+ *  편입분은 최다 비대상 그룹에서 3마리 덜어 총량을 유지한다. */
+function ensureQuestSpawns(
+  enemies: { key: EnemyKey; count: number }[],
+  targets: (EnemyKey | undefined)[],
+  protect: (EnemyKey | undefined)[] = [],
+) {
+  for (const key of targets) {
+    if (!key || enemies.some((g) => g.key === key)) continue;
+    const ex = new Set([key, ...protect].filter(Boolean) as EnemyKey[]);
+    const pool = enemies.filter((g) => !ex.has(g.key) && g.count > 2);
+    const donor = pool.length ? pool.reduce((m, g) => (g.count > m.count ? g : m), pool[0]) : undefined;
+    if (!donor) {
+      /* 후원 그룹이 1~2마리뿐이면 차감 시 그룹이 사라지거나 뒤집힌다 — 편입만 하고 총량 +3 허용 */
+      enemies.push({ key, count: 3 });
+      continue;
+    }
+    donor.count = Math.max(1, donor.count - 3);
+    const sum = enemies.reduce((t, g) => t + g.count, 0);
+    enemies.push({ key, count: Math.max(1, Math.min(3, 20 - sum)) });
+  }
+}
+
 function buildStage(spec: ChapterSpec, sub: number): StageDef {
   const key = `${spec.key}${sub}`;
   const prefix = `${spec.key}${sub}`;
@@ -1254,25 +1281,15 @@ function buildStage(spec: ChapterSpec, sub: number): StageDef {
    *  최다 그룹에서 3마리를 덜어 편입 — 총량 20 유지 (정예/보스 포함) */
   const beatHere = spec.beats.find((b) => b.sub === sub);
   if (beatHere && beatHere.quest.type === "hunt" && beatHere.quest.targetKey && !enemies.some((g) => g.key === beatHere.quest.targetKey)) {
-    /* v1.0.8 — 편입 차감 대상을 퀘스트 대상 종이 아닌 최대 그룹에서: 토벌 대상을 깎아 편입하던
-     *  기존 방식은 2-6 능대처럼 대상 밀도를 스스로 깎는 모순 (donor=enemies[0] == 대상종) */
-    const drainPool = enemies.filter((g) => g.key !== beatHere.quest.targetKey);
-    const donor = (drainPool.length ? drainPool : enemies).reduce((m, g) => (g.count > m.count ? g : m), (drainPool.length ? drainPool : enemies)[0]);
-    donor.count = Math.max(1, donor.count - 3);
-    const sum = enemies.reduce((t, g) => t + g.count, 0);
-    enemies.push({ key: beatHere.quest.targetKey, count: Math.max(1, Math.min(3, 20 - sum)) });
+    /* v3.0.2 — 공용 헬퍼로 추출 (영프 편 생성기와 동일 로직 사용) */
+    ensureQuestSpawns(enemies, [beatHere.quest.targetKey]);
   }
   /* v3.0.6 (지시 #1 — "반복 의뢰 안됨") — [반복] 토벌 의뢰 대상(spec.main)이 이 구역 스폰 조합에 없으면 편입.
    *  구역별 단일종 로테이션(1~6구역은 풀 1종만 스폰) 때문에 반복 의뢰 대상 몬스터가 맵에 아예 없어
    *  사냥해도 카운트가 전혀 오르지 않던 근본 원인 제거 (스토리 beat 편입과 동일 패턴) */
   if (!enemies.some((g) => g.key === spec.main)) {
-    /* v1.0.8 — 반복 의뢰 편입도 퀘스트 토벌 대상 종은 보호: 비대상 최대 그룹에서 차감 */
     const beatTarget = beatHere && beatHere.quest.type === "hunt" ? beatHere.quest.targetKey : undefined;
-    const drainPool2 = enemies.filter((g) => g.key !== beatTarget);
-    const donor2 = (drainPool2.length ? drainPool2 : enemies).reduce((m, g) => (g.count > m.count ? g : m), (drainPool2.length ? drainPool2 : enemies)[0]);
-    donor2.count = Math.max(1, donor2.count - 3);
-    const sum = enemies.reduce((t, g) => t + g.count, 0);
-    enemies.push({ key: spec.main, count: Math.max(1, Math.min(3, 20 - sum)) });
+    ensureQuestSpawns(enemies, [spec.main], [beatTarget as EnemyKey | undefined]);
   }
   /* v1.0.8 — 토벌 퀘스트 구역 밀도 보장 (유저 지시 "2-6 능대 25마리가 너무 오래 걸림"):
    *  스토리 토벌 대상 종이 이 구역에 최소 15마리 스폰되도록 부스트 — 다른 종에서 차감 (각 종 최소 2 유지).
@@ -1302,9 +1319,11 @@ function buildStage(spec: ChapterSpec, sub: number): StageDef {
   const repMul = Math.max(1, (repNeed / Math.max(1, spec.repeat.need)) * 0.6);
   /* vc150 (#신규6) — 반복 의뢰 다수 개편 (유저 지시 "많은 마릿수의 의뢰 2~4개"):
    *  구역 종족 중 2~4종을 뽑아 개별 고마릿수(기존 ×2.5, 5마리 단위) 의뢰를 생성한다.
-   *  종족별 중복 없이 배정 — 한 번의 처치가 여러 의뢰에 동시 카운트되지 않는다. */
+   *  종족별 중복 없이 배정 — 한 번의 처치가 여러 의뢰에 동시 카운트되지 않는다.
+   *  [수정] 의뢰 대상을 챕터 풀(spec.enemies)이 아니라 **실제 이 구역 스폰 조합**에서 뽑는다.
+   *  풀 기준이면 1~6구역에서 절반 이상의 의뢰가 그 맵에 없는 몬스터를 가리켜 영구 미완료였다. */
   const species: EnemyKey[] = [spec.main];
-  for (const en of spec.enemies) if (!species.includes(en.key)) species.push(en.key);
+  for (const g of enemies) if (!species.includes(g.key)) species.push(g.key);
   const bountyN = Math.min(4, Math.max(2, species.length));
   const bounties = species.slice(0, bountyN).map((k) => ({
     targetKey: k,
@@ -1459,7 +1478,7 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
       const pool = spec.enemies.map((g) => g.key);
       const n = Math.min(20, 8 + Math.floor(sub / 2) * 2);
       const grp = (k: string, c: number) => ({ key: k as EnemyKey, count: c });
-      const mix =
+      const mix: { key: EnemyKey; count: number }[] =
         sub <= 2 ? [grp(pool[0], n)]
         : sub <= 4 ? [grp(pool[0], Math.ceil(n * 0.6)), grp(pool[1] ?? pool[0], Math.ceil(n * 0.4))]
         : sub <= 6 ? [grp(pool[1] ?? pool[0], Math.ceil(n * 0.6)), grp(pool[2] ?? pool[0], Math.ceil(n * 0.4))]
@@ -1468,6 +1487,13 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
 
       /* 퀘스트 — 고정 비트가 있으면 그것, 없으면 레벨 게이트/자동 토벌로 채운다. */
       const beat = spec.beats.find((b) => b.sub === sub);
+      /* 토벌 대상이 이 구역 mix 에 실제로 스폰되도록 보장 — 본편 buildStage 와 같은 헬퍼.
+       *  이 생성기가 헬퍼를 안 써서 hw3("거대한 해적선") 등 12개 퀘스트가 완료 불가였다.
+       *  반복 의뢰 대표 종(spec.main)도 같은 이유로 보장한다 — pool[1] 이 하위 구역엔 없었다. */
+      ensureQuestSpawns(
+        mix,
+        [beat?.quest.type === "hunt" ? (beat.quest.targetKey as EnemyKey) : undefined, spec.main as EnemyKey],
+      );
       let quests: QuestDef[];
       if (beat) {
         quests = [{
@@ -1567,9 +1593,11 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
           exp: Math.round(spec.repeat.exp * spec.scaleMul.exp * 1.3),
           title: spec.repeat.title,
           desc: spec.repeat.desc,
-          bounties: spec.enemies.slice(0, 3).map((e) => ({
-            targetKey: e.key as EnemyKey,
-            label: ENEMIES[e.key as EnemyKey]?.name ?? e.key,
+          /* 반복 의뢰 대상도 **이 구역에 실제 스폰되는 종**으로 한정한다 (본편 buildStage 와 동일 규칙).
+           *  종전엔 챕터 풀 앞 3종을 고정 배정해, 1~4구역에서 pool[1]/pool[2] 의뢰가 영구 미완료였다. */
+          bounties: [...new Set([spec.main as EnemyKey, ...mix.map((g) => g.key)])].slice(0, 3).map((k) => ({
+            targetKey: k,
+            label: ENEMIES[k]?.name ?? k,
             need: Math.max(25, spec.repeat.need),
           })),
         },
@@ -2044,6 +2072,10 @@ export function stageIntro(key: StageKey): string {
   if (sub === 1) return spec.intro;
   if (sub === 5) return `eliteWarn${spec.num}`;
   if (sub === 10) return `bossApproach${spec.num}`;
+  /* vc237 — 걷는 대사 3개 순환 폐지. 구역마다 다른 세트를 쓰고, 세트는 stageDialogue 가
+   *  (챕터, 구역)으로 만든다. 풀이 없는 챕터(재림 제외 — 아래 분기에서 이미 처리)는
+   *  기존 키로 폴백해 회귀하지 않는다. */
+  if (hasStageDialogue(spec.key)) return `ch${spec.num}WalkS${sub}`;
   return `ch${spec.num}Walk${((sub - 2) % 3) + 1}`;
 }
 

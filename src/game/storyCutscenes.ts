@@ -234,3 +234,121 @@ export function chapterIntroOf(key: string | null | undefined): ChapterIntroSpec
   if (!key) return null;
   return HOWLRSTONE_INTROS[key] ?? CHAPTER_INTROS[key] ?? null;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * vc237 — 구역(sub-stage) 단위 컷씬
+ *
+ * 왜
+ *   지금 컷씬은 챕터 인트로(sub 1)와 보스 인트로에만 있다. 서브 2~9 는 대사만 있고
+ *   카메라 연출이 없어서 "걷다가 갑자기 글자"가 된다. 구역마다 짧은 연출을 하나씩
+ *   두면 진행감이 생긴다.
+ *
+ * 무엇을 넣지 않았나 (YAGNI)
+ *   · 152개 구역 전부에 손으로 연출을 쓰지 않는다. 구역 성격별 **4가지 템플릿**만
+ *     정의하고, 구역 인덱스로 결정론적으로 배정한다. 손으로 쓴 것은 정예/보스 직전
+ *     같은 서사적으로 중요한 지점뿐이다.
+ *   · 새 컷씬 엔진/플레이어를 만들지 않는다 — CHAPTER_INTROS 와 **같은 ChapterIntroSpec**
+ *     을 쓴다. WorldScene 이 이미 resolveChapterIntroShots + playStoryCutscene 로
+ *     재생하는 경로가 있으므로, 호출부만 늘리면 된다.
+ *
+ * once 규칙
+ *   기본 once:true — cutsceneSeen 에 키를 넣어 1회만 재생한다(기존 규칙과 동일).
+ *   키는 `stage:<챕터>:<구역>` 형식이라 챕터 인트로 키(`forest` 등)와 절대 겹치지 않는다.
+ *   ponytail: 구역 연출은 전부 1회 시청으로 둔다. 반복 재생이 필요해지면 once:false 로
+ *   바꾸고 cutsceneSeen 키에서 구역을 빼면 된다(스키마 변경 불필요).
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/** 구역 성격 — 어떤 템플릿을 쓸지 정한다. */
+export type StageBeat = "sweep" | "descend" | "narrow" | "rise";
+
+/**
+ * 구역 성격 판정 (결정론). 챕터 구역 수와 구역 번호만 본다.
+ *  · sub 5  = 정예 직전 → narrow (좁게 조여 긴장)
+ *  · sub 9  = 보스 직전 → descend (아래로 내려가며 각오)
+ *  · 그 외  = sweep / rise 를 구역 인덱스로 교대
+ */
+export function stageBeatOf(ch: string, sub: number): StageBeat {
+  if (sub === 5) return "narrow";
+  if (sub === 9) return "descend";
+  if (sub === 1) return "rise";
+  return (sub + ch.length) % 2 === 0 ? "sweep" : "rise";
+}
+
+/** 성격별 샷 템플릿. 좌표는 0~1 비율(맵 크기 무관 — 기존 규칙과 동일). */
+const BEAT_SHOTS: Record<StageBeat, ChapterIntroShot[]> = {
+  /* sweep — 좌우로 훑어 구역의 넓이를 보여준다 */
+  sweep: [
+    { rx: 0.28, ry: 0.34, panMs: 620, holdMs: 240 },
+    { rx: 0.72, ry: 0.4, panMs: 680, holdMs: 240 },
+  ],
+  /* descend — 위에서 아래로. 보스 직전의 무게 */
+  descend: [
+    { rx: 0.5, ry: 0.2, panMs: 720, holdMs: 260, zoom: 0.9 },
+    { rx: 0.5, ry: 0.66, panMs: 640, holdMs: 300, zoom: 0.96 },
+  ],
+  /* narrow — 정예 직전. 당겨서 압박 */
+  narrow: [
+    { rx: 0.5, ry: 0.36, panMs: 560, holdMs: 260, zoom: 1.06 },
+    { rx: 0.5, ry: 0.56, panMs: 480, holdMs: 300, zoom: 1.12 },
+  ],
+  /* rise — 지면에서 위로 훑어 방향을 잡는다 */
+  rise: [
+    { rx: 0.5, ry: 0.62, panMs: 580, holdMs: 240 },
+    { rx: 0.5, ry: 0.26, panMs: 660, holdMs: 260, zoom: 0.94 },
+  ],
+};
+
+/**
+ * 특정 (챕터, 구역)에 **손으로 쓴** 연출. 템플릿보다 먼저 조회된다.
+ * 서사적으로 중요한 지점만 넣는다 — 나머지는 템플릿이 담당.
+ * shots 의 dialogue 는 DIALOGUES 키. stageIntro 키를 넣으면 그 구역 대사가 연출과 함께 나온다.
+ */
+export const STAGE_INTROS: Record<string, ChapterIntroSpec> = {
+  /* 하루가 라일락의 펜던트를 처음 되돌려주는 구역 — 챕터4(정원)의 정예 직전.
+   *  정원을 훑은 뒤 좁혀 들어가며 경고를 띄운다(2샷 이상 — 단샷 연출은 리듬이 없다). */
+  "alfheim:5": {
+    once: true,
+    shots: [
+      { rx: 0.32, ry: 0.34, panMs: 640, holdMs: 260, zoom: 0.92 },
+      { rx: 0.5, ry: 0.2, panMs: 900, holdMs: 420, zoom: 0.86, dialogue: "eliteWarn4" },
+    ],
+  },
+  /* 영프 편 — 해롤드(크라켄) 직전. 바다가 통째로 검게 물드는 장면 */
+  "howlrstone3:5": {
+    once: true,
+    shots: [
+      { rx: 0.24, ry: 0.5, focus: "entry", panMs: 520, holdMs: 260, zoom: 0.86 },
+      { rx: 0.72, ry: 0.48, focus: "feature", panMs: 980, holdMs: 380, zoom: 0.8, dialogue: "howlEliteWarn3" },
+    ],
+  },
+  /* 최종장 직전 — 가장 웅장하게 */
+  "dlcsernium:9": {
+    once: true,
+    shots: [
+      { rx: 0.5, ry: 0.14, panMs: 1100, holdMs: 420, zoom: 0.84 },
+      { rx: 0.5, ry: 0.72, panMs: 820, holdMs: 360, zoom: 0.92, dialogue: "bossApproach20" },
+    ],
+  },
+};
+
+/**
+ * (챕터, 구역) 진입 연출 조회. 없으면 null.
+ *
+ * 반환되는 spec 은 CHAPTER_INTROS 와 **같은 타입**이라 기존
+ * `resolveChapterIntroShots(spec, landmarks)` + `playStoryCutscene` 경로에 그대로 꽂힌다.
+ * 구역 1(챕터 인트로)과 10(보스)은 null — 그쪽은 chapterIntroOf/bossIntroCinematic 이 담당한다.
+ */
+export function stageIntroOf(ch: string | null | undefined, sub: number): ChapterIntroSpec | null {
+  if (!ch || sub < 2 || sub > 9) return null;
+  const hand = STAGE_INTROS[`${ch}:${sub}`];
+  if (hand) return hand;
+  return { once: true, shots: BEAT_SHOTS[stageBeatOf(ch, sub)] };
+}
+
+/**
+ * cutsceneSeen 에 넣을 1회 시청 키. WorldScene 이 이 헬퍼를 써야 챕터 키와 안 겹친다.
+ * (챕터 인트로는 챕터 키 그대로 `forest` 를 쓰므로 여기선 반드시 접두어가 필요하다.)
+ */
+export function stageIntroSeenKey(ch: string, sub: number): string {
+  return `stage:${ch}:${sub}`;
+}

@@ -46,6 +46,18 @@ const SFX_MAX_CONCURRENT = 12;
 /* vc204 (지시서 #17) — 복귀 직후 SFX 페이드인 구간(ms)과 그 시작 시각. */
 const RESUME_MUTE_MS = 300;
 let resumedAt = 0;
+/* vc270 (버그 #11 "알트탭하면 소리가 겹쳐서 겁나 크게") — 앱이 뒤로 간 동안의 정지 플래그.
+ *
+ *  [왜 document.hidden 만으로는 부족한가] 브라우저 창이 **보인 채로** 다른 앱으로 전환하면
+ *  (PC 알트탭) document.hidden 은 false 다. rAF 도 계속 돌아 Phaser 타이머/트윈이 SFX 를
+ *  계속 요청한다. 그런데 Phaser 의 SoundManager.pauseOnBlur 기본값이 true 라 blur 순간
+ *  AudioContext 자체가 suspend 되고, 그동안 들어온 `sound.play()` 는 전부 **멈춰 있는
+ *  context.currentTime** 에 예약된다. 복귀해 context 가 resume 되는 순간 예약분이 한꺼번에
+ *  터지는 것이 "겁나 크게 뭉쳐서" 들리던 소리의 정체다.
+ *  → 정지 상태에서는 재생 요청을 아예 만들지 않는다(예약 자체를 막는다). */
+let suspended = false;
+/** vc270 — 정지 때마다 증가. 1600ms 예약 감소 타이머가 옛 예산을 깎지 않게 하는 세대 표식. */
+let soundEpoch = 0;
 /** BGM 볼륨 — v3.0.22 밸런스: BGM 존재감 +0.04 (원곡이 묻히지 않게)
  *  v3.1.0 — 유저 지시 "BGM과 SFX를 각각 조절할수 있는 UI": 런타임 조절 변수로 전환
  *  (BGM_VOLUME 상수는 E2E 호환용 기본값 스냅샷으로 유지)
@@ -118,7 +130,7 @@ export function loadVolumes() {
 const SFX_VOL_DEFAULT = 0.42;
 
 function play(key: string, vol: number, rate = 1) {
-  if (!game || muted) return;
+  if (!game || muted || suspended) return;
   if (!Number.isFinite(vol)) vol = SFX_VOL_DEFAULT;
   /* v1.4.33 (긴급수정 — "Uncaught Error: Audio key \"sfx_aoe_air_cast\" not found in cache")
    *  부팅 로드 목록에 없는 키를 재생하면 Phaser 가 예외를 던져 **게임 전체가 멈춘다**.
@@ -129,6 +141,7 @@ function play(key: string, vol: number, rate = 1) {
     if (cache && !cache.exists(key)) return;
   } catch { /* cache 미지원 환경 — 아래 play 를 그대로 시도 */ }
   const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+  const epoch = soundEpoch;
   /* vc204 (지시서 #17 "PC에서 창 전환시 효과음 겹쳐서 ㅈㄴ 크게 한꺼번에 들림").
    *  창이 숨겨진 동안에도 delayedCall/타이머가 계속 돌아 SFX 요청이 큐에 쌓이고,
    *  복귀하는 순간 그것들이 한꺼번에 재생돼 음량이 합산됐다.
@@ -156,6 +169,9 @@ function play(key: string, vol: number, rate = 1) {
   }
   // 1.6초 후 예비 감소 — complete 이벤트 유실 대비 단일 감소 경로 (정확한 캡은 아니어도 밸런스 목적 충분)
   setTimeout(() => {
+    /* vc270 — 정지로 예산을 초기화한 뒤 도착한 옛 타이머는 무시한다.
+     *  안 그러면 복귀 직후 새 예산을 옛 타이머들이 깎아 동시재생 상한이 헐거워진다. */
+    if (epoch !== soundEpoch) return;
     activeSounds = Math.max(0, activeSounds - 1);
   }, 1600);
 }
@@ -533,32 +549,66 @@ export function attachAudio(g: Phaser.Game) {
  * visibilitychange로 숨김 시 전체 정지, 복귀 시 BGM 재개. */
 let lifecycleAttached = false;
 
+/* vc270 (버그 #11) — suspend/resume 을 **멱등**하게 만든다.
+ *
+ *  [어떤 이벤트가 어떤 순서로 오는가] 알트탭(PC)에서 창이 포커스를 잃으면
+ *    window blur → (탭이 숨겨지는 경우에만) visibilitychange(hidden) 순으로 오고,
+ *  돌아올 때는
+ *    visibilitychange(visible) → window focus 순으로 온다.
+ *  탭 전환(Ctrl+Tab)이면 visibilitychange 만, 알트탭(같은 탭·다른 앱)이면 blur/focus 만 온다.
+ *  둘 다 suspend 로 취급하되, 이미 정지 중이면 다시 정지하지 않는다 — 그래야
+ *  같은 정지 동작을 두 번 실행해 복귀가 한 번에 안 풀리는 상태가 안 생긴다. */
+function suspendAudio(g: Phaser.Game) {
+  if (suspended) return; // 이미 정지 — 중복 정지 방지
+  suspended = true;
+  /* vc270 — 동시재생 카운터와 스로틀 기록을 비운다.
+   *  activeSounds 는 1600ms setTimeout 으로만 감소하는데, 정지 중 그 타이머는 백그라운드에서
+   *  스로틀되거나 유실된다. 그래서 복귀 시 상한(12)이 포화된 채로 남아 잠시 전부 거부되다가,
+   *  타이머가 몰려서 풀리며 한꺼번에 재생됐다. 정지 시점에 비우면 복귀 직후부터 정상 예산으로 시작한다. */
+  activeSounds = 0;
+  soundEpoch++;
+  for (const k of Object.keys(lastPlayed)) delete lastPlayed[k];
+  /* vc270 — pauseAll 이 아니라 stopAll 을 쓴다.
+   *  pauseAll 은 일회성 SFX 를 "멈춘 채로" 살려두고, 복귀 시 resumeAll 이 그것들을 **이어서
+   *  재생**한다 — 정지 직전 스윙/타격음이 복귀 순간 한꺼번에 터지는 두 번째 겹침 원인이다.
+   *  BGM 은 아래 destroyBgm 으로 정리되고 복귀 때 bgmKey 로 새로 시작하므로 잃는 것이 없다. */
+  try {
+    g.sound.stopAll();
+  } catch {
+    /* noop */
+  }
+  destroyBgm();
+}
+
+function resumeAudio() {
+  if (!suspended) return; // 정지한 적 없으면 아무것도 하지 않는다(종전엔 무조건 resumeAll)
+  /* vc270 — 창 포커스만 돌아오고 탭은 아직 숨은 경우(포커스/가시성 순서 역전)에는 재개하지 않는다.
+   *  여기서 suspend 를 유지하면 뒤따르는 visibilitychange(visible) 가 정상적으로 재개한다. */
+  if (typeof document !== "undefined" && document.hidden) return;
+  suspended = false;
+  /* stopAll 로 이미 정지했으므로 resumeAll 은 호출하지 않는다(되살릴 일회성 SFX 가 없다).
+   *  복귀 후 재생되는 것은 이후 새로 요청된 SFX 와 아래에서 새로 시작하는 BGM 뿐이다. */
+  /* vc204 (지시서 #17) — 복귀 직후 SFX 페이드인 시작점 기록.
+   *  정지 동안 쌓인 요청은 play() 가 suspended/document.hidden 으로 걸러낸다. */
+  resumedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
+  // 복귀 — 음소거 아니고 트랙 지정이 있으면 재개
+  if (!muted && bgmKey && !bgmSound) startTrack(bgmKey);
+}
+
 function attachLifecycle(g: Phaser.Game) {
   if (lifecycleAttached || typeof document === "undefined") return;
   lifecycleAttached = true;
+  /* vc270 — visibilitychange 만 보면 "창은 보이는데 포커스만 잃은" 알트탭을 놓친다.
+   *  window blur/pagehide 도 정지 트리거로 본다. */
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-      // 숨김 — 전체 정지 (트랙 키는 유지해 복귀 시 재개)
-      try {
-        g.sound.pauseAll();
-      } catch {
-        /* noop */
-      }
-      destroyBgm();
-    } else {
-      try {
-        g.sound.resumeAll();
-      } catch {
-        /* noop */
-      }
-      /* vc204 (지시서 #17) — 복귀 직후 SFX 페이드인 시작점 기록.
-       *  숨김 동안 쌓인 요청은 play() 가 document.hidden 으로 걸러내므로,
-       *  여기서는 "복귀 직후 0.3초는 작게 시작"만 담당한다. */
-      resumedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
-      // 복귀 — 음소거 아니고 트랙 지정이 있으면 재개
-      if (!muted && bgmKey && !bgmSound) startTrack(bgmKey);
-    }
+    if (document.hidden) suspendAudio(g);
+    else resumeAudio();
   });
+  window.addEventListener("blur", () => suspendAudio(g));
+  window.addEventListener("focus", () => resumeAudio());
+  /* pagehide 는 bfcache 진입/뒤로가기로 페이지가 내려갈 때 — 복귀는 pageshow 가 맡는다. */
+  window.addEventListener("pagehide", () => suspendAudio(g));
+  window.addEventListener("pageshow", () => resumeAudio());
 }
 
 /** 유저 제스처 시점 오디언락 해제 (모바일 WebView 대비) */
@@ -719,23 +769,24 @@ function ensureBgmDecoded(key: string): Promise<boolean> {
  *  디코드 실패/미완료면 0.5초 간격 재시도 — "게임 시작 직후 음악이 안 나오는" 타이밍 버그 방지 (최대 30회/15초).
  *  await 후 트랙이 바뀌었거나 음소거되면 stale로 무시해 이중 재생을 막는다. */
 async function startTrack(key: string, retried = 0) {
-  if (!game || muted) return;
+  /* vc270 — 정지 중에는 BGM 디코드/재생 시도 자체를 하지 않는다. resumeAudio 가 재개를 맡는다. */
+  if (!game || muted || suspended) return;
   const ok = await ensureBgmDecoded(key);
   if (!ok) {
-    if (retried < 30 && bgmKey === key && !bgmSound && !muted && game) {
+    if (retried < 30 && bgmKey === key && !bgmSound && !muted && !suspended && game) {
       window.setTimeout(() => {
-        if (bgmKey === key && !bgmSound && !muted) startTrack(key, retried + 1);
+        if (bgmKey === key && !bgmSound && !muted && !suspended) startTrack(key, retried + 1);
       }, 500);
     }
     return;
   }
-  if (!game || muted || bgmKey !== key || bgmSound) return; // stale 가드
+  if (!game || muted || suspended || bgmKey !== key || bgmSound) return; // stale 가드
   try {
     const snd = game.sound.add(key, { loop: true, volume: 0 });
     if (!snd) {
-      if (retried < 30 && bgmKey === key && !bgmSound && !muted) {
+      if (retried < 30 && bgmKey === key && !bgmSound && !muted && !suspended) {
         window.setTimeout(() => {
-          if (bgmKey === key && !bgmSound && !muted) startTrack(key, retried + 1);
+          if (bgmKey === key && !bgmSound && !muted && !suspended) startTrack(key, retried + 1);
         }, 500);
       }
       return;

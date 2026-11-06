@@ -19,7 +19,7 @@ import { ULT_CLASSES,
 import { sweptHitsTarget } from "../collision/sweep";
 import { loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드
 import { resolveBodyPrefix } from "../characterAppearance";
-import { ult5HoldOf, ult5bHoldOf } from "../ultHold"; // v1.4.41 (#3) — 궁극기 시전 시간
+import { ult5HoldOf, ult5bHoldOf, ultBurstMultOf } from "../ultHold"; // v1.4.41 (#3) — 궁극기 시전 시간 · 지시 #9 — 극딜 배율
 import { playUltCinematic } from "../fx/UltCinematic"; // v1.4.41 (#13) — 궁극기 시네마틱 연출
 import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUltIntroSig, spawnTierFlair, spawnUltFlourish, spawnSkillImpact, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처 · vc147 — 계열별 지면 시그니처
 import { DEATH_SLASH_CFG, runDeathSlashCinematic } from "../fx/DeathSlash"; // vc153 — 도적 제2궁극기 「사(死)의 일섬」 3D 시네마틱
@@ -8257,6 +8257,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       isFifth: this.isFifth,
       sTier: this.sTier,
       ultSlot: this.ultSlot,
+      // 지시 #9 — 극딜 창이 짧은 직업은 배율 ↑, 긴 직업은 ↓ (총량 정규화). ultHold.ts 참고.
+      ultBurst: ultBurstMultOf(this.ultSlot, this.cls, familyOf(this.cls)),
       rage: this.selfAtkBuff ? this.selfAtkBuff.mult : 1,
       rebirthDmgMult: this.rebirthDmgMult,
       runSkillPct: this.runBuffs.skillPct,

@@ -25,7 +25,7 @@ import { lineByKey as chibiLineByKey, CHIBI_LINES, type ChibiSave } from "../chi
 import { getTraumaShake, playUltCinematic } from "../fx/UltCinematic"; // v1.4.41 (#13) — 궁극기 시네마틱
 import { playStoryCutscene } from "../fx/StoryCutscene";
 import { sceneCinematicPlaying } from "../fx/sceneCinematic";
-import { chapterIntroOf, resolveChapterIntroShots } from "../storyCutscenes";
+import { chapterIntroOf, resolveChapterIntroShots, stageIntroOf, stageIntroSeenKey } from "../storyCutscenes";
 import { playAutoCutscene } from "../fx/AutoCutscene"; // v4.9.0 — 메이플식 자동 컷씬
 import { PixelFxManager } from "../fx/PixelFxManager"; // v4.9.3 — pixelfx 통합 매니저
 import { LILAC_SCENARIOS, lilacScenarioIdAt } from "../lilacScenarios"; // v4.9.0 — 1기 시나리오 데이터
@@ -384,6 +384,10 @@ export class WorldScene extends Phaser.Scene {
     this.agroHoldUntil = Math.max(this.agroHoldUntil, this.time.now + ms);
   }
   /* ----- v2.0: 토벌 퀘스트 기준선 (퀘스트 시작 이후 킬만 카운트 — 지시 #17) ----- */
+  /** 키는 `스테이지:퀘스트id|몬스터키` — 퀘스트마다 기준선을 분리한다.
+   *  종전엔 몬스터키 전역 지도라 한 번 잡힌 기준선이 세이브 내내 유지돼,
+   *  앞 구역에서 잡은 킬이 다음 구역의 같은 몬스터 토벌을 즉시 채웠다(유저 신고 증상).
+   *  값은 여전히 숫자라 세이브 `huntBase` 스키마는 그대로다. */
   private huntBaseline: Record<string, number> = {};
   /* ----- v2.0: E 상호작용 말풍선 (이름 위 배치 — 지시 #14) ----- */
   private eBubble: Phaser.GameObjects.Arc | Phaser.GameObjects.Rectangle | null = null;
@@ -973,7 +977,9 @@ export class WorldScene extends Phaser.Scene {
     this.fragmentsFound = {}; // v3.0.22 (#44) — 세이브 복원 전 초기화
     this.fieldEliteRef = null;
     this.agroHoldUntil = 0;
-    /* vc232 (#4) — 퀘스트 수락 시점 기준선도 복원 (없으면 로드 후 카운트가 전부 리셋) */
+    /* vc232 (#4) — 퀘스트 수락 시점 기준선도 복원 (없으면 로드 후 카운트가 전부 리셋)
+     * 구세이브는 몬스터키 단독 키(`huntBase.swampbeast`)를 갖는다. 그 값을 여기서
+     * 버리지 않고 그대로 싣고, seedHuntBaseline 이 진행 중 퀘스트의 스코프 키로 승계한다. */
     this.huntBaseline = { ...(data.save?.huntBase ?? {}) };
     /* v2.2 실내/취침 */
     this.isInterior = false;
@@ -2543,9 +2549,19 @@ export class WorldScene extends Phaser.Scene {
   private playChapterIntroCutscene(stageKey: StageKey): boolean {
     if (!this.player || isTrainingStage(stageKey)) return false;
     const parsed = parseStage(stageKey);
-    if (parsed.sub !== 1 || !parsed.ch || parsed.ch === "village") return false;
-    const spec = chapterIntroOf(parsed.ch);
-    if (!spec?.shots.length || (spec.once !== false && this.cutsceneSeen.includes(parsed.ch))) return false;
+    if (!parsed.ch || parsed.ch === "village") return false;
+    /* vc238 (지시 #5 "스테이지마다 대사 여러 개 + 컷씬도") — 종전엔 sub1(챕터 입장)만
+     *  연출이 있었다. 이제 구역 단위 인트로도 같은 경로로 재생한다.
+     *  · sub1  → 기존 챕터 인트로 (chapterIntroOf)
+     *  · 그 외 → stageIntroOf(구역별 연출). 데이터가 없으면 null → 기존 동작 그대로.
+     *  시청 기록 키는 반드시 분리한다(stageIntroSeenKey) — 챕터 키와 겹치면
+     *  한 번 본 것 때문에 다른 구역 연출이 통째로 스킵된다. */
+    const isChapterIntro = parsed.sub === 1;
+    const spec = isChapterIntro
+      ? chapterIntroOf(parsed.ch)
+      : stageIntroOf(parsed.ch, parsed.sub);
+    const seenKey = isChapterIntro ? parsed.ch : stageIntroSeenKey(parsed.ch, parsed.sub);
+    if (!spec?.shots.length || (spec.once !== false && this.cutsceneSeen.includes(seenKey))) return false;
     const shots = resolveChapterIntroShots(spec, {
       width: this.stageW, height: this.stageH, entry: this.entryHome, feature: this.portalHome, player: this.player,
     });
@@ -2562,8 +2578,8 @@ export class WorldScene extends Phaser.Scene {
         return cancel;
       },
       onDone: () => {
-        if (!this.cutsceneSeen.includes(parsed.ch)) {
-          this.cutsceneSeen = [...this.cutsceneSeen, parsed.ch];
+        if (!this.cutsceneSeen.includes(seenKey)) {
+          this.cutsceneSeen = [...this.cutsceneSeen, seenKey];
           this.saveSoon();
         }
       },
@@ -3215,6 +3231,19 @@ export class WorldScene extends Phaser.Scene {
     reserved.push([this.entryHome.x, this.entryHome.y]);
     const blocked = (x: number, y: number) => reserved.some(([rx, ry]) => Phaser.Math.Distance.Between(x, y, rx, ry) < 170);
 
+    /* vc238 (지시 #2 "타일맵 ㅈㄴ 이상함 — 쓸데없는 스프라이트/prop 막 배치하지마")
+     *  [문제] 장식이 5개 층(나무/바위/꽃/decor오브젝트/지면스캐터)으로 나뉘어 있는데
+     *   각 층이 자기 예산만 지키고 **서로의 자리를 전혀 몰랐다**. 그래서 나무 위에
+     *   항아리가, 꽃 위에 횃불이 겹쳐 그려져 "아무렇게나 뿌린" 화면이 됐다.
+     *   특히 꽃은 natPoint(통로 회피)를 안 쓰고 화면 전체에 균등분포로 뿌려
+     *   플레이 동선 한가운데에 박히는 주범이었다.
+     *  [해결] 모든 층이 공유하는 점유 목록(placed)을 두고, 배치 전 최소거리를
+     *   검사한다 → 한 자리에 장식이 겹치지 않는다. (층별 예산은 그대로 유지) */
+    const placed: [number, number][] = [];
+    const freeAt = (x: number, y: number, minDist: number) =>
+      !placed.some(([px, py]) => Phaser.Math.Distance.Between(x, y, px, py) < minDist);
+    const take = (x: number, y: number) => { placed.push([x, y]); };
+
     // 나무 & 소나무 & 바위 (충돌 있음) — 실제 에셋, 챕터 테마 변형 (v2.0: 구역 키 대응)
     // v3.0 (사용자 지시 #7) — 스바르트알프헤임(동굴) 초록 소나무 제거: 시든 나무·암석으로 교체
     const treeSet: string[] =
@@ -3274,6 +3303,8 @@ export class WorldScene extends Phaser.Scene {
         /* v3.0 — 개미굴 벽 셀에는 심지 않음 */
         if (!this.inOpenArea(x, y)) continue;
         if (this.nearSolidObstacle(x, y, 48)) continue;
+        if (!freeAt(x, y, 72)) continue; // vc238 — 나무끼리 겹침 방지
+        take(x, y);
         const tex = treePick();
         const t = this.add.image(x, y, tex).setDepth(this.yDepthFor(y));
         this.solidGroup.add(t);
@@ -3304,6 +3335,8 @@ export class WorldScene extends Phaser.Scene {
         if (blocked(x, y)) continue;
         if (!this.inOpenArea(x, y)) continue;
         if (this.nearSolidObstacle(x, y, 48)) continue;
+        if (!freeAt(x, y, 64)) continue; // vc238 — 바위끼리/나무와 겹침 방지
+        take(x, y);
         const r = this.add.image(x, y, rockTex).setDepth(this.yDepthFor(y));
         this.solidGroup.add(r);
         /* v3.0.10 — 64x64 바위 하단 실측
@@ -3317,12 +3350,20 @@ export class WorldScene extends Phaser.Scene {
     // F1 핵심: 꽃은 def.flowerCount 송이만 (10 이하)
     const flowers = ["flower_r", "flower_y", "flower_w"];
     const flowerN = Math.round(def.flowerCount * decorScale.flower); // vc232 (#14)
+    /* vc238 (지시 #2) — [문제] 꽃은 natPoint()를 안 쓰고 화면 전체에 균등분포로
+     *  뿌려서, 플레이 통로 한가운데와 벽 틈에 박히는 주범이었다.
+     *  [해결] 나무·바위와 같은 통로 회피(natPoint)와 공유 점유 검사를 쓰고,
+     *  다른 장식과 40px 이상 떨어뜨린다. 개수는 그대로(예산 유지). */
     for (let i = 0; i < flowerN; i++) {
-      const x = rng.between(60, this.stageW - 60);
-      const y = rng.between(60, this.stageH - 60);
-      if (blocked(x, y)) continue;
-      if (!this.inOpenArea(x, y)) continue;
-      this.add.image(x, y, rng.pick(flowers)).setDepth(1).setAlpha(0.95);
+      for (let tries = 0; tries < 6; tries++) {
+        const [x, y] = natPoint();
+        if (blocked(x, y)) continue;
+        if (!this.inOpenArea(x, y)) continue;
+        if (!freeAt(x, y, 40)) continue;
+        take(x, y);
+        this.add.image(x, y, rng.pick(flowers)).setDepth(1).setAlpha(0.95);
+        break;
+      }
     }
 
     /* vc235 — 장식 오브젝트(왕좌·책장·항아리·횃불·천막·가구).
@@ -3331,7 +3372,7 @@ export class WorldScene extends Phaser.Scene {
      *  실제 오브젝트는 배치 코드가 없어 한 번도 화면에 나오지 않았다.
      *  [예산] vc232 에서 사용자가 "쓸데없는 오브젝트 줄이기"를 지적했으므로
      *  챕터별 상한(DECOR_BUDGET)을 두고, 통행로를 비우는 기존 규칙을 그대로 쓴다. */
-    this.placeDecorObjects(ch, rng, blocked);
+    this.placeDecorObjects(ch, rng, blocked, freeAt, take);
 
     /* v1.4.11 — 지면 변형 스캐터 (tx_* 전환타일 세트 활성화 — 로드만 되고 배치 0이던 45종).
      *  v3.0.13 민원(타 세트 색상 사각형 뒤죽박죽)과 달리 같은 세트의 pvar/gvar 변형만
@@ -3618,6 +3659,8 @@ export class WorldScene extends Phaser.Scene {
     ch: string,
     rng: Phaser.Math.RandomDataGenerator,
     blocked: (x: number, y: number) => boolean,
+    freeAt: (x: number, y: number, minDist: number) => boolean,
+    take: (x: number, y: number) => void,
   ) {
     const setKey = decorSetFor(ch);
     const budget = DECOR_BUDGET[setKey];
@@ -3644,8 +3687,14 @@ export class WorldScene extends Phaser.Scene {
         if (blocked(x, y)) continue;
         if (!this.inOpenArea(x, y)) continue;
         const o = rng.pick(list);
+        /* vc238 (지시 #2) — 나무·바위·꽃이 이미 차지한 자리를 피한다.
+         *  큰 소품은 넉넉히(90px), 나머지는 48px. 이게 없으면 항아리가
+         *  나무 줄기 위에, 횃불이 꽃 위에 겹쳐 그려져 "아무렇게나 뿌린" 맵이 됐다. */
+        const minDist = o.tag === "big" ? 120 : 48;
+        if (!freeAt(x, y, minDist)) continue;
         if (this.nearSolidObstacle(x, y, o.tag === "big" ? 90 : 46)) continue;
         place(o, x, y);
+        take(x, y);
         placed++;
       }
     };
@@ -9081,9 +9130,18 @@ export class WorldScene extends Phaser.Scene {
    *  targetKeys(자동 토벌)면 구역 몬스터 전체, 단일 대상(스토리/반복)이면 해당 종만. */
   private huntProgressSum(q: QuestDef): number {
     const keys = q.targetKeys ?? (q.targetKey ? [q.targetKey] : []);
+    const base = this.huntScopeKey(q);
     let sum = 0;
-    for (const k of keys) sum += (this.killTotals[k] ?? 0) - (this.huntBaseline[k] ?? 0);
+    for (const k of keys) sum += (this.killTotals[k] ?? 0) - (this.huntBaseline[`${base}|${k}`] ?? 0);
     return sum;
+  }
+
+  /** 이 퀘스트 인스턴스의 기준선 스코프 — 스테이지 + 퀘스트 id (+ 반복 의뢰 순번).
+   *  반복 의뢰는 재수주할 때마다 새 사이클이라 순번까지 넣어야 재-baseline 된다. */
+  private huntScopeKey(q: QuestDef): string {
+    if (!this.repeatActive()) return `${this.stageDef.key}:${q.id}`;
+    const i = this.repeatBounties.findIndex((b, k) => b.count < this.repeatNeedOf(k));
+    return `${this.stageDef.key}:${q.id}:${i < 0 ? "all" : i}:${this.repeatCycle}`;
   }
 
   /**
@@ -9109,11 +9167,31 @@ export class WorldScene extends Phaser.Scene {
    *  v3.0.28 — targetKeys 지원: 자동 토벌은 구역 몬스터 전체의 기준선 설정 */
   private syncQuestBaseline() {
     const q = this.currentQuest();
-    if (q?.type === "hunt" && !this.repeatActive()) {
-      const keys = q.targetKeys ?? (q.targetKey ? [q.targetKey] : []);
-      for (const k of keys) {
-        if (!(k in this.huntBaseline)) this.huntBaseline[k] = this.killTotals[k] ?? 0;
-      }
+    this.seedHuntBaseline();
+    if (q?.type === "hunt") this.huntCount = Math.min(this.huntProgressSum(q), q.need ?? 0);
+  }
+
+  /** 현재 활성 hunt 퀘스트 기준선을 **지금** killTotals 로 다시 잡는다.
+   *
+   *  종전엔 `if (!(k in this.huntBaseline))` 로 종족키마다 한 번만 잡아서, 한 번이라도
+   *  기준선이 생긴 몬스터는 세이브가 끝날 때까지 재설정되지 않았다. 그래서 앞 구역에서
+   *  잡은 킬이 다음 구역의 같은 몬스터 토벌을 즉시 채웠다(유저 신고 증상).
+   *  지금은 퀘스트별 스코프 키라 퀘스트가 바뀌면 그 퀘스트의 기준선이 새로 잡힌다.
+   *  진행 중인 같은 퀘스트는 키가 같아 이미 잡힌 값을 유지 → 진행도가 사라지지 않는다. */
+  private seedHuntBaseline() {
+    const q = this.currentQuest();
+    if (!q || q.type !== "hunt") return;
+    const base = this.huntScopeKey(q);
+    const keys = q.targetKeys ?? (q.targetKey ? [q.targetKey] : []);
+    for (const k of keys) {
+      const id = `${base}|${k}`;
+      if (id in this.huntBaseline) continue;
+      /* 구세이브 승계 — 퀘스트별 키가 없으면 종전 몬스터키 단독 값을 그대로 이어받는다.
+       *  이게 없으면 기존 유저의 진행 중이던 토벌이 0부터 다시 시작된다.
+       *  승계 후 옛 키는 지워 같은 값이 다른 퀘스트로 새지 않게 한다. */
+      const legacy = this.huntBaseline[k];
+      this.huntBaseline[id] = legacy ?? this.killTotals[k] ?? 0;
+      if (legacy !== undefined) delete this.huntBaseline[k];
     }
   }
 
@@ -9133,6 +9211,15 @@ export class WorldScene extends Phaser.Scene {
    */
   private afterAdvance() {
     const q = this.currentQuest();
+    if (q?.type === "hunt") {
+      /* 토벌 퀘스트 시작 기준선 — 시작 이후 킬만 진행 (지시 #17)
+       * v3.0.28 — targetKeys(자동 토벌)는 구역 몬스터 전체 기준선
+       * [수정] 퀘스트가 바뀔 때마다 재설정한다 (seedHuntBaseline 참조).
+       *  반복 의뢰도 여기서 잡는다 — 종전엔 `!repeatActive()` 로 빠져 기준선이 없었다. */
+      this.seedHuntBaseline();
+      /* 표시용 진행도도 즉시 채운다 — emitQuest 가 이 값을 읽으므로 먼저 계산한다 */
+      this.huntCount = Math.min(this.huntProgressSum(q), q.need ?? 0);
+    }
     this.emitQuest();
     if (!q) {
       /* v2.4 치명 버그 수정 — 구역 1~9(보스 없는 구역)에서 체인 완료 후 전진 포탈이
@@ -9142,14 +9229,6 @@ export class WorldScene extends Phaser.Scene {
         this.activatePortal();
       }
       return;
-    }
-    if (q.type === "hunt" && !this.repeatActive()) {
-      /* 토벌 퀘스트 시작 기준선 — 시작 이후 킬만 진행 (지시 #17)
-       * v3.0.28 — targetKeys(자동 토벌)는 구역 몬스터 전체 기준선 */
-      const keys = q.targetKeys ?? (q.targetKey ? [q.targetKey] : []);
-      for (const k of keys) {
-        if (!(k in this.huntBaseline)) this.huntBaseline[k] = this.killTotals[k] ?? 0;
-      }
     }
     if (q.type === "level") {
       // v2.4 — 이미 목표 레벨을 넘었으면 즉시 연쇄 완료 (소프트락 방지)
@@ -17803,6 +17882,9 @@ export class WorldScene extends Phaser.Scene {
         // v2.3 (지시 #4) — 상인 대화 종료 → 반복 토벌 의뢰 수주
         if (this.repeatUnlockable()) {
           this.repeatOn = true;
+          /* 반복 의뢰도 수락 시점부터 센다 — 종전엔 기준선을 안 잡아
+           * 누적 킬이 곧바로 목표를 채웠다(두 번째 무한 진행 경로). */
+          this.seedHuntBaseline();
           this.saveSoon();
           audio.sfx.reward();
           this.showBanner("토벌 의뢰 수주! 구역 체인을 모두 끝낸 사냥터에서 [반복] 의뢰를 진행할 수 있어요");
