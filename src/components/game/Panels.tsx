@@ -1036,20 +1036,12 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
 export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
   const modal = useModal("상점"); // v1.0.16 (F2)
-  /* v3.0.5 — 스타포스 강화 결과 플래시 (성공 금빛 링 / 실패 붉은 흔들림) */
-  const [flash, setFlash] = useState<{ slot: "weapon" | "armor"; result: "ok" | "fail"; seq: number } | null>(null);
+  /* [vc263f] 강화 결과 플래시(flash)·`rpg:upgradeResult` 구독을 제거했다.
+   *  상점에서 스타포스 섹션을 빼면서(중복 — 가방에 이미 있음) 이 상태를 쓰는 곳이
+   *  없어졌기 때문. 남겨두면 매 강화마다 상점이 리렌더되는 dead code 가 된다. */
   /* v3.0.24 (#수량) — 소모품/버프 수량 지정 구매 (아이템키별) */
   const [qtyMap, setQtyMap] = useState<Record<string, number>>({});
   const qtyOf = (k: string) => qtyMap[k] ?? 1;
-  useEffect(() => {
-    let seq = 0;
-    const on = (v: { slot: "weapon" | "armor"; result: "ok" | "fail" }) =>
-      setFlash({ slot: v.slot, result: v.result, seq: ++seq });
-    EventBus.on("rpg:upgradeResult", on);
-    return () => {
-      EventBus.off("rpg:upgradeResult", on);
-    };
-  }, []);
 
   /* v1.0.6 (신1) — NPC 선택지 키보드 조작: 상점 목록을 ↑/↓로 훑고 E로 구매.
    *  섹션별 필터를 적용한 "실제 표시 행"의 평면 리스트를 먼저 계산해 내비게이션과 공유한다. */
@@ -1093,6 +1085,17 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
     })).filter((s) => s.rows.length > 0);
   }, [rpg.shopStock, rpg.unlockedSets, rpg.cls]);
   const flatRows = useMemo(() => shopSections.flatMap((s) => s.rows), [shopSections]);
+  /* vc263f (지시 #9) — 좌측 카테고리 탭 상태. 종전엔 전 카테고리를 세로로 쏟아
+   *  물약 목록을 지나야 장비에 닿았다. 카테고리를 골라 한 종류만 카드로 보여준다.
+   *
+   *  [유효성] effect 로 setState 하면 react-hooks/set-state-in-effect 위반이고
+   *  렌더가 한 번 더 도는 낭비가 있다. 카테고리는 shopSections 에서 파생되는 값이므로
+   *  **렌더 중 계산**으로 처리한다 — 선택값이 목록에 없으면 첫 카테고리로 폴백. */
+  const [catPick, setCatPick] = useState<string>("");
+  const activeCat = shopSections.some((s) => s.label === catPick)
+    ? catPick
+    : (shopSections[0]?.label ?? "");
+  const setActiveCat = setCatPick;
   /* E키 확정 — 해당 행의 구매 버튼과 동일 동작 (구매 불가 행은 무시) */
   const [navIdx] = useListNav(flatRows.length, (i) => {
     const k = flatRows[i];
@@ -1149,158 +1152,144 @@ export function ShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           </div>
         </div>
 
-        {/* 상점 섹션 — 물약·장비 / 버프 / 펫 / 치장 (v1.9 BM)
-            v1.0.6 — 섹션 리스트를 useMemo로 선계산해 키보드 내비게이션(↑/↓·E)과 공유.
-            선택 행은 금테 하이라이트 + ▶ 마커로 강조된다 (NPC 선택지 키보드 조작). */}
-        <div className="flex max-h-[52vh] flex-col gap-1.5 overflow-y-auto pr-0.5">
+        {/* ══ vc263f (지시 #9) — 상점 UI를 유저 제공 레퍼런스(상점_UI_참고.jpg) 구조로 개편 ══
+         *
+         * [종전 불편] 7개 카테고리(회복물약/기타소모품/장비/버프/펫/치장/가구)가
+         *  한 화면에 세로로 전부 쏟아지고, 스크롤 높이가 52vh 로 잘려 있어
+         *  "장비를 사려면 물약 목록을 한참 내려야" 했다. 카테고리를 고를 방법이 없었다.
+         *
+         * [레퍼런스 구조] 좌측 카테고리 사이드바 + 우측 상품 카드 그리드 (3분할 상점 패턴).
+         *  · 좌측: 카테고리 버튼 세로 나열(선택 시 앰버 강조) + 각 카테고리 개수 표시
+         *  · 우측: 카드 그리드(2열) — 아이콘·이름·효과·가격버튼을 카드 안에 배치
+         *  · 카드 하단 가격은 레퍼런스처럼 "재화 아이콘 + 숫자"로 표기
+         *  · 수량 조절은 카드 안에서(스택 가능 아이템만)
+         * 키보드 내비(↑/↓·E)는 기존 flatRows/navIdx 를 그대로 재사용한다. */}
+
+        {/* 카테고리 탭 — 좌측 사이드바 (레퍼런스: 다크 네이비 세로 메뉴) */}
+        <div className="mb-2 flex flex-wrap gap-1 rounded-lg border border-white/10 bg-black/25 p-1">
           {shopSections.map((section) => {
+            const on = activeCat === section.label;
             return (
-              <div key={section.label} className="flex flex-col gap-1.5">
-                <p className="mt-1 text-[10px] font-black tracking-wide text-white/55">{section.label}</p>
-                {section.rows.map((k) => {
-                  const item = ITEMS[k as ItemKey];
-                  const st = shopState(rpg, k as ItemKey);
-                  const count = item.kind === "buff" ? (rpg.buffItems[k] ?? 0) : undefined;
-                  const stackable = item.kind === "consumable" || item.kind === "buff" || k.startsWith("furn_"); // vc178 — 가구 수량 구매 (E키 확정 경로) // v3.0.24
-                  const qty = qtyOf(k);
-                  const showQty = stackable && st === "buyable";
-                  const total = item.price * (stackable ? qty : 1);
-                  const sel = flatRows.indexOf(k) === navIdx; // v1.0.6 — 키보드 선택 행
-                  return (
-                    <div
-                      key={k}
-                      data-navsel={sel ? "1" : undefined}
-                      className={`flex items-center gap-2.5 rounded-lg border px-2.5 py-2 transition-colors ${
-                        sel ? "border-amber-300/80 bg-amber-400/[0.08]" : "border-white/10 bg-white/[0.04]"
-                      }`}
-                    >
-                      <ItemIcon icon={item.icon} tier={item.tier} />
-                      <div className="min-w-0 flex-1">
-                        <p className={`truncate text-[13px] font-bold ${TIER_STYLE[item.tier].name}`}>
-                          {sel && <span className="mr-1 text-amber-300">▶</span>}
-                          {item.name}
-                          {typeof count === "number" && count > 0 && <span className="ml-1 text-white/60">×{count}</span>}
-                          <span className="ml-1.5 rounded bg-black/50 px-1 py-px text-[9px] font-black text-white/55">
-                            {TIER_STYLE[item.tier].label}
-                          </span>
-                        </p>
-                        <p className="text-[11px] text-emerald-300/90">{itemEffect(item)}</p>
-                      </div>
-                      {showQty && <QtyStepper qty={qty} onChange={(n) => setQtyMap((m) => ({ ...m, [k]: n }))} />}
-                      <button
-                        disabled={st !== "buyable"}
-                        onClick={() => EventBus.emit("rpg:buy", { key: k as ItemKey, qty: stackable ? qty : 1 })}
-                        className={`shrink-0 rounded-md px-2.5 py-1.5 text-[11px] font-black transition-transform active:scale-95 ${
-                          st === "equipped"
-                            ? "cursor-default bg-emerald-700/40 text-emerald-300"
-                            : st === "owned"
-                              ? "cursor-default bg-slate-700/50 text-white/50"
-                              : st === "buyable"
-                                ? "bg-amber-400 text-slate-900 hover:bg-amber-300"
-                                : "cursor-not-allowed bg-slate-700/50 text-white/55"
-                        }`}
-                      >
-                        {st === "equipped" ? "장착 중" : st === "owned" ? "보유함" : showQty && qty > 1 ? `${total} G` : `${item.price} G`}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+              <button
+                key={section.label}
+                onClick={() => setActiveCat(section.label)}
+                className={`rounded-md px-2 py-1 text-[10px] font-black transition-colors ${
+                  on
+                    ? "bg-gradient-to-b from-amber-300 to-amber-500 text-slate-900 shadow"
+                    : "text-white/55 hover:bg-white/10 hover:text-white/80"
+                }`}
+              >
+                {section.label}
+                <span className={`ml-1 ${on ? "text-slate-900/70" : "text-white/35"}`}>{section.rows.length}</span>
+              </button>
             );
           })}
         </div>
 
-        {/* v3.0.5 — 스타포스 강화 (★15 확장 · 마일스톤 보너스 · 결과 연출) */}
-        <div className="mt-2 rounded-lg border border-amber-200/25 bg-amber-300/[0.05] p-2">
-          <div className="mb-1.5 flex items-center gap-1.5">
-            <img src="/assets/icon_hammer.webp" alt="" className="h-4 w-4" style={{ imageRendering: "pixelated" }} />
-            <p className="text-[12px] font-black text-amber-200">스타포스 강화</p>
-            <p className="text-[10px] text-white/55">최대 ★{UPGRADE_MAX} · ★{UPGRADE_FALLBACK_FROM} 이상 {STAR_FALLBACK_STREAK}연속 실패 시 1성 하락</p>
-            {/* v3.0.7 — 강화 주문서 충전 현황 */}
-            {(rpg.starBless ?? 0) > 0 && (
-              <span className="ml-auto rounded-md border border-purple-300/50 bg-purple-400/15 px-1.5 py-0.5 text-[9px] font-black text-purple-200">
-                주문서 {(rpg.starBless ?? 0)}장 · +{(rpg.starBless ?? 0) * STAR_BLESS_RATE}%p
-              </span>
-            )}
-          </div>
-          {/* 마일스톤 효과 안내 — v3.0.20 (#8): 본당 즉시 상승 + 마일스톤 대폭 상향 */}
-          <div className="mb-1.5 flex flex-wrap gap-x-2.5 gap-y-0.5 rounded-md bg-white/[0.04] px-2 py-1 text-[9px] leading-relaxed text-white/55">
-            <span className="text-white/80">★1마다: 무기 공격+2+무기atk 8% / 방어구 방어+1+def 6%·HP+12</span>
-            <span className="text-[#6ff2d8]">★5 무기 공격+8·치명+3% / 방어구 방어+1·HP+80</span>
-            <span className="text-[#d29dff]">★10 무기 공격+14·치명+6% / 방어구 방어+3·HP+160</span>
-            <span className="text-[#ffd76a]">★15 무기 공격+24·치명+12% / 방어구 방어+6·HP+220</span>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            {(["weapon", "armor"] as const).map((slot) => {
-              const key = slot === "weapon" ? rpg.weapon : rpg.armor;
-              const item = ITEMS[key as ItemKey];
-              if (!item) return null;
-              const up = slot === "weapon" ? rpg.upWea : rpg.upArm;
-              const maxed = up >= UPGRADE_MAX;
-              const cost = upgradeCost(slot, up);
-              /* v3.0.7 — 강화 주문서 충전분 성공률 가산 표기 · v1.0.8 실패 가산(천장) 반영 */
-              const bless = Math.min(rpg.starBless ?? 0, STAR_BLESS_MAX);
-              const starPity = Math.min(rpg.starPity ?? 0, STAR_PITY_MAX);
-              const rate = (UPGRADE_RATES[up] ?? 0) + bless * STAR_BLESS_RATE + starPity;
-              const affordable = rpg.gold >= cost;
-              const tier = starTier(up);
-              const tierCss = STAR_TIER_CSS[tier];
-              const flashing = flash && flash.slot === slot ? flash.result : null;
-              /* 다음 성 스탯 미리보기 (now → next) */
-              const statLine =
-                slot === "weapon"
-                  ? `${(item.atk ?? 0) + starPerStarAtk(item.atk ?? 0) * up + starWeaponBonus(up).atk} → ${maxed ? "-" : (item.atk ?? 0) + starPerStarAtk(item.atk ?? 0) * (up + 1) + starWeaponBonus(up + 1).atk} 공격력` // v3.0.20 (#8) 본당 +2+8%
-                  : `${(item.def ?? 0) + starPerStarDef(item.def ?? 0).def * up + starArmorBonus(up).def} → ${maxed ? "-" : (item.def ?? 0) + starPerStarDef(item.def ?? 0).def * (up + 1) + starArmorBonus(up + 1).def} 방어력`;
-              return (
-                <div
-                  key={slot}
-                  className={`flex items-center gap-2.5 rounded-lg border px-2.5 py-1.5 transition-colors duration-500 ${
-                    flashing === "ok"
-                      ? "border-amber-300/90 bg-amber-300/15"
-                      : flashing === "fail"
-                        ? "animate-[sfshake_0.4s_ease] border-rose-400/70 bg-rose-400/10"
-                        : "border-white/10 bg-white/[0.04]"
-                  }`}
-                >
-                  <ItemIcon icon={item.icon} size={26} tier={item.tier} />
-                  <div className="min-w-0 flex-1">
-                    <p className={`truncate text-[12px] font-bold ${TIER_STYLE[item.tier].name}`}>
-                      {displayName(item.name, up)}
-                      <span className="ml-1 text-[10px] font-normal text-white/55">
-                        {slot === "weapon" ? "무기" : "방어구"}
-                      </span>
-                    </p>
-                    {/* v3.0.5 — 성 15칸 바 (티어색) */}
-                    <div className="mt-0.5 flex items-center gap-[2px] text-[10px] leading-none">
-                      {Array.from({ length: UPGRADE_MAX }, (_, i) => (
-                        <span key={i} style={{ color: i < up ? tierCss : "#3b4353" }}>★</span>
-                      ))}
-                    </div>
-                    <p className="mt-0.5 text-[10px] text-emerald-300/90">
-                      {itemEffect(item, up)}
-                      {!maxed && <span className="ml-1 text-white/55">({statLine})</span>}
-                    </p>
-                  </div>
-                  <button
-                    disabled={maxed || !affordable}
-                    onClick={() => EventBus.emit("rpg:upgrade", { slot })}
-                    className={`shrink-0 rounded-md px-2.5 py-1.5 text-[11px] font-black transition-transform active:scale-95 ${
-                      maxed
-                        ? "cursor-default bg-purple-800/40 text-purple-300"
-                        : affordable
-                          ? "bg-amber-400 text-slate-900 hover:bg-amber-300"
-                          : "cursor-not-allowed bg-slate-700/50 text-white/55"
+        {/* 상품 카드 그리드 — 선택된 카테고리만 렌더 (레퍼런스: 카드형 상품 진열) */}
+        {(() => {
+          const section = shopSections.find((x) => x.label === activeCat) ?? shopSections[0];
+          if (!section) {
+            return <p className="py-6 text-center text-[11px] text-white/45">진열된 상품이 없습니다</p>;
+          }
+          return (
+            <div className="grid max-h-[46vh] grid-cols-2 content-start gap-1.5 overflow-y-auto pr-0.5">
+              {section.rows.map((k) => {
+                const item = ITEMS[k as ItemKey];
+                const st = shopState(rpg, k as ItemKey);
+                const count = item.kind === "buff" ? (rpg.buffItems[k] ?? 0) : undefined;
+                const stackable = item.kind === "consumable" || item.kind === "buff" || k.startsWith("furn_");
+                const qty = qtyOf(k);
+                const showQty = stackable && st === "buyable";
+                const total = item.price * (stackable ? qty : 1);
+                const sel = flatRows.indexOf(k) === navIdx;
+                const tierHex = TIER_HEX[item.tier];
+                return (
+                  <div
+                    key={k}
+                    data-navsel={sel ? "1" : undefined}
+                    className={`flex flex-col rounded-lg border-2 p-1.5 transition-colors ${
+                      sel ? "border-amber-300/90 bg-amber-400/[0.10]" : "border-white/10 bg-white/[0.04]"
                     }`}
                   >
-                    {maxed ? "최대" : `${cost.toLocaleString()} G · ${rate}%${bless > 0 ? ` (+${bless * STAR_BLESS_RATE})` : ""}`}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                    {/* 카드 상단 — 등급 테두리 아이콘 + 이름 */}
+                    <div className="flex items-start gap-1.5">
+                      <span
+                        className="relative shrink-0 rounded-[5px] border-2"
+                        style={{
+                          borderColor: tierHex,
+                          backgroundColor: "#4a4136",
+                          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.14), 0 0 5px ${tierHex}44`,
+                        }}
+                      >
+                        <img
+                          src={`/assets/${item.icon}.webp`}
+                          alt=""
+                          draggable={false}
+                          className="h-8 w-8 object-contain p-0.5"
+                          style={{ imageRendering: "pixelated" }}
+                        />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className={`truncate text-[11px] font-bold leading-tight ${TIER_STYLE[item.tier].name}`}>
+                          {sel && <span className="mr-0.5 text-amber-300">▶</span>}
+                          {item.name}
+                          {typeof count === "number" && count > 0 && <span className="ml-1 text-white/60">×{count}</span>}
+                        </p>
+                        <p className="mt-0.5 line-clamp-2 text-[9px] leading-tight text-emerald-300/85">{itemEffect(item)}</p>
+                      </div>
+                    </div>
 
-        <p className="mt-2 text-center text-[10px] text-white/55">장비는 구매 시 즉시 장착됩니다 · 반지 4개/펜던트 2개 중복 장착 가능 · ESC로 닫기</p>
+                    {/* 수량 조절 — 스택 가능 + 구매 가능일 때만 */}
+                    {showQty && (
+                      <div className="mt-1 flex justify-center">
+                        <QtyStepper qty={qty} onChange={(n) => setQtyMap((m) => ({ ...m, [k]: n }))} />
+                      </div>
+                    )}
+
+                    {/* 카드 하단 — 가격 + 구매 버튼 (레퍼런스: 코인 아이콘 + 숫자) */}
+                    <button
+                      disabled={st !== "buyable"}
+                      onClick={() => EventBus.emit("rpg:buy", { key: k as ItemKey, qty: stackable ? qty : 1 })}
+                      className={`mt-1 flex items-center justify-center gap-1 rounded-md py-1 text-[10px] font-black transition-transform active:scale-95 ${
+                        st === "equipped"
+                          ? "cursor-default bg-emerald-700/40 text-emerald-300"
+                          : st === "owned"
+                            ? "cursor-default bg-slate-700/50 text-white/50"
+                            : st === "buyable"
+                              ? "bg-amber-400 text-slate-900 hover:bg-amber-300"
+                              : "cursor-not-allowed bg-slate-700/50 text-white/55"
+                      }`}
+                    >
+                      {st === "equipped" ? "장착 중" : st === "owned" ? "보유함" : (
+                        <>
+                          <span className="text-[9px] opacity-80">G</span>
+                          {(showQty && qty > 1 ? total : item.price).toLocaleString()}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+
+        {/* ══ vc263f (유저 지적) — 상점에서 스타포스를 제거했다 ══
+         *
+         * [지적] "상점에 스타포스가 왜있어??"
+         * [사실 확인] 스타포스는 **가방(InventoryPanel)에 이미 완전히 구현**돼 있다
+         *   — 무기/방어구/장신구 3경로 모두 `rpg:upgrade`·`rpg:upgradeAcc` 로 동작하고,
+         *     확률 공시·주문서 가산·마일스톤 표시까지 갖추고 있다.
+         *   (2495행 주석에도 "모든 스타포스 강화를 가방에서" 라고 명시돼 있었다)
+         * [결론] 상점의 강화 섹션은 **중복 UI**였다. 상점은 "물건을 사는 곳"이고
+         *   강화는 "장비를 손보는 곳"이라는 역할 구분에도 맞지 않는다.
+         * [조치] 상점에서 강화 섹션을 제거하고, 가방에서 하도록 안내 한 줄만 남긴다.
+         *   강화 로직(Player.tryUpgrade / rpg:upgrade)은 **전혀 건드리지 않았다** —
+         *   제거한 것은 상점 패널의 표시·버튼뿐이다. */}
+
+        <p className="mt-2 text-center text-[10px] text-white/55">
+          장비 강화(스타포스)는 <b className="text-amber-200">가방</b>에서 합니다 · 장비는 구매 시 즉시 장착됩니다 · 반지 4개/펜던트 2개 중복 장착 가능 · ESC로 닫기</p>
       </div>
     </div>
   );
@@ -1791,13 +1780,29 @@ function InvGrid({ slots, sel, onPick, min = 30 }: { slots: InvSlot[]; sel: InvS
         {slots.map((s) => {
           const active = !!sel && sel.t === s.t && sel.k === s.k;
           const pot = s.potGrade !== undefined && s.potGrade >= 0 ? POT_GRADE_META[s.potGrade] : null;
+          /* vc263f (지시 #9 — 유저 UI 레퍼런스 반영)
+           *  참고: 인벤토리.jpg (다크 슬롯 + 등급 테두리 2px + 수량 뱃지 + 좌상단 상태표시)
+           *  레퍼런스에서 슬롯이 "바닥에 붙은 판"이 아니라 **살짝 떠 보이는 4면 테두리**로
+           *  읽히도록 위쪽 하이라이트/아래쪽 그늘을 넣는다. 등급색은 테두리와 글로우로만
+           *  쓰고 배경은 어둡게 유지해 아이콘 가독성을 해치지 않는다. */
+          const tier = pot ? pot.color : TIER_HEX[s.tier];
           return (
             <button
               key={s.uk}
               onClick={() => onPick(s)}
               aria-label={s.k}
-              className={`relative aspect-square rounded-[5px] border-2 transition-colors ${active ? "border-amber-300 bg-[#5e5240]" : ""}`}
-              style={active ? undefined : { borderColor: pot ? pot.color : TIER_HEX[s.tier], backgroundColor: "#4a4136" }}
+              className={`group relative aspect-square rounded-[5px] border-2 transition-colors ${active ? "border-amber-300 bg-[#5e5240]" : "hover:brightness-125"}`}
+              style={
+                active
+                  ? undefined
+                  : {
+                      borderColor: tier,
+                      backgroundColor: "#4a4136",
+                      backgroundImage:
+                        "linear-gradient(to bottom, rgba(255,255,255,0.10), rgba(255,255,255,0) 45%, rgba(0,0,0,0.22))",
+                      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.35), 0 0 5px ${tier}44`,
+                    }
+              }
             >
               <img
                 src={`/assets/${s.icon}.webp`}
@@ -3329,37 +3334,103 @@ export function PassPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           </div>
         )}
 
-        {/* 트랙 — 30레벨 × 무료/프리미엄 2줄 (가로 스크롤) */}
+        {/* ══ vc263f (지시 #9) — 시즌패스 트랙을 유저 레퍼런스(시즌패스_UI_참고.jpg) 구조로 개편 ══
+         *
+         * [종전 불편] 레벨마다 무료·프리미엄 셀이 **세로로 한 칸에 쌓여** 있어
+         *  "같은 레벨에서 무료로 받는 것 vs 프리미엄으로 받는 것"을 비교하려면
+         *  매 레벨마다 위아래를 오가며 봐야 했다. 레퍼런스의 핵심 가치(무료 대비
+         *  프리미엄 우월성을 즉시 비교)가 사라진 배치였다.
+         *
+         * [레퍼런스 구조] 세로 3단 = 상단 프리미엄 트랙 / 가운데 레벨 마커 / 하단 무료 트랙.
+         *  레벨이 가로로 흐르므로 "이 레벨의 무료 보상"과 "프리미엄 보상"이
+         *  **바로 위아래로 붙어** 비교된다. 트랙 라벨을 왼쪽에 고정해 소속이 명확하다.
+         * 마커는 레퍼런스처럼 레벨 숫자를 트랙 사이에 두고, 도달 시 앰버로 강조. */}
+
         <div className="overflow-x-auto rounded-lg border border-white/10 bg-black/30 p-2">
-          <div className="flex min-w-max gap-1.5">
-            {PASS_TRACKS.map((t, i) => {
-              const lv = i + 1;
-              const reached = lv <= lvNow;
-              return (
-                <div key={lv} className="flex w-12 shrink-0 flex-col items-center gap-1">
-                  <span className={`text-[9px] font-black ${reached ? "text-amber-200" : "text-white/55"}`}>{lv}</span>
-                  {t.free && (
-                    <PassCell
-                      g={t.free}
-                      state={p.claimedF.includes(lv) ? "claimed" : reached ? "claimable" : "locked"}
-                      onClick={() => EventBus.emit("rpg:passClaim", { lv, track: "free" })}
-                    />
-                  )}
-                  {t.prem && (
-                    <PassCell
-                      g={t.prem}
-                      goldRow
-                      state={p.claimedP.includes(lv) ? "claimed" : reached && p.prem ? "claimable" : reached ? "needprem" : "locked"}
-                      onClick={() => EventBus.emit("rpg:passClaim", { lv, track: "prem" })}
-                    />
-                  )}
-                </div>
-              );
-            })}
+          <div className="min-w-max">
+            {/* 상단 — 프리미엄 트랙 라벨 + 셀 */}
+            <div className="mb-0.5 flex items-center gap-1.5">
+              <span className={`w-14 shrink-0 rounded px-1 py-0.5 text-center text-[8px] font-black ${p.prem ? "bg-amber-400 text-slate-900" : "bg-amber-400/20 text-amber-200"}`}>
+                프리미엄
+              </span>
+              <div className="flex gap-1.5">
+                {PASS_TRACKS.map((t, i) => {
+                  const lv = i + 1;
+                  const reached = lv <= lvNow;
+                  return (
+                    <div key={`p${lv}`} className="w-11 shrink-0">
+                      {t.prem ? (
+                        <PassCell
+                          g={t.prem}
+                          goldRow
+                          state={p.claimedP.includes(lv) ? "claimed" : reached && p.prem ? "claimable" : reached ? "needprem" : "locked"}
+                          onClick={() => EventBus.emit("rpg:passClaim", { lv, track: "prem" })}
+                        />
+                      ) : (
+                        <div className="h-11 w-11 rounded-lg border border-white/[0.06] bg-white/[0.02]" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 가운데 — 레벨 마커 (트랙 사이 공유, 레퍼런스의 레벨 인디케이터) */}
+            <div className="flex items-center gap-1.5">
+              <span className="w-14 shrink-0" />
+              <div className="flex gap-1.5">
+                {PASS_TRACKS.map((_, i) => {
+                  const lv = i + 1;
+                  const reached = lv <= lvNow;
+                  const isNow = lv === lvNow;
+                  return (
+                    <div key={`lv${lv}`} className="flex w-11 shrink-0 items-center justify-center">
+                      <span
+                        className={`flex h-4 w-4 items-center justify-center rounded-full text-[8px] font-black ${
+                          isNow
+                            ? "bg-amber-300 text-slate-900 ring-2 ring-amber-200/60"
+                            : reached
+                              ? "bg-amber-400/30 text-amber-100"
+                              : "bg-white/10 text-white/40"
+                        }`}
+                      >
+                        {lv}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 하단 — 무료 트랙 라벨 + 셀 */}
+            <div className="mt-0.5 flex items-center gap-1.5">
+              <span className="w-14 shrink-0 rounded bg-sky-500/25 px-1 py-0.5 text-center text-[8px] font-black text-sky-100">
+                무료
+              </span>
+              <div className="flex gap-1.5">
+                {PASS_TRACKS.map((t, i) => {
+                  const lv = i + 1;
+                  const reached = lv <= lvNow;
+                  return (
+                    <div key={`f${lv}`} className="w-11 shrink-0">
+                      {t.free ? (
+                        <PassCell
+                          g={t.free}
+                          state={p.claimedF.includes(lv) ? "claimed" : reached ? "claimable" : "locked"}
+                          onClick={() => EventBus.emit("rpg:passClaim", { lv, track: "free" })}
+                        />
+                      ) : (
+                        <div className="h-11 w-11 rounded-lg border border-white/[0.06] bg-white/[0.02]" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
         <div className="mt-1.5 flex items-center justify-between text-[9px] text-white/55">
-          <span>위: 무료 트랙 · 아래: 프리미엄 트랙 (금색)</span>
+          <span>위: 프리미엄 트랙 (금색) · 아래: 무료 트랙</span>
           <span>탭하면 즉시 수령</span>
         </div>
         <p className="mt-2 text-center text-[10px] text-white/55">시즌 종료 시 미수령 보상은 소멸된다 — 매월 1일 리셋 · ESC로 닫기</p>
@@ -3980,6 +4051,18 @@ function GuidePanel({ onClose }: { onClose: () => void }) {
  * ===================================================================== */
 type ContentTab = "tower" | "trial" | "craft" | "abyss" | "rebirth" | "park" | "dojang"; // vc147 (#17) — "rank" 제거 (독립 랭킹창과 중복)
 
+/** vc263f (지시 #9) — 콘텐츠 카드 아이콘. 레퍼런스(컨텐츠_UI_참고.jpg)처럼
+ *  카드마다 그림을 두어 라벨을 읽지 않아도 종류가 구분되게 한다. */
+const CONTENT_ICON: Record<ContentTab, string> = {
+  tower: "🗼",
+  trial: "⚔️",
+  park: "🎡",
+  dojang: "🥋",
+  craft: "🔨",
+  abyss: "🌌",
+  rebirth: "🔄",
+};
+
 export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   useEscClose(onClose);
   const modal = useModal("콘텐츠"); // v1.0.16 (F2)
@@ -4016,10 +4099,28 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
         </div>
 
         {/* 탭 행 */}
-        <div className="mb-2.5 grid grid-cols-8 gap-1">
-          {TABS.map((tb) => (
-            <button key={tb.id} onClick={() => setTab(tb.id)} className={`rounded-lg px-1 py-1.5 text-[10px] font-black transition-transform active:scale-95 ${tab === tb.id ? tb.on : "border border-white/10 bg-white/[0.04] text-white/55"}`}>{tb.label}</button>
-          ))}
+        {/* vc263f (지시 #9) — 탭 8개를 한 줄에 눌러 담아 라벨이 뭉개지고 터치 타겟이
+         *  작았다(폭 470px / 8칸 = 약 55px). 유저 레퍼런스(컨텐츠_UI_참고.jpg)의
+         *  **카드형 콘텐츠 선택**으로 바꿔 2열 그리드 + 아이콘 + 선택 강조로 개편.
+         *  탭 상태(tab)·동작(setTab)은 그대로 재사용 — 로직 변경 없음. */}
+        <div className="mb-2.5 grid grid-cols-4 gap-1">
+          {TABS.map((tb) => {
+            const on = tab === tb.id;
+            return (
+              <button
+                key={tb.id}
+                onClick={() => setTab(tb.id)}
+                className={`flex flex-col items-center justify-center gap-0.5 rounded-lg border-2 px-1 py-1.5 transition-transform active:scale-95 ${
+                  on
+                    ? `${tb.on} border-white/40 shadow`
+                    : "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.08]"
+                }`}
+              >
+                <span className="text-[13px] leading-none">{CONTENT_ICON[tb.id] ?? "🎮"}</span>
+                <span className="text-[9px] font-black leading-tight">{tb.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {tab === "tower" && (
