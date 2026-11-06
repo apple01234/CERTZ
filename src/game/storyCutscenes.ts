@@ -58,79 +58,6 @@ export type ChapterIntroSpec = {
  * 챕터별 진입 연출. 챕터마다 팬 속도·줌을 달리해 "또 같은 연출"로 읽히지 않게 한다.
  */
 export const CHAPTER_INTROS: Record<string, ChapterIntroSpec> = {
-  forest: {
-    once: true,
-    shots: [
-      { rx: 0.5, ry: 0.18, panMs: 900, holdMs: 900, zoom: 0.92 }, // 수관
-      { rx: 0.5, ry: 0.62, panMs: 800, holdMs: 700 }, // 신전
-      { rx: 0.5, ry: 0.78, panMs: 600, holdMs: 500, dialogue: "chapterIntro_forest" },
-    ],
-  },
-  kingdom: {
-    once: true,
-    shots: [
-      { rx: 0.24, ry: 0.28, panMs: 850, holdMs: 800, zoom: 0.95 }, // 좌측 항구
-      { rx: 0.76, ry: 0.3, panMs: 900, holdMs: 800 }, // 우측 성벽
-      { rx: 0.5, ry: 0.72, panMs: 700, holdMs: 500, dialogue: "chapterIntro_kingdom" },
-    ],
-  },
-  alfheim: {
-    once: true,
-    shots: [
-      { rx: 0.5, ry: 0.22, panMs: 1000, holdMs: 900, zoom: 0.9 },
-      { rx: 0.35, ry: 0.5, panMs: 800, holdMs: 700 },
-      { rx: 0.5, ry: 0.75, panMs: 650, holdMs: 500, dialogue: "chapterIntro_alfheim" },
-    ],
-  },
-  muspelheim: {
-    once: true,
-    shots: [
-      { rx: 0.5, ry: 0.2, panMs: 950, holdMs: 850, zoom: 0.88 }, // 화산 상단
-      { rx: 0.62, ry: 0.48, panMs: 750, holdMs: 650 },
-      { rx: 0.5, ry: 0.76, panMs: 650, holdMs: 500, dialogue: "chapterIntro_muspelheim" },
-    ],
-  },
-  niflheim: {
-    once: true,
-    shots: [
-      { rx: 0.42, ry: 0.24, panMs: 900, holdMs: 800, zoom: 0.93 }, // 설원
-      { rx: 0.3, ry: 0.52, panMs: 850, holdMs: 700 },
-      { rx: 0.5, ry: 0.78, panMs: 650, holdMs: 500, dialogue: "chapterIntro_niflheim" },
-    ],
-  },
-  cave: {
-    once: true,
-    shots: [
-      { rx: 0.5, ry: 0.3, panMs: 800, holdMs: 700, zoom: 1.05 }, // 좁은 동굴 — 당겨서 압박
-      { rx: 0.5, ry: 0.6, panMs: 700, holdMs: 600 },
-      { rx: 0.5, ry: 0.8, panMs: 600, holdMs: 450, dialogue: "chapterIntro_cave" },
-    ],
-  },
-  nidavellir: {
-    once: true,
-    shots: [
-      { rx: 0.3, ry: 0.26, panMs: 900, holdMs: 800, zoom: 0.92 }, // 대장간
-      { rx: 0.7, ry: 0.34, panMs: 900, holdMs: 750 },
-      { rx: 0.5, ry: 0.74, panMs: 650, holdMs: 500, dialogue: "chapterIntro_nidavellir" },
-    ],
-  },
-  hel: {
-    once: true,
-    shots: [
-      { rx: 0.5, ry: 0.18, panMs: 1000, holdMs: 950, zoom: 0.87 }, // 낙하감
-      { rx: 0.5, ry: 0.5, panMs: 900, holdMs: 800 },
-      { rx: 0.5, ry: 0.78, panMs: 700, holdMs: 550, dialogue: "chapterIntro_hel" },
-    ],
-  },
-  abyss: {
-    once: true,
-    shots: [
-      { rx: 0.5, ry: 0.16, panMs: 1100, holdMs: 1000, zoom: 0.85 }, // 가장 웅장하게
-      { rx: 0.28, ry: 0.44, panMs: 950, holdMs: 800 },
-      { rx: 0.72, ry: 0.44, panMs: 950, holdMs: 800 },
-      { rx: 0.5, ry: 0.76, panMs: 800, holdMs: 600, dialogue: "chapterIntro_abyss" },
-    ],
-  },
   /* ── DLC 1~10 — 그랜드플래닛 원정. 도시마다 다른 시선 리듬 ── */
   dlcstargate: {
     once: true,
@@ -304,15 +231,6 @@ const BEAT_SHOTS: Record<StageBeat, ChapterIntroShot[]> = {
  * shots 의 dialogue 는 DIALOGUES 키. stageIntro 키를 넣으면 그 구역 대사가 연출과 함께 나온다.
  */
 export const STAGE_INTROS: Record<string, ChapterIntroSpec> = {
-  /* 하루가 라일락의 펜던트를 처음 되돌려주는 구역 — 챕터4(정원)의 정예 직전.
-   *  정원을 훑은 뒤 좁혀 들어가며 경고를 띄운다(2샷 이상 — 단샷 연출은 리듬이 없다). */
-  "alfheim:5": {
-    once: true,
-    shots: [
-      { rx: 0.32, ry: 0.34, panMs: 640, holdMs: 260, zoom: 0.92 },
-      { rx: 0.5, ry: 0.2, panMs: 900, holdMs: 420, zoom: 0.86, dialogue: "eliteWarn4" },
-    ],
-  },
   /* 영프 편 — 해롤드(크라켄) 직전. 바다가 통째로 검게 물드는 장면 */
   "howlrstone3:5": {
     once: true,

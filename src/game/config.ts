@@ -379,7 +379,17 @@ export const SAVE_VERSION = 1;
  *  아래 표에 항목을 추가하면 된다 — 이 지점이 없으면 나중에 마이그레이션을
  *  "끼워넣을 곳"이 사라진다.
  */
+/** vc251 — 수련 원정 9지역 삭제. 이 지역 키를 들고 있는 구 세이브는 시작 거점으로 되돌린다.
+ *  `stages.ts` 의 `resolveStage()` 와 같은 규칙이지만, 여기서는 **세이브 로드 시점**에
+ *  바로 정규화해 두어 HUD·포탈·워프가 삭제된 키를 한 번도 보지 않게 한다.
+ *  세이브에 새 필드를 추가하지 않는다(기존 `stage` 값을 덮어쓸 뿐이다). */
+const REMOVED_REGION_RE = /^(forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss)(v|[1-9]|10)$/;
+
 export function migrateSave(d: SaveData): SaveData {
+  /* vc251 — 버전 게이트보다 **먼저** 돌린다. 버전이 이미 최신인 세이브에도
+   *  삭제 지역 키가 남아 있을 수 있으므로 조기 return 뒤에 두면 놓친다. */
+  if (typeof d.stage === "string" && REMOVED_REGION_RE.test(d.stage)) d.stage = "village";
+
   const from = typeof d.v === "number" ? d.v : 0; // v 없음 = 0 (도입 이전 세이브)
   if (from >= SAVE_VERSION) return d;
 

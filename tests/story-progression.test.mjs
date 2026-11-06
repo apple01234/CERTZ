@@ -57,5 +57,5 @@ assert.ok(source.includes('youngPrincessCleared: this.youngPrincessCleared'),'en
 assert.ok(source.includes('this.youngPrincessCleared = savedPlayer.youngPrincessCleared ?? false'),'missing legacy flag restores false');
 assert.equal(storyEntryAllowed('dlcstargate1',{cleared:false,youngPrincessCleared:true}),true,'only the retained story ending gates Grand Planet');
 assert.equal(NEXT_STAGE.village,YOUNG_PRINCESS_VILLAGE);
-assert.equal(NEXT_STAGE.abyss10,'village','training returns to town instead of triggering a retired ending');
+assert.ok(!('abyss10' in NEXT_STAGE),'vc251 — 삭제된 수련 지역 스테이지가 진행 체인에 남아 있으면 안 된다');
 console.log('PASS: direct Lilac entry; Grand Planet requires Lilac ending; training is optional');

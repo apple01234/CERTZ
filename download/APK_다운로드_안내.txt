@@ -1,4 +1,4 @@
-SERTZ 기억의 서약 v2.1.4 (versionCode 250)
+SERTZ 기억의 서약 v2.1.5 (versionCode 251)
 
 새 캠페인 소스 및 빌드 설정입니다. 새 서명 APK는 아직 생성·게시하지 않았습니다.
 웹 / 실제 APK 배포 여부는 GitHub Releases에서 확인하세요. 기존 APK는 새 캠페인 버전으로 표시하지 않습니다.

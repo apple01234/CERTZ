@@ -138,7 +138,7 @@ export const SNORIKA_ENTRY = "snorika1";
 export const SNORIKA_END = "snorika6";
 export const SNORIKA_STORY = {
   title: "눈의 왕국 스노리카", source: "지정 문서 6 — 눈의왕국 스노리카",
-  template: "niflheim1", groundTex: "tile_snow", pathTex: "tile_ice", bg: "#101b34",
+  template: "howlrstone2", groundTex: "tile_snow", pathTex: "tile_ice", bg: "#101b34",
   returnStage: "youngprincessv", bossAt: 5, boss: "snorikaking" as const,
   beats: [
     beat(1, "snowBook", "천문대의 수상한 책", "벨리카·란·넬리야가 받은 책을 조사한다.", "collect"),

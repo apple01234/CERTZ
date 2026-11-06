@@ -169,6 +169,28 @@ export function finaleFallback(hex: number): FinaleDef {
  * @param hit  실제 피해를 주는 콜백. (dx, dy, dmgMul) → 호출하면 그 지점 대상에게 피해.
  *             마무리는 판정 형태가 다르므로 콜백에 좌표를 넘긴다.
  */
+/* ── 스케일 정상화 ─────────────────────────────────────────────────────────────
+ * 유저 지적: "궁극기 연출이 너무 짜치다 / 도트가 아니라 그런가??" — 정확한 진단이다.
+ * 이 궁극기가 쓰는 텍스처는 전부 고해상도 webp(128~512px)이고 도트가 아니다.
+ * 그런데 종전엔 `setScale(scale * 0.4)` / `* 0.3` 으로 원본의 30~40%만 그렸다.
+ * 256px 를 102px 로 깎으면, pixelArt 렌더러(nearest)가 원본 디테일을 그대로 파괴한다.
+ * → 배율을 손으로 고르지 않고 **원본 픽셀에서 목표 월드 크기를 역산**한다.
+ *   카메라 줌은 viewZoom() = 1.25(720p) 이므로, 월드 1px ≈ 화면 1.25px 다. */
+const TEX_PX: Record<string, number> = {
+  fx_flarebig: 256, fx_impact: 256, fx_burst: 256, fx_flare: 256, fx_flarew: 256,
+  fx_glowblue: 256, fx_hex: 256, fx_glowyellow: 256, fx_glow: 256, fx_purple: 256,
+  fx_noise: 256, fx_smoke: 256, fx_shockwave: 256, fx_aura: 256,
+  fx_lightning: 256, fx_electro: 256, fx_caustic: 256, gvb_star4: 128,
+  gvu_circle_aggr: 512, gw_shock: 256, vf_ring: 256,
+};
+/** 원본 긴 변이 targetPx 가 되도록 하는 배율. 1.0 미만으로 내려가지 않게 하한을 둔다. */
+const fitScale = (tex: string, targetPx: number) =>
+  Math.max(0.55, Math.min(2.4, targetPx / (TEX_PX[tex] ?? 256)));
+/** 본체 섬광 기준 크기(월드 px) — 256px 텍스처를 1.17배로 키워 원본 디테일을 살린다. */
+const BURST_PX = 300;
+/** 예비동작(축소) 구간 — 즉발은 싸구려로 보인다. 판정은 delay 그대로, 연출만 늦게 터진다. */
+const ANTICIPATE_MS = 110;
+
 export function runUltFinale(
   scene: Phaser.Scene,
   opts: {
@@ -190,24 +212,84 @@ export function runUltFinale(
   const { x, y } = opts;
   const a = opts.aimAngle;
 
-  /* 공통: 마무리 이름 표기 + 화면 플래시 (강도만 직업별 차등) */
-  scene.cameras.main.flash(120, (tint >> 16) & 0xff, (tint >> 8) & 0xff, tint & 0xff);
+  /* 공통: 화면 플래시 — 궁극기는 최대 연출 지점이라 120ms·중간강도로는 "툭" 하고 끝난다. */
+  scene.cameras.main.flash(190, (tint >> 16) & 0xff, (tint >> 8) & 0xff, tint & 0xff);
 
-  const burst = (bx: number, by: number, scale: number) => {
-    if (scene.textures.exists(def.tex)) {
-      const im = scene.add.image(bx, by, def.tex).setDepth(24)
-        .setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(scale * 0.4).setAlpha(0);
-      scene.tweens.add({ targets: im, alpha: 0.95, scale, duration: 180, ease: "Cubic.out" });
-      scene.tweens.add({ targets: im, alpha: 0, scale: scale * 1.6, delay: 200,
-        duration: 420, onComplete: () => im.destroy() });
+  /* VC239 아틀라스(다중 프레임) 재생.
+   * StudioFX.spawnVc239Fx 와 같은 규격이지만 이 파일은 tests/ultimate-finale.test.mjs 가
+   * 소스를 vm 으로 직접 실행하며 import 를 제거하므로 다른 모듈을 import 할 수 없다.
+   * 프레임 정렬·크기 정규화만 최소 복제한다.
+   * shortcut: 아틀라스 3종 전용. 다른 애니가 필요해지면 StudioFX 쪽으로 통합할 것. */
+  const playVc = (key: string, bx: number, by: number, px: number) => {
+    const anims = (scene as unknown as { anims?: Phaser.Animations.AnimationManager }).anims;
+    if (!anims || !scene.textures.exists(key)) return;
+    const animKey = `${key}-anim`;
+    if (!anims.exists(animKey)) {
+      let names: string[] = [];
+      try {
+        names = scene.textures.get(key).getFrameNames()
+          .sort((p, q) => Number(p.split("__").pop()) - Number(q.split("__").pop()));
+      } catch { return; }
+      if (!names.length) return;
+      try {
+        anims.create({ key: animKey, frameRate: 14, repeat: 0,
+          frames: names.map((n) => ({ key, frame: n })) });
+      } catch { return; }
     }
-    if (def.tex2 && scene.textures.exists(def.tex2)) {
-      const im2 = scene.add.image(bx, by, def.tex2).setDepth(23)
-        .setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(scale * 0.3).setAlpha(0)
-        .setRotation(a);
-      scene.tweens.add({ targets: im2, alpha: 0.8, scale: scale * 0.9, duration: 200, ease: "Cubic.out" });
-      scene.tweens.add({ targets: im2, alpha: 0, scale: scale * 1.4, delay: 220,
-        duration: 400, onComplete: () => im2.destroy() });
+    let spr: Phaser.GameObjects.Sprite;
+    try { spr = scene.add.sprite(bx, by, key, "0"); } catch { return; }
+    spr.setDepth(25).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setOrigin(0.5, 0.65);
+    spr.setScale(px / Math.max(spr.width || 1, spr.height || 1));
+    try { spr.play(animKey); } catch { /* 애니 실패 → 정지 프레임 유지 */ }
+    spr.once("animationcomplete", () => { try { spr.destroy(); } catch { /* noop */ } });
+    scene.time.delayedCall(4000, () => { try { if (spr.active) spr.destroy(); } catch { /* noop */ } });
+  };
+
+  /* 바닥 레이어 — 마법진은 마법사 계열만(과거 "마법진 우려먹기" 지적 준수),
+   * 나머지는 계통색 지면 링. 종전엔 마법사에게만 있었고 그것도 0.6→2.2 배율이었다. */
+  const groundLayer = (px: number, spin: boolean) => {
+    const tex = def.magic ? "gvu_circle_aggr" : "gw_shock";
+    if (!scene.textures.exists(tex)) return;
+    const k = fitScale(tex, px);
+    const im = scene.add.image(x, y, tex).setDepth(6)
+      .setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(k * 0.4).setAlpha(0);
+    scene.tweens.add({ targets: im, alpha: def.magic ? 0.85 : 0.6, scale: k,
+      duration: 220, ease: "Cubic.out" });
+    if (spin && !opts.lite) {
+      scene.tweens.add({ targets: im, angle: def.magic ? 170 : 60, duration: 1100, ease: "Sine.out" });
+    }
+    scene.tweens.add({ targets: im, alpha: 0, scale: k * 1.25, delay: 620,
+      duration: 460, ease: "Sine.in", onComplete: () => im.destroy() });
+  };
+
+  /* 3층 폭발 — ① 본체 섬광 ② 보조 텍스처 ③ 방사형 잔상(같은 텍스처, 다른 배율/각도).
+   * 배율은 더 이상 손으로 곱하지 않는다: peak = 목표 월드 px 이고, 시작 배율은 그 34%. */
+  const burst = (bx: number, by: number, scale: number, ghost = true) => {
+    const peak = BURST_PX * scale;
+    const cast = (tex: string | undefined, dep: number, mul: number, alpha: number,
+      rot: number, delay: number) => {
+      if (!tex || !scene.textures.exists(tex)) return;
+      const k = fitScale(tex, peak * mul);
+      const im = scene.add.image(bx, by, tex).setDepth(dep)
+        .setBlendMode(Phaser.BlendModes.ADD).setTint(tint)
+        .setRotation(rot).setScale(k * 0.55).setAlpha(0);
+      /* 예비동작 — 터지기 직전 **오므라든다**. 즉발은 싸구려로 보인다. */
+      scene.tweens.add({ targets: im, scale: k * 0.28, alpha: alpha * 0.55,
+        duration: ANTICIPATE_MS, delay, ease: "Quad.in" });
+      /* 폭발 */
+      scene.tweens.add({ targets: im, scale: k, alpha,
+        delay: delay + ANTICIPATE_MS, duration: 120, ease: "Cubic.out" });
+      /* 잔화 */
+      scene.tweens.add({ targets: im, alpha: 0, scale: k * 1.8,
+        delay: delay + ANTICIPATE_MS + 120, duration: 430, ease: "Sine.out",
+        onComplete: () => im.destroy() });
+    };
+    cast(def.tex, 24, 1, 0.95, a, 0);
+    cast(def.tex2, 23, 0.8, 0.8, a, 30);
+    /* 잔상은 큰 폭발에만 붙인다 — 직선 궤적 12스텝에 붙이면 이미지가 4배로 늘어난다. */
+    if (ghost && !opts.lite) {
+      cast(def.tex, 23, 1.3, 0.5, a + Math.PI * 0.5, 90);
+      cast(def.tex2 ?? def.tex, 22, 1.5, 0.4, a - Math.PI * 0.5, 150);
     }
   };
 
@@ -223,8 +305,14 @@ export function runUltFinale(
       : def.shape === "cross" ? [[0, 1.5], [70, 1.5], [140, 1.5], [210, 1.5]]
       : [[0, 2]];
     const reach = finalePlanReach(plan);
+    /* 유저 지적의 실질 원인 — 4차 10직업의 이 경로는 **텍스처를 한 장도 안 그렸다**.
+     * graphics 로 반투명 도형만 칠하니 플랫한 벡터 블롭이 궁극기의 전부였다.
+     * 판정·롤·펄스 타이밍은 그대로 두고(밑의 g 는 계속 판정 경계를 보여준다)
+     * 그 위에 지면 레이어와 본체 폭발을 얹는다. */
+    groundLayer(520 * (opts.slot === 2 ? 1.15 : 1), true);
     for (const [delay, mul] of pulses) {
       scene.time.delayedCall(delay, () => {
+        burst(x, y, 1.5 + mul * 0.35);
         const g = scene.add.graphics().setPosition(x, y).setRotation(a)
           .setDepth(24).setBlendMode(Phaser.BlendModes.ADD);
         for (const z of plan.zones) {
@@ -274,7 +362,7 @@ export function runUltFinale(
         const by = y + sinA * def.reach * t;
         /* 12스텝을 90ms 간격의 3판정 구간에 고르게 매핑 */
         scene.time.delayedCall(Math.round(i * 22), () => {
-          burst(bx, by, 0.55 + t * 0.6);
+          burst(bx, by, 0.55 + t * 0.6, false); // 12스텝 — 잔상까지 붙이면 36장이 된다
         });
       }
       for (let i = 0; i < steps; i++) {
@@ -333,15 +421,29 @@ export function runUltFinale(
       break;
     }
     case "pillar": {
-      /* 수직 기둥 — 위로 솟구치는 연출 + 발밑 광역 판정 */
+      /* 수직 기둥 — 위로 솟구치는 연출 + 발밑 광역 판정.
+       * 종전 `.setScale(0.5, 0.2)` 은 세로를 1/5로 찌그러뜨려 기둥이 아니라
+       * 납작한 얼룩으로 보였다(유저 "짜치다"의 직접 원인 중 하나).
+       * 이제 **균등 배율**로 세우고, 기둥은 원본 atom 비율을 지킨 채 scaleY 만 자란다. */
+      /* 이 경로(비4차)는 아래 공통 꼬리에서 groundLayer 를 한 번 깐다 — 여기서 또 깔면 겹친다. */
       if (scene.textures.exists(def.tex)) {
-        const im = scene.add.image(x, y - 40, def.tex).setDepth(25)
+        const k = fitScale(def.tex, def.reach * 0.55); // 발밑 폭 = 256px 텍스처 기준
+        const im = scene.add.image(x, y + 20, def.tex).setDepth(25)
           .setBlendMode(Phaser.BlendModes.ADD).setTint(tint)
-          .setScale(0.5, 0.2).setAlpha(0);
-        scene.tweens.add({ targets: im, alpha: 0.9, scaleX: 1.3, scaleY: 4.2,
-          duration: 260, ease: "Cubic.out" });
-        scene.tweens.add({ targets: im, alpha: 0, duration: 420, delay: 280,
-          onComplete: () => im.destroy() });
+          .setScale(k * 0.5).setAlpha(0).setOrigin(0.5, 1);
+        scene.tweens.add({ targets: im, scale: k, alpha: 0.95,
+          duration: 150 + ANTICIPATE_MS, ease: "Back.easeOut" });
+        scene.tweens.add({ targets: im, alpha: 0, scale: k * 1.35,
+          delay: 260, duration: 480, ease: "Sine.out", onComplete: () => im.destroy() });
+        /* 꼭대기 섬광 — 기둥이 하늘로 뻗는 방향을 만든다. */
+        const top = scene.add.image(x, y - def.reach * 0.9, def.tex2 ?? def.tex).setDepth(26)
+          .setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setAlpha(0)
+          .setScale(fitScale(def.tex2 ?? def.tex, def.reach * 0.7) * 0.5);
+        scene.tweens.add({ targets: top, alpha: 0.9,
+          scale: fitScale(def.tex2 ?? def.tex, def.reach * 0.7),
+          delay: ANTICIPATE_MS, duration: 170, ease: "Cubic.out" });
+        scene.tweens.add({ targets: top, alpha: 0, delay: 300, duration: 400,
+          onComplete: () => top.destroy() });
       }
       const { dmg: d, crit } = dmg(2.2);
       opts.hitAt(x, y, d, crit, def.reach);
@@ -367,20 +469,33 @@ export function runUltFinale(
     }
   }
 
-  /* 마법진 — 마법사 계열만 (지시서 §3: "마법진은 마법사 계열만") */
-  if (def.magic && scene.textures.exists("gvu_circle_aggr")) {
-    const mc = scene.add.image(x, y, "gvu_circle_aggr").setDepth(22)
-      .setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setScale(0.6).setAlpha(0);
-    scene.tweens.add({ targets: mc, alpha: 0.85, scale: 2.2, duration: 300, ease: "Cubic.out" });
-    scene.tweens.add({ targets: mc, alpha: 0, scale: 3.0, delay: 320,
-      duration: 500, onComplete: () => mc.destroy() });
-    if (!opts.lite) scene.tweens.add({ targets: mc, angle: 140, duration: 900, ease: "Sine.out" });
+  /* 바닥 레이어 — 마법진은 마법사 계열만(과거 "마법진 우려먹기" 지적 준수)
+   * 이 경로(비4차 폴백)는 위 switch 가 지면을 안 깔았으므로 여기서 한 번 깐다.
+   * 종전엔 마법사에게만 0.6→2.2 배율로 붙었는데, 512px 텍스처를 0.6배로 시작하면
+   * 첫 프레임이 307px 얼룩이다. groundLayer 가 목표 px 에서 역산한다. */
+  if (!plan) groundLayer(def.reach * 1.5, true);
+
+  /* 궁극기 등급 전용 VC239 아틀라스 — public/assets/vc239/ 에 있고 지금까지
+   * 어떤 스킬도 쓰지 않던 3종(신성 심판 / 공허 붕괴 / 해일)을 여기서 소비한다.
+   * 게임 전체에서 궁극기만 부르는 지점이라 AGENTS.md "스킬에만 화려한 이펙트" 규약에 맞다. */
+  if (!opts.lite) {
+    const vc = def.magic
+      ? (def.shape === "pillar" || def.shape === "cross" ? "vfx_holy_judgement" : "vfx_void_collapse")
+      : (def.shape === "cone" || def.shape === "ring" ? "vfx_tidal_wave" : "vfx_holy_judgement");
+    const vcPx = Math.min(420, def.reach * 1.1);
+    playVc(vc, x, y - 10, vcPx);
   }
 
-  /* 카메라 — 직업별 강도, 저사양은 절반 */
+  /* 카메라 — 직업별 강도, 저사양은 절반.
+   * 유저 지적 "짜치다"는 화면 반응이 약한 탓도 크다. 궁극기는 60~120초에 한 번뿐이므로
+   * 기존 doShake 를 **세게** 쓴다(새 연출을 만들지 않고 배율만 올린다). */
   const [ms, amt] = def.shake;
+  /* 저사양(lite)은 정확히 절반 — tests/ultimate-finale.test.mjs 가 그 비율을 계약으로 본다. */
   (scene as unknown as { doShake?: (ms: number, amount: number) => void })
-    .doShake?.(ms, opts.lite ? amt * 0.5 : amt);
+    .doShake?.(Math.round(ms * 1.35), opts.lite ? amt * 0.75 : amt * 1.5);
+  /* 히트스톱 — WorldScene 이 이미 소유한 ImpactFX 경로를 그대로 쓴다(새로 만들지 않음). */
+  (scene as unknown as { hitStop?: (ms?: number) => void })
+    .hitStop?.(opts.lite ? 40 : 90);
   /* WorldScene 은 sfxSkill 을 제공하지만 Phaser.Scene 타입에는 없다. */
   (scene as unknown as { sfxSkill?: (k: string, r?: number) => void }).sfxSkill?.(def.sfx, 1.0);
 }

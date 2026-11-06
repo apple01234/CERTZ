@@ -1,29 +1,57 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {CHAPTERS,STAGES,NEXT_STAGE,STORY_SEQUENCE} from '../src/game/stages.ts';
+import {CHAPTERS,STAGES,NEXT_STAGE,STORY_SEQUENCE,resolveStage} from '../src/game/stages.ts';
 import {DIALOGUES} from '../src/game/data.ts';
-import {TRAINING_REGIONS,isTrainingStage} from '../src/game/trainingRegions.ts';
 import {storyPortalDestination,storyEntryAllowed} from '../src/game/storyProgression.ts';
 
-test('removed campaign has no mandatory route or completion gate while old maps remain usable',()=>{
+/* vc251 — 수련 원정 9지역(forest/kingdom/alfheim/muspelheim/niflheim/cave/nidavellir/hel/abyss)
+ *  완전 삭제. 종전 이 테스트는 `TRAINING_REGIONS` 가 존재하고 9지역 스테이지가 살아 있는 것을
+ *  "계약"으로 강제했다. 이제 계약이 뒤집혔다 — 삭제된 상태를 고정한다. */
+const REMOVED = ['forest','kingdom','alfheim','muspelheim','niflheim','cave','nidavellir','hel','abyss'];
+
+test('9개 수련 지역은 완전히 삭제됐다',()=>{
+  /* ① CHAPTERS 에 없다 */
+  for(const key of REMOVED){
+    assert.equal(CHAPTERS.find(c=>c.key===key),undefined,`CHAPTERS 에 ${key} 가 남아 있다`);
+  }
+  /* ② STAGES 에 지역 스테이지가 없다 (1~10 + 마을) */
+  for(const key of REMOVED){
+    for(let sub=1;sub<=10;sub++) assert.equal(STAGES[`${key}${sub}`],undefined,`STAGES.${key}${sub} 가 남아 있다`);
+    assert.equal(STAGES[`${key}v`],undefined,`STAGES.${key}v 가 남아 있다`);
+  }
+  /* ③ 모듈 자체가 삭제됐다 */
+  assert.equal(fs.existsSync(new URL('../src/game/trainingRegions.ts',import.meta.url)),false,'trainingRegions.ts 가 남아 있다');
+  /* ④ 삭제 지역 워크라인 대사도 없다 */
+  for(const key of REMOVED) assert.equal(DIALOGUES[key],undefined,`DIALOGUES.${key} 가 남아 있다`);
+});
+
+test('구 세이브의 삭제 지역 키는 village 로 폴백한다',()=>{
+  /* `forest3` 같은 지역명+번호 키 — 계단 없이 최종 폴백으로 떨어진다 */
+  for(const key of REMOVED){
+    assert.equal(resolveStage(key),'village',`${key} 폴백 실패`);
+    assert.equal(resolveStage(`${key}1`),'village',`${key}1 폴백 실패`);
+  }
+  /* 정상 키는 그대로 유지된다 */
+  assert.equal(resolveStage('village'),'village');
+  assert.equal(resolveStage('howlrstone1x1'),'howlrstone1x1');
+  assert.equal(resolveStage('dlcstargate1'),'dlcstargate1');
+});
+
+test('진행 경로는 village → youngprincessv → dlcstargate1 로 이어진다',()=>{
   const progress={cleared:false,youngPrincessCleared:false};
   assert.equal(storyPortalDestination('village',progress),'youngprincessv');
   assert.equal(storyEntryAllowed('youngprincessv',progress),true);
   assert.equal(storyEntryAllowed('dlcstargate1',{cleared:true}),false);
   assert.equal(storyEntryAllowed('dlcstargate1',{youngPrincessCleared:true}),true);
+  /* 마을에서 DLC 진입까지 삭제 지역을 거치지 않는다 */
   let stage='village';const visited=new Set();
   while(stage&&!visited.has(stage)&&stage!=='dlcstargate1'){
-    visited.add(stage);assert.equal(isTrainingStage(stage),false);stage=NEXT_STAGE[stage];
+    visited.add(stage);
+    for(const key of REMOVED) assert.ok(!stage.startsWith(key),`경로에 삭제 지역 ${stage} 가 남아 있다`);
+    stage=NEXT_STAGE[stage];
   }
   assert.equal(stage,'dlcstargate1');
-  for(const key of Object.keys(TRAINING_REGIONS)){
-    const chapter=CHAPTERS.find(c=>c.key===key);
-    assert.ok(chapter);assert.deepEqual(chapter.beats,[]);
-    assert.equal(chapter.intro,'trainingIntro');
-    for(let sub=1;sub<=10;sub++)assert.ok(STAGES[`${key}${sub}`]);
-  }
-  assert.equal(NEXT_STAGE.abyss10,'village');
   assert.ok(!STORY_SEQUENCE.some(s=>s.id==='atlantis'));
 });
 

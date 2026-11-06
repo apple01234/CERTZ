@@ -1,4 +1,4 @@
-/**
+﻿/**
  * vc147 (#19) — 제2궁극기 획득 스토리 퀘스트 "각성의 대가 (Price of Awakening)"
  *
  * 유저 지시: "220레벨에 5차 2번째 스킬을 아주 긴 스토리 퀘스트를 통해 획득 가능하게 해"
@@ -59,16 +59,16 @@ export const FIFTH2_CHAIN: Fifth2Step[] = [
     after: "카이엔: 허드렛일 같지만 — 기억은 이런 것으로 쌓이는 법이지.",
   },
   {
-    type: "reach", target: "muspelheim1", need: 1,
+    type: "reach", target: "howlrstone1x1", need: 1,
     title: "④ 화염의 대장간",
-    story: ["두 번째 기억은 불겁니다. 무스펠헤임의 대장간에서 각성의 문양을 담을 그릇을 벼려라. (무스펠헤임 1-1 도달)"],
+    story: ["두 번째 기억은 불겁니다. 영프 편의 첫 구역에서 각성의 문양을 담을 그릇을 벼려라. (하울르스톤 1-1 도달)"],
     after: "타오르는 도드람이 문양의 윤곽을 그렸다.",
   },
   {
-    type: "boss", target: "surt", need: 1,
+    type: "hunt", target: "emberwolf", need: 30,
     title: "⑤ 화염의 군주의 심장불꽃",
-    story: ["문양에 불을 지펴라. 수르트의 심장불꽃 없이는 그릇이 비어 있다. (수르트 격파)"],
-    after: "수르트의 불꽃이 문양 안에서 살아 숨쉬기 시작했다.",
+    story: ["불꽃의 정수를 지닌 화염늑대 30마리를 처치해 심장불꽃을 얻어라. (불꽃 늑대 토벌)"],
+    after: "타오르는 심장불꽃이 문양에 스며들었다.",
   },
   {
     type: "talk", target: "jobmaster", need: 1,
@@ -92,16 +92,16 @@ export const FIFTH2_CHAIN: Fifth2Step[] = [
     after: "문양의 표면에 고대 문자가 떠올랐다.",
   },
   {
-    type: "reach", target: "niflheim1", need: 1,
+    type: "reach", target: "howlrstone2x1", need: 1,
     title: "⑨ 얼어붙은 기억의 호수",
-    story: ["네 번째 기억은 얼음 아래 잠들어 있다. 니플헤임의 설원에서 정화 의식을 치러라. (니플헤임 1-1 도달)"],
+    story: ["네 번째 기억은 얼음 아래 잠들어 있다. 설원 구역에서 정화 의식을 치러라. (하울르스톤 2-1 도달)"],
     after: "얼음 아래의 기억이 눈보라 속에서 눈을 떴다.",
   },
   {
-    type: "boss", target: "fenrir", need: 1,
+    type: "hunt", target: "frostwolf", need: 30,
     title: "⑩ 서리늑대의 인장",
-    story: ["기억을 삼키려는 굶주림 그 자체 — 펜리르를 쓰러뜨려 기억에 인장을 새겨라. (펜리르 격파)"],
-    after: "펜리르의 포효가 인장이 되어 문양에 새겨졌다.",
+    story: ["기억을 삼키려는 굶주림 그 자체 — 서리늑대 30마리를 베어 기억에 인장을 새겨라. (서리늑대 토벌)"],
+    after: "서리늑대의 포효가 인장이 되어 문양에 새겨졌다.",
   },
   {
     type: "hunt", target: "x3_goblin", need: 60,

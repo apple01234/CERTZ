@@ -190,6 +190,12 @@ export function renderAuthoredMapLayers(
      *   원본 배율 1·셀 중심을 유지해야 한다(prop() 참고). */
     const depth = 9 + Math.max(0, Math.min(1, y / height)) - 0.001;
     const image = scene.add.image(x, y, key).setOrigin(0.5, 1).setScale(snapPropScale(key, scale)).setDepth(depth).setName(`rea:edge:${key}`);
+    /* [vc241 지시 #1 "오브젝트 짤림"] origin(0.5,1) 이라 이미지가 위로 스케일*높이 만큼 뻗는다.
+     *  세로로 긴 프롭(bookshelf 128·jar 116·carpet 124)은 맵 최상단에서 잘린다.
+     *  → 4면이 맵 밖으로 나가면 그리지 않는다. */
+    const src = scene.textures.get(key).getSourceImage() as { width?: number; height?: number } | undefined;
+    const sw = (src?.width ?? 0) * image.scaleX, sh = (src?.height ?? 0) * image.scaleY;
+    if (x - sw / 2 < 0 || x + sw / 2 > width || y - sh < 0 || y > height) { image.destroy(); return; }
     images.push(image);
   };
   const structuralProp = theme === "library" ? "obj_dungeon_bookshelf"
@@ -199,9 +205,11 @@ export function renderAuthoredMapLayers(
     : theme === "ruins" ? "obj_forest_rock_monument"
     : theme === "conduit" ? "obj_dungeon_anvil" : null;
   if (structuralProp) {
+    /* [vc241 지시 #2] 20 → 10. 구조물은 지형 일부라 0이 되면 안 되지만
+     *  20개는 "방마다 책장" 수준이라 과했다. */
     // Solid feet stay inside already-closed cells; presentation cannot seal an aisle.
-    for (let r = 1; r < lay.rows - 1 && images.length < 20; r++) {
-      for (let c = 1; c < lay.cols - 1 && images.length < 20; c++) {
+    for (let r = 1; r < lay.rows - 1 && images.length < 10; r++) {
+      for (let c = 1; c < lay.cols - 1 && images.length < 10; c++) {
         const cell = r * lay.cols + c;
         if (lay.open[cell] || (c + r) % (theme === "town" ? 4 : 2)) continue;
         if (![cell - 1, cell + 1, cell - lay.cols, cell + lay.cols].some(i => lay.open[i])) continue;
@@ -262,18 +270,18 @@ export function renderAuthoredMapLayers(
           candidates.push({ cell, c, r, sides });
         }
       }
-      // 후보가 적으면 더 촘촘히 깐다(0개 맵 방지). 24개 이상이면 22%.
-      /* [vc238-2] 종전 밀도(18~85%)로는 맵당 8~12개만 깔려 카메라 뷰포트(약 54셀)에
-       *  1~2개만 보였다 — "바닥 윤곽이 읽힌다"는 목적을 못 살렸다(스크린샷 확인).
-       *  벽에 닿은 열린 셀은 **경계선 자체**이므로 장식 예산이 아니라 지형 일부로 본다.
-       *  → 후보를 전부 깔되(100%), 스캔 순서 대신 결정적 셔플로 맵 전체에 고르게 퍼뜨린다.
-       *  상한은 뷰포트에 항상 여러 개 보일 만큼만 둔다(과밀 방지). */
-      const density = 1;
+      /* [vc241 지시 #2 "오브젝트 너무 과도"] — vc238-2 에서 density 를 1(100%)로 올린 뒤로
+       *  벽에 닿은 열린 셀을 **전부** 칠해 맵이 빽빽해지고 지형이 안 읽혔다.
+       *  경계선은 이미 타일 아트로 읽히므로(변형 아틀라스 4프레임) 장식을 되돌린다.
+       *  후보가 적은 맵(coast 등)에서 0개가 되지 않도록 밀도는 두되, 과밀하지 않게 38%로. */
+      const density = 0.38;
       // 결정적 셔플 — 앞에서부터 채우면 맵 위쪽만 칠해진다.
       candidates.sort((a, b) => edgeHash(a.cell, 23) - edgeHash(b.cell, 23));
       let placed = 0;
       for (const { cell, c, r, sides } of candidates) {
-        if (placed >= 96) break;
+        /* [vc241 지시 #2] 96 → 32. 96개는 뷰포트(약 54셀)에 소품이 10개 이상 겹쳐 보이는
+         *  수준이었다. 32개면 화면당 3~4개로 줄어 지형이 주인공이 되고 소품은 테마만 살린다. */
+        if (placed >= 32) break;
         if (edgeHash(cell, 7) > density) continue;
         const pick = pool[Math.floor(edgeHash(cell, 11) * pool.length) % pool.length];
         if (!scene.textures.exists(pick.key)) continue;

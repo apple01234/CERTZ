@@ -53,9 +53,12 @@ for (const ch of HOWLRSTONE_CHAPTERS) {
 assert.equal(stageCount, 65, '15챕터 가변 스테이지 = 65 필드');
 
 /* ── 2. 본편/DLC 회귀 0 ─────────────────────────────────────────────────── */
-assert.equal(CHAPTERS.length, 19, 'CHAPTERS 배열은 그대로 (본편 9 + DLC 10)');
-assert.equal(CHAPTERS.filter((c) => !c.dlc).length, 9, '본편 9챕터 불변');
-assert.deepEqual(CHAPTERS.filter((c) => !c.dlc).map((c) => c.num), [2, 3, 4, 5, 6, 7, 8, 9, 10], '본편 장 번호 불변');
+/* vc251 — 수련 원정 9지역(forest…abyss, 90스테이지) 삭제.
+ *  CHAPTERS 는 이제 DLC 10개만 남는다. 영프 챕터가 섞여 들어가지 않는 계약은 그대로 유지. */
+assert.equal(CHAPTERS.length, 10, 'CHAPTERS 는 DLC 10챕터만 (수련 원정 9지역 삭제)');
+assert.equal(CHAPTERS.filter((c) => !c.dlc).length, 0, '수련 원정 챕터는 전부 삭제됐다');
+assert.equal(CHAPTERS.filter((c) => c.dlc).length, 10, 'DLC 10챕터 불변');
+assert.deepEqual(CHAPTERS.map((c) => c.num), [11, 12, 13, 14, 15, 16, 17, 18, 19, 20], 'DLC 장 번호 불변');
 for (const ch of CHAPTERS) {
   assert.ok(!hwKeys.includes(ch.key), `${ch.key}: 영프 챕터가 CHAPTERS 에 섞이면 인덱스 곡선이 회귀한다`);
 }
@@ -67,17 +70,21 @@ for (const ch of CHAPTERS) {
    *  해석하지 못했다(ERR_UNSUPPORTED_RESOLVE_REQUEST). 상세는 git-head-module.mjs. */
   const { importFromGit } = await import('./git-head-module.mjs');
   const before = await importFromGit('src/game/stages.ts');
-  for (const key of ['forest1', 'abyss10', 'dlcstargate1', 'dlcsernium10', 'hel5']) {
+  /* vc251 — 삭제된 지역 키(forest1/abyss10/hel5)는 대조 대상에서 뺀다(존재하지 않는다).
+   *  남은 DLC 밸런스가 이번 변경으로 흔들리지 않았는지만 본다. */
+  for (const key of ['dlcstargate1', 'dlcsernium10', 'dlcprisma5']) {
     assert.deepEqual(stageScale(key), before.stageScale(key), `${key} 밸런스가 변했다 (회귀)`);
   }
   /* vc235 — 영프 편 키가 `howlrstone{N}{sub}` → `howlrstone{N}x{sub}` 로 바뀌었다
    *  (챕터가 두 자리가 되면서 붙여쓰기가 모호해짐). 비교 대상 HEAD 는 이미
    *  영프 50필드를 포함하므로 "본편/DLC 키만" 남아 있는지 본다. */
-  const preExisting = Object.keys(before.STAGES).filter((k) => !k.startsWith('howlrstone'));
+  const preExisting = Object.keys(before.STAGES).filter(
+    (k) => !k.startsWith('howlrstone') && !/^(forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss)(v|\d+)$/.test(k),
+  );
   assert.deepEqual(
     preExisting.every((k) => STAGES[k]),
     true,
-    '본편/DLC 스테이지 키가 전부 남아 있어야 한다',
+    'DLC/특수 스테이지 키가 전부 남아 있어야 한다 (수련 원정 9지역은 삭제됨)',
   );
 }
 // 영프는 전용 곡선

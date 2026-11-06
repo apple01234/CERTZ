@@ -56,7 +56,7 @@ const LATEST_TAG = androidVer.name || LATEST_VERSION;
 const VERSION_NOTE =
   /* vc239 — 버전을 올릴 때 이 문구도 함께 갱신한다(업데이트 배너 본문).
    *  v2.0.7(vc243) 에서 멈춰 있어 v2.1.3 배포 후에도 옛 내용이 배너에 떴다. */
-  "v2.1.4 (vc250) — 타일맵 아틀라스 인덱스 버그 수정(36장 중 12장만 사용), 미사용 에셋 208개 제거(-142MB), 부팅 요청 32개 감소.";
+  "v2.1.5 (vc251) — 수련 원정 9개 지역 완전 삭제, 타일맵 프롭 짤림·과밀 수정, 궁극기 연출 개선, 직업별 스킬 FX 연결.";
 const RELEASE_BASE = `https://github.com/apple01234/CERTZ/releases/download/v${LATEST_TAG}`;
 const APK_MIRROR =
   /* 파일명의 vc{code} 는 build.gradle versionCode 와 일치해야 한다(불일치 시 404).

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SERTZ 스테이지 시스템 (v2.0 — 사용자 지시 #6/#19 반영)
  *  - 챕터(해역) 9개 × 구역(sub-stage) 10개 = 90 필드 + 시작 마을
  *  - 챕터가 1씩 증가할수록 어렵고 스토리가 길어짐 (난이도/보상 곡선 내장)
@@ -17,10 +17,7 @@ import { hasStageDialogue } from "./stageDialogue";
 /* ================= 타입 ================= */
 
 export type ChapterKey =
-  | "forest" | "kingdom" | "alfheim" | "muspelheim" | "niflheim"
-  | "cave" | "nidavellir" | "hel" | "abyss"
-  /* vc186b DLC — 세계 구원(아부디토스 격파) 이후 열리는 추가 스토리.
-   *  기존 9챕터는 손대지 않고 **뒤에 덧붙이기만** 한다(회귀 방지).
+  /* vc251 — 옛 9개 수련 지역(forest…abyss) 삭제. 스토리는 DLC(그랜드 플래닛)부터 시작한다.
    *  기획서 6행: "1기가 끝이나면 2기 그랜드플래닛으로 세계가 변경된다" */
   | "dlcstargate" | "dlcprisma" | "dlcocean"
   /* vc192 — 기획서 18행 행성 순서의 나머지 7개.
@@ -37,7 +34,7 @@ export type ChapterKey =
   | "howlrstone6" | "howlrstone7" | "howlrstone8" | "howlrstone9" | "howlrstone10"
   | "howlrstone11" | "howlrstone12" | "howlrstone13" | "howlrstone14" | "howlrstone15";
 
-/** 스테이지 키 — "village" | "forest1".."abyss10" (구 세이브 키도 런타임 폴백 처리) */
+/** 스테이지 키 — "village" | howlrstone{N}x{M} | dlc* (구 세이브 키는 resolveStage 가 village 로 폴백) */
 export type StageKey = string;
 
 /** 표시 전용 순서. 본편 1장=village, 2~10장=기존 9개 필드. 저장키/인덱스 보존. */
@@ -294,125 +291,6 @@ type ChapterSpec = {
 const G = 0.8;
 
 export const CHAPTERS: ChapterSpec[] = [
-  {
-    key: "forest", num: 2, title: "수련 원정 — 숲길", subtitle: "연합의 선택 수련장 · 본편 진행과 무관",
-    intro: "trainingIntro", boss: "guardian", bossDone: "trainingDone",
-    width: 1900, height: 1070, groundTint: 0x9adf6a, groundTex: "tile_forest", pathTex: "tile_path", bg: "#0a1408",
-    flowers: 10, trees: 14, rocks: 8,
-    /* v2.9 (지시 #1) — 챕터 몬스터 풀 3종: 2구역마다 1종 로테이션(1~6) → 2종(7~8) → 3종(9) → 보스+3종(10) */
-    enemies: [{ key: "wolf", count: 4 }, { key: "spider", count: 4 }, { key: "swampbeast", count: 4 }, { key: "x2_frog", count: 3 }, { key: "x3_swampy", count: 3 }, { key: "x3_goblin", count: 3 }],
-    main: "wolf",
-    beats: [],
-    repeat: { need: 16, gold: Math.round(70 * G), exp: 70, title: "[반복] 늑대 토벌 의뢰", desc: "마을 토벌 의뢰 — 늑대를 계속 사냥해 골드와 경험치를 얻자." },
-    /* v1.4.3 (작업2) — enter 3→1: 신규 유저가 마을에서 1-1로 바로 나갈 수 있게 완화.
-     *  기존 Lv3 게이트가 시작 지점을 막아버리는 교착(레벨 올릴 곳 부재)의 핵심 원인.
-     *  대신 마을 훈련장+초보 퀘스트로 자연스러운 1→3 루트를 제공하고, mid 게이트(구역4·Lv5)는 유지.
-     *  vc146 (#8) — 첫 진입 교착 방지분(enter 1·mid 5)만 유지 — 나머지 챕터는 전부 상향 */
-    lvGate: { enter: 1, mid: 5 },
-  },
-  {
-    key: "kingdom", num: 3, title: "수련 원정 — 늪지", subtitle: "연합의 선택 수련장 · 본편 진행과 무관",
-    intro: "trainingIntro", boss: "behemoth", bossDone: "trainingDone",
-    width: 1750, height: 990, groundTint: 0x86c95e, groundTex: "tile_grass", pathTex: "tile_path", bg: "#0d1808",
-    flowers: 8, trees: 9, rocks: 6,
-    enemies: [{ key: "swampbeast", count: 5 }, { key: "wolf", count: 4 }, { key: "golem", count: 3 }, { key: "x2_rat", count: 2 }, { key: "x3_imp", count: 3 }, { key: "x3_goblin", count: 2 }],
-    main: "swampbeast",
-    beats: [],
-    repeat: { need: 20, gold: Math.round(100 * G), exp: 100, title: "[반복] 늪지 정화 의뢰", desc: "쿠소디아 기사단 의뢰 — 능대를 계속 사냥해라." },
-    /* vc146 (#8) — 챕터 레벨 제한 상향 (유저 지시 "챕터마다 레벨 제한이 너무 작음"): 8→12/15 */
-    lvGate: { enter: 12, mid: 15 },
-  },
-  {
-    key: "alfheim", num: 4, title: "수련 원정 — 정원", subtitle: "연합의 선택 수련장 · 본편 진행과 무관",
-    intro: "trainingIntro", boss: "nidhog", bossDone: "trainingDone",
-    width: 1500, height: 860, groundTint: 0x8f7fd8, groundTex: "tile_moss", pathTex: "tile_garden", bg: "#0d0a1e",
-    flowers: 6, trees: 10, rocks: 10,
-    enemies: [{ key: "minion", count: 4 }, { key: "spider", count: 4 }, { key: "wraith", count: 3 }, { key: "x2_bat", count: 3 }, { key: "x3_necromancer", count: 3 }, { key: "x2_darkhound", count: 3 }],
-    main: "minion",
-    beats: [],
-    repeat: { need: 20, gold: Math.round(95 * G), exp: 95, title: "[반복] 성전 순찰 의뢰", desc: "요정 여왕의 의뢰 — 하수인을 계속 처치해 훈련해라." },
-    /* vc146 (#8) — 챕터 레벨 제한 상향: 14→22/26 */
-    lvGate: { enter: 22, mid: 26 },
-  },
-  {
-    key: "muspelheim", num: 5, title: "수련 원정 — 화산", subtitle: "연합의 선택 수련장 · 본편 진행과 무관",
-    intro: "trainingIntro", boss: "surt", bossDone: "trainingDone",
-    /* vc204 (지시서 #16 "저 꽃게 타일은 도대체 뭐임?") — 무스펠헤임 지면 교체.
-     *  종전 groundTex="tile_lava" 는 128×128·7색짜리 오염 webp 로, 실제로는 붉은 게 그림이
-     *  반복됐다. pathTex="tile_blood" 도 128px·6색 오염본이었다.
-     *  → 정상 256×256 지형으로 교체: 지면 = tile_magma.png(107색, 균열 용암),
-     *    길 = tile_basalt.webp(209색, 어두운 현무암). tint 는 유지해 극열 톤을 보존한다.
-     *  블룸 가드는 채널(muspelheim) 기준이라 타일명이 바뀌어도 그대로 유지된다. */
-    width: 2200, height: 1250, groundTint: 0xd88a4a, groundTex: "tile_magma", pathTex: "tile_basalt", bg: "#1c0d06",
-    flowers: 0, trees: 4, rocks: 12,
-    enemies: [{ key: "emberwolf", count: 4 }, { key: "firespirit", count: 3 }, { key: "golem", count: 3 }, { key: "x2_firebird", count: 3 }, { key: "x3_imp", count: 3 }, { key: "x3_wogol", count: 3 }],
-    main: "emberwolf",
-    beats: [],
-    repeat: { need: 20, gold: Math.round(130 * G), exp: 130, title: "[반복] 화산 지대 순찰 의뢰", desc: "호족촌 의뢰 — 불꽃 늑대를 계속 사냥해라." },
-    /* vc146 (#8) — 챕터 레벨 제한 상향: 20→34/39 */
-    lvGate: { enter: 34, mid: 39 },
-  },
-  {
-    key: "niflheim", num: 6, title: "수련 원정 — 설원", subtitle: "연합의 선택 수련장 · 본편 진행과 무관",
-    intro: "trainingIntro", boss: "fenrir", bossDone: "trainingDone",
-    width: 1670, height: 950, groundTint: 0xdfeaf8, groundTex: "tile_snow", pathTex: "tile_ice", bg: "#0c1826",
-    flowers: 0, trees: 10, rocks: 10,
-    enemies: [{ key: "frostwolf", count: 4 }, { key: "icegolem", count: 3 }, { key: "wraith", count: 3 }, { key: "x2_frostfly", count: 3 }, { key: "x3_icezombie", count: 3 }, { key: "x3_bigzombie", count: 3 }],
-    main: "frostwolf",
-    beats: [],
-    repeat: { need: 24, gold: Math.round(145 * G), exp: 145, title: "[반복] 설원 순찰 의뢰", desc: "니플헤임 정찰 의뢰 — 서리 늑대를 계속 사냥해라." },
-    /* vc146 (#8) — 챕터 레벨 제한 상향: 27→48/54 */
-    lvGate: { enter: 48, mid: 54 },
-  },
-  {
-    key: "cave", num: 7, title: "수련 원정 — 동굴", subtitle: "연합의 선택 수련장 · 본편 진행과 무관",
-    intro: "trainingIntro", boss: "abysslord", bossDone: "trainingDone",
-    width: 1670, height: 950, groundTint: 0x8a6a4a, groundTex: "tile_cave", pathTex: "tile_stone", bg: "#100a08",
-    flowers: 0, trees: 0, rocks: 14,
-    enemies: [{ key: "spider", count: 4 }, { key: "minion", count: 4 }, { key: "golem", count: 3 }, { key: "x2_snail", count: 3 }, { key: "x3_imp", count: 3 }, { key: "x3_maskedorc", count: 2 }],
-    main: "spider",
-    beats: [],
-    repeat: { need: 20, gold: Math.round(115 * G), exp: 115, title: "[반복] 지하 정화 의뢰", desc: "어둠 요정 여왕의 의뢰 — 거미를 계속 사냥해라." },
-    /* vc146 (#8) — 챕터 레벨 제한 상향: 34→64/70 */
-    lvGate: { enter: 64, mid: 70 },
-  },
-  {
-    key: "nidavellir", num: 8, title: "수련 원정 — 공방", subtitle: "연합의 선택 수련장 · 본편 진행과 무관",
-    intro: "trainingIntro", boss: "skoll", bossDone: "trainingDone",
-    width: 1670, height: 950, groundTint: 0x9a8a6a, groundTex: "tile_ruin", pathTex: "tile_ash", bg: "#121008",
-    flowers: 0, trees: 0, rocks: 16,
-    enemies: [{ key: "runegolem", count: 4 }, { key: "golem", count: 3 }, { key: "spider", count: 3 }, { key: "x2_stonegolem", count: 3 }, { key: "x3_ogre", count: 3 }, { key: "x3_orcwarrior", count: 3 }],
-    main: "runegolem",
-    beats: [],
-    repeat: { need: 20, gold: Math.round(150 * G), exp: 150, title: "[반복] 광산 경비 의뢰", desc: "난쟁이 광산 조합 의뢰 — 룬 골렘을 계속 처치해라." },
-    /* vc146 (#8) — 챕터 레벨 제한 상향: 42→84/92 */
-    lvGate: { enter: 84, mid: 92 },
-  },
-  {
-    key: "hel", num: 9, title: "수련 원정 — 폐허", subtitle: "연합의 선택 수련장 · 본편 진행과 무관",
-    intro: "trainingIntro", boss: "gram", bossDone: "trainingDone",
-    width: 1670, height: 950, groundTint: 0x4a3a5a, groundTex: "tile_hel", pathTex: "tile_abyss", bg: "#0d0616",
-    flowers: 0, trees: 6, rocks: 12,
-    enemies: [{ key: "helhound", count: 4 }, { key: "wraith", count: 3 }, { key: "golem", count: 3 }, { key: "x2_darkhound", count: 3 }, { key: "x3_chort", count: 3 }, { key: "x3_maskedorc", count: 3 }],
-    main: "helhound",
-    beats: [],
-    repeat: { need: 20, gold: Math.round(175 * G), exp: 175, title: "[반복] 절벽 정찰 의뢰", desc: "헬의 기운이 강해지고 있다 — 하운드를 계속 처치해라." },
-    /* vc146 (#8) — 챕터 레벨 제한 상향: 50→104/114 */
-    lvGate: { enter: 104, mid: 114 },
-  },
-  {
-    key: "abyss", num: 10, title: "수련 원정 — 심층", subtitle: "연합의 선택 수련장 · 본편 진행과 무관",
-    intro: "trainingIntro", boss: "abudditos", bossDone: "trainingDone",
-    width: 1430, height: 830, groundTint: 0x3a2c52, groundTex: "tile_morgue", pathTex: "tile_deep", bg: "#0d0616",
-    flowers: 0, trees: 0, rocks: 12,
-    enemies: [{ key: "wraith", count: 4 }, { key: "minion", count: 4 }, { key: "helhound", count: 3 }, { key: "x2_reeffish", count: 3 }, { key: "x3_necromancer", count: 3 }, { key: "x3_bigzombie", count: 3 }],
-    main: "wraith",
-    beats: [],
-    repeat: { need: 24, gold: Math.round(165 * G), exp: 165, title: "[반복] 뿌리 정찰 의뢰", desc: "뿌리의 기운이 강해지고 있다 — 유령을 계속 처치해라." },
-    /* vc146 (#8) — 챕터 레벨 제한 상향: 58→126/136 */
-    lvGate: { enter: 126, mid: 136 },
-  },
-
   /* ══════════════════════════════════════════════════════════════════════════
    * vc186b — DLC 「세계 구원 이후」
    *
@@ -983,7 +861,7 @@ export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: nu
    *  본편/DLC 는 기존 형식 그대로 둔다. */
   const hw = /^(howlrstone(?:[1-9]|1[0-5]))x([1-9]|10)$/.exec(key);
   if (hw) return { ch: hw[1] as ChapterKey, sub: parseInt(hw[2], 10) };
-  const m = /^(forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss|dlcstargate|dlcprisma|dlcocean|dlcreverse|dlcneocity|dlcmech|dlcswallow|dlcopinicia|dlcnovel|dlcsernium)([1-9]|10)$/.exec(key);
+  const m = /^(dlcstargate|dlcprisma|dlcocean|dlcreverse|dlcneocity|dlcmech|dlcswallow|dlcopinicia|dlcnovel|dlcsernium)([1-9]|10)$/.exec(key);
   if (!m) return { ch: "village", sub: 0 };
   return { ch: m[1] as ChapterKey, sub: parseInt(m[2], 10) };
 }
@@ -1028,7 +906,7 @@ export function questNeedByLv(lv: number): number {
 /** vc142 (#5) — 후반 몬스터 HP ×10: 유저 지시 "후반만 4스테이지 쯤 부터 몬스터 체력좀 10배 씩 정도 늘려".
  *  후반 4개 챕터(7 스바르트알프헤임 · 8 니다벨리르 · 9 헬 · 10 심층 수련장)의 4구역부터 적용
  *  (구역 1~3은 진입 완충 유지). 공격력/경험치/골드 곡선은 현행 유지 — 체력만 상향. */
-const LATE_HP_CHAPTERS: ChapterKey[] = ["cave", "nidavellir", "hel", "abyss", "dlcstargate", "dlcprisma", "dlcocean", "dlcreverse", "dlcneocity", "dlcmech", "dlcswallow", "dlcopinicia", "dlcnovel", "dlcsernium"];
+const LATE_HP_CHAPTERS: ChapterKey[] = ["dlcstargate", "dlcprisma", "dlcocean", "dlcreverse", "dlcneocity", "dlcmech", "dlcswallow", "dlcopinicia", "dlcnovel", "dlcsernium"];
 const LATE_HP_FROM_SUB = 4;
 const LATE_HP_MUL = 4; // v1.2.2 — 10은 과했다(7~10챕터 50~64타). 4로 낮춰 17~20타대.
 
@@ -2019,22 +1897,18 @@ for (let i = 0; i < REBIRTH_STAGES.length; i++) {
   STAGES[def.key] = def;
   STAGE_SHORT[def.key] = `재림${i + 1}`;
   NEXT_STAGE[def.key] = i < REBIRTH_STAGES.length - 1 ? REBIRTH_STAGES[i + 1].key : null;
-  PREV_STAGE[def.key] = i > 0 ? REBIRTH_STAGES[i - 1].key : "abyss10";
+  PREV_STAGE[def.key] = i > 0 ? REBIRTH_STAGES[i - 1].key : "village"; /* vc251 — 구 abyss10 삭제 */
 }
-/* 기존 마지막 구역(10-10) → 재림 1 연장 — 기존 난이도/보상/동작은 그대로, 전진 포탈만 열린다 */
-NEXT_STAGE.abyss10 = "village"; // Optional training returns to town.
+/* vc251 — 수련 원정 9지역 삭제로 재림 진입점을 마을로 변경(구 `abyss10` 은 더 이상 없다). */
+PREV_STAGE[REBIRTH_STAGES[0].key] = "village";
 
-/** 구 세이브 키 폴백 — v1.x 6스테이지 → 신규 체인 시작점 */
+/** 구 세이브 키 폴백 — vc251 로 삭제된 9지역 키는 **전부 시작 거점으로** 되돌린다.
+ *  `forest3` 처럼 지역명+번호 키는 이 맵을 거치지 않아도 최종 폴백(`village`)으로
+ *  안전하게 떨어진다. 세이브 필드는 추가하지 않는다. */
 export const LEGACY_STAGE_FALLBACK: Record<string, StageKey> = {
-  forest: "forest1",
-  kingdom: "kingdom1",
-  alfheim: "alfheim1",
-  muspelheim: "muspelheim1",
-  niflheim: "niflheim1",
-  cave: "cave1",
-  nidavellir: "nidavellir1",
-  hel: "hel1",
-  abyss: "abyss1",
+  forest: "village", kingdom: "village", alfheim: "village",
+  muspelheim: "village", niflheim: "village", cave: "village",
+  nidavellir: "village", hel: "village", abyss: "village",
 };
 
 /** 유효 스테이지 키 검증 (+구 세이브 폴백) */

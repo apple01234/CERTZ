@@ -1,4 +1,4 @@
-import { test } from "node:test";
+﻿import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   STORAGE_KEY,
@@ -36,7 +36,7 @@ function storage() {
 }
 test("legacy saves remain byte-identical and corrupt new saves recover from backup", () => {
   const s = storage(),
-    bytes = ' {"stage":"forest1", "lv":99} ';
+    bytes = ' {"stage":"village", "lv":99} ';
   s.setItem("sertz_save_v2", bytes);
   const p = newCampaign("새증인", "mage", "test0088"),
     slots = putCharacter(p, readSlots(s));

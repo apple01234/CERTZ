@@ -1,4 +1,4 @@
-import type Phaser from "phaser";
+﻿import type Phaser from "phaser";
 /* vc235 — 영프 편 15챕터 스펙(보스 구역 판정용). 순환 import 없이 값만 읽는다. */
 import { HOWLRSTONE_CHAPTERS } from "./howlrstone";
 
@@ -474,7 +474,7 @@ function bossTrackOfCh(ch: string, zone: number): string {
 /** 챕터 일반 구역 폴백 (미지의 챕터 키) */
 const FALLBACK_TRACKS = [CHAPTER_THEME.forest];
 
-/** 스테이지 키 파싱 — "forest3"→{ch:"forest",zone:3} / "forestv"·"village"→마을 */
+/** 스테이지 키 파싱 — "howlrstone2x3"→{ch:"howlrstone2",zone:3} / "village"→마을 */
 function splitStage(stage: string): { ch: string; zone: number; isVillageStage: boolean } {
   if (stage === "village") return { ch: "village", zone: 0, isVillageStage: true };
   if (stage.endsWith("v")) return { ch: stage.slice(0, -1), zone: 0, isVillageStage: true };

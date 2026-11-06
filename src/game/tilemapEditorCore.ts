@@ -126,8 +126,17 @@ export type PropKey =
   | "obj_town_shop_black" | "obj_town_stall_stripe" | "obj_town_vending" | "obj_town_waterfall";
 
 /** 프롭별 최대 점유 칸수 — 큰 구조물이 통로를 덮지 않게 제한.
- *  `AuthoredMapLayers.snapPropScale` 의 MAX_CELLS 와 **동일**해야 한다. */
+ *  `AuthoredMapLayers.snapPropScale` 의 MAX_CELLS 와 **동일**해야 한다.
+ *
+ *  [vc241 지시 #1 "오브젝트 짤림"] 종전엔 7개만 등록하고 나머지는 기본값 **1칸**이었다.
+ *  실제 프롭 크기를 재보니 1칸(≈144×128)을 넘는 것이 수두룩했다:
+ *    obj_town_shop_black 224×112 · obj_forest_rock 124×112 · obj_town_bench 88×128
+ *    obj_dungeon_grave 116×64 · obj_dungeon_jar 48×116 · obj_forest_bush_tall 64×108
+ *  1칸으로 눌러 그리면 세로/가로가 강제로 줄어 **찍힌 것처럼** 보인다(비율 왜곡).
+ *  → 실제 크기에 맞는 상한을 준다. 큰 것은 2칸까지 허용하되, 통행은 여전히 막지 않는다
+ *    (경계 장식은 `!isSolidDecor` 화이트리스트라 충돌체가 없다). */
 export const PROP_MAX_CELLS: Record<string, number> = {
+  /* 기존 */
   obj_dungeon_bookshelf: 1,
   obj_forest_tree_pink: 1.5,
   obj_town_house_blue: 2,
@@ -135,6 +144,34 @@ export const PROP_MAX_CELLS: Record<string, number> = {
   obj_dungeon_torch: 0.5,
   obj_dungeon_chest: 0.5,
   obj_dungeon_anvil: 0.5,
+  /* vc241 — 1칸을 넘는 프롭. 원본 비율을 유지할 상한. */
+  obj_town_shop_black: 2,
+  obj_town_stall_stripe: 1.5,
+  obj_town_bench: 1,
+  obj_town_planter: 1.5,
+  obj_town_barrel: 1,
+  obj_forest_rock: 1.5,
+  obj_forest_bush: 1.5,
+  obj_forest_bush_tall: 1.5,
+  obj_forest_tree_dried: 1.5,
+  obj_forest_tree_orange: 1,
+  obj_forest_sign: 1,
+  obj_dungeon_grave: 1.5,
+  obj_dungeon_jar: 1,
+  obj_dungeon_table: 1.5,
+  obj_dungeon_carpet_v: 1.5,
+  obj_dungeon_barrel: 1,
+  obj_dungeon_sign: 0.5,
+  obj_dungeon_rock_small: 0.5,
+  obj_dungeon_stump: 0.5,
+  obj_dungeon_pentagram: 0.5,
+  obj_dungeon_throne: 0.5,
+  obj_dungeon_fence: 0.5,
+  obj_dungeon_tree_dead: 0.5,
+  obj_dungeon_candle: 0.5,
+  obj_forest_trunk: 0.5,
+  obj_town_vending: 1,
+  obj_town_waterfall: 0.5,
 };
 
 /** 프롭 배율 — 셀 대비 반 칸 배수로 정규화한다(게임과 동일 식). */

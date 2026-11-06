@@ -21,7 +21,7 @@ import { loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드
 import { resolveBodyPrefix } from "../characterAppearance";
 import { ult5HoldOf, ult5bHoldOf, ultBurstMultOf } from "../ultHold"; // v1.4.41 (#3) — 궁극기 시전 시간 · 지시 #9 — 극딜 배율
 import { playUltCinematic } from "../fx/UltCinematic"; // v1.4.41 (#13) — 궁극기 시네마틱 연출
-import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUltIntroSig, spawnTierFlair, spawnUltFlourish, spawnSkillImpact, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처 · vc147 — 계열별 지면 시그니처
+import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUltIntroSig, spawnTierFlair, spawnUltFlourish, spawnSkillImpact, spawnClassAccent, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처 · vc147 — 계열별 지면 시그니처 · vc238 — 직업별 악센트
 import { DEATH_SLASH_CFG, runDeathSlashCinematic } from "../fx/DeathSlash"; // vc153 — 도적 제2궁극기 「사(死)의 일섬」 3D 시네마틱
 import { playUltLayers } from "../fx/ultLayers"; // vc183 — 극딜 3단계 연출 레이어(암전·이펙트·카메라)
 import { runUltFinale } from "../fx/ultFinale"; // vc204 (#10) — 직업별 고유 마무리
@@ -1477,6 +1477,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const effects = new WeaponMasterCombat(this.scene, profile, origin, aim, tier, {
       texture: this.texture.key, frame: this.frame.name, flip: this.flipX, scaleX: this.scaleX, scaleY: this.scaleY,
     });
+    /* vc238 (지시 #14) — 시그니처 주력기 경로에도 직업 고유 악센트를 얹는다.
+     *  useSkill1 이 여기서 조기 return 하므로 tierFlair() 가 도달하지 못했고,
+     *  그 결과 전직 캐릭터는 직업별 FX 가 전혀 나오지 않았다. 저사양(fxLevel 0)은 생략. */
+    if (this.scene.fxLevel > 0) spawnClassAccent(this.scene, this.x, this.y, this.cls, this.clsHex(), tier >= 4 ? 1.0 : 0.62, aim.angle());
     effects.startup();
     audio.sfx.elemCast(profile.element);
     this.signatureCast = startSignatureCast(profile, {

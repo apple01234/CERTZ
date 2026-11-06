@@ -1,5 +1,4 @@
 import Phaser from "phaser";
-import { isTrainingStage } from "../trainingRegions";
 import { DECOR_BUDGET, decorSetFor, pickByTag, isSolidDecor, decorCollisionBounds, type DecorObj } from "../decorObjects";
 import { createGameState, type GameState } from "../state/gameState";
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
@@ -2547,7 +2546,9 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private playChapterIntroCutscene(stageKey: StageKey): boolean {
-    if (!this.player || isTrainingStage(stageKey)) return false;
+    /* vc251 — 수련 원정 9지역 삭제로 `isTrainingStage` 가드 불필요.
+     *  남은 챕터는 howlrstone/DLC 뿐이고 전부 인트로 컷씬을 가진다. */
+    if (!this.player) return false;
     const parsed = parseStage(stageKey);
     if (!parsed.ch || parsed.ch === "village") return false;
     /* vc238 (지시 #5 "스테이지마다 대사 여러 개 + 컷씬도") — 종전엔 sub1(챕터 입장)만
@@ -3244,21 +3245,16 @@ export class WorldScene extends Phaser.Scene {
       !placed.some(([px, py]) => Phaser.Math.Distance.Between(x, y, px, py) < minDist);
     const take = (x: number, y: number) => { placed.push([x, y]); };
 
-    // 나무 & 소나무 & 바위 (충돌 있음) — 실제 에셋, 챕터 테마 변형 (v2.0: 구역 키 대응)
-    // v3.0 (사용자 지시 #7) — 스바르트알프헤임(동굴) 초록 소나무 제거: 시든 나무·암석으로 교체
-    const treeSet: string[] =
-      ch === "niflheim" ? ["pine_snow"]
-      : ch === "abyss" || ch === "hel" ? ["pine_dark"]
-      : ch === "muspelheim" ? ["pine_dark", "ud_deadtree1", "ud_deadtree2"]
-      : ch === "cave" || ch === "nidavellir" ? ["ud_deadtree1", "ud_deadtree2", "ud_deadtree3", "pine_dark"]
-      : ["tree", "tree", "pine", "kd_plant1", "kd_plant2", "kd_plant3"]; // v1.4.11 — kd_plant 자생나무 3종 합류
+    /* vc251 — 수련 원정 9지역 삭제로 지역별 지형 분기를 제거.
+     *  남은 챕터는 DLC(별/행성)와 howlrstone(라일락 월드)뿐이라 기본 세트를 쓴다. */
+    const treeSet: string[] = ["tree", "tree", "pine", "kd_plant1", "kd_plant2", "kd_plant3"]; // v1.4.11 — kd_plant 자생나무 3종 합류
     /* v1.4.19 (검은 사각형 글리치 안전망) — 배치 전에 실제 등록된 텍스처만 남긴다.
      *  부트 로드 목록 누락 키(예: v1.4.11 kd_plant)가 Phaser __MISSING 폴백으로
      *  렌더돼 "검은 사각형+녹색 대각선"이 필드에 생기던 것을 구조적으로 차단 —
      *  향후 누락이 생겨도 글리치 사각형 대신 정상 나무로 대체된다. */
     const treePool = treeSet.filter((k) => this.textures.exists(k));
     const treePick = () => (treePool.length > 0 ? rng.pick(treePool) : "tree");
-    const rockTex = ch === "niflheim" ? "rock_snow" : ch === "abyss" || ch === "hel" ? "rock_dark" : ch === "muspelheim" || ch === "nidavellir" ? "rock_stone" : "rock";
+    const rockTex = "rock";
 
     /* v2.1 자연 배치 — 군집 중심 산포 (v3.0.15 #18: 군집 반경 축소로 진로 봉쇄 완화) */
     const clusterN = ch === "village" ? 2 : 3;
@@ -3418,104 +3414,11 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
-    // 심연 구역(알프헤임) 횃불 — 실제 Kenney 횃불 + 온기 글로우
-    //  v4.1.5 — 글로우 depth 1→56 (암전 오버레이 위로 올려 어둠 속에서도 빛나게)
-    if (ch === "alfheim") {
-      for (let i = 0; i < 6; i++) {
-        const tx = 200 + (i * (this.stageW - 400)) / 5;
-        const ty = i % 2 === 0 ? this.stageH / 2 - 140 : this.stageH / 2 + 140;
-        this.add.image(tx, ty, "torch").setDepth(2);
-        const g = this.add
-          .image(tx, ty, "glow")
-          .setDepth(56)
-          .setBlendMode(Phaser.BlendModes.ADD)
-          .setTint(0xffa040)
-          .setScale(1.1)
-          .setAlpha(0.22);
-        this.tweens.add({ targets: g, alpha: 0.42, scale: 1.35, duration: 650, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-      }
-    }
 
-    // 스바르트알프헤임 동굴/광산 — 심연에 물든 수정 광맥 (연합 파편 텍스처 보라 변형 + 글로우)
-    if (ch === "cave" || ch === "nidavellir") {
-      const rng2 = new Phaser.Math.RandomDataGenerator(["cave-crystal"]);
-      for (let i = 0; i < 7; i++) {
-        const cx2 = rng2.between(140, this.stageW - 140);
-        const cy2 = rng2.between(90, this.stageH - 90);
-        const c = this.add.image(cx2, cy2, "fragment").setDepth(1).setTint(0xc77aff).setScale(rng2.realInRange(0.7, 1.2));
-        const g = this.add
-          .image(cx2, cy2, "glow")
-          .setDepth(56) /* v4.1.5 — 암전 위 렌더 */
-          .setBlendMode(Phaser.BlendModes.ADD)
-          .setTint(0x9d5aff)
-          .setScale(1.2)
-          .setAlpha(0.18);
-        this.tweens.add({ targets: g, alpha: 0.38, scale: 1.5, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-        void c;
-      }
-    }
 
-    // 심연의 왕좌 — 보라 화염 횃불 (심연의 표식)
-    if (ch === "abyss") {
-      for (let i = 0; i < 5; i++) {
-        const tx = 220 + (i * (this.stageW - 440)) / 4;
-        const ty = i % 2 === 0 ? this.stageH / 2 - 130 : this.stageH / 2 + 130;
-        this.add.image(tx, ty, "torch").setDepth(2).setTint(0xb08aff);
-        const g = this.add
-          .image(tx, ty, "glow")
-          .setDepth(56) /* v4.1.5 — 암전 위 렌더 */
-          .setBlendMode(Phaser.BlendModes.ADD)
-          .setTint(0x8a5aff)
-          .setScale(1.2)
-          .setAlpha(0.24);
-        this.tweens.add({ targets: g, alpha: 0.45, scale: 1.4, duration: 700, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-      }
-    }
 
-    // 무스펠헤임 — 용암 균열(마그마 타일 변형) + 화염 글로우 (v2.0 신규 테마)
-    if (ch === "muspelheim") {
-      const rng3 = new Phaser.Math.RandomDataGenerator(["muspel-embers"]);
-      for (let i = 0; i < 8; i++) {
-        const ex3 = rng3.between(140, this.stageW - 140);
-        const ey3 = rng3.between(90, this.stageH - 90);
-        if (Math.abs(ey3 - this.stageH / 2) < 80) continue;
-        /* v3.0.19 — tile_magma 64→256px 텍스처 전환: 0.5→0.125 스케일 (시각 32px 동일 유지) */
-        this.add.image(ex3, ey3, "tile_magma").setDepth(0).setScale(0.125).setTint(0xffb070);
-        const g = this.add
-          .image(ex3, ey3, "glow")
-          .setDepth(56) /* v4.1.5 — 암전 위 렌더 */
-          .setBlendMode(Phaser.BlendModes.ADD)
-          .setTint(0xff8a4a)
-          .setScale(1.0)
-          .setAlpha(0.16);
-        this.tweens.add({ targets: g, alpha: 0.34, scale: 1.35, duration: 950, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-      }
-    }
 
     // 헬 — 무덤·고목·해골 (무료 에셋 Undead Pack, CC0 — v1.5 배치1 이관)
-    /* v1.4.10 — 고목(ud_deadtree 128² 캔버스)에 줄기 충돌 부여: 기존엔 충돌 없어
-     *  캐릭터가 나무를 뚫고 다니며 "배치가 이상하다"로 느껴졌다 (줄기 하단 중앙 배치) */
-    if (ch === "hel") {
-      const rng4 = new Phaser.Math.RandomDataGenerator(["hel-graves"]);
-      const graves = ["ud_grave1", "ud_grave2", "ud_grave3"];
-      for (let i = 0; i < 6; i++) {
-        const gx4 = rng4.between(140, this.stageW - 140);
-        const gy4 = rng4.between(90, this.stageH - 90);
-        if (Math.abs(gy4 - this.stageH / 2) < 90) continue;
-        const g4 = this.add.image(gx4, gy4, rng4.pick(graves)).setDepth(this.yDepthFor(gy4));
-        this.solidGroup.add(g4);
-        (g4.body as Phaser.Physics.Arcade.StaticBody).setSize(26, 30).setOffset(12, 16);
-      }
-      for (let i = 0; i < 4; i++) {
-        const dx4 = rng4.between(140, this.stageW - 140);
-        const dy4 = rng4.between(90, this.stageH - 90);
-        if (Math.abs(dy4 - this.stageH / 2) < 90) continue;
-        const dt = this.add.image(dx4, dy4, rng4.pick(["ud_deadtree1", "ud_deadtree2", "ud_deadtree3"])).setDepth(this.yDepthFor(dy4));
-        this.solidGroup.add(dt);
-        /* 128² 캔버스 — 줄기 하단 중앙만 충돌 (케노피는 통과) */
-        (dt.body as Phaser.Physics.Arcade.StaticBody).setSize(18, 22).setOffset(55, 100);
-      }
-    }
 
     /* v1.4.10 — 숲(연합 거점) 유적 나무/소품(fm_tree/fm_prop) 블록 삭제 (유저 지시
      *  "나무 및 오브젝트들의 배치가 이상하고 에셋이 안어울려" + "유적 없애고 상자만 놔뒀는데 뭐임?"):
@@ -3531,33 +3434,6 @@ export class WorldScene extends Phaser.Scene {
      *  vc145 (#13) — "식인초 작동안함" 보강: ①스폰 시도 9→16회 + 앞 8회는 위험식물 확정 선택
      *  (기존 6종 균등 선택 + 좁은 배치 조건 조합으로 0~1그루만 나오거나 멀리 나던 것 개선)
      *  ②히트박스 56×44→68×54 확대 ③물리 오버랩과 별개 거리 기반 판정 폴백(tickPlantHazards) */
-    if (ch === "kingdom" || ch === "abyss") {
-      const rng6 = new Phaser.Math.RandomDataGenerator(["cursed-plants"]);
-      const hazardPlants = ["cl_jawsplant", "cl_eyeplant", "cl_manyeyes"];
-      /* v1.4.10 — cl_bones(256² 대형, depth 1·충돌 없음) 제외: 발밑에 깔리는 거대 소품이
-       *  "배치가 이상하다"의 원인. 나머지 식물·바위 소품은 128² 이하라 유지 */
-      const passiveProps = ["cl_mflower", "cl_pustules", "cl_rock"];
-      const allProps = [...hazardPlants, ...passiveProps];
-      let hazardPlaced = 0;
-      for (let i = 0; i < 16 && hazardPlaced < 6; i++) {
-        const px6 = rng6.between(120, this.stageW - 120);
-        const py6 = rng6.between(70, this.stageH - 70);
-        if (Math.abs(py6 - this.stageH / 2) < 85) continue;
-        if (blocked(px6, py6)) continue;
-        if (!this.inOpenArea(px6, py6)) continue;
-        /* 앞 8회는 위험식물 확정 (지정 마릿수 보장), 이후 장식 섞임 */
-        const tex6 = i < 8 ? rng6.pick(hazardPlants) : rng6.pick(allProps);
-        const p6 = this.add.image(px6, py6, tex6).setDepth(1);
-        if (hazardPlants.includes(tex6)) {
-          // 육식 식물 — 목록 적재만 (오버랩은 플레이어 생성 후 일괄 등록)
-          this.physics.add.existing(p6, true);
-          (p6.body as Phaser.Physics.Arcade.StaticBody).setSize(68, 54); // center=true — 식물 중앙 배치 (vc145 확대)
-          this.plantHazards.push(p6);
-          hazardPlaced++;
-          this.tweens.add({ targets: p6, scaleX: 1.06, scaleY: 0.96, duration: 900 + (i % 4) * 130, yoyo: true, repeat: -1, ease: "Sine.inOut" });
-        }
-      }
-    }
 
     // 마을 모닥불 (Serene Village, CC-BY) — 광장 남서 고정 + 글로우
     if (STAGES[stageKey]?.isVillage) {
@@ -3584,7 +3460,7 @@ export class WorldScene extends Phaser.Scene {
       if (lay1) {
         const opens: number[] = [];
         for (let i = 0; i < lay1.open.length; i++) if (lay1.open[i]) opens.push(i);
-        const tint = parseStage(stageKey).ch === "niflheim" ? 0x8ad4ff : 0xffa050;
+        const tint = 0xffa050; /* vc251 — 설원 삭제로 단일 틴트 */
         /* v1.1.0 (#8 라이트 절감) — 고정 환경광 5 → 3: "쓸데없이 배치된 불빛이 너무 많다" 지시 반영.
          *  플레이어 횃불+근접 횃불로 시야 확보가 충분하다 */
         for (let n = 0; n < 3 && opens.length > 0; n++) {
@@ -3600,7 +3476,7 @@ export class WorldScene extends Phaser.Scene {
         for (let i = 0; i < lay2.open.length; i++) if (lay2.open[i]) opens2.push(i);
         const want2 = Math.min(4, opens2.length); // v1.1.0 (#8) — 횃불 장치 8 → 4
         const step2 = Math.max(1, Math.floor(opens2.length / Math.max(1, want2)));
-        const torchTint2 = parseStage(stageKey).ch === "niflheim" ? 0x8ad4ff : 0xffa050;
+        const torchTint2 = 0xffa050; /* vc251 — 설원 삭제로 단일 틴트 */
         for (let n = 0; n < opens2.length && this.torches.length < want2; n += step2) {
           const c = cellCenterOf(lay2, opens2[n]);
           if (Math.abs(c.y - this.stageH / 2) < 80) continue; // 중앙 통로 회피
@@ -3623,20 +3499,6 @@ export class WorldScene extends Phaser.Scene {
      *  발생 빈도 2배 완화(480ms)로 파티클 부하 절반 — 니플헤임 프리즈 완화. */
     {
       const chNow = parseStage(stageKey).ch;
-      if (chNow === "niflheim") {
-        this.weatherSnow = this.add.particles(0, 0, "wx_snowflake", {
-          x: { min: -80, max: 1400 },
-          y: 0,
-          lifespan: 9000,
-          speedY: { min: 18, max: 42 },
-          speedX: { min: -18, max: 4 },
-          scale: { min: 0.04, max: 0.1 },
-          alpha: { start: 0.22, end: 0.1 },
-          rotate: { min: 0, max: 360 },
-          quantity: 1,
-          frequency: this.fxLevel === 0 ? 480 : 240,
-        }).setDepth(54);
-      }
     }
   }
 
@@ -5635,51 +5497,6 @@ export class WorldScene extends Phaser.Scene {
     /* vc147 (#30) — 맵별 NPC 다양화: 챕터당 1종 → 구역(sub)마다 다른 NPC가 서고,
      *  각자 사연 한 줄 + 반복 의뢰(토벌)를 맡긴다. "한 챕터의 맵마다 NPC가 다 같애" 해소. */
     const SPEC: Record<string, { tex: string; name: string; dlg: string; story: string }[]> = {
-      forest: [
-        { tex: "spum_villager_m", name: "숲의 사냥꾼", dlg: "fieldNpc_forest", story: "아내가 아픈데 약재를 구하러 갔다가 늑대만 삼족을 마주쳤지. 부탁이다, 숲을 좀 안전하게 해다오." },
-        { tex: "spum_villager_f", name: "약초 할멈", dlg: "fieldNpc_forest", story: "이 근방 약초는 늑대 밥이 되기 전에 내가 다 주워 모았지. 그 대신 할멈 부탁 하나 들어주게." },
-        { tex: "spum_villager_m", name: "떠돌이 꼬마", dlg: "fieldNpc_forest", story: "아빠가 숲에 사라진 지 3년째... 나도 언젠가는 사냥꾼이 될 거라오." },
-      ],
-      kingdom: [
-        { tex: "spum_villager_f", name: "능지 생존자", dlg: "fieldNpc_kingdom", story: "성벽이 무너진 날, 나는 시체 더미에서 기어 나왔어. 그날 이후 아무것도 무섭지 않아." },
-        { tex: "spum_villager_m", name: "해골 문지기", dlg: "fieldNpc_kingdom", story: "이 문장(紋章)은 왕국 마지막 근위대의 유물일세. 소중히 여겨주게." },
-        { tex: "spum_villager_f", name: "고아 소녀", dlg: "fieldNpc_kingdom", story: "빵을 훔치다 걸린 게 처음이었어. 잡히지 않는 법을 지금은 잘 알지." },
-      ],
-      cave: [
-        { tex: "spum_villager_m", name: "광산 노동자", dlg: "fieldNpc_cave", story: "동료들이 갱도 안에서 안 나왔어. 조용히... 너무 조용한 게 문제라우." },
-        { tex: "spum_villager_f", name: "램프 아주머니", dlg: "fieldNpc_cave", story: "램프 기름이 떨어지면 그곳은 이미 지옥이지. 심장을 꾹 누르고 걸었담." },
-        { tex: "spum_villager_m", name: "은퇴 광부", dlg: "fieldNpc_cave", story: "30년을 캤지만 정작 보석 앞에 서면 무릎이 떨렸다네. 인간은 욕심이 무서운 법이지." },
-      ],
-      niflheim: [
-        { tex: "spum_villager_f", name: "설원 수렵꾼", dlg: "fieldNpc_niflheim", story: "눈보라가 온종일 몰아친 날, 아들이 사냥터에서 돌아오지 않았어. 그 눈 속에서 기다렸담." },
-        { tex: "spum_villager_m", name: "고독한 배웅자", dlg: "fieldNpc_niflheim", story: "언데드도 불쌍하다. 살 때의 기억으로 이 눈보라를 헤매는 거니까." },
-        { tex: "spum_villager_f", name: "얼음 조각가", dlg: "fieldNpc_niflheim", story: "얼음은 기억을 담아. 그래서 이 설원엔 수천 년 된 슬픔이 묻혀 있지." },
-      ],
-      muspelheim: [
-        { tex: "spum_villager_m", name: "화산 광부", dlg: "fieldNpc_muspelheim", story: "용암이 닿기 전 세 걸음까지는 뛸 수 있었지. 뒤를 돌아본 건 도착하고 나서였어." },
-        { tex: "spum_villager_m", name: "대장장이 장인", dlg: "fieldNpc_muspelheim", story: "쇠는 정직하지. 두드린 만큼만 단단해지지 — 인간과 다르지." },
-        { tex: "spum_villager_f", name: "물 긷는 아이", dlg: "fieldNpc_muspelheim", story: "여긴 물이 제일 비싸. 그럼에도 나는 매일 우물가를 지킨다." },
-      ],
-      alfheim: [
-        { tex: "spum_villager_f", name: "요정 정찰병", dlg: "fieldNpc_alfheim", story: "숲의 노래가 잡혔어. 나무들이 도움을 청하는 걸, 나만 들을 수 있는 건 아니거든." },
-        { tex: "spum_villager_m", name: "숲의 현자", dlg: "fieldNpc_alfheim", story: "연합의 꿈속에서 우리는 모두 한 잎사귀일 뿐이지. 겸손하게 사려게." },
-        { tex: "spum_villager_f", name: "꽃잎 몰이꾼", dlg: "fieldNpc_alfheim", story: "꽃잎이 흩어지는 계절이면 반드시 누군가는 떠난다. 그래서 나는 배웅을 배웠지." },
-      ],
-      nidavellir: [
-        { tex: "spum_villager_m", name: "대장장이 견습", dlg: "fieldNpc_nidavellir", story: "사부님은 못 망친 적이 없어. 나는 열 번을 망쳤고, 열한 번째에 처음 떨렸지." },
-        { tex: "spum_villager_m", name: "룬 감정사", dlg: "fieldNpc_nidavellir", story: "룬은 거짓말을 안 해. 다만 듣는 귀가 게을렀을 뿐." },
-        { tex: "spum_villager_f", name: "지하 상인", dlg: "fieldNpc_nidavellir", story: "어둠 속에서의 거래는 목숨을 담보로 해. 그래서 내 품질은 보장된다 하하." },
-      ],
-      hel: [
-        { tex: "spum_villager_f", name: "묘지 관리인", dlg: "fieldNpc_hel", story: "무덤은 말이 없지만 잔디는 자라. 내 일은 그 둘 사이의 이야기를 지켜주는 거지." },
-        { tex: "spum_villager_m", name: "촛불 우편배달부", dlg: "fieldNpc_hel", story: "이승 사람들이 붙인 촛불 편지를 무덤가에 옮겨 심는다. 배달 도중 울지 않는 게 관례라오." },
-        { tex: "spum_villager_f", name: "재의 무희", dlg: "fieldNpc_hel", story: "헬의 왕은 춤을 좋아한다더라. 그래서 나는 망자들을 위해 춤춘다." },
-      ],
-      abyss: [
-        { tex: "spum_villager_m", name: "심연 생존자", dlg: "fieldNpc_abyss", story: "위로 올라가는 법은 잊었어. 대신 내려가는 길은 999개쯤 알지." },
-        { tex: "spum_villager_f", name: "연합 수액 채집가", dlg: "fieldNpc_abyss", story: "뿌리의 수액은 달다. 대가로 꿈을 조금씩 가져가지만." },
-        { tex: "spum_villager_m", name: "등불 드리프터", dlg: "fieldNpc_abyss", story: "심연에선 등불이 꺼진 방향이 곧 바다다. 나는 그 바다를 건너왔지." },
-      ],
     };
     const list = SPEC[ch];
     if (!list) return; // 재림/특수 구역은 제외
@@ -9628,7 +9445,7 @@ export class WorldScene extends Phaser.Scene {
         const raidCh = parseStage(this.stageDef.key).ch;
         /* v1.4.32 (#게임멈춤) — 저사양 환경(모바일/APK)은 챕터 무관 보스전 블룸 생략:
          *  화염·설원 외 챕터(발할라·심연 등)에서 동종 GPU 프리즈가 계속 제보됐다. */
-        const bloomSkip = raidCh === "muspelheim" || raidCh === "niflheim" || isLowPerfEnv();
+        const bloomSkip = isLowPerfEnv(); /* vc251 — 화염·설원 챕터 삭제 */
         if (fxk > 0 && !bloomSkip) {
           const bloom = Phaser.Actions.AddEffectBloom(cam, {
             threshold: 0.68,
@@ -9683,7 +9500,7 @@ export class WorldScene extends Phaser.Scene {
   ]);
   private ambientBloomAllowed(): boolean {
     const ch = parseStage(this.stageDef.key).ch;
-    if (ch === "niflheim" || ch === "muspelheim") return false;
+    /* vc251 — 화염·설원 챕터 삭제로 챕터 분기 불필요 (지면 루마 판정만 유지) */
     const gt = (this.stageDef as { groundTex?: string }).groundTex;
     /* vc196 — 종전엔 타일 이름(tile_snow/tile_magma)으로만 판정했다. 무료 타일맵으로
      *  지형 키를 바꾸자 무스펠헤임 지면이 tile_magma → tile_lava 가 되어 이 가드가
@@ -9698,7 +9515,7 @@ export class WorldScene extends Phaser.Scene {
    *  blurSteps 2·blend ×0.6으로 비용을 낮춘 단일 패스만 복원 (프리즈 원인은 이중 패스 과부하). */
   private ambientBloomLight(): boolean {
     const ch = parseStage(this.stageDef.key).ch;
-    if (ch === "niflheim" || ch === "muspelheim") return false;
+    /* vc251 — 화염·설원 챕터 삭제로 챕터 분기 불필요 (지면 루마 판정만 유지) */
     const gt = (this.stageDef as { groundTex?: string }).groundTex;
     if (this.highLumaGround.has(gt ?? "")) return false;
     return isLowPerfEnv();
@@ -9914,7 +9731,10 @@ export class WorldScene extends Phaser.Scene {
     const specialZone =
       this.stageDef.key === "tower" || this.stageDef.key === "closet" || this.stageDef.key === "gate" ||
       this.stageDef.key === "dojang" || this.stageDef.key === "park" || this.stageDef.key === "praid";
-    const final = !specialZone && !isTrainingStage(this.stageDef.key) && NEXT_STAGE[this.stageDef.key] === null;
+    /* vc251 — 수련 원정 9지역 삭제로 `isTrainingStage` 조건 제거.
+     *  남은 스테이지는 village / howlrstone / DLC 뿐이며, NEXT_STAGE 가 null 인 곳이
+     *  곧 최종 지점이다(howlrstone 마지막은 dlcstargate1 로 이어지므로 제외됨). */
+    const final = !specialZone && NEXT_STAGE[this.stageDef.key] === null;
     /* vc231 — 영프 편 마지막 구역은 NEXT_STAGE 가 dlcstargate1 이라 final 이 아니다.
      *  `this.cleared`(본편 세계 구원) 를 건드리지 않는다 — 영프 엔딩은 별도 플래그다. */
     if (final) this.cleared = true;
@@ -14057,8 +13877,10 @@ export class WorldScene extends Phaser.Scene {
           if (STAGES[bvk]) return bvk;
         }
       }
-      /* 기록이 없으면 심연(10챕터) 마을로 — 연합 거점로 튕기지 않게 */
-      const av = "abyssv" as StageKey;
+      /* vc251 — 10챕터(심연) 삭제로 폴백 거점을 마을로 고정.
+       *  `STAGES[av]` 가드가 아래에서 걸러내므로 존재하지 않는 키여도 안전했지만,
+       *  죽은 참조를 남기지 않도록 유효 키로 바꾼다. */
+      const av = "village" as StageKey;
       if (STAGES[av]) return av;
     }
     return "village";
