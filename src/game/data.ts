@@ -439,7 +439,7 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
    *  vord(HP 42000) < jorm(60000) < nagr(95000) 순으로 강화. 슬롯은 ring/pendant 교차로
    *  기존 유물과 세트를 맞출 때 선택지가 생기게 했다. 아이콘은 기존 i_bd_* 재활용(신규 에셋 0). */
   bd_vord: { key: "bd_vord", kind: "accessory", name: "파수꾼의 지진핵", icon: "i_bd_guardian", price: 0, tier: "legend", def: 4, maxHp: 160, slot: "ring", tradeLock: true, bossDrop: "재림의 파수꾼 베오르드 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_jorm: { key: "bd_jorm", kind: "accessory", name: "연합의 독니", icon: "i_bd_nidhog", price: 0, tier: "legend", crit: 16, atk: 12, slot: "ring", tradeLock: true, bossDrop: "요르문간드 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_jorm: { key: "bd_jorm", kind: "accessory", name: "연합의 독니", icon: "i_bd_nidhog", price: 0, tier: "legend", crit: 16, atk: 12, slot: "ring", tradeLock: true, bossDrop: "탐식의 뱀 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_nagr: { key: "bd_nagr", kind: "accessory", name: "종언의 천사인장", icon: "i_bd_abudditos", price: 0, tier: "legend", crit: 20, maxHp: 150, def: 3, slot: "pendant", tradeLock: true, bossDrop: "나그라파르 드롭 — 재림 최종 전리품 · 거래소 예정" },
   /* ================= v1.0.2 (#GM아이템) — 관리자 전용 테스트 장비 =================
    *  일반 유저는 어떤 경로로도 획득 불가 (상품 목록/드롭 테이블 미포함 + gmOnly 거래 차단).
@@ -466,7 +466,7 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   outfit_sakura: { key: "outfit_sakura", kind: "cosmetic", name: "벚꽃 검부이", icon: "cost_sakura_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
   outfit_void: { key: "outfit_void", kind: "cosmetic", name: "공허의 순례자", icon: "costm_void_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
   /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 (유저 제공 SPUM 파트 실제 조합 — 투구/후드/헤어/망토/의상 파트) */
-  outfit_valkyrie: { key: "outfit_valkyrie", kind: "cosmetic", name: "발키리의 은빛 갑주", icon: "cost_valkyrie_idle0", price: 128000, bmPrice: 52, bmOnly: true, tier: "legend" },
+  outfit_valkyrie: { key: "outfit_valkyrie", kind: "cosmetic", name: "성역의 은빛 갑주", icon: "cost_valkyrie_idle0", price: 128000, bmPrice: 52, bmOnly: true, tier: "legend" },
   outfit_witch: { key: "outfit_witch", kind: "cosmetic", name: "심연의 후드 마녀", icon: "cost_witch_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
   outfit_sylvan: { key: "outfit_sylvan", kind: "cosmetic", name: "숲의 후드 수호자", icon: "cost_sylvan_idle0", price: 88000, bmPrice: 36, bmOnly: true, tier: "epic" },
   outfit_lily: { key: "outfit_lily", kind: "cosmetic", name: "흑발의 백합 검부이", icon: "cost_lily_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
@@ -547,7 +547,7 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   pet_reaper: { key: "pet_reaper", kind: "pet", name: "심연의 별 정령 리퍼", icon: "i_pet_reaper", price: 140000, bmPrice: 55, bmOnly: true, tier: "legend" },
   /* v1.0.13 피드백#19 — 수집형 틴트 펫 2종 (BM 구매 경로 — PetDef 본체는 위 PET_DEFS)
    *  지시에 따라 골드 보너스를 5~8%로 절제 — 수집·외형 가치 중심의 입문 펫 (아이콘은 요정 스프라이트 재활용) */
-  pet_sakura: { key: "pet_sakura", kind: "pet", name: "벚꽃 요정 사쿠라", icon: "pet_pixie", price: 18000, bmPrice: 8, bmOnly: true, tier: "rare" },
+  pet_sakura: { key: "pet_sakura", kind: "pet", name: "벚꽃 요정 하나미", icon: "pet_pixie", price: 18000, bmPrice: 8, bmOnly: true, tier: "rare" },
   pet_mermaid: { key: "pet_mermaid", kind: "pet", name: "심해의 인어", icon: "pet_pixie", price: 24000, bmPrice: 12, bmOnly: true, tier: "epic" },
   /* v4.3.0 — 신규 치장 6종 (ITEMS 등록: BM 구매 경로 — CosmeticDef 본체는 위 COSMETIC_DEFS) */
   cos_frost: { key: "cos_frost", kind: "cosmetic", name: "서리 오라", icon: "i_cos_frost", price: 30000, bmPrice: 18, bmOnly: true, tier: "rare" },
@@ -658,10 +658,13 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   gun_flint: { key: "gun_flint", kind: "weapon", name: "낡은 화승총", icon: "x3_gun", price: 900, tier: "common", atk: 15, clsOnly: ["pirate"] },
   gun_broadside: { key: "gun_broadside", kind: "weapon", name: "현측 포격총", icon: "x3_gun", price: 7400, tier: "rare", atk: 44, clsOnly: ["pirate"] },
   gun_abyss: { key: "gun_abyss", kind: "weapon", name: "심연의 포성", icon: "item_wpn_cutlass", price: 34000, tier: "epic", atk: 92, clsOnly: ["pirate"] },
-  mythic_weapon: { key: "mythic_weapon", kind: "weapon", name: "위그드라실의 심장검", icon: "item_mythic_weapon", price: 96000, tier: "legend", atk: 130 },
-  mythic_armor: { key: "mythic_armor", kind: "armor", name: "위그드라실의 울린갑주", icon: "item_mythic_armor", price: 88000, tier: "legend", def: 54, maxHp: 400 },
-  mythic_ring: { key: "mythic_ring", kind: "accessory", name: "노른의 계약반지", icon: "item_mythic_ring", price: 80000, tier: "legend", crit: 34, atk: 22, slot: "ring" },
-  mythic_pendant: { key: "mythic_pendant", kind: "accessory", name: "발홀의 문장 펜던트", icon: "item_mythic_pendant", price: 76000, tier: "legend", maxHp: 520, def: 12, slot: "pendant" },
+  /* vc267 (P7a 정본 감사) — 표시 이름만 교체. key/icon/스탯은 그대로라 세이브·장비 계약 불변.
+   *  위그드라실·노른·발홀은 정본 8개에 없는 타 신화 고유명이다.
+   *  정본 3.txt/7.txt 의 힘·가문 체계(빛·어둠·자연·제작)에 맞춰 다시 지었다. */
+  mythic_weapon: { key: "mythic_weapon", kind: "weapon", name: "라일락의 심장검", icon: "item_mythic_weapon", price: 96000, tier: "legend", atk: 130 },
+  mythic_armor: { key: "mythic_armor", kind: "armor", name: "라일락의 울린갑주", icon: "item_mythic_armor", price: 88000, tier: "legend", def: 54, maxHp: 400 },
+  mythic_ring: { key: "mythic_ring", kind: "accessory", name: "에크레디트의 계약반지", icon: "item_mythic_ring", price: 80000, tier: "legend", crit: 34, atk: 22, slot: "ring" },
+  mythic_pendant: { key: "mythic_pendant", kind: "accessory", name: "에델리오나의 문장 펜던트", icon: "item_mythic_pendant", price: 76000, tier: "legend", maxHp: 520, def: 12, slot: "pendant" },
 };
 
 /* v3.0.6 (지시 — "나중가면 플레이어가 너무 쌔닌까 보스 및 몬스터가 체력% 고정 데미지를 주게해"):
@@ -759,7 +762,7 @@ export const PET_DEFS: Record<PetKey, PetDef> = {
   pet_reaper: { key: "pet_reaper", name: "심연의 별 정령 리퍼", icon: "pet_atlas", tint: 0xb070ff, desc: "맵 전체 드롭 즉시 흡수 · 골드 +65%", bonusGoldPct: 65, price: 0 },
   /* v1.0.13 피드백#19 — 수집형 틴트 펫 2종 (pet_pixie 스프라이트 재활용 — 벚꽃 연분홍/심해 아쿠아 틴트).
    *  기존 레더(35~65%)와 달리 골드 보너스를 지시대로 5~8%로 절제한 수집·입문용 펫 */
-  pet_sakura: { key: "pet_sakura", name: "벚꽃 요정 사쿠라", icon: "pet_pixie", tint: 0xffb7d5, desc: "드롭 자동 줍기 · 골드 +5%", bonusGoldPct: 5, price: 0 },
+  pet_sakura: { key: "pet_sakura", name: "벚꽃 요정 하나미", icon: "pet_pixie", tint: 0xffb7d5, desc: "드롭 자동 줍기 · 골드 +5%", bonusGoldPct: 5, price: 0 },
   pet_mermaid: { key: "pet_mermaid", name: "심해의 인어", icon: "pet_pixie", tint: 0x4de0d0, desc: "드롭 자동 줍기 · 골드 +8%", bonusGoldPct: 8, price: 0 },
 };
 
@@ -839,7 +842,7 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   outfit_sakura: { key: "outfit_sakura", name: "벚꽃 검부이", icon: "cost_sakura_idle0", desc: "흑발에 벚꽃 스커트의 검부이 — 봄밤의 일섭 (여형)", price: 560, tint: 0xffb0d0, slot: "outfit" },
   outfit_void: { key: "outfit_void", name: "공허의 순례자", icon: "costm_void_idle0", desc: "보랏빛 로브의 은발 순례자 — 공허를 건니는 자 (남형)", price: 560, tint: 0xb08aff, slot: "outfit" },
   /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 (SPUM 파트 실제 조합 — 투구/후드/헤어/망토) */
-  outfit_valkyrie: { key: "outfit_valkyrie", name: "발키리의 은빛 갑주", icon: "cost_valkyrie_idle0", desc: "은빛 나이트 투구에 백은 장갑의 발키리 — 전장을 날는 여신 (여형)", price: 560, tint: 0xcfe0ff, slot: "outfit" },
+  outfit_valkyrie: { key: "outfit_valkyrie", name: "성역의 은빛 갑주", icon: "cost_valkyrie_idle0", desc: "은빛 나이트 투구에 백은 장갑의 성역 수호자 — 전장을 날는 여신 (여형)", price: 560, tint: 0xcfe0ff, slot: "outfit" },
   outfit_witch: { key: "outfit_witch", name: "심연의 후드 마녀", icon: "cost_witch_idle0", desc: "보라 후드에 심연색 로브의 마녀 — 밤의 마술을 다루는 자 (여형)", price: 560, tint: 0xb08aff, slot: "outfit" },
   outfit_sylvan: { key: "outfit_sylvan", name: "숲의 후드 수호자", icon: "cost_sylvan_idle0", desc: "갈색 후드에 녹색 튜닉의 숲 수호자 — 나무와 말이 통하는 자 (여형)", price: 560, tint: 0x9adf6a, slot: "outfit" },
   outfit_lily: { key: "outfit_lily", name: "흑발의 백합 검부이", icon: "cost_lily_idle0", desc: "흑발에 백합 문장의 붉은 망토 검부이 — 조용한 일섭의 화신 (여형)", price: 560, tint: 0xffb0d0, slot: "outfit" },

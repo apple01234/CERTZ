@@ -1,4 +1,4 @@
-﻿/**
+/**
  * SERTZ 스테이지 시스템 (v2.0 — 사용자 지시 #6/#19 반영)
  *  - 챕터(해역) 9개 × 구역(sub-stage) 10개 = 90 필드 + 시작 마을
  *  - 챕터가 1씩 증가할수록 어렵고 스토리가 길어짐 (난이도/보상 곡선 내장)
@@ -753,7 +753,9 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     summonKey: "x3_orcwarrior",
   },
   jorm: {
-    key: "jorm", name: "연합를 먹는 뱀 요르문간드",
+    /* vc267 (P7a 정본 감사) — 표시 이름만 교체. key:"jorm" 은 세이브·스테이지 참조라 유지.
+     * '요르문간드'는 정본 8개에 없는 북유럽 신화 고유명이라 정본 세계관(연합을 삼키는 뱀)으로 다시 지었다. */
+    key: "jorm", name: "연합를 먹는 뱀 가르간",
     /* vc143 (#2 후반 보스 대폭 상향) — 재림 r10 요르문간드 HP 21500→60000 · ATK 55→64 */
     hp: 60000, atk: 64, speed: 104, exp: 1900, gold: 980,
     /* v5.0.1 — 유저 제공 시트(박쥐날개 황금뿔 드래곤)로 boss_jorm 독립 (nidhog 공유 해제) */
@@ -890,17 +892,65 @@ export function howlrstoneSpec(key: StageKey): HowlrstoneChapterSpec | null {
   return legacy ? (HOWLRSTONE_CHAPTERS.find((c) => c.key === legacy[1]) ?? null) : null;
 }
 
-/** v1.4.0 (Task 1-6 — 유저 지시 #14) — 레벨 구간별 퀘스트 요구 마릿수 곡선
- *  vc143 (#3 유저 지시 “요구 마릿수가 너무 적어 중반부터 100~200단위”) — 곡선 전면 재조정:
- *  1~20: 5~8 (초반 체감 유지) · 21~40: 60~110 · 41~60: 110~170 · 61~80: 170~210 · 81+: 200~260
- *  보상은 각 소비처(자동 토벌·반복 의뢰)에서 요구량 증가분만큼 곱연산 상향된다 */
+/** vc238 (P4 — 유저 지시 "후반으로 갈수록 처치형 퀘스트 요구량이 분명하게 증가") — 곡선 재설계.
+ *
+ *  [왜 갈아엎었나] vc143 곡선은 세 가지가 깨져 있었다:
+ *   ① Lv20→21 에서 8 → 60 (7.5배 절벽). 완만한 성장이 아니라 계단이었다.
+ *   ② Lv80→81 에서 210 → 200 (**감소**). 후반인데 요구량이 줄어드는 구간이 있었다.
+ *   ③ Lv100 상한이 260 이라, 챕터 게이트가 Lv276 까지 올라간 DLC 구간에서도
+ *      요구량이 260 에 고정됐다(유저 목표는 후반 400~650).
+ *
+ *  [새 설계] 레벨을 유저 목표 6구간에 **구간별 선형**으로 매핑한다.
+ *   구간 경계의 값이 같아(연속) 절벽이 원천적으로 없다 — 인접 차이는 구간 내 기울기뿐이다.
+ *   Lv1=20 · Lv20=50 · Lv35=120 · Lv50=250 · Lv70=400 · Lv100=650.
+ *   기울기가 가장 큰 곳은 20→35(+70/15 ≈ 4.7/렙)이고, 그마저도 20→21 에서 +5 다.
+ *
+ *  [상한을 100 이 아니라 300 으로 둔 이유]
+ *   실제 챕터 게이트(`spec.lvGate.enter`)가 130~276 이다. 100 에서 캡하면 DLC 10챕터가
+ *   전부 650 에 눌러앉아 "후반으로 갈수록 증가"가 다시 사라진다. 300 은 최고 게이트(276)
+ *   위라 곡선이 끝까지 살아 있고, Lv300=1000 은 엔드게임 반복 의뢰 상한과 정확히 맞는다.
+ *
+ *  [왜 구간 표를 코드에 그대로 두나]
+ *   공식 한 줄로 압축하면 의도가 사라진다. 이 표는 밸런스 계약이고,
+ *   `tests/quest-balance.test.mjs` 가 이 값들을 직접 검증한다. */
+const QUEST_NEED_CURVE: readonly [level: number, need: number][] = [
+  [1, 20],    // 초반 20~50
+  [20, 50],
+  [35, 120],  // 초중반 50~120
+  [50, 250],  // 중반 120~250
+  [70, 400],  // 중후반 250~400
+  [100, 650], // 후반 400~650
+  [300, 1000], // 엔드게임 반복 650~1000
+];
+
+/**
+ * vc238 (P4 후속) — 사냥 퀘스트 요구량의 **절대 하한**.
+ *
+ * [왜 필요한가] 유저 목표표의 초반 구간은 "20~50" 인데, 하드코딩 beat 퀘스트가
+ *  8~16 을 쓰고 있어 하한 미만이었다(`howlrstone1x3` = 16). 재림(r1~15)도 12 고정.
+ *  목표표는 밸런스 계약이므로 하한을 코드로 강제한다.
+ *  상한은 두지 않는다 — 후반은 곡선이 알아서 올린다. */
+export const HUNT_NEED_FLOOR = 20;
+
+/** 단일 값에 하한만 적용(반올림 없음 — 이미 정수 데이터에 쓴다). */
+export function clampHuntNeed(n: number): number {
+  const v = Math.round(n);
+  return Number.isFinite(v) && v > HUNT_NEED_FLOOR ? v : HUNT_NEED_FLOOR;
+}
+
+/** 레벨 구간별 퀘스트 요구 마릿수 — 단조 증가·연속(절벽 없음).
+ *  보상은 각 소비처(자동 토벌·반복 의뢰)에서 요구량에 비례해 자동 상향된다. */
 export function questNeedByLv(lv: number): number {
-  const l = Math.min(100, Math.max(1, Math.round(lv))); // 순수 Math — stages.ts는 Phaser 미임포트(모듈 초기화 순서 보호)
-  if (l <= 20) return Math.round(5 + ((l - 1) / 19) * 3);
-  if (l <= 40) return Math.round(60 + ((l - 21) / 19) * 50);
-  if (l <= 60) return Math.round(110 + ((l - 41) / 19) * 60);
-  if (l <= 80) return Math.round(170 + ((l - 61) / 19) * 40);
-  return Math.round(200 + ((l - 81) / 19) * 60);
+  const l = Math.min(300, Math.max(1, Math.round(lv))); // 순수 Math — stages.ts는 Phaser 미임포트(모듈 초기화 순서 보호)
+  const t = QUEST_NEED_CURVE;
+  for (let i = 1; i < t.length; i++) {
+    if (l <= t[i][0]) {
+      const [x0, y0] = t[i - 1];
+      const [x1, y1] = t[i];
+      return Math.round(y0 + ((l - x0) / (x1 - x0)) * (y1 - y0));
+    }
+  }
+  return t[t.length - 1][1];
 }
 
 /** vc142 (#5) — 후반 몬스터 HP ×10: 유저 지시 "후반만 4스테이지 쯤 부터 몬스터 체력좀 10배 씩 정도 늘려".
@@ -954,9 +1004,33 @@ export function stageScale(key: StageKey, playerLv?: number): { hp: number; atk:
 /** 구역 5 정예 이름 */
 const ELITE_TITLE = ["정예", "광포한", "심연에 물든", "각성한", "포화의", "얼어붙은", "먹이는", "폭주하는", "절규하는", "종언의"];
 
+/** vc238 (P4 후속) — 구역당 동시 스폰 상한을 **진행도에 따라** 올린다.
+ *
+ *  [왜 올리나] 후반 need(최대 990)를 채우려면 스폰 사이클만 3.4분이 걸렸다.
+ *  원인은 난이도가 아니라 **밀도**였다: 전 구간 20마리 고정이라 후반에도 20마리만 돌았다.
+ *  난이도(HP/ATK)는 `stageScale` 이 따로 올리므로, 여기서는 **개체 수만** 늘린다.
+ *
+ *  [구간] 초반 보호를 위해 1~3장은 그대로 20. 이후 계단식으로 올려 후반 32.
+ *  상한 32 근거: `WorldScene` 이 동시 적 수로 FSM·충돌·渲染 부하를 관리하는데,
+ *  20 → 32 는 +60% 다. 저사양(`fxLevel 0`)은 별도로 14 로 더 낮추므로 안전 여유가 있고,
+ *  32 는 화면(1280×720 기준)에 자연스럽게 들어오는 밀도이기도 하다.
+ *
+ *  ponytail: 32 를 넘겨야 하면 `WorldScene` 의 리스폰 상한
+ *   (`mobAliveCount() >= (fxLevel===0 ? 14 : 20)`) 도 같이 올려야 한다 — 지금은 그 값이
+ *   하드 캡이라 mix 만 올리면 리스폰이 막힌다. 둘을 분리해 두면 한쪽만 고쳐 조용히 실패한다. */
+export function zoneSpawnCap(chapterNo: number): number {
+  if (chapterNo <= 3) return 20; // 초반 — 신규 유저 보호 (기존과 동일)
+  if (chapterNo <= 6) return 24; // 초중반
+  if (chapterNo <= 11) return 28; // 중반
+  return 32; // 후반 (DLC 후반 · 영프 12장+)
+}
+
 /** v2.9 (지시 #1) — 구역 → 몬스터 조합. 2구역마다 주력몬 교체로 단조로움 해소
  *  v3.0 (사용자 지시 #6) — 구역당 동시 몬스터 상한 20마리 (최적화):
- *  기존 grp()가 그룹별 20 캡이라 9~10구역 합계 26마리까지 늘었음 → 총량제로 재편 */
+ *  기존 grp()가 그룹별 20 캡이라 9~10구역 합계 26마리까지 늘었음 → 총량제로 재편
+ *  vc238 (P4 후속) — 상한을 진행도에 따라 20 → 32 로 확장(`zoneSpawnCap`).
+ *  기존 배분(15/5, 10/6/4 …)의 **비율을 유지한 채** 총량만 늘린다 — 몬스터 구성이
+ *  바뀌면 퀘스트 targetKeys 와 어긋나므로 비율 보존이 핵심이다. */
 function subEnemyMix(spec: ChapterSpec, sub: number): { key: EnemyKey; count: number }[] {
   const pool = spec.enemies.map((g) => g.key);
   const a = pool[0];
@@ -965,37 +1039,55 @@ function subEnemyMix(spec: ChapterSpec, sub: number): { key: EnemyKey; count: nu
   const d = pool[3] ?? a; // v3.0.2 — 챕터 4번째 종 (신규 몬스터)
   const e = pool[4] ?? d; // v3.0.3 — 챕터 5번째 종 (0x72 고유개성 몬스터)
   const f = pool[5] ?? e; // v3.0.4 — 챕터 6번째 종(itch.io 신규): 전 구역 소량 혼합으로 다양화
-  const TOTAL = 20; // 구역당 동시 스폰 상한 (정예/보스 포함 총량)
-  if (sub <= 2) return [{ key: a, count: 15 }, { key: f, count: 5 }];
-  if (sub <= 4) return [{ key: b, count: 15 }, { key: f, count: 5 }];
-  // 5구역은 정예 1기가 별도 스폰 → 잡몹 19 + 정예 1 = 20
-  if (sub <= 6)
-    return [
-      { key: c, count: sub === 5 ? 14 : 15 },
-      { key: f, count: sub === 5 ? 5 : 5 },
-    ];
+  /* vc238 — 이 구역이 실제로 쓸 총량. `num` 은 1부터 시작하는 챕터 번호. */
+  const cap = zoneSpawnCap(spec.num);
+  /* 5구역(정예)·10구역(보스)은 보스급 1기가 총량에 포함되므로 잡몹은 cap-1. */
+  const hasBossSlot = sub === 5 || sub === 10;
+  const total = hasBossSlot ? cap - 1 : cap;
+  /* 기존 20 기준 배분을 확장하되 **합이 정확히 total 이 되게** 맞춘다.
+   * 단순 비례 반올림은 합이 어긋나(예: 15+5 → 25+8=33) 리스폰 상한을 넘긴다.
+   * 큰 그룹부터 채우고 남는 1~2마리를 최대 그룹에 몰아준다 — 구성 비율은 유지된다. */
+  const spread = (groups: { key: EnemyKey; base: number }[]): { key: EnemyKey; count: number }[] => {
+    const baseSum = groups.reduce((t, g) => t + g.base, 0);
+    const raw = groups.map((g) => ({ key: g.key, exact: (g.base * total) / baseSum }));
+    const out = raw.map((g) => ({ key: g.key, count: Math.max(1, Math.floor(g.exact)) }));
+    /* 남는 몫을 소수부가 큰 순서로 분배 (최대 나머지 방식 — 비율 보존). */
+    let rest = total - out.reduce((t, g) => t + g.count, 0);
+    const order = raw
+      .map((g, i) => ({ i, frac: g.exact - Math.floor(g.exact) }))
+      .sort((x, y) => y.frac - x.frac);
+    for (const o of order) {
+      if (rest <= 0) break;
+      out[o.i].count++;
+      rest--;
+    }
+    return out;
+  };
+  if (sub <= 2) return spread([{ key: a, base: 15 }, { key: f, base: 5 }]);
+  if (sub <= 4) return spread([{ key: b, base: 15 }, { key: f, base: 5 }]);
+  // 5구역은 정예 1기가 별도 스폰 → 잡몹 total + 정예 1 = cap
+  if (sub <= 6) return spread([{ key: c, base: sub === 5 ? 14 : 15 }, { key: f, base: 5 }]);
   if (sub <= 8)
-    return [
+    return spread(
       // v3.0.3 — 7~8구역: 신규 종(d)과 0x72 고유개성 종(e) 교대 주력 + f 소량
-      ...(sub === 7
-        ? [{ key: d, count: 10 }, { key: e, count: 6 }]
-        : [{ key: e, count: 10 }, { key: d, count: 6 }]),
-      { key: f, count: 4 },
-    ];
+      sub === 7
+        ? [{ key: d, base: 10 }, { key: e, base: 6 }, { key: f, base: 4 }]
+        : [{ key: e, base: 10 }, { key: d, base: 6 }, { key: f, base: 4 }],
+    );
   if (sub === 10)
-    return [
-      // 10구역은 보스 1기 별도 스폰 → 잡몹 19 + 보스 1 = 20
-      { key: b, count: 7 },
-      { key: c, count: 5 },
-      { key: e, count: 4 },
-      { key: f, count: 3 },
-    ];
-  return [
-    { key: b, count: 7 },
-    { key: c, count: 5 },
-    { key: e, count: 4 },
-    { key: f, count: 4 },
-  ]; // 9구역 4종 20마리
+    return spread([
+      // 10구역은 보스 1기 별도 스폰 → 잡몹 total + 보스 1 = cap
+      { key: b, base: 7 },
+      { key: c, base: 5 },
+      { key: e, base: 4 },
+      { key: f, base: 3 },
+    ]);
+  return spread([
+    { key: b, base: 7 },
+    { key: c, base: 5 },
+    { key: e, base: 4 },
+    { key: f, base: 4 },
+  ]); // 9구역 4종
 }
 
 /* v1.0.13 피드백#2 — 퀘스트 완료 경험치 상향 (사냥 위주 성장 → 퀘스트 병행 성장 유도) */
@@ -1021,7 +1113,24 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
   }
   const beat = spec.beats.find((b) => b.sub === sub);
   if (beat) {
-    quests.push({ ...beat.quest, id: `${prefix}-${beat.quest.id}` });
+    /* vc238 (P4) — 하드코딩 beat 퀘스트도 **챕터 곡선에 맞춰 끌어올린다**.
+     *
+     *  [문제] 57개 beat 퀘스트의 `need` 가 12~24 리터럴이라, 챕터 20(Lv276)에서도
+     *  "유령 18마리"가 나왔다. 자동 토벌은 곡선을 타는데 스토리 퀘스트만 초반 수준에
+     *  머물러 "후반으로 갈수록 증가"가 절반만 달성되던 원인이다.
+     *
+     *  [해법] 리터럴을 지우지 않고 **하한**으로만 쓴다.
+     *   · 목표치 = 해당 챕터 곡선값의 60% (스토리 퀘스트는 자동 토벌보다 가볍게 — 서사 진행이
+     *     사냥 노가다에 막히면 안 된다).
+     *   · 원본 리터럴이 그보다 크면 원본 유지(작아지는 회귀 금지).
+     *   · collect/boss 등 hunt 가 아닌 퀘스트는 건드리지 않는다. */
+    const q = beat.quest;
+    if (q.type === "hunt" && q.need) {
+      const curveNeed = Math.round(questNeedByLv(spec.lvGate.enter + (sub - 1) * 2) * 0.6);
+      quests.push({ ...q, id: `${prefix}-${q.id}`, need: clampHuntNeed(Math.max(q.need, curveNeed)) });
+    } else {
+      quests.push({ ...q, id: `${prefix}-${q.id}` });
+    }
   }
   const labels: Record<EnemyKey, string> = {
     wolf: "늑대", minion: "심연 하수인", spider: "동굴 거미", golem: "수정 골렘",
@@ -1190,10 +1299,37 @@ function buildStage(spec: ChapterSpec, sub: number): StageDef {
   }
   /* vc143 (#3) — 반복 의뢰: 중반(5장·lv20+)부터 요구량을 곡선값 그대로(60~210)로 인상하고
    *  보상도 요구량 증가분만큼 상향(×0.6 댐핑 — 시간당 보상 급등 방지). 초반 1~4장은 기존 공식 유지 */
-  const repNeed =
-    spec.lvGate.enter >= 20
-      ? questNeedByLv(spec.lvGate.enter)
-      : Math.min(Math.round(spec.repeat.need * 1.5), Math.round((spec.repeat.need + sub) * Math.max(1, questNeedByLv(spec.lvGate.enter) / 8)));
+  /* vc238 (P4) — 반복 의뢰 요구량을 **챕터 순번에 따라 선형 증가**시킨다.
+   *
+   *  [종전] `lvGate.enter >= 20` 이면 곡선값, 아니면 기존 공식. 이 분기는 "초반 보호"라는
+   *  의도였지만, 챕터 게이트가 Lv130~276 인 DLC 구간에서도 곡선이 100 에서 캡돼
+   *  **20챕터 내내 요구량이 260 에 고정**되는 결과를 낳았다.
+   *
+   *  [지금] 챕터 진행도(0~1)를 그대로 비율로 쓴다:
+   *   · 초반 챕터는 낮게 — 신규 유저가 반복 의뢰로 벽을 만나지 않게(첫 챕터 ≈ 22 유지).
+   *   · 마지막 챕터는 곡선 상한(650~1000)에 닿는다.
+   *   · `spec.repeat.need` 는 **하한**으로만 쓰인다(챕터별 손맛 유지, 회귀 방지).
+   *  공용 함수라 본편·영프 편·DLC 가 같은 규칙을 탄다. */
+  const repNeed = (() => {
+    const all = CHAPTERS;
+    const idx = all.findIndex((c) => c.key === spec.key);
+    /* 챕터를 못 찾으면(특수 스테이지) 기존 공식으로 폴백 — 동작 보존. */
+    if (idx < 0) {
+      return spec.lvGate.enter >= 20
+        ? questNeedByLv(spec.lvGate.enter)
+        : Math.min(Math.round(spec.repeat.need * 1.5), Math.round((spec.repeat.need + sub) * Math.max(1, questNeedByLv(spec.lvGate.enter) / 8)));
+    }
+    const progress = all.length > 1 ? idx / (all.length - 1) : 0; // 0 = 첫 챕터, 1 = 마지막
+    /* 보간: 초반 22 → 엔드게임 REPEAT_ENDGAME_MAX. 제곱을 써서 중반까지는 완만하고
+     * 후반에 가속한다(유저 목표 "후반으로 갈수록 분명하게 증가"). */
+    const REPEAT_EARLY = 22;
+    const REPEAT_ENDGAME_MAX = 1000;
+    const eased = progress * progress;
+    const scaled = Math.round(REPEAT_EARLY + (REPEAT_ENDGAME_MAX - REPEAT_EARLY) * eased);
+    /* 5 단위 스냅 — UI 에서 997 같은 값이 뜨지 않게. */
+    const snapped = Math.round(scaled / 5) * 5;
+    return Math.max(spec.repeat.need, snapped);
+  })();
   const repMul = Math.max(1, (repNeed / Math.max(1, spec.repeat.need)) * 0.6);
   /* vc150 (#신규6) — 반복 의뢰 다수 개편 (유저 지시 "많은 마릿수의 의뢰 2~4개"):
    *  구역 종족 중 2~4종을 뽑아 개별 고마릿수(기존 ×2.5, 5마리 단위) 의뢰를 생성한다.
@@ -1305,8 +1441,15 @@ for (let ci = 0; ci < CHAPTERS.length; ci++) {
     /* v2.9 (지시 #5) — 10구역 통과 후 다음 챕터의 마을에 들린 뒤 1구역으로
      *  v3.0.11 (피드백 #5) — 복귀 체인이 전진 체인의 정확한 역순이 되도록 수정:
      *    전진: 1-10 → 2v마을 → 2-1  /  복귀: 2-1 → 2v마을 → 1-10
-     *    (기존엔 2-1 복귀가 1-10 사냥터로 바로 가 마을을 건너뛰던 버그) */
-    PREV_STAGE[key] = sub > 1 ? `${spec.key}${sub - 1}` : ci > 0 ? `${spec.key}v` : "village";
+     *    (기존엔 2-1 복귀가 1-10 사냥터로 바로 가 마을을 건너뛰던 버그)
+     *
+     *  vc274 — 첫 챕터(ci===0)만 `"village"` 로 빠지던 비대칭을 고친다.
+     *   마을 정의는 아래에서 **모든 챕터에 대해** 만들어진다(1449행). 따라서 첫 챕터도
+     *   자기 마을(`dlcstargatev`)을 갖는데, 종전엔 1구역 복귀만 시작 마을로 건너뛰어
+     *   2구역부터는 자기 마을로 돌아가는 체인이 첫 칸에서만 끊겼다
+     *   (전진은 `dlcstargatev → dlcstargate1` 인데 복귀는 `dlcstargate1 → village`).
+     *   이 비대칭은 오랫동안 테스트가 Windows ESM 경로 오류로 **죽어 있어** 드러나지 않았다. */
+    PREV_STAGE[key] = sub > 1 ? `${spec.key}${sub - 1}` : `${spec.key}v`;
   }
   /* 챕터 마을 체인 — 이전 챕터 10구역 ↔ 마을 ↔ 이 챕터 1구역 */
   const vk = `${spec.key}v`;
@@ -1373,11 +1516,18 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
         [beat?.quest.type === "hunt" ? (beat.quest.targetKey as EnemyKey) : undefined, spec.main as EnemyKey],
       );
       let quests: QuestDef[];
+      /* vc238 (P4) — 영프 편도 같은 곡선을 탄다. 종전엔 beat.need 리터럴(8~12)과
+       *  `t.count + 4`(≈12~24)가 그대로 나와, 챕터 15 에서도 "8마리"가 뜨는 등
+       *  후반 증가가 이 편에서만 사라져 있었다. 리터럴은 **하한**으로만 유지한다. */
+      const hwCurveNeed = Math.round(questNeedByLv(spec.lvGate.enter + (sub - 1) * 2) * 0.6);
       if (beat) {
         quests = [{
           ...beat.quest,
           targetKey: beat.quest.targetKey as EnemyKey | undefined,
           id: `${spec.key.slice(-1)}${sub}-${beat.quest.id}`,
+          ...(beat.quest.type === "hunt" && beat.quest.need
+            ? { need: clampHuntNeed(Math.max(beat.quest.need, hwCurveNeed)) }
+            : {}),
         } as QuestDef];
       } else {
         const gateLv = sub === 1 ? spec.lvGate.enter : sub === 4 ? spec.lvGate.mid : null;
@@ -1395,16 +1545,19 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
         } else {
           const t = mix[0];
           const label = ENEMIES[t.key]?.name ?? t.key;
+          /* vc238 (P4) — 자동 토벌도 곡선을 탄다. `t.count + 4`(구역 스폰 수 기반)는
+           *  최대 24 에 묶여 후반에도 초반 수준이었다. 리터럴은 하한으로만. */
+          const autoNeed = clampHuntNeed(Math.max(t.count + 4, hwCurveNeed));
           quests = [{
             id: `${spec.key.slice(-1)}${sub}-h`,
             type: "hunt",
             title: `${label} 소탕`,
-            desc: `${label} ${t.count + 4}마리를 처치해 전선을 밀어 올려라.`,
-            need: t.count + 4,
+            desc: `${label} ${autoNeed}마리를 처치해 전선을 밀어 올려라.`,
+            need: autoNeed,
             targetKey: t.key,
             targetLabel: label,
-            reward: Math.round((90 + sub * 18) * spec.scaleMul.gold * 0.5 * G),
-            expReward: Math.round((110 + sub * 20) * spec.scaleMul.exp * 0.5),
+            reward: Math.round((90 + sub * 18) * spec.scaleMul.gold * 0.5 * G * Math.max(1, autoNeed / 12)),
+            expReward: Math.round((110 + sub * 20) * spec.scaleMul.exp * 0.5 * Math.max(1, autoNeed / 12)),
           }];
         }
       }
@@ -1450,6 +1603,15 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
         });
       }
 
+      /* vc238 (P4) — 영프 편 반복 의뢰 요구량. 챕터 진행도(0~1)의 제곱으로 22 → 1000.
+       *  제곱을 쓰는 이유: 중반까지 완만하고 후반에 가속해야 "후반으로 갈수록 분명하게 증가"가 된다.
+       *  `spec.repeat.need`(28~36) 리터럴은 하한으로만 유지한다(회귀 방지). */
+      const hwProgress = HOWLRSTONE_CHAPTERS.length > 1 ? ci / (HOWLRSTONE_CHAPTERS.length - 1) : 0;
+      const hwRepNeed = Math.max(
+        spec.repeat.need,
+        Math.round((22 + (1000 - 22) * hwProgress * hwProgress) / 5) * 5,
+      );
+
       STAGES[key] = {
         key,
         name: `${spec.title} ${sub}구역`,
@@ -1466,7 +1628,10 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
         bossKey: isBoss ? (spec.boss as BossKey) : undefined,
         repeat: {
           targetKey: spec.main as EnemyKey,
-          need: spec.repeat.need,
+          /* vc238 (P4) — 영프 편 반복 의뢰도 챕터 진행도에 따라 상향한다.
+           *  종전엔 `spec.repeat.need`(28~36) 리터럴이라 15챕터 내내 거의 변하지 않았다.
+           *  본편/DLC 와 같은 규칙: 진행도(0~1)의 제곱으로 22 → 1000. 리터럴은 하한으로만. */
+          need: hwRepNeed,
           gold: Math.round(spec.repeat.gold * spec.scaleMul.gold * 0.9),
           exp: Math.round(spec.repeat.exp * spec.scaleMul.exp * 1.3),
           title: spec.repeat.title,
@@ -1476,7 +1641,8 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
           bounties: [...new Set([spec.main as EnemyKey, ...mix.map((g) => g.key)])].slice(0, 3).map((k) => ({
             targetKey: k,
             label: ENEMIES[k]?.name ?? k,
-            need: Math.max(25, spec.repeat.need),
+            /* vc238 — 개별 현상금도 반복 의뢰 요구량을 따라간다(종전엔 25~36 고정). */
+            need: Math.max(25, Math.round((hwRepNeed * 2.5) / 5) * 5),
           })),
         },
         /* 전용 밸런스 — stageScale 이 이 값을 최우선으로 쓴다(기존 곡선 무영향). */
@@ -1821,15 +1987,22 @@ const REBIRTH_STAGES: RebirthSpec[] = [
   },
 ];
 
+/** vc238 — 재림 구간의 곡선 기준 레벨. 재림은 200레벨 환생 이후 콘텐츠라
+ *  본편 후반(Lv100=650)보다 위에 있어야 한다. Lv150 → 703. */
+const RBIRTH_NEED_LV = 150;
+
 function buildRebirthStage(spec: RebirthSpec): StageDef {
   const mul = spec.mul;
+  /* vc238 (P4 후속) — 재림 퀘스트도 곡선에 연결. 종전엔 12 고정이라
+   *  유저 목표표 초반 하한(20) 미만이었고, 재림은 후반 콘텐츠인데도 가장 가벼웠다. */
+  const rbNeed = clampHuntNeed(questNeedByLv(RBIRTH_NEED_LV));
   const quests: QuestDef[] = [
     {
       id: `${spec.key}-hunt`,
       type: "hunt",
       title: `${spec.name.split("— ")[1]} 정화`,
-      desc: `${spec.subtitle} — 이 땅의 몬스터 12마리를 처치해라. (무엇을 잡아도 카운트된다)`,
-      need: 12,
+      desc: `${spec.subtitle} — 이 땅의 몬스터 ${rbNeed}마리를 처치해라. (무엇을 잡아도 카운트된다)`,
+      need: rbNeed,
       targetKey: spec.main,
       targetKeys: [...new Set(spec.enemies.map((g) => g.key))],
       targetLabel: `${ENEMIES[spec.main].name} 등 재림 몬스터`,

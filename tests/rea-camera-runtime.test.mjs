@@ -8,6 +8,25 @@ import ts from 'typescript';
 
 // Execute the real director modules; Phaser's renderer is replaced by a deterministic scene.
 const cache = new Map();
+/* vc274 — `phaser` 는 대부분 **타입 전용**이지만, `EventBus.ts` 만은 런타임에
+ *  `Phaser.Events.EventEmitter` 를 실제로 생성한다. 그 한 가지만 최소 스텁한다.
+ *
+ *  [왜 종전에 실패했나] 아래 require 리졸버가 모든 이름에 `.ts` 를 붙여 실제 파일로 풀었기
+ *  때문에 패키지 이름 `phaser` 가 `src/components/game/phaser.ts` 라는 **없는 경로**가 되어
+ *  ENOENT 로 죽었다. 이 테스트가 검증하려는 대상(연출 디렉터 4종)과는 무관한 실패였다. */
+const PHASER_STUB = {
+  Events: {
+    EventEmitter: class EventEmitter {
+      constructor() { this._h = new Map(); }
+      on(k, f) { (this._h.get(k) ?? this._h.set(k, []).get(k)).push(f); return this; }
+      once(k, f) { return this.on(k, f); }
+      off(k, f) { const a = this._h.get(k); if (a) this._h.set(k, a.filter((x) => x !== f)); return this; }
+      emit(k, ...a) { for (const f of this._h.get(k) ?? []) f(...a); return true; }
+      removeAllListeners() { this._h.clear(); return this; }
+    },
+  },
+};
+const BARE_MODULE = new Set(['phaser', 'node:events', 'events']);
 function load(relative) {
   const file = path.resolve(relative);
   if (cache.has(file)) return cache.get(file).exports;
@@ -17,7 +36,12 @@ function load(relative) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
   }).outputText;
   vm.runInNewContext(`(function(require,module,exports){${js}\n})`, { console, Map, Set, WeakMap })(
-    (name) => load(path.resolve(path.dirname(file), `${name}.ts`)), module, module.exports,
+    (name) => {
+      if (name === 'phaser') return { __esModule: true, default: PHASER_STUB, ...PHASER_STUB };
+      if (BARE_MODULE.has(name) || !name.startsWith('.')) return {};
+      return load(path.resolve(path.dirname(file), `${name}.ts`));
+    },
+    module, module.exports,
   );
   return module.exports;
 }

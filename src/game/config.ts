@@ -166,6 +166,11 @@ export type SaveData = {
    */
   huntKills?: Record<string, number>;
   huntBase?: Record<string, number>;
+  /* vc238 — 퀘스트 목표별 독립 처치 수: `"스테이지:퀘스트id"` → 처치 수.
+   *  huntKills(전역 종족 누계)만으로는 맵 구분이 안 돼, A맵에서 진행 중인 퀘스트가
+   *  B맵의 같은 몬스터 처치로 완료되는 버그가 있었다. 이 필드가 그 진행도의 정본이다.
+   *  구세이브는 undefined → seedHuntBaseline 이 huntBase 델타를 1회 이관한다. */
+  huntProg?: Record<string, number>;
   /* ↓ BM (v1.9 — 버프 물약/펫/치장) */
   buffItems?: Record<string, number>;
   buffs?: { key: string; remain: number; total: number }[];
@@ -492,6 +497,9 @@ export function loadSave(): SaveData | null {
     if (d.questTracked === undefined) d.questTracked = null;
     // v3.0.16 — 몬스터 컬렉션 (구 세이브 호환)
     if (!d.monsterKills || typeof d.monsterKills !== "object") d.monsterKills = {};
+    /* vc238 — 퀘스트별 독립 처치 수 (구 세이브 호환). 없으면 비워 두고,
+     *  WorldScene.seedHuntBaseline 이 진행 중인 퀘스트만 huntBase 델타로 이관한다. */
+    if (!d.huntProg || typeof d.huntProg !== "object") d.huntProg = {};
     // v3.0.22 — 결정 수집/연합 가호 (구 세이브 호환)
     if (!d.fragmentsFound || typeof d.fragmentsFound !== "object") d.fragmentsFound = {};
     if (typeof d.worldtreeBlessing !== "boolean") d.worldtreeBlessing = false;

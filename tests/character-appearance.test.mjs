@@ -1,10 +1,15 @@
 // node --experimental-strip-types --import ./tests/ts-resolve-hook.mjs tests/character-appearance.test.mjs
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { pathToFileURL } from "node:url";
 const file = new URL("../src/game/characterAppearance.ts", import.meta.url);
 assert.ok(fs.existsSync(file), "선택창과 인게임이 공유하는 기존 외형 resolver가 필요하다");
-const { resolveBodyPrefix, resolveCharacterPreview } = await import(pathToFileURL(file.pathname));
+/* vc274 — Windows 경로 버그 수정.
+ *  종전엔 `pathToFileURL(file.pathname)` 을 썼는데, Windows 에서 `file.pathname` 은
+ *  이미 `/C:/coding/...` 형태다. 그걸 다시 pathToFileURL 에 넣으면 드라이브가 한 번 더
+ *  붙어 `C:\C:\coding\...` 이 되고 ERR_MODULE_NOT_FOUND 로 죽었다
+ *  (POSIX 에서는 pathname 이 곧 경로라 문제가 없어 이식되지 않았다).
+ *  file.href 는 이미 올바른 file:// URL 이므로 그대로 import 하면 된다. */
+const { resolveBodyPrefix, resolveCharacterPreview } = await import(file.href);
 const { CLASSES } = await import("../src/game/classes.ts");
 let checks = 0;
 const eq = (actual, expected, label) => { assert.deepEqual(actual, expected, label); checks++; };

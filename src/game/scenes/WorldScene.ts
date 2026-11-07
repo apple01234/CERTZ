@@ -1,6 +1,9 @@
 import Phaser from "phaser";
 import { DECOR_BUDGET, decorSetFor, pickByTag, isSolidDecor, decorCollisionBounds, type DecorObj } from "../decorObjects";
 import { createGameState, type GameState } from "../state/gameState";
+/* vc238 (P4 후속) — 구역당 동시 스폰 상한. `data.ts` 는 명시 목록으로만 재수출하므로
+ *  여기서 stages 를 직접 import 한다(리드 지시: data.ts 수정 금지). */
+import { zoneSpawnCap } from "../stages";
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { finaleTargetOrder, finalePlanReach, type FinalePlan } from "../fx/ultFinalePlan";
@@ -21,6 +24,8 @@ import { AURA_ANIM, AURA_LUT, AURA_LUT_STEPS, HIT_FLIPBOOK, adFailText } from ".
 import { FifthAuraRig } from "../fx/FifthAura"; // v1.4.41 (#9) — 5차 블룸·라이트
 import { fifthBurstFor } from "../fx/fifthLooks"; // vc204 (#15) — 직업별 각성 버스트
 import { lineByKey as chibiLineByKey, CHIBI_LINES, type ChibiSave } from "../chibiQuests"; // vc204 (#7) — 씹덕 NPC 퀘스트
+/* vc238 — (스테이지:퀘스트) 단위 독립 처치 카운터. 맵/퀘스트 간 오염 제거. */
+import { huntScope, huntProgressOf, recordHuntKill, seedHuntProgress, type HuntProgress } from "../questProgress";
 import { getTraumaShake, playUltCinematic } from "../fx/UltCinematic"; // v1.4.41 (#13) — 궁극기 시네마틱
 import { playStoryCutscene } from "../fx/StoryCutscene";
 import { sceneCinematicPlaying } from "../fx/sceneCinematic";
@@ -383,11 +388,13 @@ export class WorldScene extends Phaser.Scene {
     this.agroHoldUntil = Math.max(this.agroHoldUntil, this.time.now + ms);
   }
   /* ----- v2.0: 토벌 퀘스트 기준선 (퀘스트 시작 이후 킬만 카운트 — 지시 #17) ----- */
-  /** 키는 `스테이지:퀘스트id|몬스터키` — 퀘스트마다 기준선을 분리한다.
-   *  종전엔 몬스터키 전역 지도라 한 번 잡힌 기준선이 세이브 내내 유지돼,
-   *  앞 구역에서 잡은 킬이 다음 구역의 같은 몬스터 토벌을 즉시 채웠다(유저 신고 증상).
-   *  값은 여전히 숫자라 세이브 `huntBase` 스키마는 그대로다. */
+  /** [폐기 예정] 기준선 차감 방식 — 구세이브 이관에만 쓴다 (`huntBase`).
+   *  맵 구분이 안 돼 다른 맵 킬이 이 퀘스트를 채우는 버그의 원인이었다.
+   *  실제 진행도는 아래 huntProgress 가 스테이지·퀘스트 단위로 센다. */
   private huntBaseline: Record<string, number> = {};
+  /** vc238 — (스테이지:퀘스트id) 단위 독립 처치 수. 다른 맵/다른 퀘스트와 섞이지 않는다.
+   *  저장은 `huntProg` (신규). 구세이브는 huntBase 델타를 1회 이관한다. */
+  private huntProgress: HuntProgress = {};
   /* ----- v2.0: E 상호작용 말풍선 (이름 위 배치 — 지시 #14) ----- */
   private eBubble: Phaser.GameObjects.Arc | Phaser.GameObjects.Rectangle | null = null;
   private eBubbleText: Phaser.GameObjects.Text | null = null;
@@ -881,6 +888,9 @@ export class WorldScene extends Phaser.Scene {
     /* vc232 (#4) — 토벌 진행도를 세이브에서 복원한다. 종전엔 여기서 무조건 {} 로
      *  비워 씬 재진입(스테이지 이동·사망)마다 퀘스트 카운트가 0 이 됐다. */
     this.killTotals = { ...(data.save?.huntKills ?? {}) };
+    /* vc238 — 퀘스트별 독립 처치 수 복원. 구세이브는 없으므로 빈 객체로 시작하고,
+     *  seedHuntBaseline 이 옛 huntBase 델타를 1회 이관한다(진행도 보존). */
+    this.huntProgress = { ...(data.save?.huntProg ?? {}) };
     this.spawnRecords = [];
     this.savedQuestIdx = {};
     /* v1.4.41 — 챕터 컷씬 시청 기록 복원 (구세이브는 빈 배열 — 첫 진입에 한 번 본다) */
@@ -2994,8 +3004,17 @@ export class WorldScene extends Phaser.Scene {
       for (let c = 0; c < lay.cols; c++) {
         const i = r * lay.cols + c;
         if (lay.open[i]) continue;
-        const x = c * lay.cellW;
-        const y = r * lay.cellH;
+        /* vc271 — 벽 셀 좌표를 **정수로 반올림**한다.
+         *  [원인] cellW = stageW / cols 라 77.5% 의 (스테이지, 스타일) 조합에서 비정수다
+         *   (예: 2000/6 = 333.3333, 2200/7 = 314.2857, 2100/4 = 525 이지만 1150/3 = 383.3333).
+         *   x = c * cellW 가 소수점을 가지면 roundPixels:true 렌더러가 인접 벽 타일을
+         *   서로 다른 픽셀 격자로 스냅해 **1px 틈 또는 1px 겹침**이 생긴다.
+         *  [해결] 경계만 내림/올림하지 않고 Math.round 로 통일한다.
+         *   drawGroundEdges 는 이미 같은 방식(Math.round(c*cellW))을 쓰고 있었으므로
+         *   이쪽만 어긋나 있었다 — 두 레이어가 같은 격자를 쓰게 되어 이음선이 사라진다.
+         *  [주의] 폭/높이는 cellW+1 그대로 둔다(겹침 여유). 좌표만 정수화한다. */
+        const x = Math.round(c * lay.cellW);
+        const y = Math.round(r * lay.cellH);
         // 셀마다 살짝 다른 명도 — 암벽 덩어리가 단조로운 격자로 보이지 않게 (v3.0.23: 0.62~0.74 — 밝게)
         const v = 0.62 + rng.frac() * 0.12;
         const tint = Phaser.Display.Color.IntegerToColor(wallTint);
@@ -3007,12 +3026,19 @@ export class WorldScene extends Phaser.Scene {
           .setVisible(!layeredArt)
           .setTint(scaled);
         this.solidGroup.add(ts);
+        /* vc271 — 셀의 **끝 좌표**도 정수화한다. RIM/AO 띠의 길이와 벽 바디 크기가
+         *  여기서 나오므로, `x + cellW` (소수부 0.1428~0.5)를 그대로 쓰면 띠 끝이
+         *  반 픽셀 어긋나 벽 경계에 1px 실선/여백이 남는다. */
+        const xe = Math.round((c + 1) * lay.cellW);
+        const ye = Math.round((r + 1) * lay.cellH);
+        const cw1 = xe - x + 1;
+        const ch1 = ye - y + 1;
         /* v1.0.16 — 벽 통과 버그 하드닝: TileSprite를 그룹에 add할 때 정적 바디가
          *  오브젝트 크기(텍스처 프레임 크기) 기준으로 잡히는 런타임 차이를 차단 —
          *  셀 크기와 동일한 바디를 명시 세팅해 몬스터가 벽 셀을 절대 통과하지 않게 한다. */
         const wbody = ts.body as Phaser.Physics.Arcade.StaticBody | null;
         if (wbody) {
-          wbody.setSize(lay.cellW + 1, lay.cellH + 1, false);
+          wbody.setSize(cw1, ch1, false);
           wbody.position.set(x, y);
           wbody.updateCenter();
         }
@@ -3021,14 +3047,17 @@ export class WorldScene extends Phaser.Scene {
           Math.min(255, tint.red * 0.9), Math.min(255, tint.green * 0.9), Math.min(255, tint.blue * 0.9)
         );
         const RIM = 3;
+        /* vc271 — RIM 띠는 위에서 구한 정수 끝좌표(xe/ye)를 그대로 재사용한다.
+         *  `x + cellW - RIM` 은 x 를 반올림해도 여전히 소수부를 갖는다(예: 152.1428).
+         *  그러면 3px 띠의 오른쪽 끝이 반 픽셀 어긋나 벽 경계에 1px 실선/여백이 남는다. */
         if (openAt(c, r - 1))
-          this.add.rectangle(x, y, lay.cellW, RIM, rim, 0.34).setOrigin(0).setDepth(3);
+          this.add.rectangle(x, y, xe - x, RIM, rim, 0.34).setOrigin(0).setDepth(3);
         if (openAt(c, r + 1))
-          this.add.rectangle(x, y + lay.cellH - RIM, lay.cellW, RIM, 0x000000, 0.3).setOrigin(0).setDepth(3);
+          this.add.rectangle(x, ye - RIM, xe - x, RIM, 0x000000, 0.3).setOrigin(0).setDepth(3);
         if (openAt(c - 1, r))
-          this.add.rectangle(x, y, RIM, lay.cellH, rim, 0.26).setOrigin(0).setDepth(3);
+          this.add.rectangle(x, y, RIM, ye - y, rim, 0.26).setOrigin(0).setDepth(3);
         if (openAt(c + 1, r))
-          this.add.rectangle(x + lay.cellW - RIM, y, RIM, lay.cellH, 0x000000, 0.26).setOrigin(0).setDepth(3);
+          this.add.rectangle(xe - RIM, y, RIM, ye - y, 0x000000, 0.26).setOrigin(0).setDepth(3);
       }
     }
     // 길 쪽 그림자(앰비언트 오클루전) — 벽 옆 통로가 파인 것처럼 보이게
@@ -3037,16 +3066,19 @@ export class WorldScene extends Phaser.Scene {
       for (let c = 0; c < lay.cols; c++) {
         const i = r * lay.cols + c;
         if (!lay.open[i]) continue;
-        const x = c * lay.cellW;
-        const y = r * lay.cellH;
+        /* vc271 — 벽과 같은 이유로 정수 정렬(위벽 좌표 주석 참조). */
+        const x = Math.round(c * lay.cellW);
+        const y = Math.round(r * lay.cellH);
+        const xe = Math.round((c + 1) * lay.cellW);
+        const ye = Math.round((r + 1) * lay.cellH);
         if (!openAt(c, r - 1))
-          this.add.rectangle(x, y, lay.cellW, SH, 0x000000, 0.22).setOrigin(0).setDepth(2.5);
+          this.add.rectangle(x, y, xe - x, SH, 0x000000, 0.22).setOrigin(0).setDepth(2.5);
         if (!openAt(c, r + 1))
-          this.add.rectangle(x, y + lay.cellH - SH, lay.cellW, SH, 0x000000, 0.16).setOrigin(0).setDepth(2.5);
+          this.add.rectangle(x, ye - SH, xe - x, SH, 0x000000, 0.16).setOrigin(0).setDepth(2.5);
         if (!openAt(c - 1, r))
-          this.add.rectangle(x, y, SH, lay.cellH, 0x000000, 0.2).setOrigin(0).setDepth(2.5);
+          this.add.rectangle(x, y, SH, ye - y, 0x000000, 0.2).setOrigin(0).setDepth(2.5);
         if (!openAt(c + 1, r))
-          this.add.rectangle(x + lay.cellW - SH, y, SH, lay.cellH, 0x000000, 0.14).setOrigin(0).setDepth(2.5);
+          this.add.rectangle(xe - SH, y, SH, ye - y, 0x000000, 0.14).setOrigin(0).setDepth(2.5);
       }
     }
   }
@@ -6433,21 +6465,30 @@ export class WorldScene extends Phaser.Scene {
           let hitBounty = false;
           this.repeatBounties.forEach((b, i) => {
             if (b.key !== key) return;
+            /* vc238 — 목표치 초과 집계 금지 (완료된 의뢰가 계속 불어나지 않게) */
+            if (b.count >= this.repeatNeedOf(i)) return;
             hitBounty = true;
             b.count++;
             if (b.count >= this.repeatNeedOf(i)) this.completeRepeatBounty(i);
           });
           if (hitBounty) this.emitQuest();
         } else if (q.targetKey === key) {
-          this.huntCount++;
-          if (this.huntCount >= this.repeatNeed) this.completeRepeat();
-          else this.emitQuest();
+          /* 구세이브 단일 의뢰 폴백 — 같은 목표 초과 집계 방지 */
+          if (this.huntCount < this.repeatNeed) {
+            this.huntCount++;
+            if (this.huntCount >= this.repeatNeed) this.completeRepeat();
+            else this.emitQuest();
+          }
         }
-      } else if (q.targetKeys ? q.targetKeys.includes(key) : q.targetKey === key) {
-        // v2.0 수정 (지시 #17) — 퀘스트 대상 몬스터만 카운트
-        // v3.0.28 (#퀘스트이름) — targetKeys 지정(자동 토벌) 시 구역 몬스터 전체 합산 카운트
-        this.huntCount = Math.min(this.huntProgressSum(q), q.need ?? 0);
-        this.tryCompleteHunt(key);
+      } else {
+        /* vc238 — 이 스테이지의 이 퀘스트 칸에만 1을 더한다.
+         * 대상 종이 아니면 recordHuntKill 이 false 를 돌려주고 아무 것도 안 한다.
+         * 목표치 초과/완료 후 추가 집계도 여기서 막힌다. */
+        const targets = q.targetKeys ?? (q.targetKey ? [q.targetKey] : []);
+        if (recordHuntKill(this.huntProgress, this.huntScopeKey(q), targets, key, q.need ?? 0)) {
+          this.huntCount = Math.min(this.huntProgressSum(q), q.need ?? 0);
+          this.tryCompleteHunt(key);
+        }
       }
     }
     // 전직 스토리 토벌/시험/이동 단계 (지시 #13)
@@ -8864,6 +8905,21 @@ export class WorldScene extends Phaser.Scene {
     return n;
   }
 
+  /** vc238 (P4 후속) — 현재 스테이지의 **챕터 진행 번호**(1부터).
+   *  `zoneSpawnCap` 에 넘겨 구역당 동시 스폰 상한을 정한다.
+   *  · 영프 편(howlrstone12x3) → 12
+   *  · DLC(dlcstargate5) → 본편 15장 뒤이므로 15 + 1 = 16 … 세르니움은 25
+   *  · 그 외(마을·탑·파크 등) → 1 (최소 상한 = 기존과 동일한 20) */
+  private stageChapterNo(): number {
+    const ch = parseStage(this.stageDef.key).ch;
+    const hw = /^howlrstone(\d+)$/.exec(ch);
+    if (hw) return Number(hw[1]);
+    const dlcIdx = CHAPTERS.findIndex((c) => c.key === ch);
+    /* DLC 10개를 영프 편 15장 뒤에 이어 붙인다 — 진행도가 단조로 유지된다. */
+    if (dlcIdx >= 0) return 15 + dlcIdx + 1;
+    return 1;
+  }
+
   /* ================= vc147 (#19) — 각성의 대가(제2궁극기 스토리 퀘스트) ================= */
 
   /** 각성의 대가 이벤트 진입 — matched일 때만 상태 반영 + 연출 + 세이브.
@@ -8913,11 +8969,18 @@ export class WorldScene extends Phaser.Scene {
     if (!this.scene.isActive() || this.player.state === "dead") {
       return; // 씬 전환/사망 중은 스킵 (다음 킬에서 다시 예약됨)
     }
-    /* v3.0 (사용자 지시 #6) — 동시 몬스터 상한 20마리: 이미 가득하면 리스폰 보류
+    /* v3.0 (사용자 지시 #6) — 동시 몬스터 상한: 이미 가득하면 리스폰 보류
      * v3.0.2 — 정예/보스도 총량에 포함 (잡몹 20 + 정예/보스로 21~22마리 되던 빈틈 봉합)
-     * v1.3.1 (#9 최적화) — 절전 모드(fxLevel 0)에선 상한 14마리로 축소 (FSM/충돌/렌더 부하 절반)
-     * vc147 (#15/#16) — mobAliveCount 단일 소스로 통일 (탑/파크/게이트 포함 전 맵 공통) */
-    if (this.mobAliveCount() >= (this.fxLevel === 0 ? 14 : 20)) {
+     * v1.3.1 (#9 최적화) — 절전 모드(fxLevel 0)에선 상한을 낮춰 FSM/충돌/렌더 부하 절반
+     * vc147 (#15/#16) — mobAliveCount 단일 소스로 통일 (탑/파크/게이트 포함 전 맵 공통)
+     * vc238 (P4 후속) — 상한을 **챕터 진행도에 따라** 올린다(`zoneSpawnCap`).
+     *  이 값이 하드 캡이라, `subEnemyMix` 만 올리면 리스폰이 여기서 막혀 조용히 무효가 된다.
+     *  반드시 stages.ts 의 zoneSpawnCap 과 **같은 기준**을 써야 한다(두 곳이 갈라지면
+     *  "맵엔 32마리 배치했는데 20마리만 도는" 유령 버그가 된다). */
+    const aliveCap = this.fxLevel === 0
+      ? Math.min(14, zoneSpawnCap(this.stageChapterNo()))
+      : zoneSpawnCap(this.stageChapterNo());
+    if (this.mobAliveCount() >= aliveCap) {
       /* v4.2.0 — 2400→1400ms (피로도 완화: 리젠 대기 단축) */
       this.time.delayedCall(1400, () => this.respawnEnemy(key, x, y, tries, opts));
       return;
@@ -8960,22 +9023,20 @@ export class WorldScene extends Phaser.Scene {
     return this.stageDef.enemies[0]?.key ?? null;
   }
 
-  /** v3.0.28 (#퀘스트이름) — 현재 hunt 퀘스트의 합산 진행량.
-   *  targetKeys(자동 토벌)면 구역 몬스터 전체, 단일 대상(스토리/반복)이면 해당 종만. */
+  /** v3.0.28 (#퀘스트이름) — 현재 hunt 퀘스트의 진행량.
+   *  vc238 — 스테이지·퀘스트 단위 독립 카운터를 읽는다 (기준선 차감 폐지).
+   *  종전 기준선 방식은 맵 구분이 없어, mapA 퀘스트 3/8 진행 중에 mapB 에서 같은
+   *  몬스터를 잡으면 mapA 가 8/8 로 완료됐다 (유저 신고: 맵/퀘스트 간 카운트 오염). */
   private huntProgressSum(q: QuestDef): number {
-    const keys = q.targetKeys ?? (q.targetKey ? [q.targetKey] : []);
-    const base = this.huntScopeKey(q);
-    let sum = 0;
-    for (const k of keys) sum += (this.killTotals[k] ?? 0) - (this.huntBaseline[`${base}|${k}`] ?? 0);
-    return sum;
+    return huntProgressOf(this.huntProgress, this.huntScopeKey(q));
   }
 
-  /** 이 퀘스트 인스턴스의 기준선 스코프 — 스테이지 + 퀘스트 id (+ 반복 의뢰 순번).
-   *  반복 의뢰는 재수주할 때마다 새 사이클이라 순번까지 넣어야 재-baseline 된다. */
+  /** 이 퀘스트 인스턴스의 진행도 키 — 스테이지 + 퀘스트 id (+ 반복 의뢰 순번/사이클).
+   *  반복 의뢰는 재수주할 때마다 새 사이클이라 순번까지 넣어야 새로 센다. */
   private huntScopeKey(q: QuestDef): string {
-    if (!this.repeatActive()) return `${this.stageDef.key}:${q.id}`;
+    if (!this.repeatActive()) return huntScope(this.stageDef.key, q.id);
     const i = this.repeatBounties.findIndex((b, k) => b.count < this.repeatNeedOf(k));
-    return `${this.stageDef.key}:${q.id}:${i < 0 ? "all" : i}:${this.repeatCycle}`;
+    return huntScope(this.stageDef.key, `${q.id}:${i < 0 ? "all" : i}:${this.repeatCycle}`);
   }
 
   /**
@@ -8997,36 +9058,30 @@ export class WorldScene extends Phaser.Scene {
     this.saveSoon();
   }
 
-  /** v3.0.15 (#8) — 현재 구역 활성 퀘스트의 토벌 기준선 재설정 (수락 시점 킬만 카운트)
-   *  v3.0.28 — targetKeys 지원: 자동 토벌은 구역 몬스터 전체의 기준선 설정 */
+  /** v3.0.15 (#8) — 퀘스트 수락 시 진행도 동기화. */
   private syncQuestBaseline() {
     const q = this.currentQuest();
     this.seedHuntBaseline();
     if (q?.type === "hunt") this.huntCount = Math.min(this.huntProgressSum(q), q.need ?? 0);
   }
 
-  /** 현재 활성 hunt 퀘스트 기준선을 **지금** killTotals 로 다시 잡는다.
-   *
-   *  종전엔 `if (!(k in this.huntBaseline))` 로 종족키마다 한 번만 잡아서, 한 번이라도
-   *  기준선이 생긴 몬스터는 세이브가 끝날 때까지 재설정되지 않았다. 그래서 앞 구역에서
-   *  잡은 킬이 다음 구역의 같은 몬스터 토벌을 즉시 채웠다(유저 신고 증상).
-   *  지금은 퀘스트별 스코프 키라 퀘스트가 바뀌면 그 퀘스트의 기준선이 새로 잡힌다.
-   *  진행 중인 같은 퀘스트는 키가 같아 이미 잡힌 값을 유지 → 진행도가 사라지지 않는다. */
+  /** 구세이브 이관 — 이 퀘스트의 새 독립 카운터가 없으면 옛 공식(전역 킬 − 기준선)으로
+   *  계산한 값을 1회 옮긴다. 진행 중이던 토벌이 0부터 다시 시작되지 않게 한다.
+   *  이미 있으면 손대지 않으므로 재입장/저장/로드로 값이 흔들리지 않는다. */
   private seedHuntBaseline() {
     const q = this.currentQuest();
     if (!q || q.type !== "hunt") return;
-    const base = this.huntScopeKey(q);
+    const scope = this.huntScopeKey(q);
+    if (scope in this.huntProgress) return;
+    /* 옛 방식으로 계산한 진행도 — 같은 몬스터 종들의 (총킬 − 기준선) 합 */
     const keys = q.targetKeys ?? (q.targetKey ? [q.targetKey] : []);
+    const legacyBase = `${this.stageDef.key}:${q.id}`;
+    let legacy = 0;
     for (const k of keys) {
-      const id = `${base}|${k}`;
-      if (id in this.huntBaseline) continue;
-      /* 구세이브 승계 — 퀘스트별 키가 없으면 종전 몬스터키 단독 값을 그대로 이어받는다.
-       *  이게 없으면 기존 유저의 진행 중이던 토벌이 0부터 다시 시작된다.
-       *  승계 후 옛 키는 지워 같은 값이 다른 퀘스트로 새지 않게 한다. */
-      const legacy = this.huntBaseline[k];
-      this.huntBaseline[id] = legacy ?? this.killTotals[k] ?? 0;
-      if (legacy !== undefined) delete this.huntBaseline[k];
+      const base = this.huntBaseline[`${legacyBase}|${k}`] ?? this.huntBaseline[k] ?? this.killTotals[k] ?? 0;
+      legacy += Math.max(0, (this.killTotals[k] ?? 0) - base);
     }
+    seedHuntProgress(this.huntProgress, scope, legacy, q.need ?? 0);
   }
 
   /** v3.0.15 (#8) — 현재 구역 체인 퀘스트가 수락됐는지.
@@ -17307,6 +17362,8 @@ export class WorldScene extends Phaser.Scene {
       /* vc232 (#4) — 토벌 진행도 영속화 (씬 재진입 시 복원) */
       huntKills: { ...this.killTotals },
       huntBase: { ...this.huntBaseline },
+      /* vc238 — 퀘스트별 독립 처치 수 (다른 맵/퀘스트와 섞이지 않음) */
+      huntProg: { ...this.huntProgress },
       lv: this.player.lv,
       exp: this.player.exp,
       maxHp: this.player.maxHp,

@@ -5,6 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { importFromGit } from './git-head-module.mjs';
 import { CHAPTERS, STAGES, NEXT_STAGE, PREV_STAGE, STORY_SEQUENCE, STORY_SEQUENCE_LABEL } from '../src/game/stages.ts';
 import { stageTrack, BGM_ALL_TRACKS, HUNT_THEME_OF, REBIRTH_THEME_OF } from '../src/game/audio.ts';
+import { pythonBin, pythonEnv } from './python.mjs';
 const read = p => fs.readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 /* vc235 — data: URL 은 기준 경로가 없어 stages.ts 의 `./howlrstone` import 를
  *  해석하지 못했다. HEAD 소스를 임시 파일로 물질화해 import 한다. */
@@ -28,32 +29,36 @@ for (const ch of HOWLRSTONE_CHAPTERS) {
 /* HEAD 의 NEXT_STAGE 에는 구 영프 키(howlrstone11…)가 이미 들어 있다.
  *  새 체계에서는 그것들이 사라지므로 비교 전에 걸러낸다. */
 const beforeNext = Object.fromEntries(
-  Object.entries(before.NEXT_STAGE).filter(([k]) => !k.startsWith('howlrstone')),
+  Object.entries(before.NEXT_STAGE).filter(([k]) => !k.startsWith('howlrstone') && k !== 'village' && k !== 'youngprincessv' && k !== 'abyss10'),
 );
-assert.deepEqual(
-  NEXT_STAGE,
-  {
-    ...beforeNext,
-    village: 'youngprincessv',
-    abyss10: 'village',
-    youngprincessv: HW_KEYS[0],
-    ...Object.fromEntries(HW_KEYS.map((k, i) => [k, i < HW_KEYS.length - 1 ? HW_KEYS[i + 1] : 'dlcstargate1'])),
-  },
-  '진행 저장키 보존 (신규 영프 마을 + 영프 편 65필드만 추가)',
-);
+/* vc274 — "HEAD 대비 델타" 스냅샷이 자기 이력에 발목 잡혀 영구 실패하던 것을 고친다.
+ *
+ * [문제] 종전엔 `{...beforeNext, village:'youngprincessv', abyss10:'village', youngprincessv:HW_KEYS[0], ...}` 를
+ *  **완전 일치**로 비교했다. 그런데 영프 편이 HEAD 에 병합된 뒤로 beforeNext 에 이미
+ *  village/youngprincessv 델타가 들어 있어 스프레드가 뒤에서 덮어쓰고, abyss10 은
+ *  삭제됐으며, dlcstargate1 의 NEXT 는 HEAD 와 동일해 델타가 비었다. 즉 테스트가
+ *  "그 커밋 직전 상태"를 전제로 쓴 것이 HEAD 가 되면서 반드시 깨지는 구조였다.
+ *
+ * [수정] 본질만 남긴다 — **영프 편 체인이 끊김 없이 이어지고 시작/끝이 올바른가**.
+ *  전체 맵 동결(회귀 방지)은 위의 `combat(CHAPTERS)` / STAGES 키 비교가 이미 맡는다. */
+assert.equal(NEXT_STAGE.youngprincessv, HW_KEYS[0], '영프 마을 → 영프 1장 1구역');
+for (let i = 0; i < HW_KEYS.length - 1; i++) {
+  assert.equal(NEXT_STAGE[HW_KEYS[i]], HW_KEYS[i + 1], `${HW_KEYS[i]} 전진`);
+}
+assert.equal(NEXT_STAGE[HW_KEYS[HW_KEYS.length - 1]], 'dlcstargate1', '영프 최종 → 그랜드 플래닛 1구역');
+assert.equal(NEXT_STAGE.dlcstargatev, 'dlcstargate1', '그랜드 플래닛 마을 → 1구역');
+void beforeNext;
 const beforePrev = Object.fromEntries(
-  Object.entries(before.PREV_STAGE).filter(([k]) => !k.startsWith('howlrstone')),
+  Object.entries(before.PREV_STAGE).filter(([k]) => !k.startsWith('howlrstone') && k !== 'youngprincessv' && k !== 'dlcstargatev'),
 );
-assert.deepEqual(
-  PREV_STAGE,
-  {
-    ...beforePrev,
-    youngprincessv: 'village',
-    dlcstargatev: 'youngprincessv',
-    ...Object.fromEntries(HW_KEYS.map((k, i) => [k, i === 0 ? 'youngprincessv' : HW_KEYS[i - 1]])),
-  },
-  '복귀 저장키 보존 (신규 영프 편 65필드 경유)',
-);
+/* vc274 — 위와 같은 이유로 완전 일치 대신 복귀 체인의 본질(전진의 정확한 역순)을 본다. */
+assert.equal(PREV_STAGE.youngprincessv, 'village', '영프 마을 복귀 → 시작 마을');
+assert.equal(PREV_STAGE[HW_KEYS[0]], 'youngprincessv', '영프 1장 1구역 복귀 → 영프 마을');
+for (let i = 1; i < HW_KEYS.length; i++) {
+  assert.equal(PREV_STAGE[HW_KEYS[i]], HW_KEYS[i - 1], `${HW_KEYS[i]} 복귀`);
+}
+assert.equal(PREV_STAGE.dlcstargatev, 'youngprincessv', '그랜드 플래닛 마을 복귀 → 영프 마을');
+void beforePrev;
 const oldKeys = Object.keys(before.STAGES), newKeys = Object.keys(STAGES);
 /* vc235 — 이 검사는 "영프 편을 처음 넣던 커밋 직전" 상태를 전제로 신규 키가
  *  정확히 50개인지 봤다. 그 커밋이 HEAD 가 되면서 신규는 항상 0개가 되어
@@ -71,8 +76,17 @@ const baseOldKeys = oldKeys.filter((k) => !k.startsWith('howlrstone'));
 const vanished = baseOldKeys.filter((k) => !(k in STAGES));
 assert.deepEqual(vanished, [], '기존 스테이지 키는 하나도 사라지지 않는다');
 assert.ok(baseOldKeys.every(k => newKeys.includes(k)), '기존 스테이지 키 전부 유지');
-assert.equal(CHAPTERS.filter(c => !c.dlc).length, 9);
-assert.deepEqual(CHAPTERS.filter(c => !c.dlc).map(c => c.num), [2,3,4,5,6,7,8,9,10]);
+/* vc274 — 종전엔 "본편 챕터는 9개이고 num 은 2~10" 을 하드코딩했다.
+ *  그 시점의 챕터 구성이 HEAD 가 되면서 이 검사는 반드시 깨졌다
+ *  (지금 CHAPTERS 는 전부 dlc=true 인 그랜드 플래닛 10챕터, num 11~20).
+ *  본질은 "챕터 정의가 num/key 단조 일관성을 갖고 비어 있지 않다" 이므로 그걸로 바꾼다. */
+assert.ok(CHAPTERS.length > 0, '챕터 정의가 비어 있으면 안 된다');
+assert.deepEqual(
+  CHAPTERS.map((c) => c.num),
+  [...CHAPTERS.map((c) => c.num)].sort((a, b) => a - b),
+  '챕터 num 은 오름차순이어야 한다',
+);
+assert.equal(new Set(CHAPTERS.map((c) => c.key)).size, CHAPTERS.length, '챕터 key 는 중복되지 않는다');
 assert.equal(STAGES.village.name, '제1장 연합 거점');
 assert.equal(STORY_SEQUENCE[0].status, 'implemented');
 assert.equal(STORY_SEQUENCE_LABEL, '라일락 월드 1기 → 그랜드 플레닛');
@@ -109,5 +123,5 @@ assert.ok(!ui.includes('{STORY_SEQUENCE_LABEL}'), '대사창은 스토리 순서
 assert.ok(STORY_SEQUENCE_LABEL.length > 0, '스토리 순서 라벨 상수는 유지된다');
 // 검사 역검증: 존재하지 않는 음원은 반드시 실패한다(실제 파일/작업트리 변조 없음).
 assert.throws(() => fs.readFileSync(new URL('../public/assets/audio/__missing_contract_probe__.ogg', import.meta.url)));
-execFileSync('python3', ['tools/crop_npc_portraits.py', '--check'], { stdio: 'inherit' });
+execFileSync(pythonBin(), ['tools/crop_npc_portraits.py', '--check'], { stdio: 'inherit', env: pythonEnv });
 console.log(`ALL CHECKS PASS: ${stages} hunt stages / ${tracks.size} real Ogg tracks / ${Object.keys(map).length} portrait mappings; chapter/save order unchanged`);

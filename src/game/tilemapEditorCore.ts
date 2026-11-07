@@ -14,16 +14,17 @@ import { isSolidDecor } from "./decorObjects";
 /* ─────────────────────────── 바닥 소스 ─────────────────────────── */
 
 /** 지면 텍스처 규격 — `AuthoredMapLayers.AUTHORED_GROUND_SOURCES` 와 동일해야 한다.
- *  (게임이 이 표를 import 하도록 바꿔 단일 출처로 만든다.) */
+ *  (게임이 이 표를 import 하도록 바꿔 단일 출처로 만든다.)
+ *  vc259 — 5종을 256px 무이음새 타일로 교체(unit 32 = 256/8 조각). */
 export const GROUND_SOURCES: Record<string, { size: number; unit: number }> = {
-  ground_meadow: { size: 64, unit: 32 },
+  ground_meadow: { size: 256, unit: 32 },
   ground_dirt: { size: 84, unit: 28 },
   ground_sand: { size: 84, unit: 28 },
   ground_forest: { size: 96, unit: 32 },
-  ground_slate: { size: 96, unit: 32 },
-  ground_ash: { size: 96, unit: 32 },
-  ground_violet: { size: 96, unit: 32 },
-  ground_cavern: { size: 96, unit: 32 },
+  ground_slate: { size: 256, unit: 32 },
+  ground_ash: { size: 256, unit: 32 },
+  ground_violet: { size: 256, unit: 32 },
+  ground_cavern: { size: 256, unit: 32 },
 };
 
 /** 에디터 팔레트에 노출할 바닥 — 게임에서 실제로 쓰이는 것만(미검증 텍스처 제외). */
@@ -63,22 +64,14 @@ export function tileGidFor(opts: {
   isPath: boolean;
   /** 원본 텍스처의 한 변 조각 수 (size / unit) */
   sourceCols: number;
-  /** 변형 아틀라스 프레임 수 (없으면 0) */
-  atlasFrames: number;
 }): number {
-  const { role, tc, tr, cellOpen, isPath, sourceCols, atlasFrames } = opts;
+  const { role, tc, tr, cellOpen, isPath, sourceCols } = opts;
   const show = role === "ground" || (role === "paths" ? isPath : !cellOpen);
   if (!show) return -1;
-  const base = 1 + (tr % sourceCols) * sourceCols + (tc % sourceCols);
-  if (!atlasFrames) return base;
-  const v = (((tc * 7 + tr * 13) >>> 0) % 2 === 0)
-    ? (((tc * 3 + tr * 5) >>> 0) % atlasFrames)
-    : (((tc + tr * 3) >>> 0) % atlasFrames);
-  /* 아틀라스 인덱스 — 프레임 v 안의 **행·열을 모두** 반영해야 한다.
-   *  [vc240 수정] 종전 `1 + v*sourceCols + (base-1)%sourceCols` 는 행 성분을 버려서
-   *  세로로 늘어선 조각이 전부 같은 타일을 가리켰다(36장 중 12장만 사용, 나머지 24장 폐기).
-   *  결과적으로 바닥이 한 줄 패턴으로 눌려 보였고 변형 4종이 사실상 1종처럼 보였다. */
-  return 1 + (v * sourceCols + Math.floor((base - 1) / sourceCols)) * sourceCols + ((base - 1) % sourceCols);
+  /* vc259 (지시 #1) — 변형 아틀라스 분기 제거. 256px 무이음새 타일로 교체해
+   *  회전 아틀라스가 불필요해졌다(격자를 못 없앴고, 생성기도 삭제).
+   *  256px/32px = 8열이므로 64조각을 순환해 반복 주기가 8칸 = 256px 이다. */
+  return 1 + (tr % sourceCols) * sourceCols + (tc % sourceCols);
 }
 
 /** 지면/길/구조 3개 레이어의 타일 배열을 만든다 — 에디터 미리보기용.
@@ -87,7 +80,7 @@ export function buildLayerData(lay: {
   cols: number; rows: number; cellW: number; cellH: number;
   open: boolean[];
   paths?: boolean[];
-}, role: EditorLayerRole, sourceKey: string, atlasFrames = 0) {
+}, role: EditorLayerRole, sourceKey: string) {
   const src = GROUND_SOURCES[sourceKey];
   if (!src) return null;
   const { size, unit } = src;
@@ -105,7 +98,7 @@ export function buildLayerData(lay: {
         role, tc, tr, cell,
         cellOpen: lay.open[cell],
         isPath: !!lay.paths?.[cell],
-        sourceCols, atlasFrames,
+        sourceCols,
       });
     }),
   );

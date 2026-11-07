@@ -208,3 +208,9 @@ SERTZ-web-*.tar.gz
 # Browser/MCP evidence is generated locally.
 .playwright-mcp/
 memory-oath-title.png
+
+# vc274 - 개발 중 생성된 감사/렌더 산출물 (커밋 대상 아님)
+/reports/
+/tests/.*.mjs
+/tests/_*.tmp.mjs
+/tests/.shots/

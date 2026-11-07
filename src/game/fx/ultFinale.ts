@@ -69,13 +69,16 @@ export const ULT_FINALE: Record<string, FinaleDef> = {
     shake: [200, 0.020], sfx: "bigsword", tint: 0xffffff, magic: false },
   berserker: { // 광란 — 연쇄 폭발
     shape: "chain", tex: "fx_burst", reach: 340,
-    shake: [240, 0.028], sfx: "roar", tint: 0xffb0a0, magic: false },
+    shake: [240, 0.028], sfx: "rage", tint: 0xffb0a0, magic: false },
   guardian: { // 수호 — 수직 기둥
     shape: "pillar", tex: "fx_aura", reach: 300,
     shake: [140, 0.010], sfx: "holy", tint: 0xfff0c0, magic: false },
   paladin: { // 성기사 — 확장 링
     shape: "ring", tex: "fx_glowyellow", reach: 360,
     shake: [120, 0.008], sfx: "holy", tint: 0xfff8d8, magic: false },
+  warlord: { // 군림 — 대지 분쇄: 3연 도약 강타로 남는 십자 균열
+    shape: "cross", tex: "fx_impact", tex2: "fx_shockwave", reach: 420,
+    shake: [250, 0.029], sfx: "quake", tint: 0xffd0b0, magic: false },
 
   /* ── 궁수 계통 ───────────────────────────────────── */
   deadeye: { // 신의 시선 — 직선 관통 저격
@@ -85,7 +88,9 @@ export const ULT_FINALE: Record<string, FinaleDef> = {
     shape: "cone", tex: "fx_electro", tex2: "fx_glow", reach: 480, arc: Math.PI * 0.5,
     shake: [160, 0.014], sfx: "wind", tint: 0xd0fff0, magic: false },
   eagleeye: { // 계열 기본 — 직선
-    shape: "line", tex: "fx_caustic", reach: 560,
+    /* vc271 — deadeye 와 (line, fx_caustic, arrowpierce) 가 완전히 겹쳐 구분이 사라졌다.
+     *  계열 기본은 화려한 tex2 없이 담백한 궤적만 남기고 tex 를 분리한다. */
+    shape: "line", tex: "fx_glow", reach: 560,
     shake: [140, 0.011], sfx: "arrowpierce", tint: 0xffffff, magic: false },
   windrunner: { // 질풍 — 연쇄
     shape: "chain", tex: "fx_glow", reach: 320,
@@ -93,6 +98,12 @@ export const ULT_FINALE: Record<string, FinaleDef> = {
   tempest: { // 폭풍 — 원형
     shape: "circle", tex: "fx_electro", reach: 420,
     shake: [200, 0.018], sfx: "thunder", tint: 0xd8fff8, magic: false },
+  ranger: { // 천강 — 무한 화살비: 하늘에서 쏟아지는 유도 화살
+    shape: "chain", tex: "fx_caustic", tex2: "fx_glow", reach: 400,
+    shake: [170, 0.015], sfx: "skyflight", tint: 0xd8ffd0, magic: false },
+  sniper: { // 일격 — 천리 관통: 3초 조준 후 단 한 발
+    shape: "line", tex: "fx_electro", tex2: "fx_flarew", reach: 700,
+    shake: [190, 0.020], sfx: "snipe", tint: 0xe8fff0, magic: false },
 
   /* ── 마법사 계통 (마법진 허용) ───────────────────── */
   arclord: { // 마나의 절대자 — 대형 마법진 원형 폭발
@@ -106,53 +117,64 @@ export const ULT_FINALE: Record<string, FinaleDef> = {
     shake: [190, 0.016], sfx: "thunder", tint: 0xffffff, magic: true },
   archmage: { // 대마법사 — 기둥
     shape: "pillar", tex: "fx_glowblue", tex2: "fx_hex", reach: 380,
-    shake: [170, 0.014], sfx: "elemcast", tint: 0xb8d8ff, magic: true },
+    shake: [170, 0.014], sfx: "manaburst", tint: 0xb8d8ff, magic: true },
   chronicle: { // 기록자 — 링
     shape: "ring", tex: "fx_glowblue", reach: 400,
     shake: [90, 0.005], sfx: "slowmo", tint: 0xe2e8ff, magic: true },
   stormbringer: { // 폭풍소환사 — 연쇄 낙뢰
     shape: "chain", tex: "fx_lightning", reach: 360,
     shake: [210, 0.019], sfx: "thunder", tint: 0xc8e0ff, magic: true },
+  sage: { // 현자 — 시간 정지: 얼린 뒤 해제 순간 누적 피해 폭발
+    shape: "ring", tex: "fx_hex", tex2: "fx_glowblue", reach: 430,
+    shake: [110, 0.007], sfx: "timestop", tint: 0xd0e8ff, magic: true },
 
   /* ── 도적 계통 ───────────────────────────────────── */
   shadowlord: { // 그림자 군주 — 연쇄 암습
     shape: "chain", tex: "fx_purple", tex2: "fx_noise", reach: 380,
-    shake: [130, 0.011], sfx: "dagger", tint: 0xc8a8ff, magic: false },
+    shake: [130, 0.011], sfx: "ambush", tint: 0xc8a8ff, magic: false },
   blademaster: { // 검의 극한 — 직선 일섬
     shape: "line", tex: "fx_flarew", tex2: "fx_impact", reach: 580,
-    shake: [180, 0.015], sfx: "slash", tint: 0xffe8b0, magic: false },
+    shake: [180, 0.015], sfx: "sword2", tint: 0xffe8b0, magic: false },
   thief: { // 계열 기본 — 원형
     shape: "circle", tex: "fx_purple", reach: 360,
-    shake: [150, 0.012], sfx: "dagger", tint: 0xffffff, magic: false },
+    shake: [150, 0.012], sfx: "knife", tint: 0xffffff, magic: false },
   assassin: { // 암살자 — 직선
     shape: "line", tex: "fx_noise", reach: 520,
-    shake: [160, 0.013], sfx: "dagger", tint: 0xc8b0ff, magic: false },
+    shake: [160, 0.013], sfx: "iainuki", tint: 0xc8b0ff, magic: false },
   nightblade: { // 야습 — 부채꼴
     shape: "cone", tex: "fx_purple", reach: 400, arc: Math.PI * 0.45,
-    shake: [140, 0.011], sfx: "slash", tint: 0xd0b0ff, magic: false },
+    shake: [140, 0.011], sfx: "dark", tint: 0xd0b0ff, magic: false },
   duelist: { // 결투가 — 십자
     shape: "cross", tex: "fx_flarew", reach: 380,
-    shake: [150, 0.012], sfx: "slash", tint: 0xffe0c0, magic: false },
+    shake: [150, 0.012], sfx: "swift", tint: 0xffe0c0, magic: false },
+  swashbuckler: { // 쾌검 — 난무: 1.5초 18연격, 매 타격마다 이동
+    shape: "chain", tex: "fx_flarew", tex2: "fx_noise", reach: 340,
+    shake: [145, 0.012], sfx: "swift", tint: 0xfff0d0, magic: false },
 
   /* ── 해적 계통 ───────────────────────────────────── */
   seaking: { // 바다의 왕 — 거대 파도(전방 부채꼴)
     shape: "cone", tex: "fx_flare", tex2: "fx_smoke", reach: 520, arc: Math.PI * 0.7,
-    shake: [230, 0.022], sfx: "cannon", tint: 0xfff0b8, magic: false },
+    shake: [230, 0.022], sfx: "heavydash", tint: 0xfff0b8, magic: false },
   dreadnought: { // 무쌍 포격 — 연쇄 함포
     shape: "chain", tex: "fx_flare", tex2: "fx_impact", reach: 420,
-    shake: [260, 0.030], sfx: "cannon", tint: 0xffd8a0, magic: false },
+    shake: [260, 0.030], sfx: "superhit", tint: 0xffd8a0, magic: false },
   pirate: { // 계열 기본 — 원형 폭발
     shape: "circle", tex: "fx_flare", reach: 400,
-    shake: [220, 0.020], sfx: "cannon", tint: 0xffffff, magic: false },
+    shake: [220, 0.020], sfx: "dash2", tint: 0xffffff, magic: false },
   corsair: { // 해적선장 — 부채꼴
     shape: "cone", tex: "fx_flarebig", reach: 440, arc: Math.PI * 0.55,
-    shake: [200, 0.018], sfx: "cannon", tint: 0xffe0b0, magic: false },
+    shake: [200, 0.018], sfx: "chain", tint: 0xffe0b0, magic: false },
   stormcaptain: { // 폭풍의 선장 — 직선 뇌격
     shape: "line", tex: "fx_electro", reach: 540,
     shake: [200, 0.017], sfx: "thunder", tint: 0xffd88a, magic: false },
   powdermaster: { // 화약술사 — 연쇄
     shape: "chain", tex: "fx_burst", reach: 350,
-    shake: [240, 0.026], sfx: "cannon", tint: 0xffc890, magic: false },
+    shake: [240, 0.026], sfx: "quake", tint: 0xffc890, magic: false },
+  raider: { // 약탈 — 화염 약탈: 불길이 지면을 타고 퍼지는 확산형 화염
+    /* seaking 과 같은 (cone, fx_flare, fx_smoke) 를 쓰면 파도와 화염이 구별되지 않는다.
+     *  화염은 fx_burst 로 바꿔 연소 입자가 튀는 느낌을 준다. */
+    shape: "cone", tex: "fx_burst", tex2: "fx_smoke", reach: 500, arc: Math.PI * 0.66,
+    shake: [215, 0.021], sfx: "flame", tint: 0xffb878, magic: false },
 };
 
 /** 정의가 없는 직업의 폴백 — 계통 모티프만 살린 보수적 마무리 */

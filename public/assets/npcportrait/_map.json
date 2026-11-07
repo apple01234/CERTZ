@@ -8,7 +8,7 @@
       90,
       90
     ],
-    "sha256": "5bb4696882af0628cd5668cf369d12a30041770cf4d452695dead0e82f542f9a"
+    "sha256": "91c6dc3530b723d7ceff2660214d09f45ffb26284150f4f2f36329e2daa8572e"
   },
   "spum_butler": {
     "src": "/assets/npcportrait/npcbody_butler.png",
@@ -19,7 +19,7 @@
       90,
       90
     ],
-    "sha256": "5bb4696882af0628cd5668cf369d12a30041770cf4d452695dead0e82f542f9a"
+    "sha256": "91c6dc3530b723d7ceff2660214d09f45ffb26284150f4f2f36329e2daa8572e"
   },
   "npcbody_devil": {
     "src": "/assets/npcportrait/npcbody_devil.png",
@@ -30,7 +30,7 @@
       90,
       90
     ],
-    "sha256": "1489a983f7e9ecb48ac066ed242a99f092f1ecfdb8dbc8243ca3ded6d841ef58"
+    "sha256": "8b145fd6589d4543cb25e3dda95c1bace9ce90bb8a0fe6613c2b864f90e88029"
   },
   "spum_skel": {
     "src": "/assets/npcportrait/npcbody_devil.png",
@@ -41,7 +41,7 @@
       90,
       90
     ],
-    "sha256": "1489a983f7e9ecb48ac066ed242a99f092f1ecfdb8dbc8243ca3ded6d841ef58"
+    "sha256": "8b145fd6589d4543cb25e3dda95c1bace9ce90bb8a0fe6613c2b864f90e88029"
   },
   "spum_devil": {
     "src": "/assets/npcportrait/npcbody_devil.png",
@@ -52,7 +52,7 @@
       90,
       90
     ],
-    "sha256": "1489a983f7e9ecb48ac066ed242a99f092f1ecfdb8dbc8243ca3ded6d841ef58"
+    "sha256": "8b145fd6589d4543cb25e3dda95c1bace9ce90bb8a0fe6613c2b864f90e88029"
   },
   "npcbody_elf": {
     "src": "/assets/npcportrait/npcbody_elf.png",
@@ -63,7 +63,7 @@
       90,
       90
     ],
-    "sha256": "56943959bffb571b7a1af281b17dbcfd46f5ea487a30832a58a4f7fb57724877"
+    "sha256": "826eed2a58ff10bc0d52a27c5b6adc5b2e176b07756f4f5dcc8b3670fd07d730"
   },
   "spum_elf": {
     "src": "/assets/npcportrait/npcbody_elf.png",
@@ -74,7 +74,7 @@
       90,
       90
     ],
-    "sha256": "56943959bffb571b7a1af281b17dbcfd46f5ea487a30832a58a4f7fb57724877"
+    "sha256": "826eed2a58ff10bc0d52a27c5b6adc5b2e176b07756f4f5dcc8b3670fd07d730"
   },
   "npcbody_fisher": {
     "src": "/assets/npcportrait/npcbody_fisher.png",
@@ -85,7 +85,7 @@
       90,
       90
     ],
-    "sha256": "1681a9d0a4db75ce83570259997f035bd67ca744ab728eca6586e6a13bcb3c7d"
+    "sha256": "b3d125070abd91f9bfb38d2cb8bfd5a7de0ca34b75888ecbc0b8e979636af9a9"
   },
   "spum_fisher": {
     "src": "/assets/npcportrait/npcbody_fisher.png",
@@ -96,7 +96,7 @@
       90,
       90
     ],
-    "sha256": "1681a9d0a4db75ce83570259997f035bd67ca744ab728eca6586e6a13bcb3c7d"
+    "sha256": "b3d125070abd91f9bfb38d2cb8bfd5a7de0ca34b75888ecbc0b8e979636af9a9"
   },
   "npcbody_knight": {
     "src": "/assets/npcportrait/npcbody_knight.png",
@@ -107,7 +107,7 @@
       90,
       90
     ],
-    "sha256": "d2eb3d8c57f403814a3b8d8162d46e7d0fc16407815a58d0600a749a2649db56"
+    "sha256": "255a4674817192efb6f9d780f2657c11e27075c3d80263a28cfc104ca09ce5c9"
   },
   "spum_knight": {
     "src": "/assets/npcportrait/npcbody_knight.png",
@@ -118,7 +118,7 @@
       90,
       90
     ],
-    "sha256": "d2eb3d8c57f403814a3b8d8162d46e7d0fc16407815a58d0600a749a2649db56"
+    "sha256": "255a4674817192efb6f9d780f2657c11e27075c3d80263a28cfc104ca09ce5c9"
   },
   "npcbody_mage": {
     "src": "/assets/npcportrait/npcbody_mage.png",
@@ -129,7 +129,7 @@
       90,
       90
     ],
-    "sha256": "246b663e5555f379f15a346f63b91fa6198c67b0496fcf858ab88d159d121bb0"
+    "sha256": "30ce741562e6f119eae2a96de894cb79d7144cff4d5737c65847588e29e353a4"
   },
   "spum_mage": {
     "src": "/assets/npcportrait/npcbody_mage.png",
@@ -140,7 +140,7 @@
       90,
       90
     ],
-    "sha256": "246b663e5555f379f15a346f63b91fa6198c67b0496fcf858ab88d159d121bb0"
+    "sha256": "30ce741562e6f119eae2a96de894cb79d7144cff4d5737c65847588e29e353a4"
   },
   "npcbody_merchant": {
     "src": "/assets/npcportrait/npcbody_merchant.png",
@@ -151,7 +151,7 @@
       90,
       90
     ],
-    "sha256": "9ce1eaeeb05c4c813185ce4fea14b11bb1a2a5abd3efa57fd7145e99eb6f3d29"
+    "sha256": "6c6873355b91e120a514dc965912549423c6b6899facfaf3e2b00c1ae0167e59"
   },
   "spum_merchant": {
     "src": "/assets/npcportrait/npcbody_merchant.png",
@@ -162,7 +162,7 @@
       90,
       90
     ],
-    "sha256": "9ce1eaeeb05c4c813185ce4fea14b11bb1a2a5abd3efa57fd7145e99eb6f3d29"
+    "sha256": "6c6873355b91e120a514dc965912549423c6b6899facfaf3e2b00c1ae0167e59"
   },
   "npc_merchant": {
     "src": "/assets/npcportrait/npcbody_merchant.png",
@@ -173,7 +173,7 @@
       90,
       90
     ],
-    "sha256": "9ce1eaeeb05c4c813185ce4fea14b11bb1a2a5abd3efa57fd7145e99eb6f3d29"
+    "sha256": "6c6873355b91e120a514dc965912549423c6b6899facfaf3e2b00c1ae0167e59"
   },
   "npcbody_miner": {
     "src": "/assets/npcportrait/npcbody_miner.png",
@@ -184,7 +184,7 @@
       90,
       90
     ],
-    "sha256": "cc1281cf7c2ecfa8907e4f042e81a81a2bf93f86d30722ee9cfc2d85846f7562"
+    "sha256": "18de5000ab0b04827c3d396817d10c58d89a1b2bbbe715ee6bd29034cb58f2fd"
   },
   "spum_miner": {
     "src": "/assets/npcportrait/npcbody_miner.png",
@@ -195,7 +195,7 @@
       90,
       90
     ],
-    "sha256": "cc1281cf7c2ecfa8907e4f042e81a81a2bf93f86d30722ee9cfc2d85846f7562"
+    "sha256": "18de5000ab0b04827c3d396817d10c58d89a1b2bbbe715ee6bd29034cb58f2fd"
   },
   "npcbody_mystic": {
     "src": "/assets/npcportrait/npcbody_mystic.png",
@@ -206,7 +206,7 @@
       90,
       90
     ],
-    "sha256": "8515dd37a89e186b1902fce996facd5b850673a8db9226a1dbedad1741498596"
+    "sha256": "932320636585a940ed7ea2efff9d32105d663b91d65d52f587cdd9333931b8f4"
   },
   "spum_mystic": {
     "src": "/assets/npcportrait/npcbody_mystic.png",
@@ -217,7 +217,7 @@
       90,
       90
     ],
-    "sha256": "8515dd37a89e186b1902fce996facd5b850673a8db9226a1dbedad1741498596"
+    "sha256": "932320636585a940ed7ea2efff9d32105d663b91d65d52f587cdd9333931b8f4"
   },
   "npcbody_priest": {
     "src": "/assets/npcportrait/npcbody_priest.png",
@@ -228,7 +228,7 @@
       90,
       90
     ],
-    "sha256": "dbb2f36e74c280b80bd30b73e302f5cc93d69b29cffd81376a7a9b15e6b663ca"
+    "sha256": "1eb7565c851de6f22653a6b3acdb5570388197e4968d689ff9148fef1d715861"
   },
   "npcbody_scout": {
     "src": "/assets/npcportrait/npcbody_scout.png",
@@ -239,7 +239,7 @@
       90,
       90
     ],
-    "sha256": "2ed7d5e52a1d06f747660fa19894a5a2fe4232c861b8db5e0f20991ade19c373"
+    "sha256": "f378091b6c5ec3e904266fc99823a437d7895d56cae1412e607ff6443140bd64"
   },
   "spum_scout": {
     "src": "/assets/npcportrait/npcbody_scout.png",
@@ -250,7 +250,7 @@
       90,
       90
     ],
-    "sha256": "2ed7d5e52a1d06f747660fa19894a5a2fe4232c861b8db5e0f20991ade19c373"
+    "sha256": "f378091b6c5ec3e904266fc99823a437d7895d56cae1412e607ff6443140bd64"
   },
   "npcbody_smith": {
     "src": "/assets/npcportrait/npcbody_smith.png",
@@ -261,7 +261,7 @@
       90,
       90
     ],
-    "sha256": "ea49ddec0c7b8d9e665dab9342b807a5bdbb5cb9080b7ed500ae7220ace69c7e"
+    "sha256": "9f4f00371c0ae0e6f5a00172f06c48b2630485900dc3da4d3ba5f99d533e8215"
   },
   "spum_smith": {
     "src": "/assets/npcportrait/npcbody_smith.png",
@@ -272,7 +272,7 @@
       90,
       90
     ],
-    "sha256": "ea49ddec0c7b8d9e665dab9342b807a5bdbb5cb9080b7ed500ae7220ace69c7e"
+    "sha256": "9f4f00371c0ae0e6f5a00172f06c48b2630485900dc3da4d3ba5f99d533e8215"
   },
   "npcbody_villager_f": {
     "src": "/assets/npcportrait/npcbody_villager_f.png",
@@ -283,7 +283,7 @@
       90,
       90
     ],
-    "sha256": "61f96fd37e185a5c5784791207c663348c07e49c9755c66c6096229573f27ced"
+    "sha256": "aa934450fcf94d6aff999ce1c3131fa3ec9573446b06ee27b0a9d15eda0fde3e"
   },
   "spum_villager_f": {
     "src": "/assets/npcportrait/npcbody_villager_f.png",
@@ -294,7 +294,7 @@
       90,
       90
     ],
-    "sha256": "61f96fd37e185a5c5784791207c663348c07e49c9755c66c6096229573f27ced"
+    "sha256": "aa934450fcf94d6aff999ce1c3131fa3ec9573446b06ee27b0a9d15eda0fde3e"
   },
   "npcbody_villager_m": {
     "src": "/assets/npcportrait/npcbody_villager_m.png",
@@ -305,7 +305,7 @@
       90,
       90
     ],
-    "sha256": "570c331825c3ebdc9a2947e22ed94324fff6a2e304d6406ffa1eedd097b363d3"
+    "sha256": "07e9743d2419473ababa8e5022fe153629911035ae57d1e17fcbd7dbb3ff7987"
   },
   "spum_villager_m": {
     "src": "/assets/npcportrait/npcbody_villager_m.png",
@@ -316,7 +316,7 @@
       90,
       90
     ],
-    "sha256": "570c331825c3ebdc9a2947e22ed94324fff6a2e304d6406ffa1eedd097b363d3"
+    "sha256": "07e9743d2419473ababa8e5022fe153629911035ae57d1e17fcbd7dbb3ff7987"
   },
   "spum_forager": {
     "src": "/assets/npcportrait/npcbody_villager_m.png",
@@ -327,7 +327,7 @@
       90,
       90
     ],
-    "sha256": "570c331825c3ebdc9a2947e22ed94324fff6a2e304d6406ffa1eedd097b363d3"
+    "sha256": "07e9743d2419473ababa8e5022fe153629911035ae57d1e17fcbd7dbb3ff7987"
   },
   "npc_gm": {
     "src": "/assets/npcportrait/npc_gm.png",
@@ -349,7 +349,7 @@
       90,
       90
     ],
-    "sha256": "dbb2f36e74c280b80bd30b73e302f5cc93d69b29cffd81376a7a9b15e6b663ca"
+    "sha256": "1eb7565c851de6f22653a6b3acdb5570388197e4968d689ff9148fef1d715861"
   },
   "스칼렛": {
     "src": "/assets/npcportrait/npc_scarlet.png",

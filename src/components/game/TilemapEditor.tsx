@@ -24,7 +24,6 @@ import {
   buildLayerData, snapPropScale, propIsSolid,
   type EditorLayerRole, type SavedLayout,
 } from "@/game/tilemapEditorCore";
-import { groundAtlasOf } from "@/game/tileThemes";
 import { HOWLRSTONE_CHAPTERS } from "@/game/howlrstone";
 import { EDITOR_ASSETS } from "@/game/editorAssetManifest";
 import AssetBrowser, { type ImportedAsset } from "./AssetBrowser";
@@ -258,8 +257,10 @@ export default function TilemapEditor() {
     const cw = sc.cellW, ch = sc.cellH;
     const lay = { cols: sc.cols, rows: sc.rows, cellW: cw, cellH: ch, open: sc.open, paths: sc.paths };
     const roleKey = layer === "ground" ? sc.ground : layer === "paths" ? sc.path : sc.structure;
-    const atlas = groundAtlasOf(roleKey);
-    const data = buildLayerData(lay, layer, roleKey, atlas ? 4 : 0);
+    /* vc259 (지시 #1) — 변형 아틀라스 폐기. 5색 얼룩 타일을 256px 무이음새 타일로
+     *  교체해 회전 아틀라스가 필요 없어졌다(생성기 scripts/make_stone_floors.py 도 삭제).
+     *  에디터와 게임이 같은 함수(buildLayerData)를 쓰므로 인자도 하나로 맞춘다. */
+    const data = buildLayerData(lay, layer, roleKey);
     const src = GROUND_SOURCES[roleKey];
 
     /* 배경(체커) */

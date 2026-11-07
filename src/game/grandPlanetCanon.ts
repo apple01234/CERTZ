@@ -102,8 +102,89 @@ export const GRAND_PLANET_EXPLORATIONS = {
   dlcsernium: { title: "자유 원정 — 세르니움", setting: "리안 일행의 고향. 태양의 데스티니, 달의 페이트, 우주의 그래스트와 이어진 도시이다." },
 } as const;
 
-/** Directly merge only these keys into BOSS_DEFS; existing training bosses keep their identities. */
-export const GRAND_PLANET_BOSSES: Record<GrandPlanetBossKey, Omit<BossDef, "key"> & { key: GrandPlanetBossKey }> = {
+/* ────────────────────────── 정본 가문 등록부 (7.txt) ────────────────────────── */
+
+/**
+ * vc267 (P7a 정본 감사) — 7.txt 「영준프린세스-가문 정리본」의 25가문.
+ *
+ * 왜 코드로 옮겼나
+ *   7.txt 에 25가문이 표로 정리돼 있는데 게임 코드에는 16가문만 남아 있었다.
+ *   특히 제로세계 6가문(에버포스·샌티널·카르테르·클로체스·라바이즈·유월·하나사키)이
+ *   통째로 빠져 "세계가 셋"이라는 정본 골격이 코드에서 확인되지 않았다.
+ *   이름만 흩어 놓으면 또 지워지므로 **단일 출처 테이블**로 고정하고 테스트가 강제한다.
+ *
+ * 계약
+ *   · 표시 문자열 전용. 세이브 키가 아니다(stage/questId/classKey 와 무관).
+ *   · 원소는 `data.ts` 의 `ElemKey` 부분집합으로만 적는다 — 새 원소를 만들지 않는다.
+ *     7.txt 의 '체스와 저울'/'아트'/'조종'/'반전'처럼 ElemKey 에 없는 힘은
+ *     `power` 에 정본 표기를 그대로 남기고 element 는 "none" 으로 둔다.
+ *   · fallen/true15 표시는 7.txt 의 #/* 표기를 그대로 옮긴 것이다.
+ */
+export type CanonFamily = {
+  key: string;
+  /** 한국어 가문명 (정본 표기 그대로) */
+  name: string;
+  /** 소속 세계 */
+  world: "lilac" | "grand" | "zero";
+  /** 정본 3.txt 의 힘 표기 */
+  power: string;
+  /** ElemKey 부분집합 — 대응 원소가 없으면 "none" */
+  element: "fire" | "water" | "wind" | "electric" | "earth" | "nature" | "ice" | "light" | "dark" | "none";
+  /** 7.txt 의 * 표시 — 15가문 */
+  true15: boolean;
+  /** 7.txt 의 # 표시 — 몰락한 가문 */
+  fallen: boolean;
+};
+
+/** 7.txt 순서 그대로. 라일락 월드 5 · 그랜드 플레닛 13 · 제로세계 7 = 25가문. */
+export const CANON_FAMILIES: readonly CanonFamily[] = [
+  /* 라일락 월드 */
+  { key: "edeliona", name: "에델리오나", world: "lilac", power: "빛과 어둠", element: "light", true15: true, fallen: false },
+  { key: "esteban", name: "에스테반", world: "lilac", power: "물", element: "water", true15: true, fallen: false },
+  { key: "crenrelve", name: "크렌렐브", world: "lilac", power: "대지", element: "earth", true15: false, fallen: false },
+  { key: "idenmir", name: "이덴미르", world: "lilac", power: "눈", element: "ice", true15: true, fallen: false },
+  { key: "ecredit", name: "에크레디트", world: "lilac", power: "자연과 제작", element: "nature", true15: true, fallen: false },
+  /* 그랜드 플레닛 */
+  { key: "grast", name: "그래스트", world: "grand", power: "우주", element: "light", true15: true, fallen: false },
+  { key: "destiny", name: "데스티니", world: "grand", power: "태양", element: "fire", true15: true, fallen: false },
+  { key: "fate", name: "페이트", world: "grand", power: "달", element: "ice", true15: true, fallen: false },
+  { key: "carrion", name: "카르리온", world: "grand", power: "어둠", element: "dark", true15: true, fallen: true },
+  { key: "ariano", name: "아리아노", world: "grand", power: "아트", element: "none", true15: true, fallen: false },
+  { key: "flame", name: "엘리자베스-플래임", world: "grand", power: "불", element: "fire", true15: true, fallen: false },
+  { key: "orpheus", name: "오르페우스", world: "grand", power: "주문과 주술", element: "dark", true15: false, fallen: false },
+  { key: "selina", name: "셀리나", world: "grand", power: "무기", element: "none", true15: false, fallen: false },
+  { key: "ignition", name: "이그니션", world: "grand", power: "도공", element: "fire", true15: false, fallen: false },
+  { key: "jillian", name: "질리언", world: "grand", power: "조종", element: "none", true15: true, fallen: false },
+  { key: "reverse", name: "리버스", world: "grand", power: "반전", element: "electric", true15: false, fallen: false },
+  { key: "pertiers", name: "페르티에스", world: "grand", power: "지배", element: "dark", true15: true, fallen: true },
+  /* 제로세계 — 이 7가문이 코드에 전혀 없었다 */
+  { key: "everforce", name: "에버포스", world: "zero", power: "번개", element: "electric", true15: true, fallen: false },
+  { key: "sentinel", name: "샌티널", world: "zero", power: "모래", element: "earth", true15: true, fallen: false },
+  { key: "carter", name: "카르테르", world: "zero", power: "저울과 체스", element: "none", true15: true, fallen: false },
+  { key: "cloches", name: "클로체스", world: "zero", power: "얼음", element: "ice", true15: false, fallen: true },
+  { key: "ravais", name: "라바이즈", world: "zero", power: "용암", element: "fire", true15: false, fallen: true },
+  { key: "yuwol", name: "유월", world: "zero", power: "바위", element: "earth", true15: true, fallen: false },
+  { key: "hanasaki", name: "하나사키", world: "zero", power: "바람", element: "wind", true15: true, fallen: false },
+  /* 스노리카는 왕국명(6.txt). 클로체스 가문의 왕국이므로 가문 목록과 분리해 둔다. */
+] as const;
+
+/** 왕국·도시 이름 — 가문이 아닌 것들. 표시용 단일 출처. */
+export const CANON_PLACES = {
+  lilacWorld: "라일락 월드",
+  grandPlanet: "그랜드 플레닛",
+  zeroWorld: "제로세계",
+  snorika: "스노리카",
+  sernium: "세르니움",
+  opinisia: "오피니시아",
+  neocity: "네오시티",
+} as const;
+
+/** 가문명 빠른 조회 — HUD/도감에서 이름만 필요할 때. */
+export const CANON_FAMILY_BY_NAME: Readonly<Record<string, CanonFamily>> = Object.fromEntries(
+  CANON_FAMILIES.map((f) => [f.name, f]),
+);
+
+/** Directly merge only these keys into BOSS_DEFS; existing training bosses keep their identities. */export const GRAND_PLANET_BOSSES: Record<GrandPlanetBossKey, Omit<BossDef, "key"> & { key: GrandPlanetBossKey }> = {
   littlestar: {
     key: "littlestar", name: "리틀스타 · 장미의 동력핵", hp: 24000, atk: 48, speed: 80, exp: 1700, gold: 900,
     tex: "boss3", orbTint: 0xe895df, introDialogue: "gpLittleStarFight", sig: "zones",

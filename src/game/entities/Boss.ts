@@ -9,6 +9,9 @@ import { trackDamage } from "../classroom"; // v1.4.31 — 교실 공유 보스 
 import { EventBus } from "../../components/game/EventBus";
 import { mitigateEnemyDamage } from "../combat/defense";
 import { rng, actorStream } from "../sim/deterministic"; // vc183 — 시드 기반 결정론 난수 // vc183 — 보스 방어력
+/* P7b — 페이즈 예고·반격 창 수치는 `bossPhases.ts` 가 단일 출처다(테스트가 검증).
+ *  종전엔 이 값들이 Boss.ts 안에 흩어져 있어 "예고가 몇 ms 인가"를 기계적으로 확인할 수 없었다. */
+import { phaseAt, telegraphMs, recoveryMs, counterWindowMs, attacksAfter, attackPool } from "./bossPhases";
 
 /**
  * 보스 (3종 — 스테이지별 정의 주입):
@@ -18,8 +21,15 @@ import { rng, actorStream } from "../sim/deterministic"; // vc183 — 시드 기
  *  - 텔레그래프는 미리 만든 텍스처 스프라이트 트윈 (매 프레임 Graphics 그리기 없음)
  *  - 파티클은 씬의 공유 이미터 explode() 재사용
  */
-type BossMode =
-  | "idle"
+
+/**
+ * P7b — 반격 창(recover) 동안 들어가는 피해 배율.
+ *  기절(staggered, ×1.6)보다 약하다: 기절은 "카운터를 성공시킨 보상"이고,
+ *  반격 창은 "아무 패턴이나 끝나면 오는 기본 리듬"이므로 보상이 더 작아야 한다.
+ *  ×1 보다 크면 "패턴 사이에 때리는 게 이득"이라는 학습이 생긴다.
+ */
+const RECOVER_DMG_MULT = 1.15;
+type BossMode =  | "idle"
   | "slamTele"
   | "chargeTele"
   | "charging"
@@ -40,8 +50,9 @@ type BossMode =
   | "vxCast" // VX 패턴 연출/연타 중 (피해 판정은 delayedCall 체인)
   // vc153 — 스바르트알프헤임 보스 개편 (애니 사양표 상태머신)
   | "vanished" // Vanish — 투명화 후 재배치 대기
-  | "shieldHold"; // ShieldCast — 방어막 상태유지 (무적 → 종료 시 마력 폭발 반격)
-
+  | "shieldHold" // ShieldCast — 방어막 상태유지 (무적 → 종료 시 마력 폭발 반격)
+  | "recover" // P7b — 강력 패턴 후 무방비 구간 (반격 기회, 피해 ×1.15)
+  | "spiralTele"; // P7b — 나선 탄막 전용 예고 (종전엔 volley,10 즉발)
 export class Boss extends Phaser.Physics.Arcade.Sprite {
   declare scene: WorldScene;
 
@@ -266,6 +277,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       case "volley":
       case "ringTele":
       case "summonTele":
+      case "spiralTele": // P7b — 나선 예고는 탄막 계열 자세(sp2)
         return `${t}-sp2`;
       case "zonesTele":
       case "quakeCast":
@@ -275,6 +287,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         return `${t}-sp3`;
       case "staggered":
         return `${t}-idle`;
+      case "recover":
+        return `${t}-idle`; // P7b — 무방비 창은 숨 고르는 자세
       case "idle": {
         const v = this.body?.velocity;
         return v && Math.abs(v.x) + Math.abs(v.y) > 24 ? `${t}-walk` : `${t}-idle`;
@@ -478,12 +492,28 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         }
         break;
       }
+      /* P7b — 반격 기회 창. 강력 패턴이 끝난 직후 보스가 짧게 무방비가 된다.
+       *  이 동안 피해가 ×1.15 로 들어가고, 다음 공격까지 쿨이 그대로 흐른다.
+       *  vc264 처럼 "패턴만 계속하고 때릴 틈이 없는" 보스전을 막는 장치다. */
+      case "recover": {
+        this.setVelocity(0, 0);
+        if (this.modeTimer <= 0) {
+          this.clearTint();
+          this.mode = "idle";
+        }
+        break;
+      }
       case "quakeCast": {
         this.setVelocity(this.knockVec.x, this.knockVec.y);
         if (this.modeTimer <= 0) this.mode = "idle"; // 낙뢰 자체는 delayedCall로 계속
         break;
       }
       case "volley": {
+        this.setVelocity(this.knockVec.x, this.knockVec.y);
+        break;
+      }
+      /* P7b — 나선 탄막 예고 (예고 자세 유지 → delayedCall 이 fireSpiral 호출) */
+      case "spiralTele": {
         this.setVelocity(this.knockVec.x, this.knockVec.y);
         break;
       }
@@ -501,10 +531,11 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   /* ---------- 페이즈 관리 ---------- */
 
-  /** HP 비율 기준 페이즈 계산 — 전환 시 연출 + 패턴 풀 확장 */
+  /** HP 비율 기준 페이즈 계산 — 전환 시 연출 + 패턴 풀 확장
+   *  P7b — 66%/33% → 60%/30%. 임계값은 `bossPhases.ts` 단일 출처.
+   *  종전 66/33 은 10%p 눈금과 어긋나 "지금 바뀌었나"를 체감하기 어려웠다. */
   private updatePhase() {
-    const r = this.hp / this.maxHp;
-    const next = r > 0.66 ? 1 : r > 0.33 ? 2 : 3;
+    const next = phaseAt(this.hp / this.maxHp);
     if (next > this.phase) {
       this.phase = next;
       this.onPhaseChange();
@@ -576,10 +607,13 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   /** 페이즈 패턴 풀에서 공격 선택 (직전 공격 제외 — 연속 반복 방지) */
   private pickAttack(player: PlayerLike2, dist: number) {
-    const pool =
-      this.phase === 1 ? this.def.patterns.p1 : this.phase === 2 ? this.def.patterns.p2 : this.def.patterns.p3;
-    let candidates = pool.filter((k) => k !== this.lastAttack);
-    if (candidates.length === 0) candidates = pool;
+    /* P7b — 후보 풀은 `bossPhases.attackPool` 이 만든다(페이즈 누적 확장).
+     *  종전엔 p3 에서 p1 패턴이 통째로 사라지는 보스가 2종 있었다
+     *  (abysslord: 자기 시그니처 greenslash·slam 이 p3 에 없음 / skoll: slam).
+     *  그래서 abysslord 는 sig 가중치(2.6배)를 줘도 후보에 없어 **영원히 안 나왔다**. */
+    let candidates = attackPool(this.def.patterns, this.phase) as BossAttackKind[];
+    candidates = candidates.filter((k) => k !== this.lastAttack);
+    if (candidates.length === 0) candidates = attackPool(this.def.patterns, this.phase) as BossAttackKind[];
     /* v1.4.12 (#20 보스마다 패턴 차별화) — 시그니처 패턴 가중치 뽑기:
      *  보스별 정체성 패턴(sig)이 2.6배 확률로 나온다 — 수호자는 강타, 펜리르는 돌진,
      *  가름은 반격처럼 각자의 전투 스타일이 체감된다. */
@@ -668,7 +702,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /* ---------- 스킬 1: 강타 (AOE) ---------- */
 
   private startSlam(player: PlayerLike2) {
-    this.setMode("slamTele", 750);
+    this.setMode("slamTele", telegraphMs("slam"));
     this.squash(-0.07, 0.11); // v1.4.9 — 강타 예고: 몸을 뒤로 젖히며 기모으기
     // 텔레그래프: 플레이어 현재 위치에 붉은 원 — 외부 에셋 링(Kenney CC0) 적색 틴트
     const ring = this.scene.add
@@ -719,21 +753,33 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     void player;
     // v4.1.4 — 돌진 연쇄: def.chargeChain(fenrir 2 / skoll 2+blink, 카오스 +1, 상한 3)
     this.chargeChainLeft = Math.min(3, (this.def.chargeChain ?? 1) - 1 + (this.chaos ? 1 : 0));
-    this.setMode("chargeTele", 550);
+    /* P7b — 돌진 예고를 bossPhases 기준(850ms)으로. 종전 550ms 는 range 하한(600) 미만이었다.
+     *  돌진은 유도형이라 예고가 짧으면 사실상 피할 수 없다 — 바닥에 진행선을 깐다. */
+    this.setMode("chargeTele", telegraphMs("charge"));
+    this.vxWarnRing(this.x, this.y, 0xff9060, 1.25, telegraphMs("charge") * 0.85);
   }
 
   /* ---------- 스킬 3: 투사체 ---------- */
 
   private startVolley() {
-    this.setMode("volley", 10);
+    /* P7b — 종전 10ms 는 사실상 예고 없음(즉발)이라 "위험 공격 사전 예고"가 없었다.
+     *  bossPhases.TELEGRAPH_MS 기준값을 쓰고, 그 시간만큼 조준 자세를 취한다. */
+    this.setMode("volley", telegraphMs("volley"));
     this.setTint(0x88a0ff);
     this.squash(-0.05, 0.07); // v1.4.9 — 발사 전 들이마시기
-    /* v1.4.11 — 원소 충전 연출 (빙결=눈꽃·화염=화염 퍼프·기타=글로우 — hv2_·mg_ 시리즈 팩) */
+    /* P7b — 조준 예고 링 (즉발 → 예고 후 발사). 매 프레임 생성 아님, 패턴당 1회. */
+    this.vxWarnRing(this.x, this.y, 0x88a0ff, 1.05, telegraphMs("volley") * 0.85);
     {
       const e = this.elem;
       const ck = e === "ice" ? "hv2_snow" : e === "fire" ? "mg_fire" : "hv2_glow";
       this.bossFx(ck, this.x, this.y - 30, { tint: e === "fire" ? 0xff9a5a : 0xffffff, scale: 0.55, alpha: 0.85, dur: 300, depth: 20 });
     }
+    /* 예고가 끝난 뒤 실제 발사 — 타이머 시작을 예고 시간만큼 미룬다. */
+    this.scene.time.delayedCall(telegraphMs("volley"), () => this.alive && this.fireVolley());
+  }
+
+  /** 실제 부채꼴 발사 (P7b — startVolley 의 예고가 끝난 뒤 호출) */
+  private fireVolley() {
   /** 페이즈별 탄 수 증가 (1:5 / 2:7 / 3:12) — v3.0.6: 보스 강화 */
     this.volleyCount = this.phase === 1 ? 5 : this.phase === 2 ? 7 : 12;
     let remaining = this.volleyCount;
@@ -766,9 +812,12 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /* ---------- 스킬 4: 원형 탄막 (링) ---------- */
 
   private startRing() {
-    this.setMode("ringTele", 420);
+    /* P7b — 420ms 는 range 하한(600) 미만이었다. 원형 탄막은 사방으로 퍼져
+     *  "어디로 피할지" 판단할 시간이 필요하므로 850ms 로 늘린다. */
+    this.setMode("ringTele", telegraphMs("ring"));
     this.setTint(0xffe08a);
     this.squash(-0.05, 0.07); // v1.4.9 — 탄막 예고 기모으기
+    this.vxWarnRing(this.x, this.y, 0xffe08a, 1.5, telegraphMs("ring") * 0.85);
   }
 
   private doRing() {
@@ -793,7 +842,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /* ---------- 스킬 5: 바닥 장판 (존스) ---------- */
 
   private startZones(player: PlayerLike2) {
-    this.setMode("zonesTele", 850);
+    this.setMode("zonesTele", telegraphMs("zones"));
     this.setTint(0xffa060);
     this.squash(-0.06, 0.09); // v1.4.9 — 장판 시전 기모으기
     // 플레이어 위치 중심 3개 장판 예고 — 1개는 보스 근처 무작위
@@ -874,7 +923,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   }
 
   private startSummon() {
-    this.setMode("summonTele", 620);
+    this.setMode("summonTele", telegraphMs("summon"));
     this.setTint(0xc070ff);
     this.squash(-0.07, 0.12); // v1.4.9 — 소환 주문 채널링
     this.summonFx(0xc070ff, 620); // v1.4.11 — 룬 마법진 (hv2_magiccircle)
@@ -922,11 +971,13 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     return r;
   }
 
-  /** VX 예고 단계 — 종류별 예고 이펙트 + 몸 색 변화 (780ms 후 doVx) */
+  /** VX 예고 단계 — 종류별 예고 이펙트 + 몸 색 변화 (예고 후 doVx)
+   *  P7b — 종전 전 패턴 일괄 780ms 였다. 이제 `bossPhases.TELEGRAPH_MS` 의 종류별 값을 쓴다
+   *  (holymantle 1100 · magicburst 1000 처럼 큰 공격은 더 길게, blinkslash 720 은 짧게). */
   private startVx(kind: BossAttackKind, player: PlayerLike2) {
     this.vxKind = kind;
     this.vxStep = 0;
-    this.setMode("vxTele", 780);
+    this.setMode("vxTele", telegraphMs(kind));
     switch (kind) {
       case "firepillars": // 수르트 — 화염 기둥이 플레이어를 3회 추적
         this.setTint(0xffb090);
@@ -1289,9 +1340,18 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /* ---------- 나선 탄막 (behemoth 눈보라 / abysslord 심연 / abudditos 종언) ----------
    * 보스를 중심으로 회전하는 다중 나선 탄막 — 틈을 읽고 돌파하는 탄막 게임식 패턴 */
   private startSpiral() {
-    this.setMode("volley", 10); // 대기 전용 모드 재사용 (volleyTimer와 무관 — spiralTimer 별도)
+    /* P7b — 종전 "volley", 10 은 예고 없는 즉발이었다(나선은 탄이 화면을 채워 회피 불가).
+     *  나선 전용 예고 모드로 바꿔 700ms 동안 조준 자세를 보인 뒤 발사한다. */
+    this.setMode("spiralTele", telegraphMs("spiral"));
     this.setTint(0x9ad0ff);
     this.squash(-0.05, 0.08); // v1.4.9 — 나선 탄막 기모으기
+    this.vxWarnRing(this.x, this.y, 0x9ad0ff, 1.3, telegraphMs("spiral") * 0.85);
+    this.scene.time.delayedCall(telegraphMs("spiral"), () => this.alive && this.fireSpiral());
+  }
+
+  /** 실제 나선 탄막 전개 (P7b — 예고 후 호출) */
+  private fireSpiral() {
+    this.setMode("volley", 10); // 대기 전용 모드 재사용 (volleyTimer와 무관 — spiralTimer 별도)
     this.spiralAngle = Phaser.Math.FloatBetween(0, Math.PI * 2);
     const arms = this.chaos ? 3 : 2; // 카오스는 3갈래 나선
     const ticks = this.chaos ? 21 : 17;
@@ -1372,7 +1432,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /* ---------- 그림자 급습 (fenrir / skoll / gram / abudditos) ----------
    * 모습을 숨긴 뒤 플레이어 근처로 순간이동 → 짧은 강타 텔레그래프 */
   private startBlink() {
-    this.setMode("blinkTele", 320);
+    this.setMode("blinkTele", telegraphMs("blink"));
     this.setAlpha(0.25);
     this.squash(-0.08, 0.1); // v1.4.9 — 그림자로 뭉개지는 수축
     this.scene.spawnBurstAt(this.x, this.y, 14, 0x8040c0);
@@ -1403,9 +1463,13 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   /** ③ GreenSlash(Once) — 근접 녹색 참격 2연 베기 (전방 150px 판정) */
   private startGreenSlash(player: PlayerLike2) {
-    this.setMode("vxCast", 950);
+    /* P7b — 근접 2연 베기의 첫 타를 예고 시간(800ms)에 맞춘다.
+     *  종전엔 240ms 뒤 첫 타가 나가 사실상 반응 불가였다. */
+    const lead = telegraphMs("greenslash");
+    this.setMode("vxCast", lead + 400);
     this.setBossAnim(`${this.def.tex}-atk`); // GreenSlash 행 (Once)
-    this.scene.time.delayedCall(900, () => this.alive && this.setBossAnim(`${this.def.tex}-idle`));
+    this.vxWarnRing(player.x, player.y, 0x6aff9a, 1.1, lead * 0.85);
+    this.scene.time.delayedCall(telegraphMs("greenslash") + 300, () => this.alive && this.setBossAnim(`${this.def.tex}-idle`));
     const tint = 0x6aff9a; // 녹색 참격
     const strike = (delay: number, mul: number) => {
       this.scene.time.delayedCall(delay, () => {
@@ -1422,8 +1486,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         }
       });
     };
-    strike(240, 0.85);
-    strike(560, 1.05);
+    strike(lead, 0.85);
+    strike(lead + 320, 1.05);
     this.endAttack(1450);
   }
 
@@ -1472,7 +1536,11 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.scene.tweens.add({ targets: this.shieldAura, scale: 1.8, alpha: 0.45, duration: 700, yoyo: true, repeat: -1 });
     this.setTint(0x9ad8ff);
     this.scene.showBanner(`${this.def.name} — 심연의 결정 방어막! (피해 무효)`);
-    this.scene.sfxSkill("shield", 0.8);
+    /* vc273 — "shield" 는 SKILL_SFX_FILES 에 없다. sfx.skill() 이 `if (!file) return;`
+     *  로 조용히 무음 처리하므로 이 방어막 전개음은 실제로 나지 않았다.
+     *  방어막/보호 계열이므로 guardian·paladin 과 같은 holy 로 맞춘다.
+     *  (바로 아래 pxFx.play("shield") 는 픽셀 이펙트 채널이라 별개 — 그대로 둔다.) */
+    this.scene.sfxSkill("holy", 0.8);
     /* vc235 — pixelfx "shield" 이벤트 연결 (정의만 되고 호출 0이었다).
      *  보스가 방어막을 두르는 순간이 "지금은 안 통한다"를 알리는 핵심 신호다. */
     try { this.scene.pxFx?.play("shield", this.x, this.y, { scale: 1.1 }); } catch { /* 무시 */ }
@@ -1553,8 +1621,11 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /* ---------- 연속 낙뢰 (guardian 심연 지진 / surt 용암 분출 / behemoth 눈보라 폭풍) ----------
    * 플레이어를 쫓는 연속 낙뢰 장판 — 6~8회 연속으로 이동기 강제 */
   private startQuake() {
-    this.setMode("quakeCast", 80);
+    /* P7b — 종전 80ms 는 "한 번 맞고 시작"에 가까웠다. 첫 낙뢰 전에 예고를 세운다.
+     *  quake 는 340ms 간격 연사이므로 첫 타만 예고하면 이후는 리듬으로 읽힌다. */
+    this.setMode("quakeCast", telegraphMs("quake"));
     this.setTint(0xffb05a);
+    this.vxWarnRing(this.x, this.y, 0xffa040, 1.6, telegraphMs("quake") * 0.85);
     const shots = this.chaos ? 8 : 6;
     this.quakeTimer?.remove();
     let done = 0;
@@ -1611,7 +1682,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
    * 노란 링 = 반격의 창. 창 안에 1회라도 맞추면 보스가 기절+취약(받는 피해 ×1.6),
    * 방관하면 즉시 대폭발(링 2파동 + 장판)으로 응수 */
   private startCounter() {
-    this.setMode("counterTele", this.chaos ? 1050 : 1400);
+    this.setMode("counterTele", counterWindowMs(this.chaos));
     this.setTint(0xffe95a);
     this.squash(-0.06, 0.06); // v1.4.9 — 반격 자세
     this.counterRing = this.scene.add
@@ -1718,10 +1789,23 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   }
 
   /** 공격 종료 — 다음 공격까지 대기. v3.0.6: 페이즈별 태진 단축 (p1 0.85 / p2 0.7 / 격노 0.5)
-   *  v4.1.4 — 카오스는 쿨타임 25% 추가 단축 (패턴 밀도 대폭 상향) */
+   *  v4.1.4 — 카오스는 쿨타임 25% 추가 단축 (패턴 밀도 대폭 상향)
+   *  P7b — 직전 패턴에 맞는 **반격 창(recover)** 을 먼저 열고 나서 쿨다운을 센다.
+   *   유저 요구 "패턴 사이의 반격 기회" — 종전엔 곧바로 idle 로 돌아가 다음 패턴을
+   *   준비했으므로, 보스가 계속 공격만 하는 것처럼 보였다. */
   private endAttack(cd: number) {
-    this.mode = "idle";
-    let m = this.enraged ? 0.5 : this.phase === 2 ? 0.7 : 0.85;
+    /* 반격 창: 패턴별 1~2초(bossPhases.RECOVERY_MS). 창이 열린 동안 피해 ×1.15. */
+    const win = this.lastAttack ? recoveryMs(this.lastAttack) : 0;
+    if (win > 0 && this.alive) {
+      this.mode = "recover";
+      this.modeTimer = win;
+      this.setTint(0xc8b0ff); // 무방비 표시 — 카운터(노랑)와 구분되는 보라
+      /* 창 진입을 알리는 짧은 링 1개. 매 프레임 생성이 아니라 패턴 종료 1회만. */
+      this.vxWarnRing(this.x, this.y, 0xc8b0ff, 1.15, win * 0.8);
+    } else {
+      this.mode = "idle";
+    }
+    let m = attacksAfter(this.phase) / 1000; // P7b — 페이즈별 쿨타임 단일 출처
     if (this.chaos) m *= 0.75;
     /* v1.4.12 (#20) — 보스별 공격 성향 (aggr: 1보다 작으면 더 빠르게 다시 공격) */
     if (this.def.aggr) m *= this.def.aggr;
@@ -1830,6 +1914,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       return; // 이 한 대는 그대로 반영 — 이후 타격부터 ×1.6
     }
     if (this.mode === "staggered") dealt = Math.max(1, Math.round(dealt * 1.6)); // 취약 상태
+    /* P7b — 반격 창(recover) 보너스. 기절(×1.6)보다 약하게, 평시(×1)보다 세게.
+     *  "패턴 사이에 때리면 확실히 이득"이 되어야 플레이어가 그 리듬을 학습한다. */
+    else if (this.mode === "recover") dealt = Math.max(1, Math.round(dealt * RECOVER_DMG_MULT));
 
     /* vc143 (#4 공유 체력) — 비호스트는 HP 권한이 없다: 연출만 수행하고 HP 감소·사망 판정은
      *  생략한다. 권위 HP는 호스트의 bhp 브로드캐스트로 동기된다 */
@@ -1844,6 +1931,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.scene.time.delayedCall(60, () => {
       if (!this.alive || !this.active) return;
       if (this.mode === "staggered") this.setTint(0x8a7aff);
+      /* P7b — 반격 창(recover) 틴트도 유지한다. 안 그러면 한 대 맞자마자
+       *  무방비 표시가 사라져 "지금 때려도 되는가"를 알 수 없다. */
+      else if (this.mode === "recover") this.setTint(0xc8b0ff);
       else if (this.mode !== "counterTele") this.clearTint();
     });
     this.scene.spawnDamageText(

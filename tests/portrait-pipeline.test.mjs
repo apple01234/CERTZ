@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { pythonBin, pythonEnv } from './python.mjs';
 
 /**
  * 초상화 파이프라인 — 정본 근거 + 파일 규격 (vc260).
@@ -108,7 +109,7 @@ for c in specs:
     rows.append([c['key'],w,h,round(op,3),max(corners),mag])
 print(json.dumps(rows))
 `;
-  const out = JSON.parse(execFileSync('python3', ['-c', code], { cwd: ROOT, encoding: 'utf8' }).trim());
+  const out = JSON.parse(execFileSync(pythonBin(), ['-c', code], { cwd: ROOT, encoding: 'utf8', env: pythonEnv }).trim());
   assert.equal(out.length, specs.characters.length, `검사 ${out.length}개 ≠ 명세 ${specs.characters.length}개`);
 
   const bad = [];

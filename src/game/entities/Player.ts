@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+﻿import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
 import {
   ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_FALLBACK_FROM, upgradeCost, sellValue, type BuffKey as BuffKeyT,
@@ -16,6 +16,7 @@ import { ULT_CLASSES,
   SKILL5_INFO, SKILL5B_INFO, FIFTH_SKILL_MULT, FIFTH_CD_MULT, FIFTH_LEVEL, FIFTH1_MULT, FIFTH2_MULT,
   type Skill1Kind, type Skill2Kind, type Skill3Kind, type Skill4Kind,
 } from "../classes";
+import { isZEvolved, isCEvolved } from "../skillEvolution"; // vc252 P5 — 전직 스킬 진화 데이터(개수·범위·관통)
 import { sweptHitsTarget } from "../collision/sweep";
 import { loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드
 import { resolveBodyPrefix } from "../characterAppearance";
@@ -358,6 +359,72 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const tierCd = Math.max(0.68, 1 - 0.08 * Math.max(0, this.sTier - 1));
     return Math.round(this.skill2Max * this.clsBonus.cdMult * tierCd * (this.isFifth ? FIFTH_CD_MULT : 1));
   }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+   * vc252 P5 (지시 #12) — 전직 스킬 진화 (SkillEvolution 연동)
+   *
+   * [유저 요구] "n차 → (n+1)차에서 보유 스킬이 강화되거나 상위 스킬로 교체되어야 한다.
+   *              단순 공격력 증가만으로 전직을 처리하지 않는다."
+   *
+   * [기존 결함] 3차 eagleeye 는 2차 sniper 와 **같은 `"snipe"` 함수**를 실행했다.
+   *  이름만 바뀌고 투사체 수·범위·관통이 동일 → 체감 진화 0.
+   *
+   * [해법] 아래 세 헬퍼가 **이산적(discrete)** 값만 바꾼다.
+   *  개수·범위·관통은 배율과 달리 "한 발 더 나간다"처럼 눈에 바로 보인다.
+   *  피해 배율은 이미 `rollDamage(a + b*t)` 가 올리고 있으므로 **여기서 곱하지 않는다**
+   *  (중복 곱 = 밸런스 회귀).
+   *
+   * [하위호환] 진화 목록에 없는 직업은 종전과 **완전히 동일한 값**을 돌려준다.
+   * ══════════════════════════════════════════════════════════════════════════ */
+
+  /** 이 직업의 Z 슬롯이 실제 진화 대상인가 (skillEvolution.ts 의 데이터 조회). */
+  get zEvolved(): boolean {
+    return isZEvolved(this.cls);
+  }
+
+  /** Z 슬롯 투사체/타격 개수 — 진화 대상이면 차수에 따라 +1~+2, 아니면 `base` 그대로. */
+  private evoCount(base: number): number {
+    if (!this.zEvolved) return base;
+    const t = this.sTier;
+    if (t >= 4) return base + 2;
+    if (t >= 3) return base + 1;
+    return base;
+  }
+
+  /** Z 슬롯 범위/반경 배율 — 진화 대상만 3차 +20%, 4차 +40%. 아니면 1(불변). */
+  private evoRange(): number {
+    if (!this.zEvolved) return 1;
+    const t = this.sTier;
+    if (t >= 4) return 1.4;
+    if (t >= 3) return 1.2;
+    return 1;
+  }
+
+  /** Z 슬롯 관통 수 가산 — 진화 대상 3차 +1, 4차 +2. 아니면 0(불변). */
+  private evoPierce(): number {
+    if (!this.zEvolved) return 0;
+    const t = this.sTier;
+    if (t >= 4) return 2;
+    if (t >= 3) return 1;
+    return 0;
+  }
+
+  /** C 슬롯이 실제 진화 대상인가 (skillEvolution.ts 의 C_EVOLVED_JOBS). */
+  get cEvolved(): boolean {
+    return isCEvolved(this.cls);
+  }
+
+  /** C 슬롯 범위/반경 배율 — C 진화 대상만 3차 +20%, 4차 +40%. 아니면 1(불변).
+   *  Z 의 `evoRange()` 와 분리한 이유: Z/C 진화 대상 직업 집합이 다르다
+   *  (예: powdermaster 는 C 만 진화, Z 는 이미 고유). */
+  private evoRangeC(): number {
+    if (!this.cEvolved) return 1;
+    const t = this.sTier;
+    if (t >= 4) return 1.4;
+    if (t >= 3) return 1.2;
+    return 1;
+  }
+
   private mpRegenAcc = 0;
 
   private iframes = 0;
@@ -1853,8 +1920,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const aim = this.aimDirFree();
     const base = Math.atan2(aim.y, aim.x);
     const t = this.sTier;
-    const range = 560 + 40 * t;
-    const halfW = t >= 4 ? 46 : 26;
+    /* vc252 P5 — 진화: eagleeye(3차)/deadeye(4차)는 사거리 +20/40%, 판정 폭 확대.
+     *  sniper(2차)는 evoRange()=1 이라 종전과 완전히 동일하다. */
+    const evoR = this.evoRange();
+    const range = (560 + 40 * t) * evoR;
+    const halfW = (t >= 4 ? 46 : 26) * evoR;
     this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
     this.playAnim("hero-atk");
     this.scene.sfxSkill("arrowpierce"); // v3.0.24 — 스나이퍼 관통 저격음 (샤프 관통 화살)
@@ -1900,7 +1970,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
     this.playAnim("hero-atk");
     this.scene.sfxSkill("wind"); // v3.0.24 — 윈드러너 회오리 화살 (바람음)
-    const shots = t >= 3 ? 2 : 1;
+    /* vc252 P5 — 진화: tempest(3차)는 회오리 +1발 + 반경 ×1.2.
+     *  windrunner(2차)는 evoCount(2)=2, evoRange()=1 로 종전과 동일. */
+    const shots = this.evoCount(t >= 3 ? 2 : 1);
+    const evoR = this.evoRange();
     for (let i = 0; i < shots; i++) {
       this.scene.time.delayedCall(i * 150, () => {
         if (this.state === "dead") return;
@@ -1909,7 +1982,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           x: this.x, y: this.y - 8,
           angle: base + (i - (shots - 1) / 2) * 0.3,
           speed: 300, dmg, crit, hex, pull: t >= 4 ? 0.5 : 0.34,
-          radius: 120 + 10 * t, life: 1500,
+          radius: (120 + 10 * t) * evoR, life: 1500,
         });
       });
     }
@@ -1987,10 +2060,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.sfxSkill("electron"); // v3.0.24 — 아크메이지 아크 볼트 (전자음)
     this.scene.spawnCast(this.x + aim.x * 14, this.y - 12 + aim.y * 8);
     const { dmg, crit } = this.rollDamage(2.4 + 0.45 * t, true); // v1.4.30 (#2) 사다리 0.3→0.45
+    /* vc252 P5 — 진화: stormbringer(3차)/arclord(4차)는 관통 +1/+2, 폭발 반경 ×1.2/×1.4.
+     *  archmage(2차)는 evoPierce()=0, evoRange()=1 이라 종전 수치 그대로. */
+    const evoP = this.evoPierce();
+    const evoR = this.evoRange();
     this.scene.fireExplodingBolt({
       x: this.x, y: this.y - 10, angle, speed: 440,
-      dmg, crit, pierce: 2 + t, hex,
-      blastRadius: 130 + 14 * t, blastMul: 1.1 + 0.08 * t,
+      dmg, crit, pierce: 2 + t + evoP, hex,
+      blastRadius: (130 + 14 * t) * evoR, blastMul: 1.1 + 0.08 * t,
       secondary: t >= 4, scale: 1.5,
     });
     this.scene.time.delayedCall(320, () => {
@@ -2010,7 +2087,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const wave = (delay: number) => {
       this.scene.time.delayedCall(delay, () => {
         if (this.state === "dead") return;
-        const radius = 150 + 18 * t;
+        /* vc252 P5 — 진화: chronicle(3차)/eternal(4차)은 파동 반경 ×1.2/×1.4.
+         *  sage(2차)는 evoRange()=1 이라 종전과 동일. */
+        const radius = (150 + 18 * t) * this.evoRange();
         this.scene.spawnPurifyRing(this.x, this.y, radius, hex);
         let hits = 0;
         for (const e of this.scene.getAllTargets()) {
@@ -2055,7 +2134,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.faceAtk(this.aimDir()); // v1.0.12 — 공격 시트 우향 네이티브 정면화
     this.playAnim("hero-atk");
     this.scene.sfxSkill("iainuki"); // v3.0.24 — 어세신 그림자 참수 (발도음)
-    const targets = this.nearestTargets(t >= 3 ? 2 : 1, 260);
+    /* vc252 P5 — 진화: nightblade(3차) 3대상 / shadowlord(4차) 4대상.
+     *  assassin(2차)은 evoCount(1)=1 이라 종전과 동일(단일 대상). */
+    const targets = this.nearestTargets(this.evoCount(t >= 3 ? 2 : 1), 260 * this.evoRange());
     if (targets.length === 0) {
       // 대상 없음 — 전방 참격으로 대체
       const dir = this.aimDir();
@@ -2110,7 +2191,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const dir = this.aimDir();
     const t = this.sTier;
     const hex = this.clsHex();
-    const hits = t >= 3 ? 7 : 5;
+    /* vc252 P5 — 진화: duelist(3차) 8연타 / blademaster(4차) 10연타.
+     *  swashbuckler(2차)는 evoCount(5)=5 로 종전과 동일. */
+    const hits = this.evoCount(t >= 3 ? 7 : 5);
     this.playAnim("hero-atk");
     this.faceAtk(dir); // v4.9.4 — 자유 조준 기준. 종전 dir.y===0 조건은 대각선에서 flip 을 강제로 false 로 눌렀다 // v1.0.16 — 좌향 네이티브 통일
     this.scene.sfxSkill("swift"); // v3.0.24 — 스와시버클러 연타 난무 (속공 베기)
@@ -2161,8 +2244,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.playAnim(atkKey);
     this.faceAtk(fire); // v4.9.4 — 자유 조준 기준. 종전 dir.y===0 조건은 대각선에서 flip 을 강제로 false 로 눌렀다
-    const shots = t >= 3 ? 3 : 1;
-    const spread = t >= 3 ? 0.07 : 0;
+    /* vc252 P5 — 진화: raider(2차)는 부모 pirate 와 같은 cannonblast 지만
+     *  관통이 깊어지고 탄 확산이 넓어져 "같은 총이 아니다"가 체감된다.
+     *  pirate(1차)는 evoCount(1)=1, evoPierce()=0 이라 종전과 동일. */
+    const shots = this.evoCount(t >= 3 ? 3 : 1);
+    const spread = t >= 3 ? 0.07 : this.evoPierce() > 0 ? 0.04 : 0;
     for (let i = 0; i < shots; i++) {
       this.scene.time.delayedCall(i * 110, () => {
         if (this.state === "dead") return;
@@ -2181,7 +2267,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           y: this.y - 6 + Math.sin(ang) * 30,
           angle: ang,
           speed: 900,
-          pierce: t >= 4 ? 5 : 3,
+          pierce: (t >= 4 ? 5 : 3) + this.evoPierce(),
           dmg, crit,
           tint: 0xffe9a8,
           knock: 150,
@@ -2617,21 +2703,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         /* v1.1.9 — 해적 계열 C(기동기) */
         case "smokestep": {
           /* 레이더 — 연막 측면: 착지 지점에 연막을 남겨 그 안의 적을 밀어낸다.
-           *  "화약" 정체성의 기동기 — 도망용이 아니라 자리 정리용. */
+           *  "화약" 정체성의 기동기 — 도망용이 아니라 자리 정리용.
+           *  vc252 P5 — 진화: powdermaster/dreadnought(C_EVOLVED)는 연막 반경 ×1.2/×1.4 +
+           *  체류·DPS 배율. pirate/raider 는 evoRangeC()=1 이라 종전 그대로. */
+          const smR = this.evoRangeC();
+          const smExtra = smR > 1 ? smR * 0.9 : 1; // 3차 1.08 / 4차 1.26 — 연막 밀도
           this.scene.spawnBurstAt(this.x, this.y, 20 + 2 * t, 0x6a6a78);
           this.scene.spawnField?.({
-            x: this.x, y: this.y, radius: 130 + 10 * t, dur: 1400,
-            dps: Math.max(4, Math.round(this.atkTotal * 0.05)), kind: "poison", owner: "player",
+            x: this.x, y: this.y, radius: (130 + 10 * t) * smR, dur: Math.round(1400 * smExtra),
+            dps: Math.max(4, Math.round(this.atkTotal * 0.05 * smExtra)), kind: "poison", owner: "player",
           });
-          burst(120 + 10 * t, 0.85 + 0.1 * t, 340);
+          burst((120 + 10 * t) * smR, 0.85 + 0.1 * t, 340);
           break;
         }
         case "grappleswing": {
           /* 코세어 — 갈고리 그네: 더 멀리 이동하고 경로상의 적을 벤다.
-           *  이동 거리가 길어 C를 "진입"에 쓸 수 있다(다른 계열 기동기와 차별). */
+           *  이동 거리가 길어 C를 "진입"에 쓸 수 있다(다른 계열 기동기와 차별).
+           *  vc252 P5 — 진화: seaking(C_EVOLVED)은 참격 범위·도달이 넓어진다.
+           *  corsair/stormcaptain 은 evoRangeC()=1 이라 종전 그대로. */
+          const gpR = this.evoRangeC();
           const aim2 = this.aimDir();
-          this.scene.spawnSlash?.(this.x, this.y, aim2, false, 1.5, 0xffdf8a);
-          burst(140 + 12 * t, 1.0 + 0.1 * t, 300);
+          this.scene.spawnSlash?.(this.x, this.y, aim2, false, 1.5 * gpR, 0xffdf8a);
+          burst((140 + 12 * t) * gpR, 1.0 + 0.1 * t, 300);
           break;
         }
       }
@@ -4590,7 +4683,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const dir = new Phaser.Math.Vector2(face, 0);
         /* 물결 압축 — 발동 예고 */
         this.scene.spawnShockwave(this.x, this.y, 0x4fd2e8, 1.2, 260, 2.2);
-        this.scene.sfxSkill("water", 0.82);
+        /* vc272 — "water"/"wave" 는 SKILL_SFX_FILES 에 없다. sfx.skill() 이
+         *  `if (!file) return;` 로 조용히 무음 처리하므로 이 발동음은 실제로 나지 않았다.
+         *  실재하는 물/파도 계열 키가 없어 가장 가까운 heavy 계열로 대체한다. */
+        this.scene.sfxSkill("heavydash", 0.82);
         for (let i = 0; i < 9; i++) {
           this.scene.time.delayedCall(200 + i * 145, () => {
             if (this.state === "dead") return;
@@ -4605,7 +4701,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             });
             this.scene.spawnBurstAt(px, py, 14, 0x9af0ff);
             this.scene.doShake?.(80, 0.007);
-            this.scene.sfxSkill("wave", 0.7 + (i % 3) * 0.06);
+            this.scene.sfxSkill("wind2", 0.7 + (i % 3) * 0.06); /* vc272 — "wave" 무음 → wind2 */
             for (const e of this.getAllTargetsIn(999)) {
               /* 전진 파도 폭 — 각 단계의 타격 창 */
               if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 150) continue;
@@ -4653,7 +4749,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           { r: 230, n: 4, mul: 3.0, delay: 700 },
           { r: 340, n: 5, mul: 5.4, delay: 1300 },
         ];
-        this.scene.sfxSkill("cannon", 0.85);
+        this.scene.sfxSkill("quake", 0.85); /* vc272 — "cannon" 무음 → quake */
         for (let si = 0; si < stages.length; si++) {
           const st = stages[si];
           this.scene.time.delayedCall(st.delay, () => {
@@ -4670,7 +4766,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 this.scene.spawnBurstAt(px, py, 16 + si * 6, 0xffb060);
                 this.scene.spawnShockwave(px, py, 0xffcc80, 1.4 + si * 0.3, 220, 2.4);
                 this.scene.doShake?.(90 + si * 30, 0.008 + si * 0.003);
-                this.scene.sfxSkill("explosion", 0.78 + si * 0.05);
+                this.scene.sfxSkill("superhit", 0.78 + si * 0.05); /* vc272 — "explosion" 무음 → superhit */
                 for (const e of this.getAllTargetsIn(999)) {
                   if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 120 + si * 25) continue;
                   const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
@@ -6249,7 +6345,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
        *  수면 오버레이는 실루엣·HUD 가독성을 유지해야 하므로 알파를 0.30 으로 제한.
        * ══════════════════════════════════════════════════════════════════ */
       case "seaking": {
-        this.scene.sfxSkill("water", 0.9);
+        this.scene.sfxSkill("heavydash", 0.9); /* vc272 — "water" 무음 → heavydash (useSkill5 와 동일) */
         /* 수면 상승 — 전장 오버레이 (가독성 상한 0.30) */
         const flood = this.scene.add.rectangle(this.x, this.y, 1400, 900, 0x2f9fd8, 0.30)
           .setDepth(6).setBlendMode(Phaser.BlendModes.ADD);
@@ -6277,7 +6373,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             /* 좌→우 파도 진행 — 매회 x 오프셋을 이동시켜 '밀려온다'로 읽히게 */
             const sweep = -300 + (i / 13) * 600;
             this.scene.spawnBurstAt(this.x + sweep + (Math.random() - 0.5) * 120, this.y + (Math.random() - 0.5) * 240, 18, 0x6fc8ff);
-            this.scene.sfxSkill("wave", 0.62 + (i % 3) * 0.05);
+            this.scene.sfxSkill("wind2", 0.62 + (i % 3) * 0.05); /* vc272 — "wave" 무음 → wind2 */
           });
         }
         /* 종료 — 물이 빠지며 수압 종결 (스냅샷 대상 재검사) */
@@ -6311,7 +6407,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
        *  무작위 타격도 공정하게 보이도록 착탄 예고 + 최소 회피 시간을 준다.
        * ══════════════════════════════════════════════════════════════════ */
       case "dreadnought": {
-        this.scene.sfxSkill("cannon", 0.95);
+        this.scene.sfxSkill("quake", 0.95); /* vc272 — "cannon" 무음 → quake (useSkill5 와 동일) */
         /* 카메라 뷰 기준 월드 좌표를 고정한다 — 카메라가 움직여도 착탄점 불변 */
         const cam = this.scene.cameras.main;
         const wx0 = cam.scrollX + cam.width * 0.5;
@@ -6340,7 +6436,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               this.scene.spawnBurstAt(px, py, 14, 0xffb060);
               this.scene.spawnShockwave(px, py, 0xffa040, 1.1, 200, 0.7);
               this.scene.doShake?.(70, 0.006);
-              this.scene.sfxSkill("explosion", 0.68 + (i % 4) * 0.04);
+              this.scene.sfxSkill("superhit", 0.68 + (i % 4) * 0.04); /* vc272 — "explosion" 무음 → superhit */
               for (const e of this.getAllTargetsIn(999)) {
                 if (Phaser.Math.Distance.Between(e.x, e.y, px, py) > 130) continue;
                 const away = this.awayScratch.set(e.x - px, e.y - py).normalize();

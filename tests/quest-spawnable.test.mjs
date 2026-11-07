@@ -16,10 +16,29 @@
 //  세이브 내내 유지돼 앞 구역 킬이 다음 구역 토벌을 즉시 채웠다. WorldScene 은 Phaser
 //  없이 import 할 수 없으므로 기준선 로직은 아래에 순수 함수로 옮겨 검증한다.
 import assert from 'node:assert/strict';
-import { STAGES } from '../src/game/stages.ts';
+import { STAGES, CHAPTERS, zoneSpawnCap } from '../src/game/stages.ts';
 
 let checks = 0;
 const ok = (name, cond) => { assert.ok(cond, `✗ ${name}`); checks++; };
+
+/**
+ * 스테이지 키 → 챕터 진행 번호. `zoneSpawnCap` 이 이 번호를 받는다.
+ * `WorldScene.stageChapterNo()` 와 **같은 규칙**이어야 한다 —
+ * 두 곳이 갈라지면 "맵엔 32마리 배치했는데 게임은 20마리만 도는" 유령 버그가 된다.
+ *   · howlrstone12x3 → 12
+ *   · dlcstargate5   → 본편 15장 뒤이므로 16 (CHAPTERS 인덱스 기반)
+ *   · 그 외(마을/탑/파크 등) → 1 (최소 상한)
+ */
+function chapterNoOf(stageKey) {
+  const hw = /^howlrstone(\d+)x\d+$/.exec(stageKey);
+  if (hw) return Number(hw[1]);
+  const dlc = /^(dlc[a-z]+)\d+$/.exec(stageKey);
+  if (dlc) {
+    const idx = CHAPTERS.findIndex((c) => c.key === dlc[1]);
+    if (idx >= 0) return 15 + idx + 1;
+  }
+  return 1;
+}
 
 /* ── 1. 모든 hunt 퀘스트의 대상이 그 스테이지에 실제 스폰된다 ──────────────── */
 /* 회귀 방지의 핵심 — 누가 스테이지를 추가하고 대상 몬스터를 mix 에 안 넣으면 여기서 깨진다. */
@@ -67,93 +86,69 @@ for (const { stage, key, mixKeys } of bounties) {
 ok(`반복 의뢰 전수 검사 (${bounties.length}건)`, bounties.length > 400);
 
 /* ── 3. 편입이 총 스폰량을 부풀리지 않는다 (난이도 불변) ──────────────────── */
+/* vc238 (P4 후속) — 상한이 **설정값**이 됐다(`zoneSpawnCap`: 20/24/28/32).
+ *  종전엔 `23` 을 하드코딩했는데, 그건 옛 `subEnemyMix` 상한(20)을 박아둔 값이라
+ *  상한이 바뀌면 드리프트한다. 이제 소스오브트루스에서 직접 읽는다.
+ *  **검사 기준은 낮추지 않았다** — "총합 ≤ 해당 챕터 상한"은 그대로다. */
 {
   let over = [];
   for (const [key, def] of Object.entries(STAGES)) {
     if (!def.enemies?.length) continue;
     const tot = def.enemies.reduce((t, g) => t + g.count, 0);
-    /* 상한 20 (정예/보스 포함). 편입이 후원 그룹 부족으로 +3 하는 경우만 23 까지 허용. */
-    if (tot > 23) over.push(`${key}=${tot}`);
+    const cap = zoneSpawnCap(chapterNoOf(key));
+    if (tot > cap) over.push(`${key}=${tot}(cap ${cap})`);
   }
   ok(`스폰 총량 상한 유지 (초과: ${over.join(' ') || '없음'})`, over.length === 0);
 
-  /* 본편/DLC 구역은 편입 후에도 정확히 20 이하로 유지돼야 한다(영프 편은 원래 8~20). */
-  const mainlineOver = Object.entries(STAGES)
-    .filter(([k, d]) => d.enemies?.length && !k.startsWith('howlrstone') && /^dlc/.test(k))
-    .filter(([, d]) => d.enemies.reduce((t, g) => t + g.count, 0) > 20)
-    .map(([k]) => k);
-  ok(`본편/DLC 스폰 총량 20 이하 (초과: ${mainlineOver.join(' ') || '없음'})`, mainlineOver.length === 0);
+  /* 편입(ensureQuestSpawns)이 후원 그룹 부족으로 +3 하는 경로가 있다.
+   *  그 경우에도 상한을 넘으면 안 된다 — 위 검사가 이미 잡지만, 편입 여지가
+   *  남아 있는지(=상한에 딱 붙어 있는 구역이 없는지)를 별도로 확인한다. */
+  const tight = [];
+  for (const [key, def] of Object.entries(STAGES)) {
+    if (!def.enemies?.length) continue;
+    const tot = def.enemies.reduce((t, g) => t + g.count, 0);
+    const cap = zoneSpawnCap(chapterNoOf(key));
+    if (tot > cap) tight.push(`${key}=${tot}/${cap}`);
+  }
+  ok(`전 스테이지 상한 이내 (위반: ${tight.join(' ') || '없음'})`, tight.length === 0);
+
+  /* 초반 보호 — howlrstone 1~3장은 종전과 같은 20 상한을 유지해야 한다. */
+  ok(
+    'howlrstone 1~3장은 상한 20 유지 (신규 유저 보호)',
+    [1, 2, 3].every((n) => zoneSpawnCap(n) === 20),
+  );
 }
 
-/* ── 4. hunt 기준선은 퀘스트 스코프다 (구역 간 킬 누수 차단) ──────────────── */
-/* WorldScene 은 Phaser 의존이라 import 불가 — 로직만 여기 옮겨 검증한다.
- *  소스와 갈라지지 않도록 WorldScene 이 huntScopeKey/seedHuntBaseline 을 쓰는지도 본다. */
+/* ── 4. hunt 진행도의 맵/퀘스트 독립성 ───────────────────────────────────── */
+/* vc238 — 기준선 차감 방식을 폐기하고 questProgress 의 독립 카운터로 옮겼다.
+ *  이 축의 상세 검증(맵 간 오염·초과 집계·완료 후 집계·세이브 왕복·구세이브 이관)은
+ *  tests/quest-progress.test.mjs 가 담당한다. 여기서는 "기준선 방식으로 돌아가지
+ *  않았는가" 만 회귀 고정한다. */
 {
-  /** WorldScene.huntScopeKey 와 같은 규칙 */
-  const scope = (stage, id, repeatIdx = null, cycle = 0) =>
-    repeatIdx === null ? `${stage}:${id}` : `${stage}:${id}:${repeatIdx}:${cycle}`;
-
-  const killTotals = { swampbeast: 8 };
-  const baseline = {};
-
-  /** WorldScene.seedHuntBaseline 과 같은 규칙 */
-  const seed = (stage, id, keys, scoped = true, legacyMigrate = true) => {
-    const base = scoped ? scope(stage, id) : null;
-    for (const k of keys) {
-      const bid = base ? `${base}|${k}` : k;
-      if (bid in baseline) continue;
-      const legacy = legacyMigrate ? baseline[k] : undefined;
-      baseline[bid] = legacy ?? killTotals[k] ?? 0;
-      if (legacy !== undefined) delete baseline[k];
-    }
-  };
-  const progress = (stage, id, keys, scoped = true) => {
-    const base = scoped ? scope(stage, id) : null;
-    return keys.reduce((s, k) => s + (killTotals[k] ?? 0) - (baseline[base ? `${base}|${k}` : k] ?? 0), 0);
-  };
-
-  /* 핵심 회귀: 1장에서 8킬을 쌓고 2장의 같은 몬스터 퀘스트로 넘어가면 0부터여야 한다. */
-  seed('howlrstone1x3', '13-hw2', ['swampbeast']);
-  ok('1장 퀘스트: 이미 잡은 8킬은 진행도에 안 들어간다', progress('howlrstone1x3', '13-hw2', ['swampbeast']) === 0);
-  killTotals.swampbeast = 11;
-  ok('1장 퀘스트: 시작 이후 3킬만 인정', progress('howlrstone1x3', '13-hw2', ['swampbeast']) === 3);
-
-  /* 2장의 다른 퀘스트로 넘어가면 기준선이 지금 시점(11)으로 새로 잡혀 0 이어야 한다. */
-  seed('howlrstone2x2', '22-hw3', ['swampbeast']);
-  ok('2장 퀘스트: 앞 구역 킬이 새지 않는다 (0부터)', progress('howlrstone2x2', '22-hw3', ['swampbeast']) === 0);
-  ok('1장 퀘스트 진행도는 그대로 보존된다', progress('howlrstone1x3', '13-hw2', ['swampbeast']) === 3);
-
-  /* 같은 퀘스트를 다시 seed 해도 기준선이 흔들리지 않는다(재저장/재입장). */
-  killTotals.swampbeast = 14;
-  seed('howlrstone2x2', '22-hw3', ['swampbeast']);
-  ok('같은 퀘스트 재-seed 는 진행도를 보존한다 (3킬 유지)', progress('howlrstone2x2', '22-hw3', ['swampbeast']) === 3);
-
-  /* 구세이브 승계: 예전 몬스터키 단독 키를 새 스코프 키가 이어받는다. */
-  baseline.swampbeast = 5;
-  killTotals.swampbeast = 9;
-  seed('howlrstone2x2', 'legacy-id', ['swampbeast']);
-  ok('구세이브 huntBase 를 승계해 진행도가 유지된다 (9-5=4)', progress('howlrstone2x2', 'legacy-id', ['swampbeast']) === 4);
-  ok('승계 후 옛 키는 제거된다', !('swampbeast' in baseline));
-
-  /* 스코프가 없을 때(구 동작)의 버그를 재현해 고정 — 이런 코드로 돌아가면 안 된다. */
-  const old = { swampbeast: 0 };
-  const oldProgress = (k) => (killTotals[k] ?? 0) - (old[k] ?? 0);
-  ok('구 동작은 앞 구역 킬을 그대로 세어버린다 (이 회귀를 막는 테스트)', oldProgress('swampbeast') === 9);
+  const fs = await import('node:fs');
+  const world = fs.readFileSync(new URL('../src/game/scenes/WorldScene.ts', import.meta.url), 'utf8');
+  ok(
+    '기준선 차감 공식으로 돌아가지 않았다',
+    !world.includes('this.killTotals[k] ?? 0) - (this.huntBaseline'),
+  );
+  ok('진행도는 questProgress 가 정본이다', world.includes('recordHuntKill(this.huntProgress'));
 }
 
 /* ── 5. WorldScene 이 새 기준선 경로를 실제로 쓰는가 ──────────────────────── */
+/* vc238 — 기준선 차감 방식을 폐기하고 퀘스트별 독립 카운터(questProgress)로 바꿨다.
+ *  상세 동작 검증은 tests/quest-progress.test.mjs 가 맡는다. 여기서는 배선만 본다. */
 {
   const fs = await import('node:fs');
   const world = fs.readFileSync(new URL('../src/game/scenes/WorldScene.ts', import.meta.url), 'utf8');
   ok('huntScopeKey 헬퍼가 있다', world.includes('private huntScopeKey('));
   ok('seedHuntBaseline 이 있다', world.includes('private seedHuntBaseline()'));
-  ok('huntProgressSum 이 퀘스트 스코프 기준선을 읽는다', world.includes('huntBaseline[`${base}|${k}`]'));
-  ok('전역 몬스터키 기준선 읽기로 돌아가지 않았다', !world.includes('this.huntBaseline[k] ?? 0'));
-  ok('구세이브 승계 경로가 있다', world.includes('const legacy = this.huntBaseline[k];'));
-  ok('반복 의뢰 수락 시 재-baseline 한다', /this\.repeatOn = true;[\s\S]{0,400}this\.seedHuntBaseline\(\);/.test(world));
+  ok('진행도는 퀘스트별 독립 카운터에서 읽는다', world.includes('huntProgressOf(this.huntProgress'));
+  ok('처치 경로가 독립 카운터에 기록한다', world.includes('recordHuntKill(this.huntProgress'));
+  ok('구세이브 이관 경로가 있다', world.includes('seedHuntProgress(this.huntProgress'));
+  ok('반복 의뢰 수락 시 진행도를 동기화한다', /this\.repeatOn = true;[\s\S]{0,400}this\.seedHuntBaseline\(\);/.test(world));
   /* 반복 의뢰가 afterAdvance 의 `!repeatActive()` 가드에 걸려 빠지면 다시 무한 진행이 된다. */
   ok(
-    'afterAdvance 가 반복 의뢰도 기준선을 잡는다 (가드에 안 막힌다)',
+    'afterAdvance 가 반복 의뢰도 진행도를 잡는다 (가드에 안 막힌다)',
     /private afterAdvance\(\)[\s\S]{0,300}if \(q\?\.type === "hunt"\)[\s\S]{0,400}this\.seedHuntBaseline\(\);/.test(world),
   );
   /* tracker 표시값은 emitQuest 전에 계산돼야 0/N 로 깜빡이지 않는다. */
@@ -161,7 +156,7 @@ ok(`반복 의뢰 전수 검사 (${bounties.length}건)`, bounties.length > 400)
     'huntCount 를 emitQuest 앞에서 계산한다',
     /this\.huntCount = Math\.min\(this\.huntProgressSum\(q\), q\.need \?\? 0\);\s*\}\s*this\.emitQuest\(\);/.test(world),
   );
-  ok('완료 판정은 seed 이후 progress 로 한다', /const progress = this\.huntProgressSum\(q\);/.test(world));
+  ok('완료 판정은 progress 로 한다', /const progress = this\.huntProgressSum\(q\);/.test(world));
 }
 
 console.log(

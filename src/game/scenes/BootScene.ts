@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { GROUND_TILE_MAP, GROUND_ATLAS_KEYS, GROUND_ATLAS_AVAILABLE } from "../tileThemes";
+import { GROUND_TILE_MAP } from "../tileThemes";
 import { AURA_TEXTURE_LOADS } from "../fx/auraTextures";
 import { DECOR_SETS } from "../decorObjects";
 import { TILE_PNG_KEYS } from "../tilePng"; // vc206 (#11) — PNG 원본 우선 로드
@@ -703,14 +703,9 @@ export class BootScene extends Phaser.Scene {
     for (const key of new Set(Object.values(GROUND_TILE_MAP))) {
       if (key.startsWith("ground_")) this.load.image(key, `ground/${key}.png`);
     }
-    /* vc252 (지시 #1) — 바닥 변형 아틀라스(회전·반전 4프레임). 96×96 단일 타일을 넓게 깔면
-     *  특징적인 돌 배치가 96px 주기로 반복돼 눈에 띈다. 변형을 섞으면 주기가 4배로 늘어난다.
-     *  파일이 없는 스테이지도 있으므로 존재할 때만 큐잉한다(404 는 로더를 실패시킨다). */
-    for (const key of GROUND_ATLAS_KEYS) {
-      if (typeof window !== "undefined" && GROUND_ATLAS_AVAILABLE.includes(key)) {
-        this.load.image(key, `ground/${key}.png`);
-      }
-    }
+    /* vc259 (지시 #1) — 바닥 변형 아틀라스 로더 제거.
+     *  아틀라스는 5색 얼룩 타일의 회전본이라 격자를 못 없앴고, 이제 5종을
+     *  256px 무이음새 타일로 교체해 필요 없어졌다. 파일도 삭제됐다(404 방지). */
     /* vc235 (#최적화) — aura 는 `setPath("assets")` 의 영향을 받으면 안 된다.
      *  manifest 의 `file` 은 `/assets/aura/gvb_*.png` 처럼 루트부터의 전체 경로다.
      *  setPath 가 걸린 상태로 넘기면 Phaser 가 `assets/` 를 앞에 붙여

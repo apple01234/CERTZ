@@ -14,6 +14,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
 import { stripTypeScriptTypes } from "node:module";
 
 /**
@@ -39,7 +40,12 @@ export async function importFromGit(relPath, rev = "HEAD") {
   // 타입 제거를 두 번 할 필요가 없고, 실수로 문자열 치환되는 위험도 없다.
   fs.writeFileSync(tmp, src, "utf8");
   try {
-    return await import(`${tmp}?t=${Date.now()}`);
+    /* vc274 — Windows 경로 버그 수정.
+     *  `${tmp}?t=...` 는 POSIX 에서는 `/a/b.ts?t=1` 이라 ESM 이 그대로 받아들였지만,
+     *  Windows 에서는 `C:\a\b.ts?t=1` 이 되어 ESM 로더가 `c:` 를 URL 스킴으로 오인한다
+     *  (ERR_UNSUPPORTED_ESM_URL_SCHEME: Received protocol 'c:').
+     *  pathToFileURL 로 올바른 file:// URL 을 만든 뒤 캐시버스터를 붙인다. */
+    return await import(`${pathToFileURL(tmp).href}?t=${Date.now()}`);
   } finally {
     try { fs.unlinkSync(tmp); } catch { /* 정리 실패는 테스트 결과에 영향 없음 */ }
   }

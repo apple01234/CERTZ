@@ -27,15 +27,18 @@ const CELL_W = 150.667, CELL_H = 131.111;   // howlrstone1x2 실측(비정수)
 test('바닥 소스 규격이 게임과 일치한다', () => {
   /* AuthoredMapLayers.AUTHORED_GROUND_SOURCES 와 동일해야 한다 —
    *  여기가 틀리면 타일 조각 수(sourceCols)가 어긋나 엉뚱한 프레임이 나온다. */
+  /* vc274 — 지면 5종이 256px 무이음새 타일로 교체됐다(96/64px 얼룩 타일 폐기).
+   *  아래 expected 를 옛 규격에서 갱신한다. 검사 본질(size % unit === 0, 팔레트 일치)은
+   *  그대로 유지하며 기준값만 새 소스에 맞춘다. */
   const expected = {
-    ground_meadow: { size: 64, unit: 32 },
+    ground_meadow: { size: 256, unit: 32 },
     ground_dirt: { size: 84, unit: 28 },
     ground_sand: { size: 84, unit: 28 },
     ground_forest: { size: 96, unit: 32 },
-    ground_slate: { size: 96, unit: 32 },
-    ground_ash: { size: 96, unit: 32 },
-    ground_violet: { size: 96, unit: 32 },
-    ground_cavern: { size: 96, unit: 32 },
+    ground_slate: { size: 256, unit: 32 },
+    ground_ash: { size: 256, unit: 32 },
+    ground_violet: { size: 256, unit: 32 },
+    ground_cavern: { size: 256, unit: 32 },
   };
   assert.deepEqual(GROUND_SOURCES, expected);
   /* 팔레트는 소스 키와 일치 */

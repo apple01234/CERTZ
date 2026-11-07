@@ -1,21 +1,23 @@
 import type Phaser from "phaser";
 import type { RoomLayout } from "../mapgen";
 import { isSolidDecor } from "../decorObjects";
-import { groundAtlasOf, GROUND_ATLAS_FRAMES } from "../tileThemes"; // vc252 (지시 #1) — 바닥 변형 아틀라스
+/* vc259 (지시 #1) — 바닥 변형 아틀라스 폐기: 256px 무이음새 타일로 교체해 불필요. */
 /* vc257 — 에디터와 **동일한** 순수 로직을 공유한다(단일 출처). */
 import * as core from "../tilemapEditorCore";
 
 /** Verified seamless floor textures in assets/ground/manifest.json. Native tiles
- * are sliced/reassembled in the Tilemap, without a raster copy or a prop fallback. */
+ * are sliced/reassembled in the Tilemap, without a raster copy or a prop fallback.
+ * vc259 — 5종을 256px 무이음새 타일로 교체(seam ratio 0.97~1.30).
+ *  unit 은 256/8 = 32px 조각. 32px 격자로 잘라 쓰면 반복 주기가 8칸 = 256px 이 된다. */
 export const AUTHORED_GROUND_SOURCES: Record<string, { size: number; unit: number }> = {
-  ground_meadow: { size: 64, unit: 32 },
+  ground_meadow: { size: 256, unit: 32 },
   ground_dirt: { size: 84, unit: 28 },
   ground_sand: { size: 84, unit: 28 },
   ground_forest: { size: 96, unit: 32 },
-  ground_slate: { size: 96, unit: 32 },
-  ground_ash: { size: 96, unit: 32 },
-  ground_violet: { size: 96, unit: 32 },
-  ground_cavern: { size: 96, unit: 32 },
+  ground_slate: { size: 256, unit: 32 },
+  ground_ash: { size: 256, unit: 32 },
+  ground_violet: { size: 256, unit: 32 },
+  ground_cavern: { size: 256, unit: 32 },
 };
 
 export type AuthoredMapRender = {
@@ -79,12 +81,8 @@ export function renderAuthoredMapLayers(
   for (const role of roles) {
     const { size, unit } = AUTHORED_GROUND_SOURCES[role.key];
     const sourceCols = size / unit;
-    /* vc252 (지시 #1) — 변형 아틀라스가 있으면 **4프레임 tileset** 으로 쓴다.
-     *  같은 팔레트의 회전·반전이라 톤은 그대로면서 반복 주기가 4배로 늘어난다.
-     *  아틀라스는 96×384 로 세로로 4장 이어 붙인 것이므로 tileset 높이 = size*4. */
-    const atlasKey = groundAtlasOf(role.key);
-    const useAtlas = !!atlasKey && scene.textures.exists(atlasKey);
-    const tilesetKey = useAtlas ? (atlasKey as string) : role.key;
+    /* v259 (지시 #1) — 변형 아틀라스 경로 제거. 256px 무이음새 타일로 교체해 불필요.
+     *  (회전 아틀라스는 5색 얼룩의 격자를 못 없앴다 — tileThemes.ts 주석 참조) */
     const cols = Math.ceil(width / unit), rows = Math.ceil(height / unit);
     const data = Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => {
       const x = Math.min(lay.cols - 1, Math.floor((c + 0.5) * unit / lay.cellW));
@@ -92,25 +90,15 @@ export function renderAuthoredMapLayers(
       const cell = y * lay.cols + x;
       const show = role.name === "ground" || (role.name === "paths" ? art.paths[cell] : !lay.open[cell]);
       if (!show) return -1;
-      /* 기본 타일 인덱스(1-based) — 원본 텍스처를 32px 조각 9개로 순환 배치하던 규칙 그대로 */
-      const base = 1 + (r % sourceCols) * sourceCols + c % sourceCols;
-      if (!useAtlas) return base;
-      /* 변형 선택: 셀 좌표 해시로 고른다(연속된 줄무늬가 생기지 않게). */
-      const v = (((c * 7 + r * 13) >>> 0) % 2 === 0)
-        ? (((c * 3 + r * 5) >>> 0) % GROUND_ATLAS_FRAMES)
-        : (((c + r * 3) >>> 0) % GROUND_ATLAS_FRAMES);
-      /* 아틀라스 프레임 레이아웃: 가로 sourceCols 조각 × 세로 GROUND_ATLAS_FRAMES 장.
-       *  프레임 번호 = 행(v) * sourceCols + 열(원본 조각).
-       *  [vc240 수정] 종전엔 원본 조각의 **행**을 버려서(`(base-1)%sourceCols` 만 사용)
-       *  세로 조각이 전부 같은 타일을 가리켰다 — 96×384 아틀라스 36장 중 12장만 쓰였다. */
-      return 1 + (v * sourceCols + Math.floor((base - 1) / sourceCols)) * sourceCols + ((base - 1) % sourceCols);
+      /* 기본 타일 인덱스(1-based) — 원본 텍스처를 unitpx 조각 sourceCols² 개로 순환 배치.
+       *  256px/32px = 8열이므로 64조각을 골고루 돈다(반복 주기가 그만큼 길다). */
+      return 1 + (r % sourceCols) * sourceCols + c % sourceCols;
     }));
     const map = scene.make.tilemap({ data, tileWidth: unit, tileHeight: unit });
     /* [주의] Phaser4 `addTilesetImage(tilesetName, key, tw, th, margin, spacing, gid, tileOffset)` —
      *  8번째 인자는 **tileOffset 객체**이지 프레임 수가 아니다.
-     *  프레임은 Tileset 이 이미지 크기로 `updateTileData` 를 호출해 자동 계산하므로
-     *  (96×384 아틀라스 → 3열 × 12행) 넘길 필요가 없다. */
-    const tiles = map.addTilesetImage(tilesetKey, tilesetKey, unit, unit, 0, 0, 1);
+     *  프레임은 Tileset 이 이미지 크기로 `updateTileData` 를 호출해 자동 계산한다. */
+    const tiles = map.addTilesetImage(role.key, role.key, unit, unit, 0, 0, 1);
     // Phaser4's fifth argument explicitly selects the regular, tintable layer.
     const layer = tiles && map.createLayer(0, tiles, 0, 0, false);
     if (!layer || !("setTint" in layer)) {
