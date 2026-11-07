@@ -1,50 +1,5 @@
 [
  {
-  "src": "sliced/tree-orange",
-  "scaled": 1,
-  "name": "tree_orange",
-  "file": "obj_forest_tree_orange.png",
-  "tag": "big",
-  "w": 65,
-  "h": 80
- },
- {
-  "src": "sliced/tree-pink",
-  "scaled": 1,
-  "name": "tree_pink",
-  "file": "obj_forest_tree_pink.png",
-  "tag": "big",
-  "w": 65,
-  "h": 80
- },
- {
-  "src": "sliced/tree-dried",
-  "scaled": 1,
-  "name": "tree_dried",
-  "file": "obj_forest_tree_dried.png",
-  "tag": "big",
-  "w": 96,
-  "h": 104
- },
- {
-  "src": "sliced/rock-monument",
-  "scaled": 1,
-  "name": "rock_monument",
-  "file": "obj_forest_rock_monument.png",
-  "tag": "big",
-  "w": 100,
-  "h": 89
- },
- {
-  "src": "sliced/rock",
-  "scaled": 4,
-  "name": "rock",
-  "file": "obj_forest_rock.png",
-  "tag": "small",
-  "w": 124,
-  "h": 112
- },
- {
   "src": "sliced/bush",
   "scaled": 4,
   "name": "bush",
@@ -63,6 +18,88 @@
   "h": 108
  },
  {
+  "name": "rock__1",
+  "file": "obj_forest_rock__1.png",
+  "tag": null,
+  "w": 124,
+  "h": 112,
+  "splitFrom": "obj_forest_rock.png"
+ },
+ {
+  "name": "rock__2",
+  "file": "obj_forest_rock__2.png",
+  "tag": null,
+  "w": 12,
+  "h": 12,
+  "splitFrom": "obj_forest_rock.png"
+ },
+ {
+  "name": "rock__3",
+  "file": "obj_forest_rock__3.png",
+  "tag": null,
+  "w": 12,
+  "h": 12,
+  "splitFrom": "obj_forest_rock.png"
+ },
+ {
+  "name": "rock__4",
+  "file": "obj_forest_rock__4.png",
+  "tag": null,
+  "w": 12,
+  "h": 16,
+  "splitFrom": "obj_forest_rock.png"
+ },
+ {
+  "src": "sliced/rock",
+  "scaled": 4,
+  "name": "rock",
+  "file": "obj_forest_rock.png",
+  "tag": "small",
+  "w": 124,
+  "h": 112
+ },
+ {
+  "src": "sliced/rock-monument",
+  "scaled": 1,
+  "name": "rock_monument",
+  "file": "obj_forest_rock_monument.png",
+  "tag": "big",
+  "w": 100,
+  "h": 89
+ },
+ {
+  "name": "sign__1",
+  "file": "obj_forest_sign__1.png",
+  "tag": null,
+  "w": 64,
+  "h": 88,
+  "splitFrom": "obj_forest_sign.png"
+ },
+ {
+  "name": "sign__2",
+  "file": "obj_forest_sign__2.png",
+  "tag": null,
+  "w": 12,
+  "h": 12,
+  "splitFrom": "obj_forest_sign.png"
+ },
+ {
+  "name": "sign__3",
+  "file": "obj_forest_sign__3.png",
+  "tag": null,
+  "w": 12,
+  "h": 12,
+  "splitFrom": "obj_forest_sign.png"
+ },
+ {
+  "name": "sign__4",
+  "file": "obj_forest_sign__4.png",
+  "tag": null,
+  "w": 12,
+  "h": 8,
+  "splitFrom": "obj_forest_sign.png"
+ },
+ {
   "src": "sliced/sign",
   "scaled": 4,
   "name": "sign",
@@ -70,6 +107,33 @@
   "tag": "wall",
   "w": 72,
   "h": 88
+ },
+ {
+  "src": "sliced/tree-dried",
+  "scaled": 1,
+  "name": "tree_dried",
+  "file": "obj_forest_tree_dried.png",
+  "tag": "big",
+  "w": 96,
+  "h": 104
+ },
+ {
+  "src": "sliced/tree-orange",
+  "scaled": 1,
+  "name": "tree_orange",
+  "file": "obj_forest_tree_orange.png",
+  "tag": "big",
+  "w": 65,
+  "h": 80
+ },
+ {
+  "src": "sliced/tree-pink",
+  "scaled": 1,
+  "name": "tree_pink",
+  "file": "obj_forest_tree_pink.png",
+  "tag": "big",
+  "w": 65,
+  "h": 80
  },
  {
   "src": "sliced/trunk",

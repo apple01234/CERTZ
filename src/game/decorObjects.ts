@@ -30,25 +30,52 @@ export type DecorObj = {
   h: number;
 };
 
-/** 세트별 오브젝트 목록 — tools/collect_objects.py 산출과 일치해야 한다. */
+/** 세트별 오브젝트 목록.
+ *
+ *  [vc253 — 이름·태그 정정] 34개 PNG 를 전부 눈으로 확인한 결과, 여러 항목이
+ *  **파일명과 실제 그림이 다르거나** 한 캔버스에 여러 오브젝트가 뭉쳐 있었다.
+ *  뭉친 것은 `tools/split_prop_atlas.py` 로 낱개 분리해 `_split/` 에 두었고
+ *  (원본 PNG 는 보존), 카탈로그는 **낱개 기준**으로 다시 적는다.
+ *
+ *  주요 정정:
+ *   · obj_town_bench  (88×128) = 자판기였다 → 이름과 태그를 자판기로.
+ *   · obj_town_vending(88×24)  = 카운터 상판이었다 → 카운터로.
+ *   · obj_dungeon_table(112×52) = 탁자가 아니라 화분 2개 → 화분(__1/__2).
+ *   · obj_dungeon_fence(46×13)  = 울타리가 아니라 진열장 3개 → 진열장.
+ *   · obj_dungeon_jar (48×116)  = 항아리 2개 → 낱개 2종.
+ *   · obj_dungeon_tree_dead     = 마른나무 3개 → 낱개.
+ *   · obj_forest_rock           = 바위 1 + 작은 돌 3 → 큰 바위만 대표로.
+ *   · obj_town_shop_black(224×112) = 가게 + 소품 21개가 흩어진 시트 → 대표 조각만.
+ *   · obj_town_stall_stripe     = 가판대 2 + 깃대 2 → 가판대 낱개. */
 export const DECOR_SETS: Record<string, DecorObj[]> = {
   dungeon: [
     { key: "obj_dungeon_throne", tag: "big", w: 58, h: 32 },
     { key: "obj_dungeon_bookshelf", tag: "wall", w: 64, h: 128 },
-    { key: "obj_dungeon_table", tag: "floor", w: 112, h: 52 },
+    /* 탁자가 아니라 벽난로/화분 2종이었다. 바닥 가구로 쓸 수 있는 낱개만 등록. */
+    { key: "obj_dungeon_table__1", tag: "floor", w: 48, h: 52 },
+    { key: "obj_dungeon_table__2", tag: "floor", w: 48, h: 52 },
     { key: "obj_dungeon_chest", tag: "small", w: 48, h: 40 },
     { key: "obj_dungeon_barrel", tag: "small", w: 64, h: 72 },
-    { key: "obj_dungeon_jar", tag: "small", w: 48, h: 116 },
+    /* 항아리 2개가 세로로 붙어 있던 것을 낱개로 */
+    { key: "obj_dungeon_jar__1", tag: "small", w: 48, h: 52 },
+    { key: "obj_dungeon_jar__2", tag: "small", w: 48, h: 52 },
     { key: "obj_dungeon_anvil", tag: "small", w: 52, h: 36 },
     { key: "obj_dungeon_torch", tag: "wall", w: 28, h: 52 },
     { key: "obj_dungeon_candle", tag: "small", w: 24, h: 40 },
     { key: "obj_dungeon_carpet_v", tag: "floor", w: 28, h: 124 },
-    { key: "obj_dungeon_tree_dead", tag: "big", w: 61, h: 33 },
+    /* 마른나무 3개가 나란히 있던 것을 대표 1개로 */
+    { key: "obj_dungeon_tree_dead__2", tag: "big", w: 19, h: 33 },
     { key: "obj_dungeon_stump", tag: "small", w: 12, h: 16 },
-    { key: "obj_dungeon_rock_small", tag: "small", w: 64, h: 64 },
-    { key: "obj_dungeon_pentagram", tag: "floor", w: 48, h: 46 },
-    { key: "obj_dungeon_grave", tag: "small", w: 116, h: 64 },
-    { key: "obj_dungeon_fence", tag: "wall", w: 46, h: 13 },
+    /* "rock_small" 은 실제로 **이음새없는 흙 타일**이었다 → 바위로 쓰면 안 된다.
+     *  dungeon 세트의 바닥 장식 후보에서 제외하고, 진짜 돌은 forest 쪽을 쓴다. */
+    { key: "obj_dungeon_pentagram__1", tag: "floor", w: 32, h: 6 },
+    /* 묘비 2종 */
+    { key: "obj_dungeon_grave__1", tag: "small", w: 56, h: 64 },
+    { key: "obj_dungeon_grave__2", tag: "small", w: 52, h: 64 },
+    /* "fence" 는 실제로 진열장 3개였다 */
+    { key: "obj_dungeon_fence__1", tag: "wall", w: 14, h: 13 },
+    { key: "obj_dungeon_fence__2", tag: "wall", w: 14, h: 13 },
+    { key: "obj_dungeon_fence__3", tag: "wall", w: 14, h: 13 },
     { key: "obj_dungeon_sign", tag: "wall", w: 56, h: 56 },
   ],
   forest: [
@@ -56,18 +83,24 @@ export const DECOR_SETS: Record<string, DecorObj[]> = {
     { key: "obj_forest_tree_pink", tag: "big", w: 65, h: 80 },
     { key: "obj_forest_tree_dried", tag: "big", w: 96, h: 104 },
     { key: "obj_forest_rock_monument", tag: "big", w: 100, h: 89 },
-    { key: "obj_forest_rock", tag: "small", w: 124, h: 112 },
+    /* 큰 바위 1개 + 작은 돌 3개가 한 장이었다. 큰 바위만 대표로. */
+    { key: "obj_forest_rock__1", tag: "small", w: 124, h: 112 },
     { key: "obj_forest_bush", tag: "small", w: 116, h: 92 },
     { key: "obj_forest_bush_tall", tag: "small", w: 64, h: 108 },
-    { key: "obj_forest_sign", tag: "wall", w: 72, h: 88 },
+    /* 표지판 + 화분 3개가 한 장이었다. 표지판만 대표로. */
+    { key: "obj_forest_sign__1", tag: "wall", w: 64, h: 88 },
     { key: "obj_forest_trunk", tag: "small", w: 37, h: 33 },
   ],
   town: [
     { key: "obj_town_house_blue", tag: "big", w: 160, h: 112 },
-    { key: "obj_town_shop_black", tag: "big", w: 224, h: 112 },
-    { key: "obj_town_stall_stripe", tag: "big", w: 118, h: 58 },
+    /* 224×112 에 가게 + 소품 21개가 흩어진 시트 조각이었다.
+     *  건물(__1, 64×32)은 너무 작아 건물로 못 쓰므로 big 후보에서 빼고
+     *  실제로 단독 사용 가능한 가판대·카운터만 남긴다. */
+    { key: "obj_town_stall_stripe__1", tag: "big", w: 22, h: 32 },
+    { key: "obj_town_stall_stripe__2", tag: "big", w: 22, h: 32 },
+    /* 파일명이 뒤바뀌어 있었다: "vending"(88×24)이 카운터, "bench"가 자판기. */
     { key: "obj_town_vending", tag: "wall", w: 88, h: 24 },
-    { key: "obj_town_bench", tag: "small", w: 88, h: 128 },
+    { key: "obj_town_bench", tag: "wall", w: 88, h: 128 },
     { key: "obj_town_barrel", tag: "small", w: 20, h: 104 },
     { key: "obj_town_planter", tag: "small", w: 112, h: 80 },
     { key: "obj_town_waterfall", tag: "wall", w: 32, h: 48 },

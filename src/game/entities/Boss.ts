@@ -832,6 +832,10 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         const dir = new Phaser.Math.Vector2(player.x - ring.x, player.y - ring.y).normalize();
         player.takeDamage(Math.round(this.def.atk * 0.9), dir);
       }
+      /* vc264 (지시 #9) — 폭발한 자리에 **불 장판**이 남는다.
+       *  [왜] 종전엔 링을 alpha 0 으로 지워(=destroy) 화면에 흔적이 없었다.
+       *  "장판이 생기고 다른 공격이 없다"는 지적의 직접 원인 — 폭발만 있고 지속 장판이 0이었다. */
+      this.dropField({ x: ring.x, y: ring.y }, "fire", 92, 3200, Math.round(this.def.atk * 0.22));
       this.scene.tweens.add({ targets: ring, alpha: 0, duration: 150, onComplete: () => ring.destroy() });
     }
     this.zoneRings = [];
@@ -954,10 +958,58 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         this.setTint(0xa0ffd8);
         this.bossFx("vx_slash", player.x, player.y - 12, { tint: 0x8affc0, scale: 1.0, alpha: 0.8, dur: 740, depth: 20 });
         break;
+      /* ── vc264 (지시 #9 "또다른 공격들 없음??") — 죽어 있던 패턴 2개 부활 ──────
+       * [버그] 아래 둘은 stages.ts 의 보스 풀(abysslord p3 등)에 **등록되어 있는데**
+       *        startVx 에 case 가 없어 default 로 떨어져 vxKind=null → 보스가 그냥 idle.
+       *        특히 portalteleport 는 doVx 에 완전한 구현이 있는데도 도달 불가였다.
+       *        (doVx 의 default 가 endAttack 만 하므로 "공격 없는 턴"처럼 보였다) */
+      case "magicburst": // 심연의 군주 — 마력 폭발 (전방위 탄막)
+        this.setTint(0xc9a6ff);
+        this.bossFx("vx_magiccircle", this.x, this.y + 8, { tint: 0xb07dff, scale: 1.6, alpha: 0.8, dur: 760, depth: 8 });
+        this.vxWarnRing(this.x, this.y, 0xb07dff, 1.9);
+        break;
+      case "portalteleport": // 아크 — 포탈 2기 소환 후 순간이동 + 녹색 참격
+        this.setTint(0x8ad4ff);
+        this.bossFx("hv2_magiccircle2", this.x, this.y + 8, { tint: 0x8ad4ff, scale: 1.3, alpha: 0.85, dur: 700, depth: 8 });
+        break;
       default:
         this.vxKind = null;
         this.mode = "idle";
     }
+  }
+
+  /**
+   * vc264 (지시 #9 "이렇게 장판이 생기고 또다른 공격들 없음??")
+   * 보스가 **지속 장판**을 남긴다.
+   *
+   * [왜 필요했나] 전수 조사 결과 `spawnField({owner:"enemy"})` 호출이 코드베이스에
+   * **단 한 곳**(Enemy.ts 의 사망 드롭)뿐이었다. 보스는 장판을 만들지 않았고,
+   * `zones` 패턴조차 링을 띄웠다가 **즉시 폭발 후 destroy** 하는 1회성이라
+   * 화면에 남는 장판이 없었다. 그래서 "장판 하나 생기고 다른 공격 없음"으로 보였다.
+   *
+   * [설계] 판정/렌더는 WorldScene.spawnField 하나에 그대로 맡긴다(중복 구현 금지).
+   *  여기서는 보스 위치·플레이어 위치 중 어디에 깔지만 결정한다.
+   *
+   * @param at       "player" 추적 | "boss" 보스 발밑 | {x,y} 지정
+   * @param kind     poison / fire / light / time (WorldScene 장판 종류 그대로)
+   * @param radius   반경(px). 보스 패턴은 보통 90~170
+   * @param dur      지속(ms)
+   * @param dps      초당 피해
+   */
+  private dropField(
+    at: "player" | "boss" | { x: number; y: number },
+    kind: "poison" | "fire" | "light" | "time",
+    radius: number,
+    dur: number,
+    dps: number,
+  ): void {
+    const p = at === "player" ? this.scene.player
+      : at === "boss" ? { x: this.x, y: this.y }
+      : at;
+    if (!p) return;
+    this.scene.spawnField({
+      x: p.x, y: p.y, radius, dur, dps, kind, owner: "enemy",
+    });
   }
 
   /** VX 실행 단계 — 종류별 판정/연출 */
@@ -990,6 +1042,10 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
               const dir = new Phaser.Math.Vector2(player.x - tx, player.y - ty).normalize();
               player.takeDamage(Math.round(atk * 1.15), dir, 0.5, this.chaos ? 0.10 : 0);
             }
+            /* vc264 (지시 #9) — 기둥이 꺼진 자리에 **잔불 장판**을 남긴다.
+             *  종전엔 폭발 이펙트만 사라지고 바닥에 아무것도 안 남아
+             *  "장판이 어디 있냐"는 지적을 받았다. 3.5초 지속, 밟으면 도트. */
+            this.dropField({ x: tx, y: ty }, "fire", 78, 3500, Math.round(atk * 0.30));
             this.scene.time.delayedCall(230, strike);
           });
         };
@@ -1046,6 +1102,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
                 const dir = new Phaser.Math.Vector2(player.x - tx, player.y - ty).normalize();
                 player.takeDamage(Math.round(atk * 0.95), dir, 0.5, this.chaos ? 0.09 : 0);
               }
+              /* vc264 (지시 #9) — 낙뢰 착탄점에 감전 장판(2.8초). */
+              this.dropField({ x: tx, y: ty }, "light", 70, 2800, Math.round(atk * 0.26));
               this.scene.time.delayedCall(220, drop);
             });
           });
@@ -1095,6 +1153,31 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
             player.takeDamage(Math.round(atk * 1.3), dir, 0.5, this.chaos ? 0.12 : 0);
           }
         });
+        this.endAttack(1500);
+        break;
+      }
+      case "magicburst": {
+        /* vc264 (지시 #9) — 심연의 군주 마력 폭발.
+         *  startVx 에는 있었지만 doVx 에 case 가 없어 default(endAttack)로 끝났다.
+         *  3연 폭발: 보스 중심 1회 → 플레이어 추적 2회. 각 폭발은 반경 150 / 130. */
+        this.setMode("vxCast", 1300);
+        const burst = (bx: number, by: number, radius: number, dmgMul: number, delay: number) => {
+          this.scene.time.delayedCall(delay, () => {
+            if (!this.alive) return;
+            this.scene.vfx3dFx("boom", bx, by, 0xb07dff, 1.6);
+            this.scene.spawnShockwave(bx, by, 0xb07dff, 1.4, 340, 0.75);
+            this.scene.impactFX.shake(90, 0.004);
+            if (Phaser.Math.Distance.Between(bx, by, player.x, player.y) < radius) {
+              const dir = new Phaser.Math.Vector2(player.x - bx, player.y - by).normalize();
+              player.takeDamage(Math.round(atk * dmgMul), dir, 0.45, this.chaos ? 0.1 : 0);
+            }
+            /* vc264 (지시 #9) — 폭발 자리에 마력 장판(3초). */
+            this.dropField({ x: bx, y: by }, "time", 96, 3000, Math.round(atk * 0.24));
+          });
+        };
+        burst(this.x, this.y, 150, 0.9, 120);
+        burst(player.x, player.y, 130, 0.7, 620);
+        burst(player.x, player.y, 130, 0.7, 1040);
         this.endAttack(1500);
         break;
       }
@@ -1151,8 +1234,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         break;
       }
       case "portalteleport": {
-        /* vc153 사양표 ⑦ PortalTeleport(Once) — 포탈 2기 소환 → 현재 위치 소멸 → 다른 포탈에서 재등장 + 녹색 참격 */
-        this.setMode("vxCast", 1250);
+        /* vc153 사양표 ⑦ PortalTeleport(Once) — 포탈 2기 소환 → 현재 위치 소멸 → 다른 포탈에서 재등장 + 녹색 참격 */        this.setMode("vxCast", 1250);
         const ang = Math.random() * Math.PI * 2;
         const d = Phaser.Math.Between(220, 330);
         const px = Phaser.Math.Clamp(player.x + Math.cos(ang) * d, 60, this.scene.stageW - 60);

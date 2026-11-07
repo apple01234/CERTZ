@@ -3362,13 +3362,14 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
-    /* vc235 — 장식 오브젝트(왕좌·책장·항아리·횃불·천막·가구).
-     *  [왜 추가했나] 위의 나무·바위·꽃은 전부 단순 텍스처(tree/rock/flower_*)라
-     *  맵이 "같은 바닥이 반복되는" 화면이었다. `_assets_in` 타일셋에서 뽑은
-     *  실제 오브젝트는 배치 코드가 없어 한 번도 화면에 나오지 않았다.
-     *  [예산] vc232 에서 사용자가 "쓸데없는 오브젝트 줄이기"를 지적했으므로
-     *  챕터별 상한(DECOR_BUDGET)을 두고, 통행로를 비우는 기존 규칙을 그대로 쓴다. */
-    this.placeDecorObjects(ch, rng, blocked, freeAt, take);
+    /* vc264 (지시 #8 "이 타일맵 오브젝트 에셋 세트 쓰지마 이 게임이랑 안어울림") —
+     *  `_assets_in` 타일셋에서 뽑은 오브젝트(자판기·항아리·오각별·진열장 등)는
+     *  **이 게임의 아트 톤과 맞지 않는다**. 초록 잔디 위에 자판기와 오각별이
+     *  뜬 채로 놓여 "다른 게임 에셋을 붙여넣은" 화면이 됐다.
+     *
+     *  → 배치를 끈다. 함수(placeDecorObjects)는 남겨 두되 호출하지 않는다.
+     *    되살릴 일이 있으면 이 줄 하나만 되돌리면 된다.
+     *    (나무·바위·꽃 스캐터는 아래에서 계속 그려지므로 맵이 비지는 않는다) */
 
     /* v1.4.11 — 지면 변형 스캐터 (tx_* 전환타일 세트 활성화 — 로드만 되고 배치 0이던 45종).
      *  v3.0.13 민원(타 세트 색상 사각형 뒤죽박죽)과 달리 같은 세트의 pvar/gvar 변형만
@@ -4488,7 +4489,20 @@ export class WorldScene extends Phaser.Scene {
         })
         .setOrigin(0.5)
         .setDepth(this.yDepthFor(v.y));
-      this.interactables.push({ x: v.x, y: v.y, kind: "talk", dlg: v.dlg, npcId: v.dlg, label: `${v.name}와 대화` });
+      /* vc264 (지시 #5 "초상화와 NPC의 모습이 다른 버그") — 초상화를 **스프라이트에서 직접** 유도한다.
+       *
+       * [원인] 종전엔 npcId 에 v.dlg(대화 키)를 넣었다. 초상화는 그 키가 아니라
+       *  DIALOGUES[dlg].speaker **문자열**로 다시 조회됐고, 스프라이트와 초상화가
+       *  서로 다른 경로로 해석돼 어긋났다:
+       *    · 주민/마을 아이가 둘 다 speaker "마을 주민" 을 써서 마을 아이가 남캐 초상화를 받았다
+       *    · 마을 아이용 초상화 키("마을 아이")는 대사 데이터에 없어 영원히 죽은 항목이었다
+       *  [해결] 화면에 실제로 그린 텍스처(bodyTex)를 초상화 키로 넘긴다. 그림과 초상화가
+       *  같은 출처를 쓰므로 어긋날 수가 없다. npcportrait/_map.json 은 npcbody_* 를
+       *  정확히 crop 한 파일이라 bodyTex 로 바로 찾힌다. */
+      this.interactables.push({
+        x: v.x, y: v.y, kind: "talk", dlg: v.dlg, npcId: bodyTex,
+        label: `${v.name}와 대화`,
+      });
     }
 
     // 직업 교관 카이엔 (v1.9 — 전직 NPC, E키 상담 후 전직 패널 열림) — 전직관 건물 앞 배치
@@ -5527,8 +5541,11 @@ export class WorldScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(this.yDepthFor(py));
-    /* vc147 (#30) — NPC 반복 의뢰: fieldreq|프로토콜로 대화창에서 수주/보고 */
-    this.interactables.push({ x: px, y: py, kind: "talk", dlg: `fieldreq|${s.dlg}|${s.name}|${encodeURIComponent(s.story)}`, npcId: s.dlg, label: `${s.name}와 대화` });
+    /* vc147 (#30) — NPC 반복 의뢰: fieldreq|프로토콜로 대화창에서 수주/보고
+     * vc264 (지시 #5) — npcId 를 대화키(s.dlg)가 아니라 **실제로 그린 텍스처**(bodyTex2)로 둔다.
+     *  대화키를 넣으면 초상화가 화자명 문자열로 다시 조회돼 스프라이트와 어긋난다
+     *  (챕터 마을 NPC 38명 전원이 초상화 없는 화자명을 써서 그림과 다른 얼굴이 떴다). */
+    this.interactables.push({ x: px, y: py, kind: "talk", dlg: `fieldreq|${s.dlg}|${s.name}|${encodeURIComponent(s.story)}`, npcId: bodyTex2, label: `${s.name}와 대화` });
     this.fieldReqNpcPos = { x: px, y: py };
     this.refreshFieldReqLabel();
   }
@@ -17597,7 +17614,15 @@ export class WorldScene extends Phaser.Scene {
       const it = this.interactables.find((q) => q.npcId === npcId);
       if (it) this.emote("excl", it.x, it.y - 44);
     }
-    EventBus.emit("dialogue:show", d);
+    /* vc264 (지시 #5 "초상화와 NPC의 모습이 다른 버그") — 초상화를 npcId 로 **못박는다**.
+     *
+     * [원인] 종전엔 speaker 문자열로만 초상화를 찾았다. 스프라이트는 npcId/텍스처로,
+     *  초상화는 화자명으로 각각 독립 해석돼 서로 어긋났다(마을 주민/마을 아이가 같은
+     *  speaker 를 써서 아이가 남캐 초상화를 받는 등).
+     * [해결] 호출자가 넘긴 npcId(=화면에 그린 실제 텍스처 키)를 portrait 로 실어 보낸다.
+     *  DialogueBox 는 portraitId 를 최우선으로 쓰므로 그림과 초상화가 같은 출처가 된다.
+     *  npcId 가 없으면 종전처럼 speaker 기반 폴백을 쓴다(회귀 없음). */
+    EventBus.emit("dialogue:show", npcId ? { ...d, portrait: npcId } : d);
   }
 
   /** v2.3 (지시 #1) — 스토리 대사 1회 재생: 이미 본 대사(세이브 기록)는 스킵.

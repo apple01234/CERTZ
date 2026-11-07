@@ -20,12 +20,30 @@ import {
 const root = new URL('../', import.meta.url);
 let checked = 0;
 
+/* vc253 — 낱개 분리된 조각(`foo__2`)은 `_split/` 아래에 있다.
+ *  tools/split_prop_atlas.py 가 한 PNG 에 뭉친 여러 오브젝트를 잘라낸 결과다.
+ *  BootScene 로더와 **같은 규칙**이어야 한다(경로가 갈라지면 __MISSING 글리치). */
+const objPath = (setName, key) =>
+  new URL(
+    /__\d+$/.test(key)
+      ? `public/assets/objects/_split/${setName}/${key}.png`
+      : `public/assets/objects/${setName}/${key}.png`,
+    root,
+  );
+
 /* ── 1. 카탈로그 ↔ 실제 파일 ─────────────────────────────────────────── */
 for (const [setName, list] of Object.entries(DECOR_SETS)) {
   assert.ok(list.length > 0, `${setName}: 오브젝트가 비어 있으면 배치가 무의미하다`);
   for (const o of list) {
-    const p = new URL(`public/assets/objects/${setName}/${o.key}.png`, root);
+    const p = objPath(setName, o.key);
     assert.ok(fs.existsSync(p), `${o.key}: PNG 가 없다 (${setName})`);
+    /* 크기 정보가 실제 PNG 와 일치해야 한다 — 어긋나면 에디터 프리뷰·배율 계산이
+     *  틀려 프롭이 "잘린 것처럼" 보인다(vc253 에서 21개가 어긋나 있던 것을 정정). */
+    const buf = fs.readFileSync(p);
+    const realW = buf.readUInt32BE(16);
+    const realH = buf.readUInt32BE(20);
+    assert.equal(o.w, realW, `${o.key}: w ${o.w} ≠ 실제 ${realW}`);
+    assert.equal(o.h, realH, `${o.key}: h ${o.h} ≠ 실제 ${realH}`);
     assert.ok(o.w > 0 && o.h > 0, `${o.key}: 크기 정보 필요`);
     assert.ok(['wall', 'floor', 'big', 'small'].includes(o.tag), `${o.key}: 태그 ${o.tag} 는 배치 규칙에 없다`);
     checked++;
@@ -81,14 +99,19 @@ for (const [setName, b] of Object.entries(DECOR_BUDGET)) {
 /* ── 7. WorldScene 이 배치를 호출하는가 ─────────────────────────────── */
 {
   const ws = fs.readFileSync(new URL('src/game/scenes/WorldScene.ts', root), 'utf8');
-  assert.ok(ws.includes('placeDecorObjects('), 'WorldScene 에 오브젝트 배치 호출이 필요하다');
-  /* vc238 — 배치 호출이 장식 점유 검사(freeAt/take)를 함께 넘긴다.
-   *  나무·바위·꽃과 겹치지 않게 하는 인자이므로, 인자가 빠지면 "아무렇게나 뿌린" 맵이
-   *  재발한다. 전체 인자 목록을 고정하지 않고(시그니처 진화 허용) 필수 인자만 확인한다. */
-  assert.ok(/this\.placeDecorObjects\(ch, rng, blocked,/.test(ws), '배치 호출이 placeDecor 안에 있어야 한다');
+  /* vc264 (지시 #8 "이 타일맵 오브젝트 에셋 세트 쓰지마 이 게임이랑 안어울림") —
+   *  배치 호출을 **의도적으로 끊었다**. 자판기·항아리·오각별이 초록 잔디 위에
+   *  떠 있어 다른 게임 에셋을 붙여넣은 화면이 됐기 때문.
+   *  함수(placeDecorObjects)는 남겨 두되 호출하지 않는다(되살릴 때 한 줄만 복구).
+   *  그래서 여기서는 "호출이 없다"를 계약으로 고정하고, 나무·바위·꽃 스캐터가
+   *  계속 도는지는 별도로 확인한다(맵이 비지 않아야 한다). */
+  assert.ok(!/^\s*this\.placeDecorObjects\(/m.test(ws),
+    'vc264 지시 #8 — 오브젝트 세트 배치 호출은 꺼져 있어야 한다');
+  assert.ok(ws.includes('private placeDecorObjects('),
+    '함수는 남겨 둔다(지시가 바뀌면 호출만 되살린다)');
+  /* 맵이 비지 않도록 자연 스캐터(나무·바위·꽃)는 살아 있어야 한다 */
   assert.ok(/freeAt/.test(ws), 'vc238 — 장식 겹침 방지용 freeAt 점유 검사가 필요하다');
   assert.ok(/take\(x, y\)/.test(ws), 'vc238 — 배치한 자리를 점유 목록에 기록해야 한다');
-  assert.ok(ws.includes('this.textures.exists(o.key)'), '로드 누락 시 __MISSING 글리치를 막는 가드가 필요하다');
 }
 
 /* ── 8. 태그별 후보가 태그 규칙과 맞는가 ────────────────────────────── */

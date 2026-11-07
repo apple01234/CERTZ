@@ -39,7 +39,8 @@ export type MapOverride = {
   path: string;
   structure: string;
   structureTint: number;
-  props?: { key: string; cell: number; x: number; y: number; scale: number }[];
+  /* vc253 — solid:true 면 그 셀이 막힌다. 생략하면 순수 장식(충돌 없음). */
+  props?: { key: string; cell: number; x: number; y: number; scale: number; solid?: boolean }[];
 };
 
 /** seed → 오버라이드. 부팅 시 한 번 채워지고 이후 동기 조회된다. */
@@ -112,10 +113,43 @@ export function overrideToLayout(seed: string): { layout: RoomLayout; ok: boolea
     && entry >= 0 && exit >= 0 && entry < open.length && exit < open.length
     && open[entry] && open[exit] && entry !== exit;
 
+  /* ── vc253: props 를 **실제로 넘긴다** ─────────────────────────────────
+   *  [버그] 종전엔 이 블록이 없어서 `doc.props` 를 읽지도 않고 버렸다.
+   *  그래서 에디터에서 프롭을 아무리 배치해도 게임에는 프리셋 해시 배치만 나왔다.
+   *  유저 지적 "타일맵을 코드로 자동배치 하지말고 파일기반으로" 의 직접 원인.
+   *
+   *  [좌표] 에디터는 cell(인덱스)만 저장하는 경우와 x/y 를 저장하는 경우가 둘 다 있다.
+   *  x/y 가 유효하면 그걸 쓰고, 아니면 cell 로부터 격자 중앙을 계산한다.
+   *  [solid] 파일에 solid 가 있으면 그 셀을 막는다. 없으면 순수 장식(충돌 없음) —
+   *  종전 isSolidDecor 로 자동 충돌체를 붙이던 동작은 파일 기반에서 쓰지 않는다
+   *  (그림과 판정이 어긋나 "안 보이는데 막히는 벽"이 생기는 원인이었다). */
+  const cw = Number(doc.cellW) || 144;
+  const chh = Number(doc.cellH) || 128;
+  const placed: NonNullable<NonNullable<RoomLayout["authored"]>["props"]> = [];
+  if (Array.isArray(doc.props)) {
+    for (const p of doc.props) {
+      if (!p || typeof p.key !== "string") continue;
+      const cell = Number(p.cell);
+      if (!Number.isInteger(cell) || cell < 0 || cell >= open.length) continue;
+      const solid = (p as { solid?: boolean }).solid === true;
+      if (solid) open[cell] = false;
+      const px = Number(p.x), py = Number(p.y);
+      const col = cell % cols, row = Math.floor(cell / cols);
+      placed.push({
+        key: p.key,
+        cell,
+        x: Number.isFinite(px) && px > 0 ? px : (col + 0.5) * cw,
+        y: Number.isFinite(py) && py > 0 ? py : (row + 1) * chh,
+        scale: Number(p.scale) || 1,
+        solid,
+      });
+    }
+  }
+
   const layout: RoomLayout = {
     cols, rows,
-    cellW: Number(doc.cellW) || 144,
-    cellH: Number(doc.cellH) || 128,
+    cellW: cw,
+    cellH: chh,
     open,
     entry: ok ? entry : 0,
     exit: ok ? exit : 0,
@@ -127,6 +161,7 @@ export function overrideToLayout(seed: string): { layout: RoomLayout; ok: boolea
       path: doc.path || "ground_slate",
       structure: doc.structure || "ground_cavern",
       structureTint: Number(doc.structureTint) || 0x967958,
+      ...(placed.length > 0 ? { props: placed } : {}),
     },
   };
   return { layout, ok };

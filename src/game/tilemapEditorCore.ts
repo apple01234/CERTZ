@@ -114,65 +114,95 @@ export function buildLayerData(lay: {
 
 /* ─────────────────────────── 프롭 스냅 ─────────────────────────── */
 
+/** 프롭 키 — public/assets/objects 아래 실제 PNG 와 **1:1** 이어야 한다.
+ *  vc253: tools/split_prop_atlas.py 로 낱개 분리한 조각(`__1`, `__2` …)도 포함한다. */
 export type PropKey =
-  | "obj_dungeon_anvil" | "obj_dungeon_barrel" | "obj_dungeon_bookshelf" | "obj_dungeon_candle"
-  | "obj_dungeon_carpet_v" | "obj_dungeon_chest" | "obj_dungeon_fence" | "obj_dungeon_grave"
-  | "obj_dungeon_jar" | "obj_dungeon_pentagram" | "obj_dungeon_rock_small" | "obj_dungeon_sign"
-  | "obj_dungeon_stump" | "obj_dungeon_table" | "obj_dungeon_throne" | "obj_dungeon_torch"
-  | "obj_dungeon_tree_dead" | "obj_forest_bush" | "obj_forest_bush_tall" | "obj_forest_rock"
-  | "obj_forest_rock_monument" | "obj_forest_sign" | "obj_forest_tree_dried"
-  | "obj_forest_tree_orange" | "obj_forest_tree_pink" | "obj_forest_trunk"
-  | "obj_town_barrel" | "obj_town_bench" | "obj_town_house_blue" | "obj_town_planter"
-  | "obj_town_shop_black" | "obj_town_stall_stripe" | "obj_town_vending" | "obj_town_waterfall";
+  | "obj_dungeon_throne"
+  | "obj_dungeon_bookshelf"
+  | "obj_dungeon_table__1"
+  | "obj_dungeon_table__2"
+  | "obj_dungeon_chest"
+  | "obj_dungeon_barrel"
+  | "obj_dungeon_jar__1"
+  | "obj_dungeon_jar__2"
+  | "obj_dungeon_anvil"
+  | "obj_dungeon_torch"
+  | "obj_dungeon_candle"
+  | "obj_dungeon_carpet_v"
+  | "obj_dungeon_tree_dead__2"
+  | "obj_dungeon_stump"
+  | "obj_dungeon_pentagram__1"
+  | "obj_dungeon_grave__1"
+  | "obj_dungeon_grave__2"
+  | "obj_dungeon_fence__1"
+  | "obj_dungeon_fence__2"
+  | "obj_dungeon_fence__3"
+  | "obj_dungeon_sign"
+  | "obj_forest_tree_orange"
+  | "obj_forest_tree_pink"
+  | "obj_forest_tree_dried"
+  | "obj_forest_rock_monument"
+  | "obj_forest_rock__1"
+  | "obj_forest_bush"
+  | "obj_forest_bush_tall"
+  | "obj_forest_sign__1"
+  | "obj_forest_trunk"
+  | "obj_town_house_blue"
+  | "obj_town_stall_stripe__1"
+  | "obj_town_stall_stripe__2"
+  | "obj_town_vending"
+  | "obj_town_bench"
+  | "obj_town_barrel"
+  | "obj_town_planter"
+  | "obj_town_waterfall";
 
-/** 프롭별 최대 점유 칸수 — 큰 구조물이 통로를 덮지 않게 제한.
- *  `AuthoredMapLayers.snapPropScale` 의 MAX_CELLS 와 **동일**해야 한다.
- *
- *  [vc241 지시 #1 "오브젝트 짤림"] 종전엔 7개만 등록하고 나머지는 기본값 **1칸**이었다.
- *  실제 프롭 크기를 재보니 1칸(≈144×128)을 넘는 것이 수두룩했다:
- *    obj_town_shop_black 224×112 · obj_forest_rock 124×112 · obj_town_bench 88×128
- *    obj_dungeon_grave 116×64 · obj_dungeon_jar 48×116 · obj_forest_bush_tall 64×108
- *  1칸으로 눌러 그리면 세로/가로가 강제로 줄어 **찍힌 것처럼** 보인다(비율 왜곡).
- *  → 실제 크기에 맞는 상한을 준다. 큰 것은 2칸까지 허용하되, 통행은 여전히 막지 않는다
- *    (경계 장식은 `!isSolidDecor` 화이트리스트라 충돌체가 없다). */
+/** 프롭별 최대 점유 칸수 — 실제 PNG 크기에서 계산한다.
+ *  vc253: 아래 값들은 tools/split_prop_atlas.py + PNG 헤더로 자동 산출했다.
+ *  셀 = 144×128, 큰 축 비율을 0.5칸 단위로 올림(최소 0.5, 최대 2).
+ *  손으로 고칠 때는 **파일 크기를 먼저 확인**하고 여기를 맞춘다. */
 export const PROP_MAX_CELLS: Record<string, number> = {
-  /* 기존 */
-  obj_dungeon_bookshelf: 1,
-  obj_forest_tree_pink: 1.5,
-  obj_town_house_blue: 2,
-  obj_forest_rock_monument: 1,
-  obj_dungeon_torch: 0.5,
-  obj_dungeon_chest: 0.5,
-  obj_dungeon_anvil: 0.5,
-  /* vc241 — 1칸을 넘는 프롭. 원본 비율을 유지할 상한. */
-  obj_town_shop_black: 2,
-  obj_town_stall_stripe: 1.5,
-  obj_town_bench: 1,
-  obj_town_planter: 1.5,
-  obj_town_barrel: 1,
-  obj_forest_rock: 1.5,
-  obj_forest_bush: 1.5,
-  obj_forest_bush_tall: 1.5,
-  obj_forest_tree_dried: 1.5,
-  obj_forest_tree_orange: 1,
-  obj_forest_sign: 1,
-  obj_dungeon_grave: 1.5,
-  obj_dungeon_jar: 1,
-  obj_dungeon_table: 1.5,
-  obj_dungeon_carpet_v: 1.5,
-  obj_dungeon_barrel: 1,
-  obj_dungeon_sign: 0.5,
-  obj_dungeon_rock_small: 0.5,
-  obj_dungeon_stump: 0.5,
-  obj_dungeon_pentagram: 0.5,
+/* dungeon */
   obj_dungeon_throne: 0.5,
-  obj_dungeon_fence: 0.5,
-  obj_dungeon_tree_dead: 0.5,
+  obj_dungeon_bookshelf: 1,
+  obj_dungeon_table__1: 0.5,
+  obj_dungeon_table__2: 0.5,
+  obj_dungeon_chest: 0.5,
+  obj_dungeon_barrel: 1,
+  obj_dungeon_jar__1: 0.5,
+  obj_dungeon_jar__2: 0.5,
+  obj_dungeon_anvil: 0.5,
+  obj_dungeon_torch: 0.5,
   obj_dungeon_candle: 0.5,
+  obj_dungeon_carpet_v: 1,
+  obj_dungeon_tree_dead__2: 0.5,
+  obj_dungeon_stump: 0.5,
+  obj_dungeon_pentagram__1: 0.5,
+  obj_dungeon_grave__1: 0.5,
+  obj_dungeon_grave__2: 0.5,
+  obj_dungeon_fence__1: 0.5,
+  obj_dungeon_fence__2: 0.5,
+  obj_dungeon_fence__3: 0.5,
+  obj_dungeon_sign: 0.5,
+  /* forest */
+  obj_forest_tree_orange: 1,
+  obj_forest_tree_pink: 1,
+  obj_forest_tree_dried: 1,
+  obj_forest_rock_monument: 1,
+  obj_forest_rock__1: 1,
+  obj_forest_bush: 1,
+  obj_forest_bush_tall: 1,
+  obj_forest_sign__1: 1,
   obj_forest_trunk: 0.5,
+  /* town */
+  obj_town_house_blue: 1.5,
+  obj_town_stall_stripe__1: 0.5,
+  obj_town_stall_stripe__2: 0.5,
   obj_town_vending: 1,
+  obj_town_bench: 1,
+  obj_town_barrel: 1,
+  obj_town_planter: 1,
   obj_town_waterfall: 0.5,
-};
+};;
 
 /** 프롭 배율 — 셀 대비 반 칸 배수로 정규화한다(게임과 동일 식). */
 export function snapPropScale(srcW: number, srcH: number, baseScale: number, cellW: number, cellH: number, key: string): number {
@@ -291,7 +321,7 @@ export function serializeLayout(lay: {
   cols: number; rows: number; cellW: number; cellH: number;
   open: boolean[]; paths: boolean[]; entry: number; exit: number;
   theme: string; ground: string; path: string; structure: string; structureTint: number;
-  props: { key: string; cell: number; x: number; y: number; scale: number }[];
+  props: { key: string; cell: number; x: number; y: number; scale: number; solid?: boolean }[];
   name?: string;
 }) {
   return {
@@ -315,6 +345,8 @@ export function serializeLayout(lay: {
       key: p.key, cell: p.cell,
       x: Math.round(p.x * 100) / 100, y: Math.round(p.y * 100) / 100,
       scale: Math.round(p.scale * 1000) / 1000,
+      /* vc253 — true 일 때만 적는다. 파일이 짧고, 없으면 장식(충돌 없음)이 기본. */
+      ...(p.solid ? { solid: true as const } : {}),
     })),
   };
 }

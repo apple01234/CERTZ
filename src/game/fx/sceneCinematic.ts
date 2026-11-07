@@ -1,4 +1,5 @@
 import type Phaser from "phaser";
+import { EventBus } from "../../components/game/EventBus";
 
 export type CinematicEnd = "complete" | "skip" | "shutdown";
 export type CinematicScene = Phaser.Scene & {
@@ -14,12 +15,28 @@ const sessions = new WeakMap<Phaser.Scene, CinematicSession>();
 export const sceneCinematicPlaying = (scene: Phaser.Scene): boolean => sessions.has(scene);
 export function cancelSceneCinematic(scene: Phaser.Scene): void { sessions.get(scene)?.finish("shutdown"); }
 
+/** vc264 (지시 #2) — 연출 재생 여부를 React HUD 에 알린다.
+ *  "연출 중에는 모든 대사창을 제외한 모든 UI 안보이게 해"
+ *
+ *  [왜 여기서 발신하나] HUD·스킬버튼·미니맵은 React DOM 이고 연출은 Phaser 씬 안에서 돈다.
+ *  서로의 상태를 볼 수 없어 EventBus 가 유일한 통로다.
+ *  [이벤트명] GameRoot 가 이미 `cinematic:state` 를 구독해 HUD 를 hidden 처리하고 있다.
+ *  같은 이름을 쓰면 UI 쪽 수정 없이 **모든 연출 경로**가 자동으로 덮인다
+ *  (WorldScene 이 직접 emit 하던 두 곳 외에 autoCutscene·cine3d 경로도 포함).
+ *  [대사창] DialogueBox 는 GameRoot 의 이 래퍼 **밖**에 있어 이 신호로 숨지 않는다 —
+ *  지시대로 대사창만 남는다. */
+const CINEMATIC_STATE_EVENT = "cinematic:state";
+function announce(on: boolean): void {
+  try { EventBus.emit(CINEMATIC_STATE_EVENT, { active: on }); } catch { /* React 미장착 */ }
+}
+
 /** One camera/input owner. RE: Feather Park completion signals, Morfosi cleanup,
  * JENNY camera-effect lifetime; see REFERENCE_DEEP_ANALYSIS.md §§1,3,5. */
 export function beginSceneCinematic(scene: Phaser.Scene, onFinish: (reason: CinematicEnd) => void): CinematicSession | null {
   if (sessions.has(scene) || (scene as CinematicScene).camCinema) return null;
   const session = new CinematicSession(scene as CinematicScene, onFinish);
   sessions.set(scene, session);
+  announce(true);
   return session;
 }
 
@@ -249,6 +266,9 @@ export class CinematicSession {
       scene.input.keyboard?.resetKeys();
     }
     sessions.delete(scene);
+    /* vc264 (지시 #2) — 세션이 실제로 사라진 뒤에 해제 신호를 보낸다.
+     *  순서를 뒤집으면 HUD 가 "아직 재생 중"으로 보고 다시 숨는다. */
+    announce(false);
     this.onFinish(reason);
   }
 }

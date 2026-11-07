@@ -198,6 +198,33 @@ export function renderAuthoredMapLayers(
     if (x - sw / 2 < 0 || x + sw / 2 > width || y - sh < 0 || y > height) { image.destroy(); return; }
     images.push(image);
   };
+  /* ── vc253: 맵 파일이 있으면 **파일에 적힌 좌표만** 그린다 ──────────────
+   *  [왜] 종전엔 아래 세 블록(구조물/랜드마크/경계장식)이 전부 해시로 좌표를
+   *  자동 계산했다. 그래서 (a) 그림과 발밑 충돌이 따로 놀아 "안 보이는데 막히는 벽"이
+   *  생겼고 (b) 가장자리 셀에 스냅된 프롭이 잘려 보였고 (c) 밀도를 코드로만 조절할 수
+   *  있었다. 유저 지시: "타일맵을 코드로 자동배치 하지말고 파일기반으로".
+   *
+   *  → authored.props 가 있으면 파일 좌표를 그대로 그리고 아래 자동 배치를 전부 건너뛴다.
+   *    없으면(절차 생성 맵) 종전 동작을 그대로 유지한다 — 회귀 없음. */
+  if (art.props && art.props.length > 0) {
+    for (const p of art.props) {
+      if (!scene.textures.exists(p.key)) continue;
+      const depth = 9 + Math.max(0, Math.min(1, p.y / height)) - 0.001;
+      const img = scene.add.image(p.x, p.y, p.key)
+        .setOrigin(0.5, 1)
+        .setScale(p.scale)
+        .setDepth(depth)
+        .setName(`rea:file:${p.key}`);
+      /* ⚠ onDecor() 을 **부르지 않는다**. onDecor 는 WorldScene.attachDecorCollision 이고,
+       *  isSolidDecor(key) 로 발밑 충돌체를 또 만든다. 그러면 파일의 solid:false 프롭에도
+       *  보이지 않는 벽이 생긴다(이중 판정 = 유저가 지적한 "안 보이는데 막힘").
+       *  막을 프롭은 파일에서 solid:true 로 적어 open[cell]=false 가 되게 한다 —
+       *  판정의 단일 출처는 open 그리드 하나뿐이다. */
+      images.push(img);
+    }
+    return { maps, layers, images };
+  }
+
   const structuralProp = theme === "library" ? "obj_dungeon_bookshelf"
     : theme === "grove" ? "obj_forest_tree_pink"
     : theme === "town" ? "obj_town_house_blue"

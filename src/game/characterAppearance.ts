@@ -38,6 +38,10 @@ export function resolveBodyPrefix(
    *  [수리] `scripts/make_player_sheet.py` 가 npcbody 규격(96×64 캔버스, 캐릭터 23×56,
    *   2.2등신, 실제 이목구비)으로 `chm2_*`/`chf2_*` 전 세트(7동작 × 4프레임 = 56장)를
    *   생성했다. 이제 기본 남캐도 자기 시트를 갖고, FA 폴백은 시트가 **없을 때만** 쓴다. */
+  /* vc253 (지시 "그냥 이 에셋으로 바꿔") — 기본 캐릭터 시트를 유저가 준 그림으로 교체했다.
+   *  `tools/apply_user_character.py` 가 그 원본(40×38)을 96×64 캔버스 규격의
+   *  chm2_ / chf2_ 56장으로 변환한다. 그래서 기본 외형은 다시 `ch{m|f}{skin}` 이다.
+   *  (hero_ 세트는 남성 전용이라 여성 캐릭터에 쓸 수 없었다.) */
   const own = `ch${gender}${skin}`;
   if (hasBody(own)) return own;
   /* 시트가 없는 구 배포/신규 피부 조합만 FA 로 폴백(깨짐 방지) */

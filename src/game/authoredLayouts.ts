@@ -12,6 +12,10 @@ export type AuthoredPresentation = {
   path: string;
   structure: string;
   structureTint: number;
+  /** vc253 — 맵 파일(public/maps/*.json)에 **손으로 적은** 프롭 좌표.
+   *  있으면 렌더러가 해시 자동 배치 대신 이것만 그린다.
+   *  없으면(절차 생성 맵) 종전 자동 배치를 유지한다. */
+  props?: { key: string; cell: number; x: number; y: number; scale: number; solid: boolean }[];
 };
 
 const THEMES: Record<AuthoredTheme, Pick<AuthoredPresentation, "ground" | "path" | "structure" | "structureTint">> = {

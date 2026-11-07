@@ -770,7 +770,14 @@ export class BootScene extends Phaser.Scene {
      *  종전엔 tree/rock/pine 같은 단순 텍스처만 깔려서 맵이 "같은 바닥 반복"으로
      *  보였다. 총 34개·37KB 라 부팅 부담은 사실상 없다. */
     for (const [setName, list] of Object.entries(DECOR_SETS)) {
-      for (const o of list) this.load.image(o.key, `objects/${setName}/${o.key}.png`);
+      for (const o of list) {
+        /* vc253 — `foo__2` 처럼 낱개 분리된 조각은 `_split/` 에서 읽는다.
+         *  원본(뭉친 시트)은 보존하되 게임은 낱개만 쓴다.
+         *  접미사 판정: 키에 "__<n>" 이 붙어 있으면 분리본. */
+        const split = /__\d+$/.test(o.key);
+        const dir = split ? `objects/_split/${setName}` : `objects/${setName}`;
+        this.load.image(o.key, `${dir}/${o.key}.png`);
+      }
     }
     /* v1.1.0 (#1/#19/#21/#22) — 외형 시스템: 여성(chf)/피부(chm) 변형 11종 + SPUM식 코스튬 완전교체(cost_*) 10종 × 28프레임
      *  + 어태치 장식 5종 (scripts/gen_char_system.py 산출). 구 outfit_* 재색상 오버레이는 폐기(미로드)

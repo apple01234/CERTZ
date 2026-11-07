@@ -282,6 +282,21 @@ export function DialogueBox({
 
   // 모바일: 화면 홀드 — 누르는 동안 고속 진행
   const startHold = (e: React.PointerEvent) => {
+    /* vc264 (지시 #4) — 선택지가 떠 있으면 홀드 진행을 하지 않는다.
+     *
+     * [증상] NPC 퀘스트 선택지("[수주] …" / "나중에")를 누르면 수락이 아니라
+     *        대화가 닫혀 **취소**된 것처럼 동작했다.
+     * [원인] 선택지 버튼은 stopPropagation 을 하지만, 그건 **버튼 자신의
+     *        onPointerDown** 이다. 홀드 핸들러는 **부모 래퍼**에 달려 있어
+     *        같은 pointerdown 이 부모에도 전달되고, advance() 가 마지막 줄에서
+     *        dialogue:done 을 먼저 발신해 버린다. 그러면 WorldScene 의 choice
+     *        리스너가 dialogue:choice 를 받기 전에 대화가 이미 닫힌다.
+     * [해결] 선택지가 보이는 상태에서는 advance 를 시작하지 않는다.
+     *        (선택지는 버튼 자신의 핸들러로만 처리된다) */
+    if (hasChoices) {
+      e.stopPropagation();
+      return;
+    }
     e.preventDefault();
     advanceThrottled();
     if (holdTimer.current) window.clearInterval(holdTimer.current);
@@ -293,6 +308,14 @@ export function DialogueBox({
   };
 
   if (!dialogue) return null;
+
+  /* vc264 (지시 #4) — 선택지가 "지금 화면에 떠 있는가".
+   *  렌더 조건(마지막 줄 + 타이핑 완료)과 startHold 판정이 **같은 식**을 쓰도록 묶는다.
+   *  둘이 갈라지면 선택지가 보이는데 홀드는 계속 도는(=취소되는) 상태가 된다. */
+  const choiceList = dialogue.choices ?? [];
+  const hasChoices =
+    choiceList.length > 0 &&
+    idx >= dialogue.lines.length - 1 && shown.length >= line.length;
 
   return (
     <div
@@ -354,9 +377,9 @@ export function DialogueBox({
           </p>
           {/* vc143 (#10) — 선택형 대화: 마지막 줄 완료 시 선택지 버튼 (보스전 퇴장 관리인 등).
            *  클릭 시 dialogue:choice 발신 + dialogue:done으로 종료 — 컨테이너 홀드 진행과 충돌 없게 stopPropagation */}
-          {dialogue.choices && dialogue.choices.length > 0 && idx >= dialogue.lines.length - 1 && shown.length >= line.length && (
+          {hasChoices && (
             <div className="mt-2 flex flex-col gap-1.5" onPointerDown={(e) => e.stopPropagation()}>
-              {dialogue.choices.map((c) => (
+              {choiceList.map((c) => (
                 <button
                   key={c.id}
                   className="game-btn px-3 py-1.5 text-left text-[12px] font-black text-[#ffe9b0] transition-transform active:scale-95 sm:text-[13px]"
