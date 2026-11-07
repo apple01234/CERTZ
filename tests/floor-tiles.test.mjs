@@ -122,20 +122,26 @@ test('회전 아틀라스 생성기가 다시 생기지 않았다', () => {
   }
 });
 
-test('렌더러가 아틀라스 없이 원본 타일로 프레임을 고른다', () => {
+test('렌더러가 아틀라스 없이 원본 타일을 그대로 반복한다', () => {
   const src = read('src/game/fx/AuthoredMapLayers.ts');
   assert.equal(src.includes('groundAtlasOf'), false, '폐기된 아틀라스 조회가 남아 있다');
   assert.equal(src.includes('GROUND_ATLAS_FRAMES'), false, '폐기된 아틀라스 프레임 참조가 남아 있다');
-  /* 256px 원본을 32px 조각으로 순환 배치해야 반복 주기가 길어진다. */
-  assert.match(src, /return 1 \+ \(r % sourceCols\) \* sourceCols \+ c % sourceCols/);
+  /* vc275 — 256px 무이음새 원본을 **확대/축소 없이** 1:1 로 반복해야 한다.
+   *  setTileScale 로 늘리면 pixelArt 게임에서 픽셀 폭이 들쭉날쭉해진다(화질 저하 금지).
+   *  셀마다 잘라 붙이되 전역 위상(setTilePosition)으로 무늬 연속성을 유지한다. */
+  assert.equal(/setTileScale/.test(src), false, '타일을 확대/축소하면 픽셀아트 화질이 깨진다');
+  assert.match(src, /setTilePosition\(b\.x % periodX, b\.y % periodY\)/);
 });
 
 test('Phaser4 addTilesetImage 8번째 인자를 프레임 수로 쓰지 않는다', () => {
   /* [함정] Phaser4 의 8번째 인자는 tileOffset(객체)이다. 숫자를 넘기면 타입 오류가 나고,
-   *  프레임은 Tileset 이 이미지 크기로 updateTileData 를 호출해 자동 계산한다. */
+   *  프레임은 Tileset 이 이미지 크기로 updateTileData 를 호출해 자동 계산한다.
+   *  vc275 — 지면/경로/구조물은 Tilemap 이 아니라 클리핑된 TileSprite 밴드로 그린다.
+   *  따라서 이 함정을 다시 밟을 경로가 없어야 한다(Tilemap 재도입 금지). */
   const src = read('src/game/fx/AuthoredMapLayers.ts');
   assert.equal(/addTilesetImage\([^)]*,\s*atlasFrames\s*\)/.test(src), false, '프레임 수를 8번째 인자로 넘기고 있다');
-  assert.match(src, /addTilesetImage\(role\.key, role\.key, unit, unit, 0, 0, 1\)/);
+  assert.equal(/scene\.make\.tilemap/.test(src), false, 'Tilemap 지면 렌더가 다시 도입됐다 — 셀 경계 침범이 재발한다');
+  assert.match(src, /scene\.add\.tileSprite\(b\.x, b\.y, b\.w, b\.h, role\.key\)/);
 });
 
 test('노이즈 바닥을 쓰던 테마가 새 석재를 가리킨다', () => {

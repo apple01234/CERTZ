@@ -77,41 +77,74 @@ export function renderAuthoredMapLayers(
   }
   const maps: Phaser.Tilemaps.Tilemap[] = [];
   const layers: Phaser.Tilemaps.TilemapLayer[] = [];
+  /** vc275 — 지면/경로/구조물을 TileSprite 밴드로 그린 결과. shutdown 에서 파괴한다. */
+  const textureGroups: Phaser.GameObjects.TileSprite[][] = [];
   const width = lay.cols * lay.cellW, height = lay.rows * lay.cellH;
   for (const role of roles) {
-    const { size, unit } = AUTHORED_GROUND_SOURCES[role.key];
-    const sourceCols = size / unit;
+    const { size } = AUTHORED_GROUND_SOURCES[role.key];
     /* v259 (지시 #1) — 변형 아틀라스 경로 제거. 256px 무이음새 타일로 교체해 불필요.
      *  (회전 아틀라스는 5색 얼룩의 격자를 못 없앴다 — tileThemes.ts 주석 참조) */
-    const cols = Math.ceil(width / unit), rows = Math.ceil(height / unit);
-    const data = Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => {
-      const x = Math.min(lay.cols - 1, Math.floor((c + 0.5) * unit / lay.cellW));
-      const y = Math.min(lay.rows - 1, Math.floor((r + 0.5) * unit / lay.cellH));
-      const cell = y * lay.cols + x;
-      const show = role.name === "ground" || (role.name === "paths" ? art.paths[cell] : !lay.open[cell]);
-      if (!show) return -1;
-      /* 기본 타일 인덱스(1-based) — 원본 텍스처를 unitpx 조각 sourceCols² 개로 순환 배치.
-       *  256px/32px = 8열이므로 64조각을 골고루 돈다(반복 주기가 그만큼 길다). */
-      return 1 + (r % sourceCols) * sourceCols + c % sourceCols;
-    }));
-    const map = scene.make.tilemap({ data, tileWidth: unit, tileHeight: unit });
-    /* [주의] Phaser4 `addTilesetImage(tilesetName, key, tw, th, margin, spacing, gid, tileOffset)` —
-     *  8번째 인자는 **tileOffset 객체**이지 프레임 수가 아니다.
-     *  프레임은 Tileset 이 이미지 크기로 `updateTileData` 를 호출해 자동 계산한다. */
-    const tiles = map.addTilesetImage(role.key, role.key, unit, unit, 0, 0, 1);
-    // Phaser4's fifth argument explicitly selects the regular, tintable layer.
-    const layer = tiles && map.createLayer(0, tiles, 0, 0, false);
-    if (!layer || !("setTint" in layer)) {
-      map.destroy();
-      for (const created of maps) created.destroy();
-      return null;
+    /* ═══ vc275 (P1b — "건물 주변·맵 경계가 잘린 듯 보인다") ═══
+     * [실측한 원인] 종전엔 타일 **중심점**이 속한 셀 하나로 그릴지 말지를 정했다:
+     *   x = floor((c + 0.5) * unit / cellW)
+     * 셀(145~153px)과 타일 조각(28/32px)이 정수배가 아니라서, 중심이 열린 셀에 있어도
+     * 타일의 왼쪽 절반이 벽을 침범하고, 중심이 벽 셀에 있으면 오른쪽 절반이 통로를
+     * 비워 **1~16px 틈**이 생겼다. 실측(게임과 동일 계산으로 재구성):
+     *   howlrstone1x2 paths 61,469px² 침범 / dlcprisma1 paths 36,901px² 침범
+     * 이 침범이 곧 "칼로 자른 듯한 직선 경계"·"부자연스러운 접촉"이다.
+     *
+     * [1차 시도 — 실패] 타일이 걸친 셀이 전부 같은 상태일 때만 칠했다.
+     *  → 침범은 0 이 됐지만 경계에 걸친 타일이 통째로 빠져 **미달(지면색 구멍)이
+     *    최대 +118,747px² 늘었다.** 유저가 지적한 "잘린 듯"이 오히려 심해진다.
+     *
+     * [최종 해결] 셀 하나를 **정확히 셀 크기로 클리핑한 TileSprite** 로 칠한다.
+     *  · TileSprite 는 주어진 폭/높이로 잘리므로 셀 경계를 절대 넘지 않는다 → 침범 0.
+     *  · 칠해야 하는 셀은 빠짐없이 칠한다 → 미달 0. (경계가 침범도 미달도 아닌 이유)
+     *  · setTilePosition(x % period, y % period) 로 **전역 위상**을 맞춰 인접 셀의
+     *    무늬가 한 장처럼 이어진다(위상 리셋 없음 — WorldScene 지면 경로와 같은 기법).
+     *  · 픽셀아트 화질 보존: 타일을 확대/축소하지 않는다(원본 1:1 반복).
+     *  이전 구현은 unit(28/32px) 격자 Tilemap 이라 셀 크기(145~153px)와 어긋날 수밖에
+     *  없었다. 셀 크기에 맞춰 자르는 방식만이 두 오차를 동시에 없앤다. */
+    const wants = role.name === "paths"
+      ? (cell: number) => !!art.paths[cell]
+      : (cell: number) => !lay.open[cell];
+    /* 행 단위로 연속한 같은 상태 셀을 한 장으로 병합한다.
+     *  셀 1개 = TileSprite 1개면 맵당 최대 cols×rows(≈150)개지만, 병합하면
+     *  복도처럼 가로로 이어진 구간이 1개로 줄어 오브젝트 수가 크게 낮아진다. */
+    const band: { x: number; y: number; w: number; h: number }[] = [];
+    for (let r = 0; r < lay.rows; r++) {
+      const y0 = Math.round(r * lay.cellH);
+      const y1 = Math.round((r + 1) * lay.cellH);
+      let runStart = -1;
+      for (let c = 0; c <= lay.cols; c++) {
+        const on = c < lay.cols
+          && (role.name === "ground" || wants(r * lay.cols + c));
+        if (on && runStart < 0) runStart = c;
+        if (!on && runStart >= 0) {
+          const x0 = Math.round(runStart * lay.cellW);
+          const x1 = Math.round(c * lay.cellW);
+          if (x1 > x0 && y1 > y0) band.push({ x: x0, y: y0, w: x1 - x0, h: y1 - y0 });
+          runStart = -1;
+        }
+      }
     }
-    layer.setName(`rea:${role.name}`).setDepth(role.depth).setTint(role.tint);
-    maps.push(map);
-    layers.push(layer);
+    if (!band.length) continue;
+    /* 무늬 위상 기준 — 원본 텍스처가 한 장으로 이어지도록 전역 좌표로 나머지를 잡는다. */
+    const periodX = size;
+    const periodY = size;
+    const pieces: Phaser.GameObjects.TileSprite[] = [];
+    for (const b of band) {
+      const ts = scene.add.tileSprite(b.x, b.y, b.w, b.h, role.key).setOrigin(0).setDepth(role.depth);
+      ts.setTilePosition(b.x % periodX, b.y % periodY);
+      ts.setTint(role.tint);
+      ts.setName(`rea:${role.name}`);
+      pieces.push(ts);
+    }
+    textureGroups.push(pieces);
   }
   scene.events.once("shutdown", () => {
     for (const map of maps) map.destroy();
+    for (const group of textureGroups) for (const ts of group) ts.destroy();
   });
   const images: Phaser.GameObjects.Image[] = [];
   /* vc253 (지시 #1 "오브젝트가 크기에 맞게 잘리지 않음") — 프롭을 **타일 배수**로 정규화한다.

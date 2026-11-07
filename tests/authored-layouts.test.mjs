@@ -78,65 +78,98 @@ test('story geography has distinct authored structures and no changes to feature
   }
 });
 
-test('Tilemap layers reuse native admitted floors, keep collision separate, and destroy on shutdown', () => {
+test('Authored floor bands clip to cell edges and never bleed or leave gaps', () => {
   const manifest = JSON.parse(fs.readFileSync(new URL('../public/assets/ground/manifest.json', import.meta.url)));
-  const created = [], layers = [], events = [], images = [], attached = [];
   const existingProp = key => ['dungeon','forest','town'].some(set => fs.existsSync(new URL(`../public/assets/objects/${set}/${key}.png`, import.meta.url)));
-  const scene = {
-    textures: { exists: key => key in manifest || existingProp(key), get: key => ({ getSourceImage: () => manifest[key] }) },
-    add: { image: (x,y,key) => {
-      const image = { x,y,key, setOrigin() { return this; }, setScale(scale) { this.scale = scale; return this; }, setDepth() { return this; }, setName(name) { this.name = name; return this; }, setTint() { return this; } };
-      images.push(image); return image;
-    } },
-    events: { once: (event, fn) => events.push({ event, fn }) },
-    make: { tilemap: options => {
-      const map = { options, destroyed: false,
-        addTilesetImage: (name,key,w,h,_margin,_spacing,gid) => ({ name,key,w,h,gid }),
-        createLayer: (_index, tiles) => {
-          const layer = { tiles, setName(name) { this.name = name; return this; }, setDepth() { return this; }, setTint() { return this; } };
-          layers.push(layer); return layer;
+  const events = [];
+  const makeScene = () => {
+    const bands = [];
+    return {
+      bands,
+      textures: { exists: key => key in manifest || existingProp(key), get: key => ({ getSourceImage: () => manifest[key] }) },
+      add: {
+        image: (x, y, key) => {
+          const image = { x, y, key, setOrigin() { return this; }, setScale(scale) { this.scale = scale; return this; }, setDepth() { return this; }, setName(name) { this.name = name; return this; }, setTint() { return this; } };
+          return image;
         },
-        destroy() { this.destroyed = true; },
-      };
-      created.push(map); return map;
-    } },
+        /* vc275 — 지면/경로/구조물은 셀 크기로 클리핑한 TileSprite 밴드로 그린다. */
+        tileSprite: (x, y, w, h, key) => {
+          const ts = { x, y, w, h, key, name: '', tilePosition: { x: 0, y: 0 },
+            setOrigin() { return this; }, setDepth() { return this; }, setTint() { return this; },
+            setName(name) { this.name = name; return this; },
+            setTilePosition(tx, ty) { this.tilePosition = { x: tx, y: ty }; return this; },
+            destroy() { this.destroyed = true; } };
+          bands.push(ts); return ts;
+        },
+      },
+      events: { once: (event, fn) => events.push({ event, fn }) },
+    };
   };
+  const scene = makeScene();
   const lay = authoredRoomLayout('howlrstone1x1', 2400, 1280);
   const before = [...lay.open];
-  const result = renderAuthoredMapLayers(scene, lay, image => attached.push(image));
-  assert.equal(result.maps.length, 3);
-  assert.deepEqual(layers.map(x => x.name), ['rea:ground','rea:paths','rea:structures']);
-  assert.deepEqual(lay.open, before);
-  assert.ok(images.some(x => x.key === 'obj_dungeon_bookshelf'), 'library uses retained native bookshelf art');
-  /* vc238 — 경계 장식(rea:edge:*)은 **발밑 충돌 훅을 타면 안 된다**.
-   *  기존 계약은 "모든 prop 이 충돌 훅을 탄다"였는데, 통행로 가장자리에 깔리는
-   *  바닥 장식까지 충돌체가 되면 투명 벽이 생긴다. 그래서 계약을 두 갈래로 나눈다:
-   *   · 구조물 prop(rea:prop:*) → 반드시 충돌 훅
-   *   · 경계 장식(rea:edge:*)   → 절대 충돌 훅 금지 + isSolidDecor 금지 */
-  const realProps = images.filter(x => !String(x.name).startsWith('rea:edge:'));
-  const edgeProps = images.filter(x => String(x.name).startsWith('rea:edge:'));
-  assert.equal(edgeProps.length + realProps.length, images.length);
-  assert.deepEqual(attached, realProps, 'all structural props reach the original feet-collision hook');
-  for (const image of edgeProps) {
-    assert.equal(attached.includes(image), false, `${image.key}: edge decor must not create a collider`);
-    assert.equal(isSolidDecor(image.key), false, `${image.key}: edge decor must be walk-through`);
+  const result = renderAuthoredMapLayers(scene, lay, () => {});
+  assert.ok(result, 'authored layers render');
+  assert.deepEqual(lay.open, before, 'rendering never mutates collision grid');
+  /* vc275 — 지면/경로/구조물은 images 가 아니라 TileSprite 밴드로 그린다.
+   *  images 에는 프롭(구조물/경계장식)만 담긴다. */
+  assert.ok(scene.bands.length > 0, 'floor art is emitted as tile bands');
+  assert.ok(result.images.every(x => String(x.name).startsWith('rea:')),
+    'images only carries props, never floor art');
+
+  /* ═══ vc275 핵심 계약 — P1b "경계 잘림/틈" 회귀 방지 ═══
+   *  각 밴드는 (1) 셀 경계에 정확히 붙고 (2) 셀 크기를 넘지 않아야 한다.
+   *  이 두 조건이 깨지면 통로 침범(bleed) 또는 지면색 구멍(miss)이 생긴다. */
+  const roleOf = name => String(name).replace('rea:', '');
+  const byRole = { ground: [], paths: [], structures: [] };
+  for (const band of scene.bands) {
+    const role = roleOf(band.name);
+    assert.ok(role in byRole, `unexpected band name ${band.name}`);
+    byRole[role].push(band);
   }
-  for (const image of realProps) {
-    const cell = Math.floor(image.y / lay.cellH) * lay.cols + Math.floor(image.x / lay.cellW);
-    assert.equal(lay.open[cell], false, 'solid shelf feet stay outside the traversable aisles');
-    assert.equal(image.scale, 1, 'native bookshelf pixels retain their scale');
+  for (const role of ['ground', 'paths', 'structures']) {
+    assert.ok(byRole[role].length > 0, `${role}: bands must be emitted`);
   }
-  for (const { key, w, h, gid } of layers.map(x => x.tiles)) {
-    assert.equal(manifest[key].width, AUTHORED_GROUND_SOURCES[key].size);
-    assert.equal(manifest[key].height % h, 0);
-    assert.equal(manifest[key].width % w, 0);
-    assert.equal(gid, 1);
+  const { cellW, cellH, cols, rows } = lay;
+  const xsOf = v => Math.round(v / cellW), ysOf = v => Math.round(v / cellH);
+  for (const band of scene.bands) {
+    assert.ok(band.w > 0 && band.h > 0, 'band has positive size');
+    /* 경계 정렬: 모든 밴드의 좌상단/우하단이 셀 격자에 정수로 맞아야 한다. */
+    for (const v of [band.x, band.x + band.w]) {
+      assert.equal(Math.abs(v - Math.round(v / cellW) * cellW) < 1e-6, true,
+        `band x=${v} must land on a cell boundary (cellW=${cellW})`);
+    }
+    for (const v of [band.y, band.y + band.h]) {
+      assert.equal(Math.abs(v - Math.round(v / cellH) * cellH) < 1e-6, true,
+        `band y=${v} must land on a cell boundary (cellH=${cellH})`);
+    }
+    /* 셀 범위 안 */
+    assert.ok(xsOf(band.x) >= 0 && xsOf(band.x + band.w) <= cols, 'band inside horizontal bounds');
+    assert.ok(ysOf(band.y) >= 0 && ysOf(band.y + band.h) <= rows, 'band inside vertical bounds');
+    /* 무늬 위상은 원본 타일 주기의 나머지 — 인접 밴드끼리 무늬가 이어진다. */
+    const size = AUTHORED_GROUND_SOURCES[band.key].size;
+    assert.equal(band.tilePosition.x, band.x % size, `${band.key}: tile phase x follows global coordinate`);
+    assert.equal(band.tilePosition.y, band.y % size, `${band.key}: tile phase y follows global coordinate`);
   }
-  assert.ok(created[1].options.data.flat().includes(-1), 'paths must not cover entire map');
-  assert.ok(created[2].options.data.flat().includes(-1), 'structures must not fill open rooms');
-  assert.equal(events[0].event, 'shutdown');
+  /* 경로/구조물 밴드는 반드시 통로/벽 상태와 일치해야 한다(침범·미달 0의 근거). */
+  const checkCover = (role, want) => {
+    const covered = new Set();
+    for (const band of byRole[role]) {
+      for (let r = ysOf(band.y); r < ysOf(band.y + band.h); r++) {
+        for (let c = xsOf(band.x); c < xsOf(band.x + band.w); c++) covered.add(r * cols + c);
+      }
+    }
+    for (let cell = 0; cell < cols * rows; cell++) {
+      assert.equal(covered.has(cell), want(cell), `${role}: cell ${cell} coverage mismatch`);
+    }
+  };
+  checkCover('paths', cell => !!lay.authored.paths[cell]);
+  checkCover('structures', cell => !lay.open[cell]);
+  checkCover('ground', () => true);
+
+  assert.equal(events[0].event, 'shutdown', 'bands are released on scene shutdown');
   events[0].fn();
-  assert.ok(created.every(x => x.destroyed));
+  assert.ok(scene.bands.every(b => b.destroyed), 'every band destroyed on shutdown');
   scene.textures.exists = () => false;
   assert.equal(renderAuthoredMapLayers(scene, lay), null, 'missing assets preserve legacy renderer fallback');
 });
@@ -146,15 +179,17 @@ test('vc238 edge decor outlines the floor without ever narrowing a route', () =>
   const existingProp = key => ['dungeon','forest','town'].some(set => fs.existsSync(new URL(`../public/assets/objects/${set}/${key}.png`, import.meta.url)));
   const makeScene = () => ({
     textures: { exists: key => key in manifest || existingProp(key), get: key => ({ getSourceImage: () => manifest[key] }) },
-    add: { image: (x, y, key) => {
-      const image = { x, y, key, name: 'obj_x', setOrigin() { return this; }, setScale(s) { this.scale = s; return this; }, setDepth() { return this; }, setName(n) { this.name = n; return this; }, setTint() { return this; } };
-      return image; } },
+    add: {
+      image: (x, y, key) => {
+        const image = { x, y, key, name: 'obj_x', setOrigin() { return this; }, setScale(s) { this.scale = s; return this; }, setDepth() { return this; }, setName(n) { this.name = n; return this; }, setTint() { return this; } };
+        return image;
+      },
+      /* vc275 — 지면/경로/구조물 밴드. 경계 장식 검증에는 관여하지 않는다. */
+      tileSprite: (x, y, w, h, key) => ({ x, y, w, h, key, name: '',
+        setOrigin() { return this; }, setDepth() { return this; }, setTint() { return this; },
+        setName(n) { this.name = n; return this; }, setTilePosition() { return this; }, destroy() {} }),
+    },
     events: { once: () => {} },
-    make: { tilemap: () => ({
-      addTilesetImage: (name, key, w, h, _m, _s, gid) => ({ name, key, w, h, gid }),
-      createLayer: () => ({ setName() { return this; }, setDepth() { return this; }, setTint() { return this; } }),
-      destroy() {},
-    }) },
   });
 
   /* 모든 영프 구역 + 그랜드 플래닛 일부 — 경계 장식이 통행로/입출구를 건드리지 않아야 한다. */
