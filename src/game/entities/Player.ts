@@ -17,6 +17,7 @@ import { ULT_CLASSES,
   type Skill1Kind, type Skill2Kind, type Skill3Kind, type Skill4Kind,
 } from "../classes";
 import { isZEvolved, isCEvolved } from "../skillEvolution"; // vc252 P5 — 전직 스킬 진화 데이터(개수·범위·관통)
+import { ModStack, ModOp } from "../combat/modStack"; // vc276 — 배율 스택 (JENNY FloatModStack 이식)
 import { sweptHitsTarget } from "../collision/sweep";
 import { loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드
 import { resolveBodyPrefix } from "../characterAppearance";
@@ -229,6 +230,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  v3.0.24 — 300→225 되돌림 (유저: "기본 이속이 너무 빠름 — 강화 및 스텟을 올려야지 빠르게 해야지!!")
    *  → 기본은 보수적으로, 민첩 스탯(+0.5%/점)과 강화(스타포스 +0.5%/성)에 투자해야 빨라진다 */
   static readonly BASE_SPEED = 225;
+  /** vc276 — 이동속도 배율 스택 (JENNY FloatModStack 이식).
+   *  static 인 이유: recalcSpeed() 가 프레임마다 불릴 수 있어 매번 new 하면
+   *  GC 부담이 생긴다. 플레이어는 1명이므로 static 단일 인스턴스로 충분하다.
+   *  clear() 후 재삽입하는 패턴이라 이전 값이 누적되지 않는다. */
+  static readonly speedMods = new ModStack(1.0);
   facing: Phaser.Math.Vector2 = new Phaser.Math.Vector2(1, 0);
 
   state: "idle" | "attack" | "dash" | "dead" = "idle";
@@ -7973,7 +7979,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
   private buffEmitAcc = 0;
 
-  /** 기본 속도 × 경로 누적 속도 보너스 × 신속 버프 × 천공 신속 × 감속 (합산 → 곱) */
+  /** 기본 속도 × 경로 누적 속도 보너스 × 신속 버프 × 천공 신속 × 감속 (합산 → 곱)
+   *
+   * ═══ vc276 — 배율을 ModStack 으로 관리 (JENNY FloatModStack 이식) ═══
+   * [왜 바꿨나] 종전엔 `buff * sky * slow` 를 인라인으로 곱했다. 곱셈 자체는 맞지만
+   *  **어느 배율이 적용 중인지 추적할 수 없고**, 새 배율(예: 지역 감속, 탈것,
+   *  장비 세트)을 추가할 때마다 이 줄을 고쳐야 했다. 배율이 늘면 어느 것이
+   *  이미 반영됐는지 알 수 없어 **이중 적용**이 생긴다.
+   * [해결] ModStack 에 우선순위를 부여해 넣는다. 적용 순서가 결정적이고,
+   *  하나를 빼도 나머지가 그대로 남는다(부분 해제가 정확).
+   * [보존] 곱셈 결과는 종전과 **완전히 동일**하다 — 이 변경은 회귀가 아니다.
+   *  (세 배율을 같은 priority 로 넣어 순서 영향이 없게 했다) */
   private recalcSpeed() {
     const buff = this.hasBuff("buff_spd") || this.hasBuff("buff_king") ? 1.25 : 1;
     const sky = this.selfSpdBuff ? this.selfSpdBuff.mult : 1;
@@ -7983,7 +7999,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
      *  v4.0.0 — 배지 이속 + 게이트 인런 카드 이속 */
     const dexPct = Math.min(60, this.stats.dex * 0.5);
     const starPct = Math.min(15, (this.weaponStars + this.armorStars) * 0.5);
-    this.speed = Math.round(Player.BASE_SPEED * (1 + (this.clsBonus.speedPct + dexPct + starPct + this.extBonus.speedPct + this.runBuffs.speedPct) / 100) * buff * sky * slow);
+    const growthPct = this.clsBonus.speedPct + dexPct + starPct
+      + this.extBonus.speedPct + this.runBuffs.speedPct;
+    /* 배율 스택 — 성장(가산)을 먼저 반영한 뒤 버프/감속을 곱한다.
+     *  종전 식 `BASE * (1 + growth/100) * buff * sky * slow` 와 동일한 결과.
+     *
+     *  ═══ 함정: 부동소수점 곱셈 **순서**가 결과를 1 바꾼다 ═══
+     *  종전: 225 × 1.4 × 0.7 = 220.5      → round = 221
+     *  스택: (1.0 × 1.4 × 0.7) × 225 = 220.49999999999997 → round = 220
+     *  같은 수학식인데 반올림 경계(220.5)에서 갈린다. 실제로 유저가 체감하는
+     *  1 이속 차이이고, 이 테스트(speed-modstack-equivalence)가 잡아냈다.
+     *  → base 를 BASE_SPEED 로 두면 곱셈 순서가 종전과 같아진다(225 가 맨 앞). */
+    const stack = Player.speedMods;
+    stack.clear();
+    stack.base = Player.BASE_SPEED;
+    stack.addBit(1, 1 + growthPct / 100, ModOp.MULTIPLY, 10);
+    stack.addBit(2, buff, ModOp.MULTIPLY, 20);
+    stack.addBit(3, sky, ModOp.MULTIPLY, 20);
+    stack.addBit(4, slow, ModOp.MULTIPLY, 20);
+    this.speed = Math.round(stack.value);
   }
 
   /* ---------------- RPG 기본 요소 ---------------- */
