@@ -52,21 +52,32 @@ HUD 렌더 경로를 직접 검증했다. DOM 조회 결과 **`침묵 3초`** �
 - 증거: `reports/play/vc288preset/3_preset_ui.png` (전투 기본 선택 상태)
 - 증거: `reports/play/vc288preset/4_boss_preset.png` (보스전 선택 후)
 
-### ⑤ 보스 카운트다운 — 코드로만 확인, 화면 캡처는 실패
+### ⑤ 보스 카운트다운 — 확인 (EventBus 가로채기로 해결)
+
 `Boss.startCountdown()` 이 낙하 착지 콜백에서 호출되고, `tick()` 이
-`if (this.countdown > 0) return` 으로 행동을 멈추는 것은 테스트 5개로 고정했다
-(`tests/boss-countdown.test.mjs`).
+`if (this.countdown > 0) return` 으로 행동을 멈춘다.
 
-**화면 캡처는 실패했다.** 카운트다운은 3초뿐인데, 컷씬을 넘기는 도중에 시작되어
-스크린샷 320ms 간격으로도 잡히지 않았다. 컷씬 대사 → 전투 화면으로 넘어가는
-프레임 사이에 통째로 지나갔다.
+**처음엔 화면 캡처에 3번 실패했다.** 카운트다운은 3초뿐인데 컷씬을 넘기는 도중에
+시작되어, 250~320ms 간격 스크린샷으로도 컷씬 프레임과 전투 프레임 사이로 지나갔다.
 
-첫 시도에서 `3` 이 표시된 프레임을 한 번 얻었으나, 그 뒤 캡처 폴더를 지우면서
-함께 사라졌다(복구 불가 — `reports/` 는 gitignore).
+**해결: 폴링을 버리고 이벤트 구동으로 바꿨다.** 배너는
+`EventBus("banner:show") → React state` 로 렌더되므로, 새 문서에 주입한 스크립트로
+`EventBus.emit` 을 가로채 배너를 기록했다(`Page.addScriptToEvaluateOnNewDocument`).
+기록된 배너:
 
-ponytail: 카운트다운 화면 증거가 꼭 필요하면 컷씬을 건너뛰는 경로를 만들거나
-`startCountdown` 의 STEPS 를 일시적으로 늘려 캡처하면 된다. 지금은 테스트로
-계약이 고정돼 있어 굳이 그렇게 하지 않았다.
+```
+바다의 군단장 헤럴드 — 3
+바다의 군단장 헤럴드 — 2
+바다의 군단장 헤럴드 — 1
+시작!
+```
+
+순서·횟수·보스 이름이 모두 코드와 일치한다. 화면 캡처도 성공했다.
+
+- 증거: `reports/play/vc288countdown/1_countdown.png` (255KB) — 중앙에 카운트다운 표시
+- 증거: `reports/play/vc288countdown/2_after.png` (283KB)
+
+교훈: 짧은 UI 이벤트를 잡을 때는 **스크린샷 폴링이 아니라 이벤트 기록**을 쓴다.
 
 ## 최종 인게임 확인 (vc288, 10개 결함 육안 검증)
 

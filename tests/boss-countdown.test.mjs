@@ -10,6 +10,18 @@
  *   1) 착지 완료 콜백이 startCountdown() 을 부른다
  *   2) tick() 이 카운트다운 중 조기 반환한다 (행동 정지)
  *   3) destroyPool() 이 카운트다운 타이머를 정리한다 (죽은 뒤 배너 방지)
+ *
+ * [실측 확인 — vc288]
+ *  위 소스 계약이 실제로 도는지 브라우저에서 확인했다. `EventBus.emit` 을 가로채
+ *  `banner:show` 를 기록한 결과:
+ *
+ *    바다의 군단장 헤럴드 — 3
+ *    바다의 군단장 헤럴드 — 2
+ *    바다의 군단장 헤럴드 — 1
+ *    시작!
+ *
+ *  순서·횟수·보스 이름이 모두 코드와 일치했다(reports/play/vc288countdown/1_countdown.png).
+ *  스크린샷 폴링으로는 3번 놓쳤지만, EventBus 를 가로채면 이벤트 구동이라 놓치지 않는다.
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
