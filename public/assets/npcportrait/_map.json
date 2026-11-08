@@ -650,5 +650,17 @@
     ],
     "sha256": "ae9b4fb5e60069a7dcde5217ad23ecafb14ae25b103781649df5d28562bc9c24",
     "canon": "4.txt '이현선인: 부채를 쓰며 도술을 사용한다. 이현선인이 가지고 있는 고유 특성은 꽃'"
+  },
+  "아리스텔라 경": {
+    "src": "/assets/npcportrait/npc_aristella.png",
+    "source": "/assets/npcportrait/npc_aristella.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "c87373f736646ee518d676320365ed09a9a62ad3a1b4db81fdc555bce270366b",
+    "canon": "에벤트왕국 근위대장 아리스텔라 — npc_aristella.png (은발 성기사). 기존 키 '아리스텔라' 는 npc_ari.png 를 가리켜 혼동이 있었으므로 더 구체적인 별칭으로 분리한다."
   }
 }

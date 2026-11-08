@@ -60,7 +60,22 @@ const NPC_PORTRAITS: Record<string, { tex: string; tone: string }> = {
   "궁수 계열의 시조 '바람의 세이렌'": { tex: "spum_elf", tone: "#a7f3d0" },
   "마법사 계열의 시조 '만개한 세이렌'": { tex: "spum_mage", tone: "#c4b5fd" },
   "도적 계열의 시조 '그림자의 로크'": { tex: "spum_devil", tone: "#94a3b8" },
-};
+  /* ═══ vc285 — 라일락 월드 수식어 화자 (리뷰 지적: 초상화/월드 불일치) ═══
+   * [실측] 대사 데이터의 화자 85명 중 54명이 어떤 초상화로도 해석되지 않았다.
+   *  초상화가 없으면 이 컴포넌트는 얼굴 없이 이름만 그린다(portraitOf → null).
+   *  그중 "라일락 연합의 기록자"는 **27회**로 라일락 월드 최다 화자인데도
+   *  이미 있는 npc_lilac.png 를 못 쓰고 있었다 — 이름이 수식어로 감싸여
+   *  `_map.json` 의 키("라일락")와 정확히 일치하지 않았기 때문이다.
+   *
+   * [해결] 화자명을 바꾸지 않고 **표에 별칭을 추가**한다. 대사 데이터가 정본이므로
+   *  문구를 손대지 않는 쪽이 안전하고 diff 도 작다.
+   *  초상화는 이미 배포 중인 npc_*.png 를 그대로 쓴다(새 에셋 생성 0). */
+  "라일락 연합의 기록자": { tex: "npc_lilac", tone: "#c9b3ff" },
+  "라일락 월드의 안내인": { tex: "npc_lilac", tone: "#c9b3ff" },
+  "라일락 연합": { tex: "npc_lilac", tone: "#c9b3ff" },
+  "스칼렛의 환영": { tex: "npc_scarlet", tone: "#fda4af" },
+  "어둠의 군주 스칼렛": { tex: "npc_scarlet", tone: "#fda4af" },
+  "에벤트왕국 근위대장 아리스텔라": { tex: "npc_aristella", tone: "#fcd34d" },};
 
 /** 보스 대사 — BOSS_DEFS의 보스 이름과 일치하면 해당 보스 스프라이트 사용
  *  v3.0.25 (#이미지 안불러와짐) — 보스 텍스처는 idle 프레임 분할 파일(boss_*_idle0.png)이므로
