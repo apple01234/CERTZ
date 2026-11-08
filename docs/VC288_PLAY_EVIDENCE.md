@@ -38,8 +38,21 @@ HUD 렌더 경로를 직접 검증했다. DOM 조회 결과 **`침묵 3초`** �
 
 - 증거: `2_boss_loading.png`, `3_after_cutscene.png` (185KB)
 
-### ④ 보스 카운트다운 — 코드로만 확인, 화면 캡처는 실패
+### ④ 스킬 배치 프리셋 3종 — 확인
 
+옵션 → 키 매핑 창에 초록 박스 「스킬 배치 프리셋」이 렌더되고,
+버튼 3개(`전투 기본` / `보스전` / `원거리`)가 실제로 보인다.
+
+"보스전"을 누르자:
+- 버튼이 `보스전 ✓` 로 바뀜
+- 설명이 "궁극기 두 개를 손 닿는 곳으로 올리고 물약을 멀리 둡니다." 로 바뀜
+- `localStorage['sertz_keymap_v2']` 값이 **실제로 변경됨**
+- `localStorage['sertz_skillpreset_v1']` = **`boss`** 로 저장됨
+
+- 증거: `reports/play/vc288preset/3_preset_ui.png` (전투 기본 선택 상태)
+- 증거: `reports/play/vc288preset/4_boss_preset.png` (보스전 선택 후)
+
+### ⑤ 보스 카운트다운 — 코드로만 확인, 화면 캡처는 실패
 `Boss.startCountdown()` 이 낙하 착지 콜백에서 호출되고, `tick()` 이
 `if (this.countdown > 0) return` 으로 행동을 멈추는 것은 테스트 5개로 고정했다
 (`tests/boss-countdown.test.mjs`).
