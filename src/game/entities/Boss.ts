@@ -108,6 +108,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /* vc153 — 스바르트알프헤임 보스 개편 상태 */
   private shieldInvuln = false; // ShieldCast 상태유지 중 피해 무효
   private shieldAura: Phaser.GameObjects.Image | null = null; // 방어막 오라 (정리 보장 대상)
+  /* vc288 — 방어막 남은 시간 게이지. 시간제 무적의 종료 시점을 보여 준다. */
+  private shieldGauge: Phaser.GameObjects.Graphics | null = null;
+  private shieldGaugeTimer: Phaser.Time.TimerEvent | null = null;
   /** 독 장판 (nidhog/jorm poisonfield) — 밟으면 도트 피해 */
   private poisonZones: { x: number; y: number; until: number; img: Phaser.GameObjects.Image; last: number }[] = [];
   /** 카운터 창 텔레그래프 링 */
@@ -124,6 +127,12 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private squashX = 0;
   private squashY = 0;
   private entranceDone = false;
+  /* vc288 — 보스 등장 직후 전투 개시까지의 카운트다운(초). 0 이면 끝난 상태.
+   *  유저 요구 "보스 시작 전 카운트다운"이 미구현이었다. 낙하 착지와 동시에 공격이
+   *  시작되면, 화면을 보고 준비할 틈이 없어 "맞으면서 시작"이 된다.
+   *  이 값이 0 보다 큰 동안은 보스가 아무 행동도 하지 않는다(update 조기 반환). */
+  private countdown = 0;
+  private countdownTimer: Phaser.Time.TimerEvent | null = null;
 
   // F4: 투사체 고정 풀
   private orbPool: Phaser.Physics.Arcade.Image[] = [];
@@ -238,6 +247,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         this.scene.spawnBurstAt(this.x, this.y + 12, 12, 0xffffff);
         this.scene.impactFX.shake(150, 0.007);
         this.startChaosAura();
+        this.startCountdown();
       },
     });
   }
@@ -251,6 +261,48 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       duration: 420,
       yoyo: true,
       repeat: -1,
+    });
+  }
+
+  /**
+   * vc288 — 보스전 개시 카운트다운 (3 → 2 → 1 → 시작).
+   *
+   * [왜 필요한가]
+   *  종전엔 낙하 착지와 **동시에** 공격이 시작됐다. 유저는 보스가 어디에 섰는지,
+   *  내가 어디 있는지를 볼 틈도 없이 첫 패턴을 맞았다. 보스전의 첫 3초가
+   *  "읽을 시간"이 아니라 "얻어맞는 시간"이었던 셈이다.
+   *
+   * [동작]
+   *  착지 직후 1초 간격으로 3·2·1 을 배너에 띄우고, 그동안 `tick()` 은 조기 반환한다.
+   *  카운트가 끝나면 "시작!" 을 띄우고 정상 전투로 넘어간다.
+   *  씬이 사라지면 타이머도 같이 정리된다(TimerEvent 는 씬 소속이므로 자동 소멸하지만,
+   *  보스가 죽어 destroy 되는 경우를 대비해 onDie/cleanup 에서 remove 한다).
+   *
+   * ponytail: 카운트 길이를 바꾸려면 COUNTDOWN_STEPS 만 고친다.
+   *  값을 늘리면 "준비 시간"이 늘어나지만 템포가 죽는다 — 3초가 현재 균형점이다.
+   */
+  private startCountdown() {
+    const STEPS = 3;
+    this.countdown = STEPS;
+    this.scene.showBanner(`${this.def.name} — ${STEPS}`);
+    this.scene.sfxRoar();
+    this.countdownTimer?.remove();
+    this.countdownTimer = this.scene.time.addEvent({
+      delay: 1000,
+      repeat: STEPS - 1,
+      callback: () => {
+        if (!this.alive) {
+          this.countdown = 0;
+          return;
+        }
+        this.countdown = Math.max(0, this.countdown - 1);
+        if (this.countdown > 0) {
+          this.scene.showBanner(`${this.def.name} — ${this.countdown}`);
+        } else {
+          this.scene.showBanner("시작!");
+          this.scene.impactFX.shake(120, 0.006);
+        }
+      },
     });
   }
 
@@ -339,6 +391,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   tick(dt: number, player: PlayerLike2) {
     if (!this.alive || !this.entranceDone) return; // v1.4.9 — 낙하 등장 중 행동 정지
+    /* vc288 — 카운트다운 중에는 아무 것도 하지 않는다. 사용자가 화면을 읽고
+     *  위치를 잡을 시간을 준다. 타이머가 0 으로 만든 뒤부터 정상 동작. */
+    if (this.countdown > 0) return;
     this.modeTimer -= dt;
     this.knockVec.scale(Math.pow(0.002, dt / 1000));
 
@@ -1544,6 +1599,33 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       .setDepth(23).setBlendMode(Phaser.BlendModes.ADD).setTint(0x8ad4ff).setScale(1.4).setAlpha(0.8);
     this.scene.tweens.add({ targets: this.shieldAura, scale: 1.8, alpha: 0.45, duration: 700, yoyo: true, repeat: -1 });
     this.setTint(0x9ad8ff);
+    /* vc288 — 방어막 남은 시간 게이지.
+     *  유저 요구 "보스 방어막 게이지"가 미구현이었다. 종전엔 배너로 "피해 무효"만
+     *  알려 주고 **언제 끝나는지**는 알 수 없었다. 그런데 이 방어막은 2.6~3.2초짜리
+     *  무적이라, 끝나는 순간을 모르면 헛스윙만 하다가 반격(MagicBurst)을 맞는다.
+     *
+     *  방어막을 "HP 게이지"로 바꾸지 않는다 — 그건 밸런스 변경이고 지금 계약은
+     *  "시간제 무적"이다. 대신 남은 시간을 오라 바깥 링의 각도로 그린다. */
+    const shieldMs = this.chaos ? 2600 : 3200;
+    this.shieldGauge = this.scene.add.graphics().setDepth(24);
+    this.shieldGaugeTimer?.remove();
+    this.shieldGaugeTimer = this.scene.time.addEvent({
+      delay: 50,
+      repeat: Math.ceil(shieldMs / 50) - 1,
+      callback: () => {
+        const g = this.shieldGauge;
+        if (!g) return;
+        /* 남은 비율 — modeTimer 가 실제 남은 시간의 단일 출처다(중복 계산 금지). */
+        const k = Math.max(0, Math.min(1, this.modeTimer / shieldMs));
+        g.clear();
+        if (!this.alive || k <= 0) return;
+        g.lineStyle(2, 0x8ad4ff, 0.9);
+        /* 12시에서 반시계로 줄어드는 호 — 많이 남았을 때가 길다. */
+        g.beginPath();
+        g.arc(this.x, this.y - 6, 26, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * k, false);
+        g.strokePath();
+      },
+    });
     this.scene.showBanner(`${this.def.name} — 심연의 결정 방어막! (피해 무효)`);
     /* vc273 — "shield" 는 SKILL_SFX_FILES 에 없다. sfx.skill() 이 `if (!file) return;`
      *  로 조용히 무음 처리하므로 이 방어막 전개음은 실제로 나지 않았다.
@@ -1560,6 +1642,18 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.shieldInvuln = false;
     this.shieldAura?.destroy();
     this.shieldAura = null;
+    /* vc288 — 게이지도 같이 정리한다. 안 지우면 방어막이 끝난 뒤에도
+     *  파란 호가 허공에 남는다. */
+    this.shieldGaugeTimer?.remove();
+    this.shieldGaugeTimer = null;
+    this.shieldGauge?.destroy();
+    this.shieldGauge = null;
+    /* vc288 — 방어막이 터지는 순간 **스킬을 봉인**한다.
+     *  종전엔 이 반격이 그냥 큰 피해였고, 플레이어는 계속 스킬을 쓸 수 있었다.
+     *  이제 "방어막 뒤에 뭔가 온다"는 것을 배우게 된다 — 방어막을 보면 거리를 벌리고
+     *  평타로 버티는 선택을 하게 된다. 이것이 침묵 상태이상의 첫 실사용처다.
+     *  지속 2.5초: 반격(MagicBurst 2.1초)과 겹치는 구간에만 걸려 "대응 불가"가 되지 않는다. */
+    player.applySilence?.(2500);
     this.clearTint();
     this.setMode("vxCast", 2100);
     this.setBossAnim(`${this.def.tex}-atk`);
@@ -2044,6 +2138,16 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.beamTimer?.remove();
     this.quakeTimer?.remove();
     this.supportTimer?.remove();
+    /* vc288 — 카운트다운 타이머도 정리한다. 남겨 두면 보스가 죽은 뒤에도
+     *  "2 / 1 / 시작!" 배너가 계속 뜬다. */
+    this.countdownTimer?.remove();
+    this.countdownTimer = null;
+    this.countdown = 0;
+    /* vc288 — 방어막 게이지 정리 (씬 전환/사망 시 허공에 남지 않도록) */
+    this.shieldGaugeTimer?.remove();
+    this.shieldGaugeTimer = null;
+    this.shieldGauge?.destroy();
+    this.shieldGauge = null;
     this.twin?.destroy(); this.twin = null; // v1.0.12 — 씬 정리 시 하티 제거
     for (const orb of this.orbPool) orb.destroy();
     for (const r of this.teleRings) r.destroy();
@@ -2064,4 +2168,7 @@ export interface PlayerLike2 {
   hp: number;
   /** v3.0.6 — pierce(0~1): 방어력 관통, hpPct(0~1): maxHP % 고정 피해 하한 (보스 공격 전용) */
   takeDamage(dmg: number, fromDir: Phaser.Math.Vector2, pierce?: number, hpPct?: number): void;
+  /** vc288 — 침묵 부여(스킬 봉인). 보스가 "스킬을 봉인한다" 패턴을 쓸 때 호출한다.
+   *  optional 로 둔 이유: 테스트 더미/옛 호출부가 이 메서드 없이도 동작해야 한다. */
+  applySilence?(ms: number): void;
 }

@@ -291,7 +291,10 @@ export function HUD({
                 const meta =
                   d.kind === "poison" ? { icon: "💀", label: "중독", color: "#9ade8a" }
                     : d.kind === "bleed" ? { icon: "🩸", label: "출혈", color: "#ff8a8a" }
-                      : { icon: "🐌", label: "감속", color: "#8ab6ff" };
+                      : d.kind === "slow" ? { icon: "🐌", label: "감속", color: "#8ab6ff" }
+                        /* vc288 — 침묵: 스킬 봉인. 체력을 깎지 않아 종전엔 "버튼이 왜 안 눌리지"만
+                         *  남았다. 다른 상태이상과 같은 자리에 두어 한눈에 보이게 한다. */
+                        : { icon: "🔇", label: "침묵", color: "#c9b3ff" };
                 const pct = d.total > 0 ? Math.max(0, Math.min(100, (d.remain / d.total) * 100)) : 0;
                 return (
                   <div

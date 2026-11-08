@@ -38,9 +38,11 @@ export type HudState = {
   /** vc179 (지시 #5 DDD) — 연속킬 콤보 (2연킬 이상일 때만 존재).
    *  남은 시간이 줄어드는 걸 보여 주는 것만으로 "끊기기 전에 더 잡자"가 생긴다. */
   combo?: { n: number; pct: number; remain: number; total: number } | null;
-  /** v1.1.3 (#개편) — 현재 걸린 상태이상(중독/출혈/감속). 종전엔 화면에 표시가 전혀 없어
-   *  "왜 체력이 계속 줄지"를 알 수 없었다. 남은 시간(ms)을 함께 보내 HUD가 게이지를 그린다. */
-  dots?: { kind: "poison" | "bleed" | "slow"; remain: number; total: number }[];
+  /** v1.1.3 (#개편) — 현재 걸린 상태이상(중독/출혈/감속/침묵). 종전엔 화면에 표시가 전혀 없어
+   *  "왜 체력이 계속 줄지"를 알 수 없었다. 남은 시간(ms)을 함께 보내 HUD가 게이지를 그린다.
+   *  vc288 — `silence` 추가: 스킬이 봉인되는 상태. 체력을 깎지 않지만 "지금 스킬을 못 쓴다"를
+   *  알려 주지 않으면 버튼이 안 눌리는 이유를 알 수 없다. */
+  dots?: { kind: "poison" | "bleed" | "slow" | "silence"; remain: number; total: number }[];
   /** vc237 — 장비에서 유도한 시너지 태그 문구("화염 2/4 — 공격력 +2%"). 태그가 없으면 빈 배열.
    *  세이브 필드가 아니라 매 emit 마다 장착 상태에서 파생된다. optional — 구버전 emit 과 호환. */
   synergies?: string[];

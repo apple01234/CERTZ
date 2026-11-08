@@ -534,6 +534,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private mpRegenAcc = 0;
 
   private iframes = 0;
+  /* vc288 — 침묵(스킬 봉인) 잔여 ms.
+   *  유저 요구 "침묵당한 손쓸 수 없음"이 미구현이었다. 지금은 상태이상이
+   *  중독/출혈/감속(dots)뿐이라 "스킬을 못 쓴다"는 압박이 전투에 없었다.
+   *  값이 0 보다 크면 모든 스킬 사용이 막히고, HUD 가 남은 시간을 보여 준다.
+   *  지속시간은 보스 패턴이 정한다(지금은 심연의 결정 방어막 종료 반격). */
+  private silenceMs = 0;
   private dashTime = 0;
   private dashGhostAcc = 0; // v4.9.0 — 돌진 잔상 스폰 간격 누적
   private dashDir = new Phaser.Math.Vector2();
@@ -683,6 +689,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
     this.iframes = Math.max(0, this.iframes - ms);
+    /* vc288 — 침묵 잔여시간 감소. 다른 상태이상과 같은 자리에서 함께 줄인다. */
+    this.silenceMs = Math.max(0, this.silenceMs - ms);
     this.potCd = Math.max(0, this.potCd - ms);
     this.tickBuffs(ms);
     this.tickDots(ms); // v3.0.3 — 출혈/독 도트 + 감속 만료
@@ -1573,7 +1581,39 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     w.tut?.notify(ev);
   }
 
+  /**
+   * vc288 — 침묵 부여. 보스가 "스킬 봉인" 패턴을 쓸 때 호출한다.
+   *
+   * [왜 필요한가]
+   *  지금까지 상태이상은 중독·출혈·감속뿐이라, 플레이어는 **항상 스킬을 쓸 수 있었다.**
+   *  그래서 위협은 "체력이 줄어든다" 하나로 수렴했다. 침묵이 있으면 "지금은 스킬을
+   *  아끼고 평타로 버텨야 한다"는 판단이 생긴다 — 전투에 선택지가 늘어난다.
+   *
+   * [설계]
+   *  지속시간은 중첩하지 않고 **더 긴 쪽**을 쓴다(짧은 침묵이 긴 침묵을 깎지 않게).
+   *  스킬 진입점 6개가 모두 `isSilenced()` 한 줄로 막히므로 새 스킬이 추가돼도
+   *  같은 가드를 쓰면 자동으로 적용된다.
+   *
+   * ponytail: 지금은 스킬만 막는다. 이동/평타는 그대로 둔다 — 둘까지 막으면
+   *  "손쓸 수 없음"이 되어 조작 불능이 된다(그건 재미가 아니라 짜증이다).
+   */
+  applySilence(ms: number) {
+    if (ms <= 0) return;
+    this.silenceMs = Math.max(this.silenceMs, ms);
+  }
+
+  /** 침묵 중인가. 스킬 진입점 6곳이 이 한 줄로 막힌다. */
+  isSilenced(): boolean {
+    return this.silenceMs > 0;
+  }
+
+  /** 남은 침묵 ms (HUD 표시용). */
+  silenceRemain(): number {
+    return this.silenceMs;
+  }
+
   useSkill1() {
+    if (this.silenceMs > 0) return; // vc288 — 침묵 중 스킬 봉인
     if (this.state !== "idle" || this.skill1Cd > 0 || this.mp < 15) return;
     const signature = weaponMasterProfileOf(this.cls) ?? (!this.cls || this.cls === "warrior" ? STARTER_SIGNATURE : null);
     if (signature) { this.useSignatureSkill(signature); return; }
@@ -2624,6 +2664,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   useSkill2() {
+    if (this.silenceMs > 0) return; // vc288 — 침묵 중 스킬 봉인
     if (this.signatureCast && this.state === "attack" && this.skill2Cd <= 0 && this.mp >= 20) this.cancelSkillCast();
     if (this.state !== "idle" || this.skill2Cd > 0 || this.mp < 20) return;
     const move = this.scene.currentMoveVec();
@@ -3150,6 +3191,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   useSkill3() {
+    if (this.silenceMs > 0) return; // vc288 — 침묵 중 스킬 봉인
     if (this.state !== "idle" || !this.skill3Unlocked || this.skill3Cd > 0 || this.mp < 25) return;
     const kind = SKILL3_KIND[this.cls ?? ""] as Skill3Kind | undefined;
     if (!kind) return;
@@ -3763,6 +3805,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   useSkill4() {
+    if (this.silenceMs > 0) return; // vc288 — 침묵 중 스킬 봉인
     if (this.state !== "idle" || !this.skill4Unlocked || this.skill4Cd > 0 || this.mp < 40) return;
     const kind = SKILL4_KIND[this.cls ?? ""] as Skill4Kind | undefined;
     if (!kind) return;
@@ -4259,6 +4302,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  · 시퀀스 전체에 화면 플래시/쉐이크/기둥/폭발/필드를 겹쳐 "궁극기"급 임팩트
    * v3.3.0 (지시 #2) — 4차 세부직업 8종 전부 "고유 궁극기"로 분리 (겹침 0).
    *  4차 미달 플레이어는 기존 계열 궁극기 폴백. */  useSkill5() {
+    if (this.silenceMs > 0) return; // vc288 — 침묵 중 스킬 봉인
     if (this.state !== "idle" || !this.skill5Unlocked || this.skill5Cd > 0 || this.mp < 100) return;
     this.mp -= 100;
     this.skill5Cd = this.skill5Max; // 60초 고정 (cdMult 미적용)
@@ -6055,6 +6099,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  1차 궁극기와 겹치지 않는 12종(계열 폴백 4 + 4차 세부직업 8) — 종결 계수 합산이
    *  1차 궁극기의 1.4~2배급. 광역 필드·시간 정지·무적 성역·피해 재현 등 2분다운 규모. */
   useSkill5b() {
+    if (this.silenceMs > 0) return; // vc288 — 침묵 중 스킬 봉인
     if (this.state !== "idle" || !this.skill5bUnlocked || this.skill5bCd > 0 || this.mp < 150) return;
     this.mp -= 150;
     this.skill5bCd = this.skill5bMax; // 120초 고정 (cdMult 미적용)

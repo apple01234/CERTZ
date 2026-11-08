@@ -17112,10 +17112,15 @@ export class WorldScene extends Phaser.Scene {
       dots: (() => {
         const d = this.player.dots;
         const now = this.time.now;
-        const out: { kind: "poison" | "bleed" | "slow"; remain: number; total: number }[] = [];
+        const out: { kind: "poison" | "bleed" | "slow" | "silence"; remain: number; total: number }[] = [];
         if (d.poison) out.push({ kind: "poison", remain: Math.max(0, d.poison.until - now), total: 5000 });
         if (d.bleed) out.push({ kind: "bleed", remain: Math.max(0, d.bleed.until - now), total: 5000 });
         if (d.slow) out.push({ kind: "slow", remain: Math.max(0, d.slow.until - now), total: 4000 });
+        /* vc288 — 침묵은 dots 와 달리 Player 의 단일 카운터다(silenceMs).
+         *  체력을 깎지 않으므로 dots 에 섞지 않고 d 에 넣는 대신 직접 push 한다.
+         *  total 은 지속시간을 모르므로 남은 시간을 그대로 쓴다(게이지가 줄어드는 것만 보이면 된다). */
+        const sil = this.player.silenceRemain();
+        if (sil > 0) out.push({ kind: "silence", remain: sil, total: sil });
         return out;
       })(),
       /* vc237 — 시너지 문구. 장착에서 유도한 태그 개수를 describeSynergies 에 그대로 넘긴다.
