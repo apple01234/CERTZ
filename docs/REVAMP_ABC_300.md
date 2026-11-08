@@ -178,7 +178,7 @@
 | B36 | 스킬 잔상 강화 | ⬜ | spawnDashGhost |
 | B37 | 다중 처치 슬로우 | ⬜ | |
 | B38 | 콤보 단계별 화면 효과 | ⬜ | |
-| B39 | 보스 HP 30% 이하 오라 | ⬜ | |
+| B39 | 보스 HP 30% 이하 오라 | 🟡 | vc288 — 페이즈 3 진입 시 발밑 2중 붉은 고리 맥동(`startEnrageAura`). Graphics 재사용(clear 후 재그리기), 보스 뒤 depth, 사망 시 정리. 런타임에서 `phase:3, enraged:true` 확인했으나 **오라 렌더 자체는 스크린샷으로 확증 못 함** — `hasAura:false` 는 private 필드 프로브 타이밍 문제로 추정 중. tests/boss-enrage-aura.test.mjs 5개 |
 | B40 | 파티원 스킬 이펙트 | ⬜ | |
 | B41 | 원소 반응 이펙트 강화 | ⬜ | spawnElementReaction |
 | B42 | 피격 시 붉은 비네트 | ✅ | v1.1.3 추가 |

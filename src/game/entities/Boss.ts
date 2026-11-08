@@ -111,6 +111,12 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /* vc288 — 방어막 남은 시간 게이지. 시간제 무적의 종료 시점을 보여 준다. */
   private shieldGauge: Phaser.GameObjects.Graphics | null = null;
   private shieldGaugeTimer: Phaser.Time.TimerEvent | null = null;
+  /* vc288 (REVAMP_ABC_300 B39) — 격노 오라. HP 30% 이하(페이즈 3)에서 보스 발밑에
+   *  붉은 고리가 깜박인다. 종전엔 `enraged` 가 이동속도·공격력에만 영향을 줘서
+   *  **화면상으로는 격노한 것을 알 수 없었다** — 유저는 갑자기 빨라진 보스를 보며
+   *  "왜 갑자기 세지?" 만 느꼈다. */
+  private enrageAura: Phaser.GameObjects.Graphics | null = null;
+  private enrageAuraTimer: Phaser.Time.TimerEvent | null = null;
   /** 독 장판 (nidhog/jorm poisonfield) — 밟으면 도트 피해 */
   private poisonZones: { x: number; y: number; until: number; img: Phaser.GameObjects.Image; last: number }[] = [];
   /** 카운터 창 텔레그래프 링 */
@@ -261,6 +267,49 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       duration: 420,
       yoyo: true,
       repeat: -1,
+    });
+  }
+
+  /**
+   * vc288 (REVAMP_ABC_300 B39) — 격노 오라. 페이즈 3 진입(=HP 33% 이하) 시 보스 발밑에
+   * 붉은 고리가 맥동한다.
+   *
+   * [왜 필요한가]
+   *  `enraged` 플래그는 이미 있었지만 이동속도 1.18배·공격력 0.75배에만 영향을 줬다.
+   *  **화면에는 아무 표시가 없었다.** 유저는 갑자기 빨라진 보스를 보며 이유를 알 수
+   *  없었고, "내가 뭘 잘못했나" 로 오해하기 쉬웠다. 위기 상태는 눈에 보여야 한다.
+   *
+   * [동작]
+   *  2중 고리를 90ms 간격으로 다시 그린다(반경과 투명도가 미세하게 맥동).
+   *  Graphics 를 매 프레임 새로 만들지 않고 **하나를 clear() 후 재사용**한다 —
+   *  이 프로젝트에서 자주 호출되는 지점은 할당을 피하는 규칙(ponytail)을 따른다.
+   *  보스가 죽거나 씬이 바뀌면 destroyPool() 이 정리한다.
+   */
+  private startEnrageAura() {
+    if (!this.alive || this.enrageAura) return;
+    const g = this.scene.add.graphics();
+    g.setDepth(this.depth - 1); // 보스 뒤에 깔아 스프라이트를 가리지 않는다
+    this.enrageAura = g;
+
+    let t = 0;
+    this.enrageAuraTimer = this.scene.time.addEvent({
+      delay: 90,
+      loop: true,
+      callback: () => {
+        if (!this.alive || !this.enrageAura) return;
+        t += 0.15;
+        /* 0~1 맥동 — sin 으로 부드럽게. 반경 34~42, 투명도 0.20~0.42 */
+        const k = (Math.sin(t) + 1) / 2;
+        const r = 34 + k * 8;
+        g.clear();
+        g.setPosition(this.x, this.y + 12);
+        /* 바깥 고리 — 옅고 넓다 */
+        g.lineStyle(3, 0xff4a6a, 0.14 + k * 0.16);
+        g.strokeCircle(0, 0, r + 4);
+        /* 안쪽 고리 — 진하고 좁다 */
+        g.lineStyle(2, 0xff8090, 0.22 + k * 0.20);
+        g.strokeCircle(0, 0, r);
+      },
     });
   }
 
@@ -613,6 +662,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.nextAttackCd = 900;
     if (this.phase === 3) {
       this.enraged = true;
+      /* vc288 (B39) — 격노를 화면에 보여 준다 */
+      this.startEnrageAura();
       // v4.1.4 — 카오스 페이즈 3: 권속 지원군 (summonKey가 있는 보스 한정, 12초마다 1마리)
       if (this.chaos && this.def.summonKey && !this.supportTimer) {
         this.supportTimer = this.scene.time.addEvent({
@@ -2148,6 +2199,11 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.shieldGaugeTimer = null;
     this.shieldGauge?.destroy();
     this.shieldGauge = null;
+    /* vc288 (B39) — 격노 오라 정리. 사망 후에도 붉은 고리가 남으면 시체가 맥동한다. */
+    this.enrageAuraTimer?.remove();
+    this.enrageAuraTimer = null;
+    this.enrageAura?.destroy();
+    this.enrageAura = null;
     this.twin?.destroy(); this.twin = null; // v1.0.12 — 씬 정리 시 하티 제거
     for (const orb of this.orbPool) orb.destroy();
     for (const r of this.teleRings) r.destroy();
