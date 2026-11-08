@@ -237,7 +237,7 @@ export function HUD({
           <Bar value={hud.mp} max={hud.maxMp} from="#1e6fb8" to="#5ec5ff" label={`${Math.min(Math.round(hud.mp), Math.round(hud.maxMp))} / ${Math.round(hud.maxMp)}`} height={10} />
           {/* 골드 + 공격/방어/크리 (지시 #15 — 스탯창 고정) — v1.0.20 게임형 칩 */}
           <div className="mt-0.5 flex items-center gap-1">
-            <span className="game-chip flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-black text-[#ffd98a]">
+            <span className="game-chip flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-black text-game-gold">
               <img src="/assets/item_coin.webp" alt="" className="h-3.5 w-3.5" style={{ imageRendering: "pixelated" }} />
               {fmtC(rollingGold)}
             </span>

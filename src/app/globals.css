@@ -77,6 +77,43 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ═══ vc288 — 게임 UI 색 토큰 (REVAMP_100 #14) ═══
+ *
+ * [실측] src/components 의 tsx 22개에 hex 색이 284회 등장하고 고유값은 134개였다.
+ *  그중 **29종이 3회 이상 반복되어 전체 사용의 55%** 를 차지한다.
+ *  즉 "제각각 색"이 아니라 "같은 색을 여기저기서 다시 적은" 상태였다.
+ *
+ * [조치] 반복 상위 색만 토큰으로 올린다. 134개를 전부 토큰화하지 않는다 —
+ *  1회짜리 색까지 이름을 붙이면 읽기만 나빠지고 이득이 없다(YAGNI).
+ *  기준: **3회 이상 반복**되는 색만. 나머지는 그대로 둔다.
+ *
+ * [사용법] `text-game-gold` / `bg-game-panel` 처럼 쓴다.
+ *  새 코드는 이 토큰을 쓰고, 기존 하드코딩은 건드릴 때 함께 바꾼다
+ *  (한 번에 284곳을 치환하면 회귀 위험이 이득보다 크다 — ponytail).
+ *
+ * ponytail: 토큰 목록을 늘리려면 먼저 `node tools/_probe_tokens.mjs` 로
+ *  실제 반복 횟수를 재라. 반복이 3회 미만이면 토큰화하지 않는다.
+ */
+@theme {
+  /* 강조 — 가장 많이 쓰이는 금색 계열 (27·8·7·6회) */
+  --color-game-gold: #ffd98a;
+  --color-game-gold-deep: #ffd76a;
+  --color-game-gold-dim: #cbb88a;
+  --color-game-gold-soft: #e8c064;
+
+  /* 위험 — 체력·경고 (8·5·5회) */
+  --color-game-danger: #ff9a8a;
+  --color-game-danger-soft: #ffb0b0;
+
+  /* 정보 — 방어·마나 (4회) */
+  --color-game-info: #a8e0ff;
+
+  /* 표면 — 칩/패널 바탕 (11·8·6회) */
+  --color-game-surface: #211c17;
+  --color-game-surface-alt: #151922;
+  --color-game-surface-deep: #2a241e;
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
