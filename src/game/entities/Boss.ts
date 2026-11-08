@@ -12,7 +12,8 @@ import { rng, actorStream } from "../sim/deterministic"; // vc183 — 시드 기
 /* P7b — 페이즈 예고·반격 창 수치는 `bossPhases.ts` 가 단일 출처다(테스트가 검증).
  *  종전엔 이 값들이 Boss.ts 안에 흩어져 있어 "예고가 몇 ms 인가"를 기계적으로 확인할 수 없었다. */
 import { phaseAt, telegraphMs, recoveryMs, counterWindowMs, attacksAfter, attackPool } from "./bossPhases";
-
+/* vc288 — 정본(스토리 기획서)에 근거한 페이즈 형태 이름. 없으면 종전 문구로 폴백한다. */
+import { canonBossOf } from "./bossDesign";
 /**
  * 보스 (3종 — 스테이지별 정의 주입):
  *  guardian: 심연의 수호자 (알프헤임) / behemoth: 침몰의 선장 (쿠소디아 선박의 왕국) / abysslord: 심연의 군주 (심연의 왕좌)
@@ -595,10 +596,18 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.bossFx("hv2_flash2", this.x, this.y - 20, { tint: 0xffffff, scale: 2.1, alpha: 0.7, dur: 320, depth: 29 });
     this.bossFx("hv2_magiccircle2", this.x, this.y + 8, { tint: this.def.orbTint, scale: 1.5, alpha: 0.8, dur: 620, depth: 8 });
     this.squash(-0.1, 0.16); // v1.4.9 — 페이즈 포효 자세
+    /* [vc288 — 정본 페이즈] 유저 요구: "모든 주요 보스는 단순 체력 많은 몬스터가 되어서는 안 된다."
+     *  종전 배너는 "2 페이즈!" / "최후의 힘을 해방한다!" 뿐이라, 유저는 **무엇으로 변했는지**
+     *  알 수 없었다. 정본(bossDesign.ts)에 형태 이름이 있으면 그걸 쓴다 —
+     *  해롤드는 "크라켄", 페르온은 "검은 드래곤", 스칼렛은 "아이온 · 알다바오트".
+     *  `this.phase` 는 1부터 시작하므로 배열 인덱스는 -1. 정본이 없는 보스는 종전 문구 그대로. */
+    const canonForm = canonBossOf(this.def.key)?.phases[this.phase - 1]?.form;
     this.scene.showBanner(
-      this.phase === 3
-        ? `${this.def.name} — 최후의 힘을 해방한다!`
-        : `${this.def.name} — 2 페이즈!`
+      canonForm
+        ? `${this.def.name} — ${canonForm}`
+        : this.phase === 3
+          ? `${this.def.name} — 최후의 힘을 해방한다!`
+          : `${this.def.name} — 2 페이즈!`,
     );
     // 페이즈 전환 플래시
     this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
