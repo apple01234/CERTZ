@@ -64,3 +64,28 @@ test('classDef 가 4차 경계를 정확히 보고한다', () => {
   assert.equal(classDef('warrior')?.tier, 1);
   assert.equal(classDef(null), null);
 });
+
+/* ═══ vc284 (리뷰 지적) — 환생 직후 경로를 고정한다 ═══
+ *
+ * [리뷰 지적] 환생하면 `resetClass()` 가 cls=null 로 만들고 곧바로 tier-1 클래스를
+ *  부여한다(WorldScene.ts:8442-8443). 그래서 이전에 랭킹에 있던 캐릭터도
+ *  환생 직후에는 목록에서 빠진다.
+ *
+ * [판단] 이것은 **의도된 동작**이다. 요구사항 #24 는 "4차 전직 이상만 등록"이지
+ *  "한 번 올랐으면 영구 유지"가 아니고, 레벨 1 로 돌아간 캐릭터가 상위 랭킹에
+ *  남아 있으면 명예의 전당이 무의미해진다.
+ *  다만 이 경로가 테스트로 고정돼 있지 않아, 나중에 누가 "환생자가 사라졌다"를
+ *  버그로 착각하고 조건을 느슨하게 풀 수 있다. 그래서 **의도임을 테스트로 못박는다.**
+ */
+test('환생 직후(cls 가 1차로 리셋됨)에는 랭킹에서 제외된다 — 의도된 동작', () => {
+  /* 환생 직후 상태를 실제 구성과 같게 만든다: cls 는 1차, 레벨은 1, 환생 횟수는 남아 있음 */
+  const afterRebirth = { cls: 'warrior', lv: 1, inf: { rebirths: 3 } };
+  assert.equal(rankEligible(afterRebirth), false,
+    '환생 직후 1차 클래스는 랭킹 제외 — 4차 조건의 자연스러운 결과다');
+
+  /* 미전직(null) 상태도 동일 */
+  assert.equal(rankEligible({ cls: null, lv: 1, inf: { rebirths: 3 } }), false);
+
+  /* 4차에 다시 도달하면 복귀한다 — 영구 박탈이 아님을 함께 고정 */
+  assert.equal(rankEligible({ cls: 'warbringer', lv: 200, inf: { rebirths: 3 } }), true);
+});

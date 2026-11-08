@@ -16052,19 +16052,34 @@ export class WorldScene extends Phaser.Scene {
       closed = true;
       this.input.keyboard?.off("keydown-SPACE", next); // 잔여 리스너 해제 (파괴된 Text 접근 차단)
       this.input.keyboard?.off("keydown-ENTER", next); // vc256 — Enter 도 진행키로 받는다
+      this.events.off("shutdown", onSceneGone);        // vc284 — 씬 종료 훅 해제
       this.tweens.killTweensOf(t1);
       overlay.destroy(); deco.destroy(); t0.destroy(); t1.destroy(); t2.destroy(); tSkip.destroy();
       this.input.keyboard?.removeCapture("SPACE");
       this.dialoguing = false;
       this.physics.world.resume();
       /* vc283 (지시 #02) — 프롤로그로 숨긴 HUD 를 반드시 되돌린다.
-       *  이 cleanup 은 완료·건너뛰기·오버레이 탭 세 경로의 **단일 출구**이고
        *  `closed` 가드로 1회만 실행되므로 active:false 도 정확히 한 번 발신된다.
        *  (짝이 깨지면 HUD 가 영구히 사라진 채 게임이 진행된다 —
        *   GameRoot 는 별도 복구 경로 없이 이 플래그만 신뢰한다.) */
       EventBus.emit("cinematic:state", { active: false });
       this.introSeenSave(); // v1.1.0 (#18) — 시청/스킵 모두 1회 기록 (재시작 시 재생 방지)
     };
+    /* ═══ vc284 (리뷰 지적: 짝 안 맞는 종료 경로) ═══
+     * [지적] 위 주석이 "완료·건너뛰기·오버레이 탭 세 경로가 모두 거치는 단일 출구"라고
+     *  단언했지만, 실제로 cleanup 에 닿는 길은 next() 와 tSkip 뿐이다.
+     *  프롤로그가 떠 있는 채 씬이 내려가면(exitToMenu·재시작·강제 종료)
+     *  active:true 가 **영구 미해제**되어 HUD 가 사라진 채로 게임이 남는다.
+     *  GameRoot 는 이 플래그 외에 복구 경로가 없다(GameRoot.tsx:204-209).
+     *
+     * [해결] 형제 연출 경로(sceneCinematic)는 이미 shutdown/destroy 를 훅한다.
+     *  같은 방식으로 씬 shutdown 에서 짝을 맞춘다. `closed` 가드가 있으므로
+     *  정상 종료 뒤의 shutdown 에서는 중복 발신되지 않는다. */
+    const onSceneGone = () => {
+      closed = true; // 이후 cleanup 본체가 오버레이를 건드리지 않게 잠근다(파괴된 객체 접근 방지)
+      EventBus.emit("cinematic:state", { active: false });
+    };
+    this.events.once("shutdown", onSceneGone);
     const next = () => {
       if (closed) return;
       i += 1;

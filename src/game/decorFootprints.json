@@ -71,18 +71,6 @@
     "sha256": "e4511206c6cdc837f883b8b3064c00ddf39c703bf1f56c0ad539513eb7f054ff",
     "url": "/assets/objects/town/obj_town_barrel.png"
   },
-  "obj_town_house_blue": {
-    "width": 160,
-    "height": 112,
-    "opaque": [
-      0,
-      0,
-      160,
-      112
-    ],
-    "sha256": "71fd835ea9a6bac3e39d83525a7b8b431c009d579b5ad64b2878030bc534011e",
-    "url": "/assets/objects/town/obj_town_house_blue.png"
-  },
   "obj_town_shop_black": {
     "width": 224,
     "height": 112,

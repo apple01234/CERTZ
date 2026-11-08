@@ -451,13 +451,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return fifthFormDef(this.cls, "z") ?? null;
   }
 
-  /** 5차 형태 파라미터 조회 — 없으면 `undefined`. 타입 좁히기용. */
-  private fifthZParam<K extends keyof NonNullable<ReturnType<typeof fifthFormDef>>["params"]>(
-    key: K,
-  ): NonNullable<ReturnType<typeof fifthFormDef>>["params"][K] | undefined {
-    const def = this.fifthZForm;
-    return def?.params[key];
-  }
+  /* vc284 (리뷰 Minor) — `fifthZParam` 헬퍼 제거.
+   *  정의만 있고 호출이 0곳이었다(각 형태 분기가 `f5.params.x ?? 기본값` 을 인라인으로 읽는다).
+   *  tsc/eslint 는 private 미사용을 잡지 않아 조용히 남아 있었다. */
 
   /* ══════════════════════════════════════════════════════════════════════════
    * vc280 (P5 확장) — V(3차)·B(4차) 슬롯 진화 헬퍼

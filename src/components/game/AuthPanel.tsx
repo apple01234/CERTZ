@@ -117,6 +117,13 @@ export function AuthPanel() {
 
   const submit = async () => {
     if (busy) return;
+    /* vc284 (리뷰 지적) — 버튼 disabled 만으로는 부족하다.
+     *  비밀번호 input 의 Enter 핸들러가 submit() 을 직접 호출하므로 그 경로가 뚫린다.
+     *  여기서 한 번 더 막아 규칙이 클라 안에서도 실제로 강제되게 한다. */
+    if (mode === "signup" && nick.length > 0 && !nameCheck.nick.ok) {
+      setMsg(nameCheck.nick.message ?? "게임 내 이름을 확인해 주세요");
+      return;
+    }
     setMsg("");
     setBusy(true);
     const r =
@@ -390,7 +397,7 @@ export function AuthPanel() {
                   )}
                   <input {...swallowKeys} type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="비밀번호 (6자 이상)" className={inputCls} maxLength={40} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") { e.preventDefault(); submit(); } }} />
                 </div>
-                <button onClick={submit} disabled={busy || !id || !pw} className="mt-1.5 w-full rounded-xl border-2 border-amber-200/80 bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-2.5 text-[13px] font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95 disabled:opacity-40">
+                <button onClick={submit} disabled={busy || !id || !pw || (mode === "signup" && nick.length > 0 && !nameCheck.nick.ok)} className="mt-1.5 w-full rounded-xl border-2 border-amber-200/80 bg-gradient-to-b from-amber-400 to-amber-600 px-4 py-2.5 text-[13px] font-black text-slate-900 shadow-lg transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95 disabled:opacity-40">
                   {mode === "login" ? "로그인" : "이 정보로 가입!"}
                 </button>
                 {/* v1.4.0 (#4) — 관리자 로그인 방법 설명 완전 제거: 클라이언트에 운영자 진입 힌트 노출 금지 (서버 롤 검증만 유지) */}

@@ -238,6 +238,49 @@ test('Phaser4 addTilesetImage 8번째 인자를 프레임 수로 쓰지 않는�
   assert.match(src, /scene\.add\.tileSprite\(b\.x, b\.y, b\.w, b\.h, role\.key\)/);
 });
 
+/* ═══ vc283 리뷰 반영 — "흐림(blur)"을 실제로 재는 지표가 없었다 ═══
+ *
+ * [리뷰 지적] 위 테스트들(색 수 / seam / 자기상관)은 **전부 옛 수채화 타일도 통과**한다.
+ *  실측(d3233b4f 의 ground_meadow): colors=1330, top=1.1%, lag64=-0.197, seam 1.09/0.99
+ *  → colors>=20 ✅, top<50% ✅, lag64<0.5 ✅, seam<1.5 ✅. 즉 "흐릿한 풀밭"이 전부 통과한다.
+ *  사용자가 지적한 1순위 결함이 바로 그 흐림인데, 어떤 지표도それを 보지 않았다.
+ *
+ * [무엇이 흐림과 픽셀아트를 가르나 — 실측]
+ *  **내부 거칠기(인접 픽셀 평균 절대차)** 가 유일하게 갈랐다:
+ *    옛 수채화 : 1.67 ~ 3.10   (그라데이션이 매끄러워 이웃 픽셀이 거의 같다)
+ *    새 픽셀아트: 8.02 ~ 16.48  (도트 경계에서 값이 계단처럼 튄다)
+ *  5~10배 차이라 임계를 넉넉히 잡아도 방향이 명확하다.
+ *
+ *  [주의] 확대(NEAREST 2x)는 같은 픽셀을 복제해 인접 diff 0 인 쌍을 만든다.
+ *  그래서 diff 0 인 쌍은 **분모에서 제외**하고 잰다(seamRatio 와 같은 이유·같은 규칙).
+ *
+ * [임계 5.0] 옛 타일 최대 3.10 / 새 타일 최소 8.02 → 5.0 은 양쪽에서 1.6배 이상 여유.
+ *  이 테스트는 "흐릿한 수채화로 되돌아가는 것"을 잡는다. */
+test('지면이 흐릿한 수채화로 되돌아가지 않았다 (내부 거칠기)', () => {
+  const py = `
+from PIL import Image
+for n in ${JSON.stringify(SWAPPED)}:
+    im = Image.open(f'public/assets/ground/{n}.png').convert('RGB')
+    px = im.load(); w, h = im.size
+    s = 0; cnt = 0
+    for y in range(h):
+        for x in range(w - 1):
+            a, b = px[x, y], px[x + 1, y]
+            d = abs(a[0]-b[0]) + abs(a[1]-b[1]) + abs(a[2]-b[2])
+            if d:                      # 확대 복제분(diff=0)은 제외
+                s += d; cnt += 1
+    print(n, round(s / max(cnt, 1) / 3, 2))
+`;
+  const out = execFileSync(PY, ['-c', py], { cwd: ROOT, encoding: 'utf8', env: pythonEnv }).trim().split(/\r?\n/);
+  assert.equal(out.length, SWAPPED.length, '교체된 지면 전부를 검사해야 한다');
+  for (const line of out) {
+    const [n, v] = line.trim().split(/\s+/);
+    assert.ok(Number(v) >= 5.0,
+      `${n} 내부 거칠기 ${v} — 흐릿한 수채화로 회귀(>=5.0 필요). ` +
+      `옛 수채화 타일은 1.67~3.10, 픽셀아트는 8.02~16.48 이었다.`);
+  }
+});
+
 test('노이즈 바닥을 쓰던 테마가 새 석재를 가리킨다', () => {
   const themes = read('src/game/tileThemes.ts');
   /* tile_dark/tile_stone 등이 ground_slate/ground_ash 를 그대로 쓰되,
