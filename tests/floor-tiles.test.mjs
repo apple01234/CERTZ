@@ -38,15 +38,50 @@ function floorStats(names) {
   return JSON.parse(out);
 }
 
-/** seam(경계 이음새) / 내부 이웃차이 비율. 1.0 근처면 격자가 안 보인다. */
+/** seam(경계 이음새) / 내부 이웃차이 비율. 1.0 근처면 격자가 안 보인다.
+ *
+ *  ═══ vc283 (지면을 DCSS CC0 32px 픽셀아트로 교체하면서 발견한 측정 버그) ═══
+ *  [증상] 새 지면 7종이 이 테스트에서 전부 seam 1.5~2.0 으로 "격자 보임" 판정됐다.
+ *
+ *  [원인] 이 지면들은 `32px → 4x4 패킹(128px) → NEAREST 2x(256px)` 로 만들어져
+ *   **모든 소스 픽셀이 2x2 블록으로 복제**돼 있다. 그래서 가로 인접쌍의 절반이
+ *   diff=0 이 되어 `inner` 기준선이 정확히 **절반**로 줄어든다. 반면 wrap 경계는
+ *   서로 다른 실제 픽셀끼리 비교하므로 그대로다 → 비율이 2배로 부풀려진다.
+ *   실측(ground_meadow): 256px 1.899 → 128px 0.946. 즉 **이음선은 없었다.**
+ *   (128px = 다운샘플해서 원본 해상도로 되돌린 것 = 위상이 같은 상태)
+ *
+ *  [해결] 인접 diff 가 0 인 쌍(확대 복제분)을 제외하고 `inner` 를 잰다.
+ *   확대 배수에 무관하게 "실제로 다른 이웃 픽셀 사이의 거칠기"만 남으므로,
+ *   NEAREST 확대본과 원본 256px 타일을 같은 잣대로 비교할 수 있다.
+ *   확대가 없는 타일(예: ground_dirt 84px)은 제외분이 0이라 종전과 동일하게 동작한다. */
 function seamRatio(name) {
   const py = `
 from PIL import Image
 im=Image.open('public/assets/ground/${name}.png').convert('RGB')
 w,h=im.size; px=im.load()
-inner=sum(abs(px[x,y][0]-px[x+1,y][0])+abs(px[x,y][1]-px[x+1,y][1])+abs(px[x,y][2]-px[x+1,y][2]) for y in range(h) for x in range(w-1))/(3*h*(w-1))
-slr=sum(abs(px[0,y][i]-px[w-1,y][i]) for y in range(h) for i in range(3))/(3*h)
-stb=sum(abs(px[x,0][i]-px[x,h-1][i]) for x in range(w) for i in range(3))/(3*w)
+def d(p,q):
+    return abs(p[0]-q[0])+abs(p[1]-q[1])+abs(p[2]-q[2])
+# 내부 거칠기 — '실제로 다른' 이웃쌍만 센다 (확대 복제분 diff=0 은 분모에서 제외)
+s=0; n=0
+for y in range(h):
+    for x in range(w-1):
+        v=d(px[x,y],px[x+1,y])
+        if v:
+            s+=v; n+=1
+inner=s/max(n,1)/3
+# wrap 경계도 같은 규칙으로(0 인 쌍 제외) — 대부분 0 이 아니지만 일관성 유지
+s2=0; n2=0
+for y in range(h):
+    v=d(px[0,y],px[w-1,y])
+    if v:
+        s2+=v; n2+=1
+slr=s2/max(n2,1)/3
+s3=0; n3=0
+for x in range(w):
+    v=d(px[x,0],px[x,h-1])
+    if v:
+        s3+=v; n3+=1
+stb=s3/max(n3,1)/3
 print(round(slr/max(inner,0.01),3), round(stb/max(inner,0.01),3))
 `;
   const [lr, tb] = execFileSync(PY, ['-c', py], { cwd: ROOT, encoding: 'utf8', env: pythonEnv }).trim().split(/\s+/).map(Number);
@@ -65,11 +100,21 @@ const SWAPPED = ['ground_meadow', 'ground_slate', 'ground_ash', 'ground_violet',
 test('5색 얼룩 타일로 회귀하지 않았다', () => {
   const s = floorStats(SWAPPED);
   for (const k of SWAPPED) {
-    assert.ok(s[k].colors >= 100, `${k} 색 수가 ${s[k].colors} — 5색 얼룩으로 회귀(>=100 필요)`);
+    /* ═══ vc283 — 기준을 "색이 많을수록 좋다"에서 "얼룩/격자가 아니다"로 교정 ═══
+     *  종전 기준(>=100색, meadow 는 >=1000색)은 **수채화 사진풍 타일을 통과시키는**
+     *  문턱이었다. 실제로 그 기준을 만족하던 ground_meadow 는 1330색의 흐릿한
+     *  수채화였고, 사용자가 "흐릿한 풀밭 vs 선명한 도트 캐릭터"를 지적한 원인이었다.
+     *  픽셀아트는 반대로 색이 **적다** — DCSS CC0 32px 유래 5종은 273~691색이다.
+     *
+     *  그래서 "색 수" 자체를 품질 지표로 쓰지 않는다. 진짜 회귀 신호는
+     *  (a) 5색 얼룩(=<20색)으로 되돌아가는 것  (b) 단색 퇴화(최빈색 과점)
+     *  (c) 격자 노출(seam)  세 가지다. 색 수는 하한만 아주 느슨하게 둔다. */
+    assert.ok(s[k].colors >= 20, `${k} 색 수가 ${s[k].colors} — 5색 얼룩/단색으로 회귀(>=20 필요)`);
     assert.ok(s[k].grayRatio < 0.5, `${k} 회색조 비율 ${s[k].grayRatio} — 무채색 노이즈로 회귀`);
   }
-  /* meadow 는 3색 단색이었다 — 가장 큰 회귀 지점이라 따로 못박는다. */
-  assert.ok(s.ground_meadow.colors >= 1000, `ground_meadow 색 수 ${s.ground_meadow.colors} — 3색 체커보드로 회귀`);
+  /* meadow 는 과거 3색 체커보드였던 최대 회귀 지점 — 단색 퇴화만 별도로 못박는다.
+   *  (색 수 상한을 강제하면 "색이 많아야 좋다"는 옛 오해가 되살아난다.) */
+  assert.ok(s.ground_meadow.colors >= 20, `ground_meadow 색 수 ${s.ground_meadow.colors} — 3색 체커보드로 회귀`);
 });
 
 test('96px/64px 격자가 다시 보이지 않는다 (seam ratio)', () => {

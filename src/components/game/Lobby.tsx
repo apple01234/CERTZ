@@ -23,6 +23,7 @@ import { authMe, nameTaken, claimName, releaseName } from "@/game/account"; // v
 import { classDef, isClassKey, classLabel, familyOf, FIFTH_LEVEL, type ClassKey } from "@/game/classes";
 import type { SaveData } from "@/game/config";
 import { resolveCharacterPreview, type CharacterAppearance } from "@/game/characterAppearance";
+import { validateName, NAME_MIN, NAME_MAX } from "@/game/playerName"; // vc272 — 이름 검증 단일 출처
 
 /* v1.4.30 (#8 모험가 시작) — 캐릭터 생성 시 직업 선택 단계를 철거:
  *  모든 캐릭터는 공통 직업 "모험가"로 태어나고, 마을 퀘스트 체인(전직 퀘스트) 완료 후
@@ -134,8 +135,16 @@ export function Lobby({ onExit }: { onExit: () => void }) {
    *  ② 사용 가능하면 claim 등록 후 생성, 생성 실패 시 반납
    *  ③ 중복이면 1단계로 되돌려 안내 */
   const doCreate = async () => {
-    const trimmed = nameInput.trim();
-    if (!trimmed || nameChecking) return;
+    /* vc272 — 서버로 보내기 전에 공용 검증으로 한 번 더 막는다. 1자를 통과시키던
+     *  종전 경로는 claimName 에서 400을 받고도 원인을 "중복"으로만 안내했다. */
+    const check = validateName(nameInput);
+    if (!check.ok) {
+      setMsg(check.message);
+      setStep(0);
+      return;
+    }
+    const trimmed = check.name;
+    if (nameChecking) return;
     setNameChecking(true);
     try {
       const taken = await nameTaken(trimmed);
@@ -203,8 +212,12 @@ export function Lobby({ onExit }: { onExit: () => void }) {
     return d?.color ?? "#9fb3d9";
   };
 
-  /* v1.0.19 (B-1) — 생성 플로우 단계 검증 */
-  const nameOk = nameInput.trim().length >= 1;
+  /* v1.0.19 (B-1) — 생성 플로우 단계 검증
+   * vc272 — 종전 `trim().length >= 1` 은 **1자를 통과**시켰는데 서버 claimname 은 2자 미만을
+   *  400으로 거부했다. 그래서 화면에선 "다음"이 활성화되는데 서버에서 실패해
+   *  "이름이 안 만들어진다"로 보였다(요구사항 6.1). 공용 검증 함수로 단일화한다. */
+  const nameCheck = validateName(nameInput);
+  const nameOk = nameCheck.ok;
   const STEP_LABELS = ["이름", "직업", "외형"];
 
   return (
@@ -355,10 +368,14 @@ export function Lobby({ onExit }: { onExit: () => void }) {
                     <input
                       value={nameInput}
                       onChange={(e) => setNameInput(e.target.value)}
-                      maxLength={8}
-                      placeholder="캐릭터 이름 (최대 8자)"
+                      maxLength={NAME_MAX}
+                      placeholder={`캐릭터 이름 (${NAME_MIN}~${NAME_MAX}자, 한글/영문/숫자)`}
                       className="game-input mt-2 w-full px-3 py-2.5 text-[13px] font-bold placeholder:text-white/55"
                     />
+                    {/* vc272 — 1자를 넣었을 때 왜 "다음"이 안 눌리는지 알려준다 */}
+                    {!nameOk && nameInput.length > 0 && (
+                      <p className="mt-1 text-[10px] font-black text-[#ff9a8a]">{nameCheck.message}</p>
+                    )}
                     {msg && <p className="mt-1 text-[10px] font-black text-[#ff9a8a]">{msg}</p>}
                     <button
                       onClick={() => { if (nameOk) { setMsg(null); setStep(1); } }}

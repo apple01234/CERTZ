@@ -246,9 +246,26 @@ export function renderAuthoredMapLayers(
     return { maps, layers, images };
   }
 
+  /* ═══ vc283 (지시 #11 "문제의 파란 지붕 타일셋 완전 교체") ═══
+   * [증상] 마을 테마 구조물이 파란 삼각 지붕 + 그 아래 직사각형 판으로 보이고,
+   *  지붕 윗변이 잘린 듯 평평하게 끊긴다. 지붕과 벽의 디자인이 따로 논다.
+   *
+   * [원인] `obj_town_house_blue.png`(160×112) 한 장에 지붕과 벽이 **분리된 채**
+   *  합성돼 있고, 상단 투명 영역이 22%(opaque 0.78)라 삼각 지붕이 잘려 보인다.
+   *  이 파일은 34색 안티앨리어싱 없는 도트지만 지붕/벽 색이 서로 무관해
+   *  "지붕이 건물과 비정상적으로 결합"된 것처럼 읽힌다.
+   *
+   * [해결] 요구사항 4.3 은 "반복 수정하지 말고 에셋을 완전히 교체"라고 명시한다.
+   *  이미 로드·검증된 `house_a`(빨강 지붕)/`house_b`(초록 지붕) 로 바꾼다 —
+   *  지붕+벽+입구가 **한 덩어리로 그려진** 156×194 픽셀아트라
+   *  (a) 배경 직사각형이 없고 (b) 지붕 윤곽이 완전하며 (c) 입구 위치가 실제로 보인다.
+   *  두 장을 테마 색에 맞춰 번갈아 쓴다(단일 구조물이 반복되지 않게).
+   *
+   * [주의] house_a/b 는 WorldScene 마을 건물(4532행)이 이미 쓰는 **같은 에셋**이다.
+   *  새 바이너리를 만들지 않았고 라이선스도 기존 그대로다(신규 에셋 0). */
   const structuralProp = theme === "library" ? "obj_dungeon_bookshelf"
     : theme === "grove" ? "obj_forest_tree_pink"
-    : theme === "town" ? "obj_town_house_blue"
+    : theme === "town" ? (edgeHash(lay.entry, 31) > 0.5 ? "house_a" : "house_b")
     : theme === "citadel" ? "obj_dungeon_torch"
     : theme === "ruins" ? "obj_forest_rock_monument"
     : theme === "conduit" ? "obj_dungeon_anvil" : null;

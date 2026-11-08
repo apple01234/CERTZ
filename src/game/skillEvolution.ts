@@ -386,3 +386,127 @@ export const B_EVOLVED_JOBS: ReadonlySet<string> = new Set(Object.keys(B_EVOLVED
 export function isBEvolved(jobId?: string | null): boolean {
   return !!jobId && B_EVOLVED_JOBS.has(jobId);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * vc281 — 5차 전직: 공격 **형태** 변경 (요구사항 9.4)
+ *
+ * [유저 요구 원문]
+ *  "원거리 직업은 1~4차까지 투사체가 단계적으로 증가하는 구조를 유지할 수 있다.
+ *   하지만 5차 전직에서는 단순히 투사체를 한 발 더 추가하지 않는다.
+ *   **5차 전직은 공격 형태 자체가 바뀌어야 한다.**"
+ *  예시: 전방 집중 사격 → 광역 탄막 / 단일 마법탄 → 연쇄 폭발 /
+ *        화살 연사 → 관통·확산 사격 / 단일 타격 → 영역 지속 공격
+ *
+ * [구조적 사실 — 왜 지금까지 안 바뀌었나]
+ *  5차는 **별도 ClassKey 가 아니다.** `Player.sTier` 가 5 를 반환할 뿐이고
+ *  `SKILL1_KIND` 는 클래스 키로만 조회된다. 따라서 5차의 kind 는 4차와
+ *  **구조적으로 100% 동일**하며, 기존 코드는 `rollDamage(a + b*t)` 로 배율만 올렸다.
+ *  → 형태를 바꾸려면 kind 와 별개로 "5차 모드" 를 실행부에 넣어야 한다.
+ *
+ * [이 표가 하는 일]
+ *  5차에 도달한 **원거리 직업**에 대해, 어떤 함수가 어떤 형태로 바뀌는지 명시한다.
+ *  `Player` 의 `fifthForm()` 이 이 표를 읽어 분기한다.
+ *  표에 없는 직업/슬롯은 `null` → **종전과 완전히 동일한 경로**(수치 무변화).
+ *
+ * ponytail: 지금은 원거리 3직업(deadeye/skylord/arclord) Z 슬롯만.
+ *   근접 4직업까지 넓히려면 아래 `FIFTH_FORMS` 에 항목을 추가하면 된다 —
+ *   `Player` 쪽 분기는 `fifthForm(job, slot)` 한 곳만 거치므로 추가 코드가 필요 없다.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/** 5차에서 바뀌는 **공격 형태** — 배율이 아니라 판정·투사체 구조가 달라진다. */
+export type FifthForm =
+  | "wide-barrage"   // 광역 탄막: 전방 부채꼴 다수 투사체 동시 발사
+  | "chain-burst"    // 연쇄 폭발: 착탄점에서 주변으로 순차 폭발
+  | "zone-sustain"   // 영역 지속: 지면에 지속 피해 장판
+  | "pierce-spread"; // 관통·확산: 다중 관통 + 확산
+
+export type FifthFormDef = {
+  form: FifthForm;
+  /** 사용자에게 보여줄 한 줄 (HUD·툴팁) */
+  label: string;
+  /** 형태 파라미터 — 해석은 `Player` 실행부가 한다 */
+  params: {
+    /** wide-barrage: 동시 발사 수 */
+    count?: number;
+    /** wide-barrage / pierce-spread: 부채꼴 각도(rad) */
+    arc?: number;
+    /** chain-burst: 연쇄 횟수 */
+    chains?: number;
+    /** zone-sustain: 지속 시간(ms) */
+    durationMs?: number;
+    /** zone-sustain: 장판 반경(px) */
+    radius?: number;
+    /** pierce-spread: 관통 수 */
+    pierce?: number;
+  };
+};
+
+/**
+ * 5차 공격 형태 표 — key 는 `${jobId}:${slot}`.
+ *
+ * 원거리 계열(ranger/mage) 4차 직업이 5차(sTier=5)에 도달했을 때만 적용된다.
+ * 근접 계열은 이번 범위 밖(`ponytail` 참조).
+ */
+export const FIFTH_FORMS: Record<string, FifthFormDef> = {
+  /* ── deadeye(사신 저격수) — 단일 관통 저격 → 관통·확산 사격 ──
+   *  유저 예시 "화살 연사 → 관통·확산 사격"을 그대로 구현.
+   *  1~4차는 히트스캔 라인 1줄, 5차는 3방향으로 갈라지며 각각 관통한다. */
+  "deadeye:z": {
+    form: "pierce-spread",
+    label: "사신의 사격 — 3방향 관통·확산",
+    params: { count: 3, arc: 0.34, pierce: 3 },
+  },
+
+  /* ── skylord(천공 군주) — 하늘에서 3발 낙하 → 광역 탄막 ──
+   *  유저 예시 "전방 집중 사격 → 광역 탄막".
+   *  1~4차는 3열 낙하, 5차는 부채꼴 7발 동시 탄막. */
+  "skylord:z": {
+    form: "wide-barrage",
+    label: "천공 탄막 — 부채꼴 7발 동시 사격",
+    params: { count: 7, arc: 1.15 },
+  },
+
+  /* ── arclord(아크 군주) — 단일 마법탄 → 연쇄 폭발 ──
+   *  유저 예시 "단일 마법탄 → 연쇄 폭발".
+   *  1~4차는 볼트 1발 + 폭발, 5차는 착탄점에서 4연쇄 폭발. */
+  "arclord:z": {
+    form: "chain-burst",
+    label: "아크 연쇄 — 착탄점 4연쇄 폭발",
+    params: { chains: 4, radius: 150 },
+  },
+
+  /* ── eternal(영원의 기록자) — 정화 파동 → 영역 지속 ──
+   *  유저 예시 "단일 타격 → 영역 지속 공격".
+   *  1~4차는 순간 파동, 5차는 2.5초 지속 장판. */
+  "eternal:z": {
+    form: "zone-sustain",
+    label: "영원의 장막 — 2.5초 지속 정화 영역",
+    params: { durationMs: 2500, radius: 200 },
+  },
+
+  /* ── V 슬롯 — 요구사항 18 "비 내리는 듯한 이펙트 제거" ──
+   *  `arrowrain`(deadeye V)은 `y - 320` 에서 화살이 **수직 낙하**한다.
+   *  유저가 지적한 "모든 궁극기에 공통된 빗줄기"의 실체가 이 낙하 패턴이다.
+   *  5차에서는 낙하 대신 **전방 부채꼴 동시 사격**으로 형태를 바꾼다. */
+  "deadeye:v": {
+    form: "wide-barrage",
+    label: "사신의 폭우 — 전방 부채꼴 동시 사격(낙하 제거)",
+    params: { count: 8, arc: Math.PI * 0.9 },
+  },
+};
+
+/** `jobId:slot` 의 5차 형태 — 없으면 `undefined`(= 종전 경로 그대로). */
+export function fifthFormDef(jobId?: string | null, slot: EvoSlot = "z"): FifthFormDef | undefined {
+  if (!jobId) return undefined;
+  return FIFTH_FORMS[`${jobId}:${slot}`];
+}
+
+/** 이 직업·슬롯이 5차에서 형태가 바뀌는가. */
+export function hasFifthForm(jobId?: string | null, slot: EvoSlot = "z"): boolean {
+  return !!fifthFormDef(jobId, slot);
+}
+
+/** 5차 형태가 정의된 직업 목록 (테스트·보고용). */
+export const FIFTH_FORM_JOBS: ReadonlySet<string> = new Set(
+  Object.keys(FIFTH_FORMS).map((k) => k.split(":")[0]),
+);

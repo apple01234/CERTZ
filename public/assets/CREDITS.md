@@ -21,6 +21,22 @@
 - Source: https://opengameart.org/content/animated-portal-or-wormhole-several-variants
 - Used for: 차원문 소용돌이 애니메이션 8프레임 (8번 변형, 루미넌스 알파 변환)
 
+### Dungeon Crawl Stone Soup tiles (32x32) — DCSS contributors
+- License: CC0 1.0 (Public Domain)
+- Source: https://opengameart.org/content/dungeon-crawl-32x32-tiles
+- Pack copy in repo: `public/assets/campaign/drive/` (LICENSE.txt + manifest.json 동봉)
+- Used for: **지면 7종 픽셀아트** (`public/assets/ground/ground_*`).
+  vc275 에서 흐릿한 수채화 지면을 대체했다. 원본 32x32 타일을 4x4 로 패킹한 뒤
+  NEAREST 2x 로 256x256 으로 확대하고, 팔레트(hue/채도/명도)만 테마별로 회전했다.
+  생성 스크립트: `tools/ground_pixelart.py` (크롭·정수배 확대·팔레트 조정만 수행)
+  - `ground_meadow`   ← floor-garden.png
+  - `ground_forest`   ← floor-forest-2.png
+  - `ground_sand`     ← floor-garden.png (황갈색 회전)
+  - `ground_slate`    ← floor-garden.png (탈색 회청)
+  - `ground_violet`   ← floor-garden-1.png
+  - `ground_cavern`   ← floor-garden-1.png (어둡고 푸르게)
+  - `ground_ash`      ← floor-garden.png (탈색 밝게)
+
 ### Tiny Dungeon — Kenney
 - License: CC0 1.0
 - Source: https://kenney.nl/assets/tiny-dungeon
@@ -299,3 +315,23 @@ ghostIce_48x32(3동작×6프레임), wraith 21프레임 HD(150×159) 등 35종.
 - License: MIT — pixelfx © 2026 Patch, Hugo Duprez
 - 사용 범위: 스프라이트시트(public/assets/fx). Patch Pixel 폰트는 사용하지 않음.
 - 수정: 16px 원본을 게임 해상도에 맞춰 시트로 렌더(도구 옵션만 사용, 코드 수정 없음)
+
+## vc283 — 지면(ground) 픽셀아트 교체 (SERTZ PROJECT REBIRTH V2, 지시 #3·#27)
+
+**Dungeon Crawl Stone Soup tiles** — CC0 1.0 (Public Domain)
+- Source: https://opengameart.org/content/dungeon-crawl-32x32-tiles
+- 원본 위치: `public/assets/campaign/drive/` (LICENSE.txt 동봉)
+- 사용 파일: `floor-garden.png`, `floor-garden-1.png`, `floor-forest-2.png` (모두 32×32)
+- 변환: 4×4 패킹(128px) → NEAREST 2× (256px), HSV 팔레트 회전만 적용.
+  **픽셀 배치·음영 구조는 원본 그대로**이며 새로 그리지 않았다.
+- 생성 도구: `tools/ground_pixelart.py` (재현 가능, `--dry` 로 검증만)
+- 적용 지면: `ground_meadow` / `ground_forest` / `ground_sand` / `ground_slate` /
+  `ground_violet` / `ground_cavern` / `ground_ash` 7종
+- 변환 근거와 출처 해시는 `public/assets/ground/manifest.json` 에 항목별로 기록.
+
+**교체 이유**: 종전 7종은 `tile_*.webp` 를 확대한 **수채화 사진풍**(고유색 653~1330색)이라
+선명한 도트 캐릭터와 픽셀 밀도가 어긋났다(사용자 지적: "흐릿한 풀밭"). CC0 픽셀아트 원본으로
+교체해 밀도를 통일했다. 지면은 이제 256px·273~691색이며, seam(경계 이음새) 비율은
+확대 배수를 보정해 측정하면 0.73~1.01 로 격자가 보이지 않는다.
+
+**CC0 1.0** — 상업 이용·수정 허용, 출처 표기 의무 없음. 위 내용은 기록용이다.

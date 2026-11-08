@@ -140,7 +140,6 @@ export type PropKey =
   | "obj_forest_bush_tall"
   | "obj_forest_sign__1"
   | "obj_forest_trunk"
-  | "obj_town_house_blue"
   | "obj_town_stall_stripe__1"
   | "obj_town_stall_stripe__2"
   | "obj_town_vending"
@@ -186,8 +185,7 @@ export const PROP_MAX_CELLS: Record<string, number> = {
   obj_forest_bush_tall: 1,
   obj_forest_sign__1: 1,
   obj_forest_trunk: 0.5,
-  /* town */
-  obj_town_house_blue: 1.5,
+  /* town — vc283: obj_town_house_blue(1.5) 제거, house_a/house_b 로 교체(지시 #11) */
   obj_town_stall_stripe__1: 0.5,
   obj_town_stall_stripe__2: 0.5,
   obj_town_vending: 1,

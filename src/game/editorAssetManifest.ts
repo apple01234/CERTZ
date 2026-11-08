@@ -156,7 +156,9 @@ export const EDITOR_ASSETS: EditorAsset[] = [
   { url:"/assets/objects/forest/obj_forest_trunk.png", name:"obj_forest_trunk", category:"objects", group:"forest", label:"trunk", w:37, h:33, tag:"small" },
   { url:"/assets/objects/town/obj_town_barrel.png", name:"obj_town_barrel", category:"objects", group:"town", label:"barrel", w:5, h:26, tag:"small" },
   { url:"/assets/objects/town/obj_town_bench.png", name:"obj_town_bench", category:"objects", group:"town", label:"bench", w:22, h:32, tag:"small" },
-  { url:"/assets/objects/town/obj_town_house_blue.png", name:"obj_town_house_blue", category:"objects", group:"town", label:"house_blue", w:160, h:112, tag:"big" },
+  /* vc283 (지시 #11) — obj_town_house_blue 제거: 파란 삼각 지붕이 잘려 보이고
+   *  지붕/벽 디자인이 따로 놀았다. 마을 테마 구조물은 house_a/house_b 로 교체했고,
+   *  그 둘은 objects/ 하위가 아니라 public/assets/ 루트 소속이라 이 목록에 넣지 않는다. */
   { url:"/assets/objects/town/obj_town_planter.png", name:"obj_town_planter", category:"objects", group:"town", label:"planter", w:28, h:20, tag:"small" },
   { url:"/assets/objects/town/obj_town_shop_black.png", name:"obj_town_shop_black", category:"objects", group:"town", label:"shop_black", w:224, h:112, tag:"big" },
   { url:"/assets/objects/_split/town/obj_town_shop_black__1.png", name:"obj_town_shop_black__1", category:"objects", group:"town" },

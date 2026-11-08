@@ -92,8 +92,14 @@ export const DECOR_SETS: Record<string, DecorObj[]> = {
     { key: "obj_forest_trunk", tag: "small", w: 37, h: 33 },
   ],
   town: [
-    { key: "obj_town_house_blue", tag: "big", w: 160, h: 112 },
-    /* 224×112 에 가게 + 소품 21개가 흩어진 시트 조각이었다.
+    /* ═══ vc283 (지시 #11 "문제의 파란 지붕 타일셋 완전 교체") ═══
+     * `obj_town_house_blue`(160×112) 를 제거했다. 지붕과 벽이 분리 합성돼
+     * 상단 22% 가 투명이라 삼각 지붕이 잘린 듯 보였고, 지붕/벽 색이 무관해
+     * "건물과 비정상 결합"으로 읽혔다. 요구사항 4.3 이 반복 수정 대신
+     * **에셋 교체**를 명시하므로 `house_a`/`house_b`(156×194, 지붕+벽+입구가
+     * 한 덩어리) 로 대체했다. 그 둘은 ASSET_LIST 소속이라 여기 등록하지 않는다
+     * (decorObjects 는 objects/ 하위 프롭만 담당).
+     * 224×112 에 가게 + 소품 21개가 흩어진 시트 조각이었다.
      *  건물(__1, 64×32)은 너무 작아 건물로 못 쓰므로 big 후보에서 빼고
      *  실제로 단독 사용 가능한 가판대·카운터만 남긴다. */
     { key: "obj_town_stall_stripe__1", tag: "big", w: 22, h: 32 },

@@ -15991,6 +15991,21 @@ export class WorldScene extends Phaser.Scene {
      *  프롤로그 도중 창을 벗어나거나 컨텍스트가 끊기면 physics.pause() 가 영구 잠금이 된다. */
     this.dialogueSince = this.time.now;
     this.physics.world.pause();
+    /* ═══ vc283 (지시 #02 "프롤로그·컷씬의 게임 HUD 숨김") ═══
+     * [증상] 프롤로그 내레이션이 떠 있는데 그 위로 HP바·인벤토리 칩(좌상단),
+     *  도감/랭킹/설정 버튼(우상단), 스킬 버튼·이동 조이스틱(우하단), 채팅(좌하단)이
+     *  전부 그대로 보인다. 검은 오버레이(alpha 0.97) 위에 HUD 만 밝게 떠서
+     *  "컷씬"이 아니라 "게임 화면에 글자 얹은 것"으로 읽힌다.
+     *
+     * [원인] GameRoot 는 이미 `cinematic:state` 를 구독해 HUD 를 hidden 처리한다
+     *  (GameRoot.tsx:204-219). 그런데 그 이벤트를 **궁극기 컷신과 챕터 카드만**
+     *  발신하고(WorldScene:2528/2624), 정작 가장 먼저 나오는 프롤로그는
+     *  발신하지 않았다. 즉 배선이 없는 게 아니라 이 경로만 빠져 있었다.
+     *
+     * [해결] 프롤로그 시작 시 active:true, cleanup 에서 active:false.
+     *  cleanup 은 스킵/완료/오버레이 탭 **세 경로가 모두 거치는 단일 출구**이고
+     *  `closed` 플래그로 1회만 실행되므로 이벤트도 정확히 한 번씩 짝을 이룬다. */
+    EventBus.emit("cinematic:state", { active: true });
     const cam = this.cameras.main;
     const W = cam.width;
     const H = cam.height;
@@ -16042,6 +16057,12 @@ export class WorldScene extends Phaser.Scene {
       this.input.keyboard?.removeCapture("SPACE");
       this.dialoguing = false;
       this.physics.world.resume();
+      /* vc283 (지시 #02) — 프롤로그로 숨긴 HUD 를 반드시 되돌린다.
+       *  이 cleanup 은 완료·건너뛰기·오버레이 탭 세 경로의 **단일 출구**이고
+       *  `closed` 가드로 1회만 실행되므로 active:false 도 정확히 한 번 발신된다.
+       *  (짝이 깨지면 HUD 가 영구히 사라진 채 게임이 진행된다 —
+       *   GameRoot 는 별도 복구 경로 없이 이 플래그만 신뢰한다.) */
+      EventBus.emit("cinematic:state", { active: false });
       this.introSeenSave(); // v1.1.0 (#18) — 시청/스킵 모두 1회 기록 (재시작 시 재생 방지)
     };
     const next = () => {

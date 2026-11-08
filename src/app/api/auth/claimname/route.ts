@@ -9,6 +9,10 @@
 import { NextRequest } from "next/server";
 import { loadDb, mutateDb } from "@/lib/ghdb";
 import { currentUser, json, options, rateLimit } from "@/lib/sapi";
+/* vc272 — 클라이언트와 **같은** 검증 모듈을 쓴다. 종전엔 이 파일이 규칙을 따로 들고 있어
+ *  (제어문자 제거 · trim · 8자 절단 · 2자 하한) 클라 규칙과 갈라질 수 있었다.
+ *  이제 한 곳(playerName.ts)만 고치면 양쪽이 함께 바뀐다. */
+import { validateName } from "@/game/playerName";
 
 export function OPTIONS(req: NextRequest) { return options(req); }
 
@@ -21,10 +25,11 @@ export async function POST(req: NextRequest) {
     const me = currentUser(db, req);
     if (!me) return json(req, 401, { error: "로그인이 필요해요 (미로그인은 기기 내 중복만 검사됩니다)" });
     const b = (await req.json().catch(() => ({}))) as { name?: unknown; kind?: unknown };
-    /* node claimname과 동일 정화: 제어문자/제로폭 제거 · trim · 8자 절단 */
-    const name = String(b.name || "").replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028\u2029]/g, "").trim().slice(0, 8);
-    if (!name) return json(req, 400, { error: "이름을 입력해 주세요" });
-    if (name.length < 2) return json(req, 400, { error: "이름은 2~8자로 입력해 주세요" });
+    /* vc272 — 공용 검증(정화 + 길이 + 공백-only). 클라가 이미 같은 함수로 걸러내므로
+     *  여기 도달하는 요청은 정상이지만, 서버는 신뢰 경계이므로 반드시 다시 검사한다. */
+    const check = validateName(b.name);
+    if (!check.ok) return json(req, 400, { error: check.message });
+    const name = check.name;
     const key = name.toLowerCase();
     const kind = String(b.kind || "char").slice(0, 16);
     const r = await mutateDb((fdb) => {

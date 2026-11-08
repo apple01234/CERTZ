@@ -1,4 +1,4 @@
-﻿import Phaser from "phaser";
+import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
 import {
   ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, UPGRADE_FALLBACK_FROM, upgradeCost, sellValue, type BuffKey as BuffKeyT,
@@ -16,7 +16,7 @@ import { ULT_CLASSES,
   SKILL5_INFO, SKILL5B_INFO, FIFTH_SKILL_MULT, FIFTH_CD_MULT, FIFTH_LEVEL, FIFTH1_MULT, FIFTH2_MULT,
   type Skill1Kind, type Skill2Kind, type Skill3Kind, type Skill4Kind,
 } from "../classes";
-import { isZEvolved, isCEvolved, isVEvolved, isBEvolved } from "../skillEvolution"; // vc252 P5 · vc280 — V/B 확장
+import { isZEvolved, isCEvolved, isVEvolved, isBEvolved, fifthFormDef } from "../skillEvolution"; // vc252 P5 · vc280 — V/B 확장 · vc281 — 5차 공격 형태
 import { ModStack, ModOp } from "../combat/modStack"; // vc276 — 배율 스택 (JENNY FloatModStack 이식)
 import { sweptHitsTarget } from "../collision/sweep";
 import { loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드
@@ -429,6 +429,34 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (t >= 4) return 1.4;
     if (t >= 3) return 1.2;
     return 1;
+  }
+
+  /* ──────────────────────────────────────────────────────────────────────────
+   * vc281 (요구사항 9.4) — 5차 전직: 공격 **형태** 변경
+   *
+   * [유저 요구] "5차 전직은 공격 형태 자체가 바뀌어야 한다.
+   *              단순히 투사체를 한 발 더 추가하지 않는다."
+   *
+   * [왜 필요한가] 5차는 별도 ClassKey 가 아니라 `sTier === 5` 일 뿐이라
+   *  `resolveSkill1Of()` 가 4차와 **똑같은 kind** 를 돌려준다. 지금까지는
+   *  `rollDamage(a + b*t)` 로 배율만 올려서 "형태는 그대로"였다.
+   *
+   * [해법] `skillEvolution.ts` 의 `FIFTH_FORMS` 표를 읽어, 5차에만
+   *  다른 실행 경로로 분기한다. 표에 없으면 `null` → **종전 경로 그대로**.
+   * ────────────────────────────────────────────────────────────────────────── */
+
+  /** 이 직업이 5차에서 Z 공격 형태가 바뀌는가 (`sTier === 5` 일 때만). */
+  get fifthZForm() {
+    if (this.sTier !== 5) return null;
+    return fifthFormDef(this.cls, "z") ?? null;
+  }
+
+  /** 5차 형태 파라미터 조회 — 없으면 `undefined`. 타입 좁히기용. */
+  private fifthZParam<K extends keyof NonNullable<ReturnType<typeof fifthFormDef>>["params"]>(
+    key: K,
+  ): NonNullable<ReturnType<typeof fifthFormDef>>["params"][K] | undefined {
+    const def = this.fifthZForm;
+    return def?.params[key];
   }
 
   /* ══════════════════════════════════════════════════════════════════════════
@@ -2010,6 +2038,52 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.faceAtk(aim); // v1.0.12 — 공격 시트 우향 네이티브 정면화
     this.playAnim("hero-atk");
     this.scene.sfxSkill("arrowpierce"); // v3.0.24 — 스나이퍼 관통 저격음 (샤프 관통 화살)
+    /* ══ vc281 (요구사항 9.4) — 5차: 단일 직선 저격 → **3방향 관통·확산 사격** ══
+     *  유저 예시 "화살 연사 → 관통·확산 사격" 그대로.
+     *  1~4차는 히트스캔 라인 1줄(위 코드 경로), 5차는 각도가 갈라진 3줄이
+     *  각각 관통한다. 배율이 아니라 **판정 형태**가 바뀐다.
+     *  표에 없거나 5차 미만이면 아래 블록을 건너뛰고 종전 경로로 간다. */
+    const f5 = this.fifthZForm;
+    if (f5?.form === "pierce-spread") {
+      const n = f5.params.count ?? 3;
+      const arc = f5.params.arc ?? 0.34;
+      const pierce = f5.params.pierce ?? 3;
+      let totalHits = 0;
+      for (let i = 0; i < n; i++) {
+        const ang = base + (i - (n - 1) / 2) * arc;
+        const fx2 = Math.cos(ang);
+        const fy2 = Math.sin(ang);
+        const ex2 = this.x + fx2 * range;
+        const ey2 = this.y - 8 + fy2 * range;
+        this.scene.spawnSnipeBeam(this.x, this.y - 8, ex2, ey2, this.clsHex());
+        const dir2 = new Phaser.Math.Vector2(fx2, fy2);
+        const sx2 = this.x + fx2 * 18;
+        const sy2 = this.y - 8 + fy2 * 18;
+        let lineHits = 0;
+        for (const e of this.scene.getAllTargets()) {
+          if (!e.active || this.hitSet.has(e)) continue;
+          const rel = new Phaser.Math.Vector2(e.x - sx2, e.y - sy2);
+          const proj = Phaser.Math.Clamp(rel.dot(dir2), 0, range);
+          const closest = dir2.clone().scale(proj);
+          const perp = rel.clone().subtract(closest);
+          if (perp.length() <= halfW + 18) {
+            lineHits++;
+            if (lineHits > pierce) break; // 관통 한도
+            this.hitSet.add(e);
+            const { dmg, crit } = this.rollDamage(2.4 + 0.4 * t, true);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, dir2, 260, crit);
+          }
+        }
+        totalHits += lineHits;
+      }
+      if (totalHits > 0) this.scene.onMeleeConnect(totalHits, "crit");
+      this.scene.time.delayedCall(240, () => {
+        if (this.state === "attack") this.state = "idle";
+      });
+      this.scene.emitHud();
+      return;
+    }
     // 저격 라인 이펙트 — px 직선 (spawnSlash 대신 씬 그래픽 풀 활용: 라인 + 머즐 플래시)
     const ex = this.x + Math.cos(base) * range;
     const ey = this.y - 8 + Math.sin(base) * range;
@@ -2086,6 +2160,49 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.faceAtk(aim);
     this.playAnim("hero-atk");
     this.scene.sfxSkill("wind");
+    /* ══ vc281 (요구사항 9.4) — 5차: 3열 낙하 → **광역 탄막** ══
+     *  유저 예시 "전방 집중 사격 → 광역 탄막" 그대로.
+     *  1~4차는 3열 순차 낙하(아래 경로), 5차는 부채꼴 7발을 **동시에** 뿌린다.
+     *  투사체 1발 추가가 아니라 발사 구조 자체가 바뀐다. */
+    const f5 = this.fifthZForm;
+    if (f5?.form === "wide-barrage") {
+      const n = f5.params.count ?? 7;
+      const arc = f5.params.arc ?? 1.15;
+      const reach5 = 210 + 26 * t;
+      for (let i = 0; i < n; i++) {
+        const ang = base + (i - (n - 1) / 2) * (arc / Math.max(1, n - 1));
+        const tx = this.x + Math.cos(ang) * reach5 * (0.75 + 0.25 * ((i % 3) / 2));
+        const ty = this.y + Math.sin(ang) * reach5 * (0.75 + 0.25 * ((i % 3) / 2));
+        const arrow = this.scene.add
+          .image(tx, ty - 240, "hv2_arrow")
+          .setDepth(14)
+          .setTint(hex)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setScale(1.05)
+          .setRotation(Math.PI / 2);
+        this.scene.tweens.add({ targets: arrow, y: ty, duration: 200, ease: "Quad.in", onComplete: () => arrow.destroy() });
+        const { dmg, crit } = this.rollDamage(1.15 + 0.13 * t, true);
+        if (crit) this.scene.sfxCrit();
+        this.scene.time.delayedCall(200, () => {
+          if (this.state === "dead") return;
+          this.scene.spawnBurstAt(tx, ty, 8 + 2 * t, hex);
+          for (const e of this.scene.getAllTargets()) {
+            if (!e.active || this.hitSet.has(e)) continue;
+            if (Phaser.Math.Distance.Between(tx, ty, e.x, e.y) <= 72) {
+              this.hitSet.add(e);
+              const d = new Phaser.Math.Vector2(e.x - tx, e.y - ty).normalize();
+              e.takeDamage(dmg, d, 130, crit);
+              this.scene.onMeleeConnect(1, "skill");
+            }
+          }
+        });
+      }
+      this.scene.time.delayedCall(360, () => {
+        if (this.state === "attack") this.state = "idle";
+      });
+      this.scene.emitHud();
+      return;
+    }
     const cols = 3;
     const reach = 210 + 26 * t;
     for (let i = 0; i < cols; i++) {
@@ -2152,6 +2269,42 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       blastRadius: (130 + 14 * t) * evoR, blastMul: 1.1 + 0.08 * t,
       secondary: t >= 4, scale: 1.5,
     });
+    /* ══ vc281 (요구사항 9.4) — 5차: 단일 마법탄 → **연쇄 폭발** ══
+     *  유저 예시 "단일 마법탄 → 연쇄 폭발" 그대로.
+     *  볼트가 날아간 **착탄 지점**에서 주변으로 순차 폭발이 이어지며,
+     *  각 폭발이 반경 내 적을 다시 때린다. 배율이 아니라 판정 구조가 바뀐다.
+     *  표에 없거나 5차 미만이면 이 블록은 실행되지 않는다(종전 경로). */
+    const f5 = this.fifthZForm;
+    if (f5?.form === "chain-burst") {
+      const chains = f5.params.chains ?? 4;
+      const radius = f5.params.radius ?? 150;
+      const tx0 = this.x + Math.cos(angle) * (170 + 18 * t);
+      const ty0 = this.y - 10 + Math.sin(angle) * (170 + 18 * t);
+      for (let c = 1; c <= chains; c++) {
+        this.scene.time.delayedCall(120 * c, () => {
+          if (this.state === "dead") return;
+          /* 각 연쇄는 착탄점을 중심으로 조금씩 퍼진다. */
+          const spreadA = (Math.PI * 2 * c) / chains;
+          const cx = tx0 + Math.cos(spreadA) * radius * 0.75;
+          const cy = ty0 + Math.sin(spreadA) * radius * 0.75;
+          this.scene.spawnBurstAt(cx, cy, 10 + 2 * t, hex);
+          let hits = 0;
+          for (const e of this.scene.getAllTargets()) {
+            if (!e.active || this.hitSet.has(e)) continue;
+            const d = Phaser.Math.Distance.Between(cx, cy, e.x, e.y);
+            if (d <= radius) {
+              this.hitSet.add(e);
+              hits++;
+              const dirC = new Phaser.Math.Vector2(e.x - cx, e.y - cy).normalize();
+              const { dmg: dC, crit: cC } = this.rollDamage(1.1 + 0.12 * t, true);
+              if (cC) this.scene.sfxCrit();
+              e.takeDamage(dC, dirC, 120, cC);
+            }
+          }
+          if (hits > 0) this.scene.onMeleeConnect(hits, "skill");
+        });
+      }
+    }
     this.scene.time.delayedCall(320, () => {
       if (this.state === "attack") this.state = "idle";
     });
@@ -2202,6 +2355,47 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     };
     wave(80);
     if (t >= 3) wave(330);
+    /* ══ vc281 (요구사항 9.4) — 5차: 순간 파동 → **영역 지속** ══
+     *  유저 예시 "단일 타격 → 영역 지속 공격" 그대로.
+     *  1~4차는 1~2회 순간 파동으로 끝난다(위 코드). 5차는 같은 자리에
+     *  `durationMs` 동안 남아 주기적으로 피해·자힐을 주는 장판이 된다.
+     *  파동 함수(`wave`)를 재사용하고 **횟수만 지속형으로** 바꾼다. */
+    const f5 = this.fifthZForm;
+    if (f5?.form === "zone-sustain") {
+      const dur = f5.params.durationMs ?? 2500;
+      const zr = f5.params.radius ?? 200;
+      const tickMs = 500;
+      const ticks = Math.max(1, Math.round(dur / tickMs));
+      for (let k = 0; k < ticks; k++) {
+        this.scene.time.delayedCall(560 + k * tickMs, () => {
+          if (this.state === "dead") return;
+          /* 지속 영역은 hitSet 을 비워 매 틱 다시 때린다 — 장판의 정의. */
+          this.hitSet.clear();
+          this.scene.spawnPurifyRing(this.x, this.y, zr, hex);
+          let hits = 0;
+          for (const e of this.scene.getAllTargets()) {
+            if (!e.active) continue;
+            if (Phaser.Math.Distance.Between(this.x, this.y, e.x, e.y) <= zr) {
+              hits++;
+              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
+              const { dmg, crit } = this.rollDamage(0.55 + 0.05 * t, true);
+              if (crit) this.scene.sfxCrit();
+              e.takeDamage(dmg, away, 60, crit);
+            }
+          }
+          if (hits > 0) {
+            const heal = (3 + Math.floor(t / 2)) * hits;
+            this.hp = Math.min(this.maxHp, this.hp + heal);
+            this.scene.onMeleeConnect(hits, "skill");
+          }
+        });
+      }
+      this.scene.time.delayedCall(560 + ticks * tickMs, () => {
+        if (this.state === "attack") this.state = "idle";
+      });
+      this.scene.emitHud();
+      return;
+    }
     this.scene.time.delayedCall(t >= 3 ? 560 : 320, () => {
       if (this.state === "attack") this.state = "idle";
     });
@@ -3215,6 +3409,33 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.spawnBurstAt(cx, cy, 12, hex);
         /* vc280 (P5) — V 진화: 화살비 발수 14 → 차수별 증가. */
         const N = this.evoCountV(14);
+        /* ══ vc281 (요구사항 18) — 5차는 비 내리는 화살 폭우를 쓰지 않는다 ══
+         *  유저 지적: "모든 직업 궁극기에 공통적으로 보이는 비가 내리는 듯한 이펙트를 제거하라."
+         *  `y: oy - 320` 에서 아래로 떨어지는 이 연출이 바로 그 "빗줄기"다.
+         *  5차는 **수직 낙하 대신 전방 부채꼴 동시 사격**으로 바꾼다 —
+         *  형태가 "떨어지는 비" → "쏘는 사격" 으로 달라진다. */
+        const f5V = this.sTier === 5 ? fifthFormDef(this.cls, "v") : undefined;
+        if (f5V?.form === "wide-barrage") {
+          const n5 = Math.max(5, Math.round(N * 0.6));
+          const arc5 = f5V.params.arc ?? Math.PI * 0.9;
+          const baseA = Math.atan2(aim.y, aim.x);
+          for (let i = 0; i < n5; i++) {
+            this.scene.time.delayedCall(60 + i * 34, () => {
+              if (this.state === "dead") return;
+              const ang = baseA + (i - (n5 - 1) / 2) * (arc5 / Math.max(1, n5 - 1));
+              const { dmg, crit } = this.rollDamage(1.25, true);
+              if (crit) this.scene.sfxCrit();
+              this.scene.firePlayerProj({
+                x: this.x, y: this.y - 10, angle: ang, speed: 760, pierce: 3,
+                dmg, crit, tint: hex, knock: 160, scale: 1.2,
+                tex: "x2_arrow", blend: "add", rot: true,
+              });
+            });
+          }
+          this.scene.impactFX.shake(100, 0.004);
+          this.scene.spawnPickupText(this.x, this.y - 44, "화살 폭우!", "#1cff5c");
+          break;
+        }
         for (let i = 0; i < N; i++) {
           this.scene.time.delayedCall(80 + i * 70, () => {
             if (this.state === "dead") return;

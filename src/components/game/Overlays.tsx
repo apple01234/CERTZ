@@ -8,6 +8,7 @@ import { RotateCw, Play, Swords, Skull, Trophy, Home, Store, MessageCircle, Spar
 import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0
 import { resolveApiBase } from "@/game/server"; // v1.4.20 — 멀티서버 분리
 import { loadKeyMap, loadMoveScheme, keyLabel } from "@/game/keymap"; // v1.0.17 — 조작 안내줄이 키맵·스킨을 따라가도록
+import { validateName, isNameValid, NAME_MAX } from "@/game/playerName"; // vc272 — 이름 검증 단일 출처
 /* v1.0.16 (F8) — 종전엔 `import pkg from "../../../package.json"`으로 버전을 읽었는데,
  *  번들러가 JSON 전체를 인라인해 의존성 목록·npm 스크립트까지 게임 번들에 실렸다(청크 3.08MB 실측).
  *  next.config.ts가 package.json의 version만 NEXT_PUBLIC_APP_VERSION으로 주입한다 —
@@ -592,12 +593,15 @@ export function RewardPopup() {
 export function NamePanel() {
   const [open, setOpen] = useState(false);
   const [val, setVal] = useState("");
+  /* vc272 — 검증 실패 사유 표시 (조용히 무시하면 "버튼이 안 먹는다"로 보인다) */
+  const [err, setErr] = useState<string | null>(null);
   const gate = useKeyGate(); // v4.1.0 — 이름 입력 중 게임 단축키 차단
 
   useEffect(() => {
     const ask = () => {
       setOpen(true);
       setVal("");
+      setErr(null);
     };
     EventBus.on("name:ask", ask);
     return () => {
@@ -608,10 +612,13 @@ export function NamePanel() {
   if (!open) return null;
 
   const confirm = () => {
-    const name = val.trim();
-    if (!name) return;
+    /* vc272 — 공용 검증(playerName.ts). 종전엔 trim 만 해서 공백-only·1자를 통과시켰고
+     *  서버 claimname 은 2자 미만을 400으로 거부했다(클라 통과·서버 거부 불일치). */
+    const v = validateName(val);
+    if (!v.ok) { setErr(v.message); return; }
+    setErr(null);
     setOpen(false);
-    EventBus.emit("name:set", { name });
+    EventBus.emit("name:set", { name: v.name });
   };
 
   return (
@@ -630,28 +637,33 @@ export function NamePanel() {
           {...swallowKeys}
           autoFocus
           value={val}
-          maxLength={8}
+          maxLength={NAME_MAX}
           /* v4.9.0 — 모바일 소프트키보드 자동 대문화/자동수정 방지 (소문자 입력 보장) */
           type="text"
           inputMode="text"
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
-          onChange={(e) => setVal(e.target.value)}
+          onChange={(e) => { setVal(e.target.value); setErr(null); }}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
               confirm();
             }
           }}
-          placeholder="1~8자 (한글/영문/숫자)"
+          placeholder="2~8자 (한글/영문/숫자)"
           className="game-input w-full px-3 py-3 text-lg font-black tracking-wider placeholder:text-white/55"
         />
-        <div className="mt-1 text-right text-[10px] font-bold text-white/55">{val.length}/8</div>
+        <div className="mt-1 flex items-center justify-between gap-2">
+          {/* vc272 — 규칙을 입력란 옆에 상시 노출 (placeholder 는 입력 시작하면 사라진다) */}
+          <span className="text-[10px] font-bold text-white/45">한글·영문·숫자 2~8자</span>
+          <span className="text-[10px] font-bold text-white/55">{val.length}/{NAME_MAX}</span>
+        </div>
+        {err && <p className="mt-1 text-[11px] font-black text-[#ff9a8a]">{err}</p>}
         <button
           onClick={confirm}
-          disabled={!val.trim()}
-          className="game-btn mt-2 w-full px-4 py-3 text-sm font-black active:scale-95"
+          disabled={!isNameValid(val)}
+          className="game-btn mt-2 w-full px-4 py-3 text-sm font-black active:scale-95 disabled:opacity-40"
         >
           이 이름으로 모험 시작!
         </button>

@@ -22,6 +22,7 @@ import { SAVE_KEY, activeSaveKey, type SaveData } from "@/game/config";
 import { importCloudSave, importCharsFromCloud, collectLocalChars, SLOTS_KEY } from "@/game/slots"; // v1.4.32 — 슬롯 편입 복원 · vc149 (#2) — 전 캐릭터 백업/복원
 import { resolveApiBase } from "@/game/server"; // v1.4.20 — 멀티서버 분리: 정적 배포에서 원격 서버 OAuth 시작
 import { googleWebSignIn, googleWebRedirectToken } from "@/lib/googleAuth"; // v1.0.5-beta (vc134) — 웹 구글 로그인 안정화(모바일 리다이렉트)
+import { validateName, isNameValid, NAME_MIN, NAME_MAX } from "@/game/playerName"; // vc272 — 이름 검증 단일 출처
 
 /**
  * v4.9.0 — 계정 패널 (유저 지시 #4)
@@ -46,6 +47,8 @@ export function AuthPanel() {
   const [id, setId] = useState("");
   const [pw, setPw] = useState("");
   const [nick, setNick] = useState("");
+  /* vc272 — 닉네임(선택) 검증 결과. 렌더에서 한 번만 계산해 타입 좁히기를 유지한다. */
+  const nameCheck = { nick: validateName(nick) };
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const gate = useKeyGate();
@@ -376,7 +379,14 @@ export function AuthPanel() {
                 <div className="flex flex-col gap-1">
                   <input ref={gate} {...swallowKeys} value={id} onChange={(e) => setId(e.target.value)} placeholder="아이디 (영문 소문자/숫자 3~20자)" className={inputCls} maxLength={20} autoCapitalize="none" autoCorrect="off" spellCheck={false} />
                   {mode === "signup" && (
-                    <input {...swallowKeys} value={nick} onChange={(e) => setNick(e.target.value)} placeholder="게임 내 이름 (1~8자, 선택)" className={inputCls} maxLength={8} />
+                    <>
+                      <input {...swallowKeys} value={nick} onChange={(e) => setNick(e.target.value)} placeholder={`게임 내 이름 (${NAME_MIN}~${NAME_MAX}자, 선택)`} className={inputCls} maxLength={NAME_MAX} />
+                      {/* vc272 — 선택 항목이지만 값이 있으면 서버 규칙과 같은 검증을 통과해야 한다.
+                       *  1자만 넣으면 가입은 되고 캐릭터 이름 등록에서만 실패해 원인을 찾기 어려웠다. */}
+                      {nick.length > 0 && !nameCheck.nick.ok && (
+                        <p className="text-[9px] font-black text-[#ff9a8a]">{nameCheck.nick.message}</p>
+                      )}
+                    </>
                   )}
                   <input {...swallowKeys} type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="비밀번호 (6자 이상)" className={inputCls} maxLength={40} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") { e.preventDefault(); submit(); } }} />
                 </div>

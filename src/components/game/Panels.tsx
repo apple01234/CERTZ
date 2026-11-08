@@ -32,6 +32,9 @@ import { PASS_TRACKS, PASS_PREMIUM_PRICE, PASS_MAX_LV, PASS_LV_XP, SEASON_DAILY_
 import { Trophy } from "lucide-react";
 import { authMe, marketGet, marketList, marketCancel, marketBuy, marketCollect, cloudSaveUpload, fetchRanking, fetchRank, claimRankReward, rankCacheAgeSec, getApiServerHost, type RankBoard, type MarketState, type AuthUser, type RankState, type RankRow } from "@/game/account"; // v1.0.1 — 유저 거래판 · v1.0.6 등록 전 세이브 선동기화 · v1.3.0 랭킹 · v1.4.0 랭킹 캐시 표기
 import { requestTradeSnapshot } from "@/game/trade"; // vc147 (#5) — 거래 패널 마운트 시 현재 상태 스냅샷 복원
+/* vc283 (지시 #24) — 랭킹 등록 조건 문구를 서버 집계와 같은 상수에서 가져온다.
+ *  문자열을 여기 하드코딩하면 서버 조건(RANK_MIN_TIER)이 바뀔 때 화면만 옛말을 하게 된다. */
+import { RANK_REQUIREMENT_TEXT } from "@/lib/rankEligibility";
 import { STORE_PACKS } from "@/game/ads"; // v1.0.2 — 현금 패키지
 import { STORE_PACK_CONTENTS } from "@/game/data"; // v1.0.7 — 패키지 구성 미리보기
 import { chestOdds, eertOdds, POT_PITY_MAX, STAR_PITY_FROM, STAR_PITY_STEP, STAR_PITY_MAX, STAR_FALLBACK_STREAK } from "@/game/data"; // v4.5.0 — 확률 공시 (게임산업법) · v1.0.8 천장 공시 · vc263c 하락 규칙
@@ -4497,6 +4500,10 @@ function KingdomRankTab() {
       <div className="mb-2 rounded-lg border border-yellow-300/40 bg-yellow-400/10 px-2.5 py-2">
         <p className="text-[11px] font-black text-yellow-100">왕국 랭킹 — 전설의 명예</p>
         <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">환생 · 심연의 탑 기록 · 레벨 순으로 명예의 전당이 결정된다. 계정 패널에서 클라우드 백업(3분 자동)이 켜져 있으면 자동 등록!</p>
+        {/* vc283 (지시 #24) — 등록 조건을 화면에 명시한다.
+         *  종전엔 아무 조건도 없어 1레벨 캐릭터도 집계됐다. 이제 서버(rankListFor)가
+         *  4차 전직 미만을 걸러내므로, 조건을 모르면 "왜 내가 안 보이지"가 된다. */}
+        <p className="mt-0.5 text-[10px] font-black leading-relaxed text-amber-200/90">※ {RANK_REQUIREMENT_TEXT}</p>
         {/* v1.4.0 (Task 0-3) — 조회 실패 시 캐시 데이터 표기: 빈 화면 대신 “n초 전 기준” 안내 */}
         {rankCacheAgeSec() !== null && (
           <p className="mt-0.5 text-[9px] font-bold text-yellow-200/70">⏱ {rankCacheAgeSec()}초 전 기준 — 열려 있는 동안 15초마다 자동 갱신 · 열 때 내 기록 즉시 등록</p>

@@ -80,7 +80,12 @@ test('story geography has distinct authored structures and no changes to feature
 
 test('Authored floor bands clip to cell edges and never bleed or leave gaps', () => {
   const manifest = JSON.parse(fs.readFileSync(new URL('../public/assets/ground/manifest.json', import.meta.url)));
-  const existingProp = key => ['dungeon','forest','town'].some(set => fs.existsSync(new URL(`../public/assets/objects/${set}/${key}.png`, import.meta.url)));
+  /* vc283 (지시 #11) — 마을 테마 구조물이 obj_town_house_blue → house_a/house_b 로 교체됐다.
+   *  두 건물은 objects/ 하위가 아니라 public/assets/ 루트에 있으므로 기존 헬퍼가 못 찾는다.
+   *  테스트가 "텍스처 없음"으로 판단해 프롭을 하나도 그리지 않으면 계약 검증이 무의미해진다. */
+  const rootProp = key => ['house_a', 'house_b'].includes(key)
+    && fs.existsSync(new URL(`../public/assets/${key}.png`, import.meta.url));
+  const existingProp = key => rootProp(key) || ['dungeon','forest','town'].some(set => fs.existsSync(new URL(`../public/assets/objects/${set}/${key}.png`, import.meta.url)));
   const events = [];
   const makeScene = () => {
     const bands = [];
@@ -176,7 +181,12 @@ test('Authored floor bands clip to cell edges and never bleed or leave gaps', ()
 
 test('vc238 edge decor outlines the floor without ever narrowing a route', () => {
   const manifest = JSON.parse(fs.readFileSync(new URL('../public/assets/ground/manifest.json', import.meta.url)));
-  const existingProp = key => ['dungeon','forest','town'].some(set => fs.existsSync(new URL(`../public/assets/objects/${set}/${key}.png`, import.meta.url)));
+  /* vc283 (지시 #11) — 마을 테마 구조물이 obj_town_house_blue → house_a/house_b 로 교체됐다.
+   *  두 건물은 objects/ 하위가 아니라 public/assets/ 루트에 있으므로 기존 헬퍼가 못 찾는다.
+   *  테스트가 "텍스처 없음"으로 판단해 프롭을 하나도 그리지 않으면 계약 검증이 무의미해진다. */
+  const rootProp = key => ['house_a', 'house_b'].includes(key)
+    && fs.existsSync(new URL(`../public/assets/${key}.png`, import.meta.url));
+  const existingProp = key => rootProp(key) || ['dungeon','forest','town'].some(set => fs.existsSync(new URL(`../public/assets/objects/${set}/${key}.png`, import.meta.url)));
   const makeScene = () => ({
     textures: { exists: key => key in manifest || existingProp(key), get: key => ({ getSourceImage: () => manifest[key] }) },
     add: {

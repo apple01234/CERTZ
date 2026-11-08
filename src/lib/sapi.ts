@@ -14,6 +14,8 @@ import { scryptSync, randomBytes, timingSafeEqual, createHash } from "node:crypt
 import type { DbShape, UserRec, ListingRec } from "./ghdb";
 import { ITEMS } from "@/game/data"; // vc146 (#9) — 거래 가능 품목 동적 구성 (gmOnly만 제외)
 import { clsToBranch } from "@/game/classes"; // v1.0.14 피드백#2 — 클래스키 → 계열(8 기본 직업) 정규화
+/* vc283 (지시 #24) — 랭킹 4차 전직 조건. 순수 모듈에서 가져와 rankListFor 가 쓴다. */
+import { rankEligible } from "./rankEligibility";
 import storage from "../../accounts/storage.json" with { type: "json" };
 /* vc251 — 쿠키 직렬화는 순수 모듈에서(이 파일은 next/server 의존이라 Node 테스트 불가) */
 import { COOKIE as COOKIE_NAME, TOKEN_TTL_MS as TTL_MS, isHttpsRequest, sessionCookieString, clearCookieString } from "./sessionCookie";
@@ -302,6 +304,13 @@ function rankBetter(a: { data: Record<string, unknown> }, b: { data: Record<stri
 }
 
 /**
+ * vc283 (지시 #24 "랭킹 등록 조건을 4차 전직 이상으로 변경") — 랭킹 등록 자격.
+ *  판정 로직은 `rankEligibility.ts` (순수 모듈) 로 분리했다 — 이 파일은 next/server 의존이라
+ *  Node 테스트에서 로드할 수 없기 때문이다. 여기서는 재-export 만 한다.
+ */
+export { RANK_MIN_TIER, rankEligible, RANK_REQUIREMENT_TEXT } from "./rankEligibility";
+
+/**
  * v1.0.13 피드백#7/#16 — 캐릭터별 랭킹 + 직업별 필터 (기존 계정 단위 집계 확장).
  *  · db.saves[uid].data(활성 세이브) + db.saves[uid].chars(캐릭터 백업분, cloud-save 최대 24캐릭)를
  *    캐릭터 단위로 모두 수집 — 한 계정이 여러 캐릭터로 랭킹에 오른다.
@@ -320,6 +329,11 @@ export function rankListFor(db: DbShape, me: UserRec | null, meName = "", job = 
     const d = saveDataOf(s);
     if (!d) continue;
     if (!Number(d.lv)) continue;
+    /* vc283 (지시 #24) — 4차 전직 미만은 랭킹에 올리지 않는다.
+     *  클라 필터만으로는 API 직접 호출에 뚫리므로 **집계 지점**인 여기서 막는다.
+     *  활성 세이브와 chars 백업분 **양쪽**에 적용해야 한 계정의 저차 캐릭이
+     *  백업 경로로 새어 들어오는 것을 막을 수 있다. */
+    if (!rankEligible(d)) continue;
     const u = db.users[uid];
     if (u && u.role === "admin") continue; // GM/관리자 제외 (운영 공정성)
     const activeName = String(d.playerName || (u ? u.name : "이름없음") || "이름없음").slice(0, 8);
@@ -330,6 +344,8 @@ export function rankListFor(db: DbShape, me: UserRec | null, meName = "", job = 
       for (const [cid, cs] of Object.entries(packedChars)) {
         if (!cs || typeof cs !== "object" || Array.isArray(cs)) continue;
         if (!Number((cs as Record<string, unknown>).lv)) continue;
+        /* vc283 (지시 #24) — 백업 캐릭터도 같은 4차 조건 */
+        if (!rankEligible(cs as Record<string, unknown>)) continue;
         const cname = String((cs as Record<string, unknown>).playerName || "이름없음").slice(0, 8);
         if (cname === activeName && Number((cs as Record<string, unknown>).lv) === Number(d.lv)) continue; // 활성 중복
         all.push({ uid, cid: String(cid).slice(0, 24), data: cs as Record<string, unknown>, name: cname });

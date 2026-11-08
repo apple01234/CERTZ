@@ -154,6 +154,8 @@ export function DialogueBox({
 }) {
   const [idx, setIdx] = useState(0);
   const [shown, setShown] = useState("");
+  /* vc272 — 선택지 키보드 강조 인덱스 (↑/↓ 이동, Enter/Space 확정) */
+  const [choiceIdx, setChoiceIdx] = useState(0);
   const timer = useRef<number | null>(null);
   const holdTimer = useRef<number | null>(null);
   const lastAdvance = useRef(0);
@@ -307,15 +309,71 @@ export function DialogueBox({
     holdTimer.current = null;
   };
 
-  if (!dialogue) return null;
-
-  /* vc264 (지시 #4) — 선택지가 "지금 화면에 떠 있는가".
-   *  렌더 조건(마지막 줄 + 타이핑 완료)과 startHold 판정이 **같은 식**을 쓰도록 묶는다.
-   *  둘이 갈라지면 선택지가 보이는데 홀드는 계속 도는(=취소되는) 상태가 된다. */
-  const choiceList = dialogue.choices ?? [];
+  /* ═══════════════ vc272 — 선택지 방향키 내비게이션 ═══════════════
+   *
+   * [증상] 선택지가 떠도 ↑/↓ 로 고를 수 없고 마우스/터치로만 선택됐다(요구사항 6.2).
+   * [원인] 선택지 버튼에 onPointerDown 만 있고 키보드 핸들러가 아예 없었다.
+   * [해결] Panels.tsx 의 useListNav(169-197) 와 **같은 판정 규칙**을 쓴다:
+   *   · e.code 기준 — 한글 2벌식 IME 가 켜져 있어도 물리 키로 판정 (e.key 는 "ㄷ" 이 된다)
+   *   · 입력 포커스(input/textarea) 중엔 무시
+   *   · preventDefault 로 스크롤/게임 입력 차단
+   * 게임 이동 잠금은 **기존 `ui:panelKeys` 이벤트**를 재사용한다(새 이벤트를 만들지 않는다).
+   * WorldScene 이 이미 이 이벤트로 panelNavOpen 을 세워 이동·공격키를 잠근다.
+   *
+   * [주의] 훅은 `if (!dialogue) return null` **위**에 있어야 한다(조건부 훅 금지).
+   *  그래서 아래 choiceList/hasChoices 파생값도 여기서 먼저 계산하고, 렌더 직전에 쓴다. */
+  const choiceList = dialogue?.choices ?? [];
   const hasChoices =
     choiceList.length > 0 &&
-    idx >= dialogue.lines.length - 1 && shown.length >= line.length;
+    idx >= (dialogue?.lines.length ?? 0) - 1 && shown.length >= line.length;
+
+  const pickChoice = (c: { id: string } | undefined) => {
+    if (!c) return;
+    audio.sfx.uiClick();
+    EventBus.emit("dialogue:choice", { id: c.id });
+    EventBus.emit("dialogue:done");
+  };
+
+  /* 선택지가 새로 열리면 강조를 첫 항목으로 되돌린다 */
+  useEffect(() => {
+    if (hasChoices) setChoiceIdx(0);
+  }, [hasChoices]);
+
+  /* 선택지가 열린 동안 게임 이동키 잠금 — 기존 이벤트 재사용 */
+  useEffect(() => {
+    if (!hasChoices) return;
+    EventBus.emit("ui:panelKeys", { active: true });
+    return () => { EventBus.emit("ui:panelKeys", { active: false }); };
+  }, [hasChoices]);
+
+  const choiceRef = useRef<{ list: { label: string; id: string }[]; at: number }>({ list: [], at: 0 });
+  useEffect(() => { choiceRef.current = { list: choiceList, at: choiceIdx }; });
+
+  useEffect(() => {
+    if (!hasChoices) return;
+    const onKey = (e: KeyboardEvent) => {
+      const el = document.activeElement;
+      if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return;
+      const n = choiceRef.current.list.length;
+      if (n <= 0) return;
+      if (e.code === "ArrowDown") {
+        e.preventDefault();
+        setChoiceIdx((i) => (i + 1) % n);
+      } else if (e.code === "ArrowUp") {
+        e.preventDefault();
+        setChoiceIdx((i) => (i - 1 + n) % n);
+      } else if (e.code === "Enter" || e.code === "NumpadEnter" || e.code === "Space") {
+        /* 대사를 연 그 키다운이 선택까지 확정하지 않게 열림 직후는 무시 (advance 와 같은 가드) */
+        if (performance.now() - openedAt.current < OPEN_GUARD_MS) return;
+        e.preventDefault();
+        pickChoice(choiceRef.current.list[choiceRef.current.at]);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [hasChoices]);
+
+  if (!dialogue) return null;
 
   return (
     <div
@@ -379,20 +437,32 @@ export function DialogueBox({
            *  클릭 시 dialogue:choice 발신 + dialogue:done으로 종료 — 컨테이너 홀드 진행과 충돌 없게 stopPropagation */}
           {hasChoices && (
             <div className="mt-2 flex flex-col gap-1.5" onPointerDown={(e) => e.stopPropagation()}>
-              {choiceList.map((c) => (
-                <button
-                  key={c.id}
-                  className="game-btn px-3 py-1.5 text-left text-[12px] font-black text-[#ffe9b0] transition-transform active:scale-95 sm:text-[13px]"
-                  onPointerDown={(e) => {
-                    e.stopPropagation();
-                    audio.sfx.uiClick();
-                    EventBus.emit("dialogue:choice", { id: c.id });
-                    EventBus.emit("dialogue:done");
-                  }}
-                >
-                  ▸ {c.label}
-                </button>
-              ))}
+              {choiceList.map((c, i) => {
+                /* vc272 — 키보드 강조와 마우스 호버가 같은 시각 언어를 쓰도록 한 곳에서 계산.
+                 *  강조 항목: 금색 테두리 + 밝은 배경 + ▸ 마커 (터치 기기에선 호버가 없으므로
+                 *  이 강조가 "지금 어떤 걸 고를 수 있는지"의 유일한 단서가 된다) */
+                const sel = i === choiceIdx;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    aria-current={sel ? "true" : undefined}
+                    className={
+                      sel
+                        ? "game-btn border-2 border-[#ffd98a] bg-[#5a4515]/90 px-3 py-1.5 text-left text-[12px] font-black text-[#fff3cc] shadow-[0_0_10px_rgba(255,217,138,0.45)] transition-transform active:scale-95 sm:text-[13px]"
+                        : "game-btn border-2 border-transparent px-3 py-1.5 text-left text-[12px] font-black text-[#ffe9b0]/70 transition-transform active:scale-95 sm:text-[13px]"
+                    }
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
+                      setChoiceIdx(i);
+                      pickChoice(c);
+                    }}
+                  >
+                    {sel ? "▸ " : "\u2003"}
+                    {c.label}
+                  </button>
+                );
+              })}
             </div>
           )}
           <div className="mt-1.5 flex items-end justify-between gap-2">

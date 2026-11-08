@@ -1,19 +1,26 @@
 {
  "ground_meadow": {
-  "source": "public/assets/tile_grass_pack.webp",
-  "note": "3색 단색 초록(64px 체커보드) → 256px 무이음새 풀숲",
-  "pack": "SERTZ 256px terrain (tile_grass_pack)",
-  "license": "CC0-1.0",
-  "width": 256,
-  "height": 256,
-  "sourceSha256": "3f574a37c94ef3cbf875e8f9d402c150c25085c7e6a37a574e32b9f528713542",
+  "source": "public/assets/campaign/drive/floor-garden.png",
+  "sourceSha256": "42ab5d43aaf0f56079d4487ab0d698784350f513be7fad5b4d5433263e977eb9",
   "crop": [
    0,
    0,
-   256,
-   256
+   32,
+   32
   ],
-  "integerScale": 1
+  "integerScale": 2,
+  "pack": "DCSS 32x32 (floor-garden.png) → 4x4 pack → NEAREST 2x",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://opengameart.org/content/dungeon-crawl-32x32-tiles",
+  "tint": {
+   "hue": 0.25,
+   "sat": 1.0,
+   "val": 1.0
+  },
+  "note": "잔디(원색)",
+  "width": 256,
+  "height": 256,
+  "generatedBy": "tools/ground_pixelart.py"
  },
  "ground_dirt": {
   "source": "assets_dl/tilesets/simple_tiles_32px.png",
@@ -31,102 +38,142 @@
   "height": 84
  },
  "ground_sand": {
-  "source": "public/assets/tile_gold.webp",
-  "sourceSha256": "619a833f98bf3d240cf5b285ee45100b26d30978b4c29046e0b7890b5a24cb8b",
-  "note": "84px·58색·이음선(비율 1.4e7) → 256px 무이음새 황금빛 모래",
-  "pack": "SERTZ 256px terrain (tile_gold)",
-  "license": "CC0-1.0",
-  "width": 256,
-  "height": 256,
+  "source": "public/assets/campaign/drive/floor-garden.png",
+  "sourceSha256": "42ab5d43aaf0f56079d4487ab0d698784350f513be7fad5b4d5433263e977eb9",
   "crop": [
    0,
    0,
-   256,
-   256
+   32,
+   32
   ],
-  "integerScale": 1,
-  "sha256": "06c6920bddad051907a108f7e116197724f74deec3c8f61d4a0aaada9311df92"
+  "integerScale": 2,
+  "pack": "DCSS 32x32 (floor-garden.png) → 4x4 pack → NEAREST 2x",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://opengameart.org/content/dungeon-crawl-32x32-tiles",
+  "tint": {
+   "hue": 0.11,
+   "sat": 0.75,
+   "val": 1.22
+  },
+  "note": "모래(황갈색)",
+  "width": 256,
+  "height": 256,
+  "generatedBy": "tools/ground_pixelart.py"
  },
  "ground_forest": {
-  "source": "public/assets/tile_rust.webp",
-  "sourceSha256": "f4356f2b697933aa6b289f05a5c50b369bf23d140fc8c545ca637c808f0058bf",
-  "note": "96px·29색·가로 이음선(1.98) → 256px 무이음새 어두운 흙(폐허)",
-  "pack": "SERTZ 256px terrain (tile_rust)",
-  "license": "CC0-1.0",
-  "width": 256,
-  "height": 256,
+  "source": "public/assets/campaign/drive/floor-forest-2.png",
+  "sourceSha256": "f5cc01324d66647dc59bd35fd332b468f23097bcd09e03097e852f14f26f2cd8",
   "crop": [
    0,
    0,
-   256,
-   256
+   32,
+   32
   ],
-  "integerScale": 1,
-  "sha256": "ec7bcd500e2f2bd7bc6dd26b17334593deed90f4436f7422c9c5a7c0c47e3bd3"
+  "integerScale": 2,
+  "pack": "DCSS 32x32 (floor-forest-2.png) → 4x4 pack → NEAREST 2x",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://opengameart.org/content/dungeon-crawl-32x32-tiles",
+  "tint": {
+   "hue": 0.28,
+   "sat": 0.9,
+   "val": 0.78
+  },
+  "note": "숲 바닥(어둡게)",
+  "width": 256,
+  "height": 256,
+  "generatedBy": "tools/ground_pixelart.py"
  },
  "ground_slate": {
-  "source": "public/assets/tile_tech.webp",
-  "note": "5색 회색 얼룩말 → 256px 무이음새 청회색 석재",
-  "pack": "SERTZ 256px terrain (tile_tech)",
-  "license": "CC0-1.0",
-  "width": 256,
-  "height": 256,
-  "sourceSha256": "9010c958f0440e8aab8861a6566fca5684a66d62e7efe00cb072db86e816efbb",
+  "source": "public/assets/campaign/drive/floor-garden.png",
+  "sourceSha256": "42ab5d43aaf0f56079d4487ab0d698784350f513be7fad5b4d5433263e977eb9",
   "crop": [
    0,
    0,
-   256,
-   256
+   32,
+   32
   ],
-  "integerScale": 1
+  "integerScale": 2,
+  "pack": "DCSS 32x32 (floor-garden.png) → 4x4 pack → NEAREST 2x",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://opengameart.org/content/dungeon-crawl-32x32-tiles",
+  "tint": {
+   "hue": 0.58,
+   "sat": 0.14,
+   "val": 0.95
+  },
+  "note": "석재(탈색 회청)",
+  "width": 256,
+  "height": 256,
+  "generatedBy": "tools/ground_pixelart.py"
  },
  "ground_ash": {
-  "source": "public/assets/tile_marble.webp",
-  "note": "5색 갈색 얼룩말 → 256px 무이음새 석회암",
-  "pack": "SERTZ 256px terrain (tile_marble)",
-  "license": "CC0-1.0",
-  "width": 256,
-  "height": 256,
-  "sourceSha256": "a1b14622ad034484b43aed773722365d50002b96046dbba4668e88d157a04686",
+  "source": "public/assets/campaign/drive/floor-garden.png",
+  "sourceSha256": "42ab5d43aaf0f56079d4487ab0d698784350f513be7fad5b4d5433263e977eb9",
   "crop": [
    0,
    0,
-   256,
-   256
+   32,
+   32
   ],
-  "integerScale": 1
+  "integerScale": 2,
+  "pack": "DCSS 32x32 (floor-garden.png) → 4x4 pack → NEAREST 2x",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://opengameart.org/content/dungeon-crawl-32x32-tiles",
+  "tint": {
+   "hue": 0.1,
+   "sat": 0.08,
+   "val": 1.45
+  },
+  "note": "잿빛(탈색 밝게)",
+  "width": 256,
+  "height": 256,
+  "generatedBy": "tools/ground_pixelart.py"
  },
  "ground_violet": {
-  "source": "public/assets/tile_mushroom.webp",
-  "note": "5색 분홍+보라+노랑 → 256px 무이음새 보라 지면",
-  "pack": "SERTZ 256px terrain (tile_mushroom)",
-  "license": "CC0-1.0",
-  "width": 256,
-  "height": 256,
-  "sourceSha256": "f46e38ecf4eef67b573f015653db027375b61a9556463055063020af0e7ab0eb",
+  "source": "public/assets/campaign/drive/floor-garden-1.png",
+  "sourceSha256": "2fc22ef0d9bd3a254678ab38fe45f2c4a5a253cf313b848c840f8366453f353c",
   "crop": [
    0,
    0,
-   256,
-   256
+   32,
+   32
   ],
-  "integerScale": 1
+  "integerScale": 2,
+  "pack": "DCSS 32x32 (floor-garden-1.png) → 4x4 pack → NEAREST 2x",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://opengameart.org/content/dungeon-crawl-32x32-tiles",
+  "tint": {
+   "hue": 0.78,
+   "sat": 0.55,
+   "val": 0.9
+  },
+  "note": "보랏빛",
+  "width": 256,
+  "height": 256,
+  "generatedBy": "tools/ground_pixelart.py"
  },
  "ground_cavern": {
-  "source": "public/assets/tile_void.webp",
-  "note": "ground_violet 복제 → 256px 무이음새 흑보라 동굴",
-  "pack": "SERTZ 256px terrain (tile_void)",
-  "license": "CC0-1.0",
-  "width": 256,
-  "height": 256,
-  "sourceSha256": "2f0afbb941c733a3b904266ad0f20610cacd803386c372074935186ab9ae9e20",
+  "source": "public/assets/campaign/drive/floor-garden-1.png",
+  "sourceSha256": "2fc22ef0d9bd3a254678ab38fe45f2c4a5a253cf313b848c840f8366453f353c",
   "crop": [
    0,
    0,
-   256,
-   256
+   32,
+   32
   ],
-  "integerScale": 1
+  "integerScale": 2,
+  "pack": "DCSS 32x32 (floor-garden-1.png) → 4x4 pack → NEAREST 2x",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://opengameart.org/content/dungeon-crawl-32x32-tiles",
+  "tint": {
+   "hue": 0.62,
+   "sat": 0.45,
+   "val": 0.5
+  },
+  "note": "동굴(어둡고 푸르게)",
+  "width": 256,
+  "height": 256,
+  "generatedBy": "tools/ground_pixelart.py"
  },
  "ground_snow": {
   "source": "public/assets/.tile_pack_backup/tile_snow.png",

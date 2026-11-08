@@ -25,4 +25,12 @@ export const TILE_PNG_KEYS: readonly string[] = [
   "tile_path_dark",
   "tile_snow",
   "tile_stone",
+  /* ═══ vc283 (지시 #11 "파란 지붕 교체" / 지시 #27 아트 일관성) ═══
+   * 마을 테마 구조물이 `obj_town_house_blue` → `house_a`/`house_b` 로 바뀌면서
+   * 두 건물이 화면에 상시 노출된다. 그런데 webp 열화본이 원본 대비 색이
+   * 뭉개져 있어(tile_* 5종과 같은 문제) 도트 윤곽이 흐려진다 —
+   * 지면·캐릭터는 선명한데 건물만 뿌옇게 보이면 #27(아트 밀도 통일)이 깨진다.
+   * PNG 원본이 이미 있으므로 그대로 우선 사용한다. */
+  "house_a",
+  "house_b",
 ];

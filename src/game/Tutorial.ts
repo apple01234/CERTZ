@@ -101,9 +101,15 @@ const STEP_KEYS: Partial<Record<TutStepId, string>> = {
 
 /* v1.4.10 — 상세 설명(2~3줄) 수용을 위해 패널 높이 62→80 확대
  * v1.0.13 피드백#17 — 안내인 상세 안내(4문장) 수용: 패널 높이 80→96 (desc 4줄 + 여백)
- *  desc 랩폭 390px @12px ≈ 32자/줄 × 4줄 = 128자 이내 — 위 STEPS desc는 전부 이 한도 내 */
-const PANEL_W = 520;
-const PANEL_H = 96;
+ *  desc 랩폭 390px @12px ≈ 32자/줄 × 4줄 = 128자 이내 — 위 STEPS desc는 전부 이 한도 내
+ *
+ * vc272 (지시 #6.3 "게임 화면을 필요 이상으로 덮지 않는다") — 520×96 → 420×84.
+ *  실측: 현재 STEPS desc 최대 길이 35자. 랩폭 420-124=296px @12px ≈ 24자/줄 → 2줄이면 끝난다.
+ *  (종전 96px 높이는 4줄까지 가정한 여유였는데 실제 데이터는 2줄이라 16px 가 남았다)
+ *  면적 49,920 → 35,280 px² (약 29% 감소). 화면 상단에서 덮는 세로 구간도 96→84 로 줄어
+ *  HP바·프롤로그 텍스트와의 겹침이 완화된다. */
+const PANEL_W = 420;
+const PANEL_H = 84;
 
 export class Tutorial {
   private scene: WorldScene;
@@ -126,11 +132,46 @@ export class Tutorial {
   private mkGlow: Phaser.GameObjects.Image | null = null;
   private mkSpark: Phaser.GameObjects.Sprite | null = null;
 
+  /* ═══════════════ vc272 — 컷씬/프롤로그 중 자동 숨김 ═══════════════
+   *
+   * [증상] 프롤로그·궁극기 컷신이 화면을 덮어도 "튜토리얼 1/5 · 주민에게 말 걸기" 패널이
+   *        그 위에 또렷하게 남았다(첨부 스크린샷 1).
+   * [원인] 튜토리얼 HUD 는 `setDepth(9200)`, 프롤로그 검은 오버레이는 `setDepth(3000)` —
+   *        튜토리얼이 **더 위**에 그려진다. 그리고 이 클래스에는 표시/숨김 API 자체가 없어
+   *        씬이 뭘 하든 패널을 내릴 방법이 없었다.
+   * [해결] `cinematic:state` 를 구독해 컷신이 활성인 동안만 숨긴다.
+   *        새 이벤트를 만들지 않는다 — GameRoot 가 이미 구독 중인 기존 계약을 그대로 쓴다.
+   *
+   * [함정 — 반드시 지킬 것] 마커(mkGlow/mkSpark)는 `this.hud` 컨테이너에 **들어있지 않고**
+   *  씬에 직접 add 됐다. 그래서 hud.setVisible(false) 만으로는 마커가 남는다.
+   *  게다가 update() 가 매 프레임 `mkGlow.setVisible(true)` 를 **무조건** 호출하므로,
+   *  숨김 플래그를 저장해 두고 update 에서 그 플래그를 존중해야 덮어써지지 않는다.
+   */
+  private hidden = false;
+
+  /** 컷씬/프롤로그 중 튜토리얼 UI(패널+마커)를 숨기거나 복원한다. */
+  setHidden(on: boolean) {
+    this.hidden = on;
+    this.hud?.setVisible(!on);
+    /* 마커는 컨테이너 밖이라 개별 처리. 복원 여부는 update() 가 마커 위치를 다시 계산해 정한다. */
+    if (on) {
+      this.mkGlow?.setVisible(false);
+      this.mkSpark?.setVisible(false);
+    }
+  }
+
+  /** cinematic:state 리스너 — destroy 에서 반드시 해제해야 씬 재시작 시 누수가 없다. */
+  private readonly onCinematic = (v: { active?: boolean }) => {
+    this.setHidden(!!v?.active);
+  };
+
   constructor(scene: WorldScene, resumeStep = 0) {
     this.scene = scene;
     this.stepIdx = Phaser.Math.Clamp(resumeStep, 0, STEPS.length - 1);
     this.buildHud();
     this.refresh();
+    /* vc272 — 컷씬 활성 여부 구독 (프롤로그·궁극기 컷신·챕터 카드 공통) */
+    EventBus.on("cinematic:state", this.onCinematic);
     /* v1.0.13 피드백#17 — 안내인 화자 배너 + 재개 단계가 ⑤/⑥이면 DOM 버튼 하이라이트 즉시 복원 */
     this.emitDom(this.domKeyOf(STEPS[this.stepIdx].id), true);
     /* vc256 — 시작 배너는 1회, 짧게. 종전엔 desc(115자)를 그대로 찍어 화면을 덮었다. */
@@ -286,6 +327,14 @@ export class Tutorial {
 
   update() {
     if (this.done) return;
+    /* vc272 — 컷신 중엔 마커 위치 갱신을 하지 않는다. update() 가 아래에서
+     *  `mkGlow.setVisible(true)` 를 무조건 호출하므로, 여기서 조기 반환하지 않으면
+     *  setHidden(true) 가 매 프레임 덮어써져 마커가 다시 나타난다. */
+    if (this.hidden) {
+      this.mkGlow?.setVisible(false);
+      this.mkSpark?.setVisible(false);
+      return;
+    }
     const st = STEPS[this.stepIdx];
     /* 마커 추적 */
     let tx: number | null = null;
@@ -366,6 +415,9 @@ export class Tutorial {
 
   destroy() {
     this.scene.scale.off("resize", this.onResize, this);
+    /* vc272 — cinematic:state 구독 해제. 이게 없으면 씬 재시작 후에도 죽은 인스턴스가
+     *  리스너로 남아 다음 컷신마다 유령 setHidden 을 호출한다. */
+    EventBus.off("cinematic:state", this.onCinematic);
     this.mkGlow?.destroy(); this.mkGlow = null;
     this.mkSpark?.destroy(); this.mkSpark = null;
     this.hud?.destroy(); this.hud = null;
