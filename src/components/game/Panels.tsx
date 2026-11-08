@@ -21,7 +21,7 @@ import { LockReason } from "./LockBadge"; // vc247 (지시 #11) — 잠금 사�
 import { GATHER_DEFS, COOK_RECIPES } from "@/game/gathering"; // v1.1.9 (#개편 A47·A48) // v1.1.8 (#개편 A46) 낚시 도감
 import { CLASS_LIST, CLASSES, BRANCH_KEYS, classDef, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 import { BOSS_ATLAS } from "@/game/textures"; // v1.4.31 — 보스 도감 아틀라스 초상화
-import { loadKeyMap, applyKeyBinding, resetKeyMap, loadMoveScheme, writeMoveScheme, keyLabel, ACTION_LABELS, ASSIGNABLE_KEYS, type GameAction, type KeyMap, type MoveScheme } from "@/game/keymap";
+import { loadKeyMap, applyKeyBinding, resetKeyMap, loadMoveScheme, writeMoveScheme, writeKeyMap, keyLabel, ACTION_LABELS, ASSIGNABLE_KEYS, keyMapForPreset, loadSkillPreset, writeSkillPreset, SKILL_PRESET_LABELS, SKILL_PRESET_HINTS, type GameAction, type KeyMap, type MoveScheme, type SkillPreset } from "@/game/keymap";
 import { getPlayerName, loadSave, mutateFriends, loadFx, writeFx } from "@/game/config"; // v2.4 — 이름 변경 표시 / v2.5 — 방문 구역 기록 / v1.0.18 — 셰이더 강도 / v1.0.13 피드백#12 — 친구 추가( FriendsWidget 동일 스토어 API)
 import { toonEnabled } from "@/game/fx/ToonFX";
 import { loadShakeScale, setShakeScale } from "@/game/fx/shakeScale";
@@ -5754,6 +5754,8 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
   const seenSet = useMemo(() => new Set(loadSave()?.tutSeen ?? []), []);
   /* v1.0.17 — 이동 스킴 (방향키/WASD). 전환 시 전투 키 프리셋도 함께 적용된다 */
   const [scheme, setScheme] = useState<MoveScheme>(() => loadMoveScheme());
+  /* vc288 — 스킬 배치 프리셋 상태 (이동 스킴과 별개 축) */
+  const [preset, setPreset] = useState<SkillPreset>(() => loadSkillPreset());
   const [recording, setRecording] = useState<GameAction | null>(null);
   /* v1.0.18 — 셰이더 효과 강도 표시값 */
   const [fxLabel, setFxLabel] = useState(() => loadFx().intensity);
@@ -5821,6 +5823,18 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
     EventBus.emit("movescheme:changed", s);
   };
 
+  /* vc288 — 스킬 배치 프리셋 적용 (REVAMP_100 개편 후보 "스킬 프리셋").
+   *  이동 스킴과 **별개 축**이다: 스킴은 "왼손이 어디 있나", 프리셋은 "무엇을 먼저 누르나".
+   *  적용하면 현재 스킴 위에 프리셋 배치가 얹히고, 이후 자유 재배정은 그대로 가능하다. */
+  const applySkillPreset = (p: SkillPreset) => {
+    const next = keyMapForPreset(p, scheme);
+    writeKeyMap(next);
+    writeSkillPreset(p);
+    setKm(next);
+    setPreset(p);
+    EventBus.emit("keymap:changed", next);
+  };
+
   return (
     <div
       className="pointer-events-auto fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
@@ -5871,6 +5885,33 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
               );
             })}
           </div>
+        </div>
+
+        {/* vc288 — 스킬 배치 프리셋 (REVAMP_100 개편 후보 "스킬 프리셋 2~3개").
+         *  위의 이동 키 배치와 **별개 축**이다: 저건 "왼손이 어디 있나",
+         *  이건 "무엇을 먼저 누르나". 하나만 고르는 3택 버튼으로 둔다. */}
+        <div className="mt-2 rounded-lg border border-emerald-300/25 bg-emerald-400/[0.06] px-2.5 py-2.5">
+          <p className="text-[12px] font-black text-emerald-200">스킬 배치 프리셋</p>
+          <p className="mt-0.5 text-[10px] leading-snug text-white/50">
+            손에 익은 배치를 한 번에 고릅니다. 스킬 성능은 그대로이고 <b>키 위치만</b> 바뀌어요.
+          </p>
+          <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+            {(["combat", "boss", "ranged"] as const).map((p) => {
+              const active = preset === p;
+              return (
+                <button
+                  key={p}
+                  onClick={() => { if (!active) applySkillPreset(p); }}
+                  aria-pressed={active}
+                  title={SKILL_PRESET_HINTS[p]}
+                  className={`rounded-md border-2 px-1 py-1.5 text-[11px] font-black transition ${active ? "border-emerald-300/70 bg-emerald-500/20 text-emerald-200" : "border-white/15 bg-black/40 text-white/55 hover:border-white/40"}`}
+                >
+                  {SKILL_PRESET_LABELS[p]}{active ? " ✓" : ""}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-1 text-[9px] leading-snug text-white/40">{SKILL_PRESET_HINTS[preset]}</p>
         </div>
 
         {/* v3.1.0 (#볼륨UI) — BGM/효과음 개별 볼륨 슬라이더 */}

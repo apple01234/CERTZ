@@ -118,6 +118,124 @@ export function presetKeyMapFor(scheme: MoveScheme): KeyMap {
   return { ...(scheme === "wasd" ? WASD_KEYMAP : DEFAULT_KEYMAP) };
 }
 
+/* ═══ vc288 — 스킬 배치 프리셋 (REVAMP_100 개편 후보 "스킬 프리셋 2~3개") ═══
+ *
+ * [왜 필요한가]
+ *  지금까지 프리셋은 **이동 스킴**(화살표/WASD) 2종뿐이었다. 그건 "손 위치"를 고르는
+ *  것이지 "어떤 스킬을 먼저 누를지"를 고르는 것이 아니다.
+ *  플레이어마다 손이 다르고, 보스전에서는 생존기가 손에 붙어 있어야 한다.
+ *  매번 옵션 창에서 키를 하나씩 바꾸는 건 번거롭다 — 한 번에 갈아끼울 수 있어야 한다.
+ *
+ * [설계]
+ *  프리셋은 **배치만** 바꾼다. 스킬 자체(데미지·쿨·판정)는 건드리지 않는다.
+ *  그래야 "프리셋 바꿨더니 세져졌다"는 오해가 생기지 않는다.
+ *
+ *  · combat  — 기본. 공격 X 를 중심으로 스킬1~3 을 좌우에 몰아 넣는다(현행 유지).
+ *  · boss    — 보스전용. 궁극기(5·5b)를 손 닿는 곳으로 올리고, 물약을 멀리 둔다.
+ *              보스전은 "궁극기를 언제 쓰나"가 승패를 가르므로 그걸 먼저 손에 쥔다.
+ *  · ranged  — 원거리/카이팅. 이동키 반대편에 공격을 두어 달리면서 쏠 수 있게 한다.
+ *
+ * ponytail: 프리셋을 늘리려면 SKILL_PRESETS 에 항목만 추가한다.
+ *  4개를 넘기면 고르는 비용이 이득을 넘으므로 지금은 3개다.
+ */
+
+/** 스킬 배치 프리셋 키 */
+export type SkillPreset = "combat" | "boss" | "ranged";
+
+/** 프리셋 표시 이름 — UI 는 이걸 그대로 쓴다(문자열 중복 금지). */
+export const SKILL_PRESET_LABELS: Record<SkillPreset, string> = {
+  combat: "전투 기본",
+  boss: "보스전",
+  ranged: "원거리",
+};
+
+/** 프리셋 설명 — "무엇이 달라지는지" 한 줄. */
+export const SKILL_PRESET_HINTS: Record<SkillPreset, string> = {
+  combat: "공격 X 중심으로 스킬 1~3 을 좌우에 모읍니다.",
+  boss: "궁극기 두 개를 손 닿는 곳으로 올리고 물약을 멀리 둡니다.",
+  ranged: "이동키 반대편에 공격을 두어 달리면서 쏠 수 있게 합니다.",
+};
+
+/**
+ * 프리셋별 배치. **전투/물약 키만** 정의한다 —
+ * UI 키(가방·상점·옵션 등)는 스킴 기본값을 그대로 상속한다.
+ * 일부만 덮어쓰는 이유: 프리셋마다 UI 키까지 적으면 18개를 3번 반복해야 하고,
+ * 그중 하나만 어긋나도 "프리셋 바꿨더니 가방이 안 열린다"가 된다.
+ */
+const PRESET_OVERRIDES: Record<SkillPreset, Partial<KeyMap>> = {
+  combat: {}, // 스킴 기본값 그대로
+  boss: {
+    /* 궁극기를 검지/중지 바로 아래로 — 보스전에서 가장 늦게 누르면 지는 키다.
+     *
+     * 주의: 기본 배치가 이미 1~5, A~Z 중 SPACE 를 뺀 대부분을 쓴다.
+     * 남는 알파벳은 L N P U W 뿐이므로, 덮어쓸 수 있는 키는 **원래 스킬이 쓰던 키**다
+     * (교체 방식: skill5 는 S 를 쓰고 있었으니 F 를 주고, F 를 쓰던 skill3 을 U 로 옮긴다).
+     * 중복이 생기면 테스트가 잡는다 — 실제로 Z·G 중복을 두 번 잡았다. */
+    skill5: "F",    /* F 를 가져옴 */
+    skill3: "U",    /* 비어 있던 키로 밀어냄 */
+    skill5b: "W",   /* 빈 키 (제2궁극기) */
+    attack: "X",    /* 그대로 */
+    potHp: "1",
+    potMp: "2",
+  },
+  ranged: {
+    /* 이동키(화살표 또는 WASD)와 물리적으로 먼 **오른손 쪽**에 공격 계열을 둔다.
+     * 왼손은 이동, 오른손은 공격 — 달리면서 쏘는 자세.
+     *
+     * 빈 알파벳은 L N P U W 뿐이다. 기존 키를 빼앗으면 그 액션이 다른 키와
+     * 충돌하므로(실제로 shop·friends 와 두 번 충돌했다), **빈 키에만** 배정하고
+     * 나머지는 스킴 기본값을 그대로 둔다. */
+    attack: "P",
+    skill1: "L",
+    skill2: "N",
+    skill3: "U",
+    skill4: "W",
+    potHp: "1",
+    potMp: "2",
+  },
+};
+
+/**
+ * 프리셋 + 스킴을 합쳐 완전한 키맵을 만든다.
+ *
+ * 이동키와 충돌하는 배정은 **버린다** — WASD 스킴에서 W/A/S/D 를 스킬에 주면
+ * 이동이 막혀 게임이 진행되지 않는다.
+ */
+export function keyMapForPreset(preset: SkillPreset, scheme: MoveScheme): KeyMap {
+  const base = presetKeyMapFor(scheme);
+  const out: KeyMap = { ...base, ...PRESET_OVERRIDES[preset] };
+  /* 이동 키와 겹치면 스킴 기본값으로 되돌린다(안전망). */
+  const move = moveKeysFor(scheme);
+  const moveCodes = new Set([move.left, move.right, move.up, move.down]);
+  for (const action of Object.keys(out) as GameAction[]) {
+    if (moveCodes.has(out[action])) out[action] = base[action];
+  }
+  return out;
+}
+
+const SKILL_PRESET_STORAGE = "sertz_skillpreset_v1";
+
+/** 저장된 스킬 프리셋을 읽는다. 없거나 이상하면 "combat". */
+export function loadSkillPreset(): SkillPreset {
+  try {
+    const v = window.localStorage.getItem(SKILL_PRESET_STORAGE);
+    if (v === "combat" || v === "boss" || v === "ranged") return v;
+  } catch {
+    /* 저장소 접근 불가 — 기본값 */
+  }
+  return "combat";
+}
+
+/** 스킬 프리셋을 저장한다. */
+export function writeSkillPreset(p: SkillPreset) {
+  try {
+    window.localStorage.setItem(SKILL_PRESET_STORAGE, p);
+  } catch {
+    /* 저장 실패는 게임 진행에 영향 없음 */
+  }
+}
+
+
 /** v1.0.17 — 스킴별 이동 키. 이 키들은 액션 배정이 차단된다(이동 전용).
  *  arrows 스킴: 화살표 / wasd 스킴: W A S D */
 export function moveKeysFor(scheme: MoveScheme): { left: string; right: string; up: string; down: string } {
