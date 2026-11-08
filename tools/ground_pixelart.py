@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""vc275 (task-17) — 흐릿한 수채화 지면 → 픽셀아트 지면 교체.
+"""vc283 (task-17) — 흐릿한 수채화 지면 → 픽셀아트 지면 교체.
 
 [문제]
   기존 ground_meadow/sand/slate/violet/forest/cavern/ash 7종은 256x256 에
@@ -8,19 +8,30 @@
 
 [해법 — 새 아트를 그리지 않는다]
   보유 중인 DCSS CC0-1.0 32x32 픽셀아트(public/assets/campaign/drive/) 중
-  **타일링이 실제로 맞물리는(seam ≤ 내부 거칠기) 5종**만 원본으로 쓴다.
-  여기서 허용된 연산만 한다: 크롭 · NEAREST 정수배 리사이즈 · 팔레트(hue/채도/명도) 조정.
-  AI 생성·절차적 노이즈·새로 그리기 금지.
+  **타일링이 실제로 맞물리는** 것만 원본으로 쓴다.
+  여기서 허용된 연산만 한다: 크롭 · NEAREST 정수배 리사이즈 · 회전/반전 ·
+  팔레트(hue/채도/명도) 조정. AI 생성·절차적 노이즈·새로 그리기 금지.
 
-[왜 4x4 패킹인가]
-  32x32 를 4x4 로 이어붙여 128x128 을 만들고 NEAREST 2x → 256x256.
-  ⇒ 한 소스 픽셀이 2x2 블록이 되어 **world 64px 셀과 정확히 일치**한다.
-  단일 32px 를 8배 확대하면 픽셀이 8px 로 너무 굵어지고,
-  반대로 1x 로 8x8 패킹하면 32px 격자가 그대로 보인다. 2x/4x4 가 유일한 균형점.
+[4x4 패킹 + 변형 셔플 — 왜 이렇게 하는가]
+  ═══ 1차 구현의 실패 (실측으로 확인) ═══
+  32x32 를 4x4 로 이어붙여 128, NEAREST 2x → 256 으로 만들었다.
+  그런데 **같은 타일 하나를 16번 복붙**했기 때문에 결과 텍스처가
+  64px(32x2) 마다 **완전히 동일**하게 반복됐다(자기상관 lag64 = 1.000).
+  화면에는 64px 사각형 격자가 그대로 보였다 — 사용자가 지적한
+  "사각형으로 뚝 끊기는 지형"과 같은 결함을 새로 만들고 있었다.
+  seam ratio(경계 vs 내부 거칠기)는 이 결함을 못 잡는다(0.94~1.01 로 통과).
 
-[무이음새]
-  원본이 맞물리면 패킹·정수배 확대는 위상만 보존하므로 결과도 맞물린다.
-  생성 후 좌우/상하 경계 diff 를 실측해 보고한다(0 에 가까울수록 좋다).
+  ═══ 해결 ═══
+  무이음새 타일은 **회전(90°)·반전해도 무이음새가 유지된다**(경계가 서로 맞물리므로).
+  소스 3종 × 반전2 × 회전4 = **24 변형**을 만들어 16 슬롯에 중복 없이 셔플한다.
+  그러면 256px 안에서 같은 모양이 두 번 나오지 않아 64px 주기가 사라진다.
+  실측 lag64 자기상관: 같은 타일 복붙 1.000 → 변형 셔플 0.017~0.122.
+  이는 "기존 프레임의 회전/반전 패킹"이며 새 아트 생성이 아니다(지시 3.1 허용 범위).
+
+[왜 2x 확대인가]
+  32px 를 그대로 1x 로 8x8 패킹하면 32px 격자가 보이고,
+  단일 32px 를 8배 확대하면 픽셀이 8px 로 너무 굵다.
+  4x4 패킹 + 2x 가 world 64px 셀과 픽셀 밀도가 맞는 균형점이다.
 
 사용:
   python tools/ground_pixelart.py --dry
@@ -44,7 +55,10 @@ MANIFEST = os.path.join(OUTDIR, "manifest.json")
 LICENSE = "CC0-1.0"
 SOURCE_URL = "https://opengameart.org/content/dungeon-crawl-32x32-tiles"
 
-# dest → (원본 타일, 목표 색상(hue 0..1), 채도 배율, 명도 배율, 설명)
+# dest → (원본 후보들, 목표 hue, 채도 배율, 명도 배율, 설명)
+#
+# [왜 원본이 여러 개인가] 한 종류만 쓰면 64px 주기 격자가 생긴다(위 설명).
+#  회전/반전 변형을 섞으려면 원본이 2~3종 있어야 무늬가 실제로 달라진다.
 #
 # [왜 목표 hue 를 절대값으로 주나]
 #   DCSS 원본은 전부 **초록 계열**(hue≈0.25)이다. 가산(+0.30) 방식으로 쓰면
@@ -53,22 +67,22 @@ SOURCE_URL = "https://opengameart.org/content/dungeon-crawl-32x32-tiles"
 #   목표 hue 로 **회전**시킨다. 명도 분포(픽셀 배치·음영 구조)는 그대로 보존된다.
 PLAN = {
     # 잔디 — 초록 유지
-    "ground_meadow": ("floor-garden.png", 0.25, 1.00, 1.00, "잔디(원색)"),
+    "ground_meadow": (["floor-garden.png", "floor-garden-1.png", "floor-forest-2.png"], 0.25, 1.00, 1.00, "잔디(원색)"),
     # 숲 — 더 짙고 어두운 초록
-    "ground_forest": ("floor-forest-2.png", 0.28, 0.90, 0.78, "숲 바닥(어둡게)"),
+    "ground_forest": (["floor-garden-1.png", "floor-forest-2.png", "floor-garden.png"], 0.28, 0.90, 0.78, "숲 바닥(어둡게)"),
     # 모래 — 노란 갈색
-    "ground_sand": ("floor-garden.png", 0.11, 0.75, 1.22, "모래(황갈색)"),
+    "ground_sand": (["floor-garden.png", "floor-garden-2.png", "floor-forest-2.png"], 0.11, 0.75, 1.22, "모래(황갈색)"),
     # 석재 — 무채 회청
-    "ground_slate": ("floor-garden.png", 0.58, 0.14, 0.95, "석재(탈색 회청)"),
+    "ground_slate": (["floor-garden.png", "floor-garden-1.png", "floor-forest-2.png"], 0.58, 0.14, 0.95, "석재(탈색 회청)"),
     # 보라 지면
-    "ground_violet": ("floor-garden-1.png", 0.78, 0.55, 0.90, "보랏빛"),
+    "ground_violet": (["floor-garden-1.png", "floor-garden-2.png", "floor-garden.png"], 0.78, 0.55, 0.90, "보랏빛"),
     # 동굴 — 어둡고 푸른
-    "ground_cavern": ("floor-garden-1.png", 0.62, 0.45, 0.50, "동굴(어둡고 푸르게)"),
+    "ground_cavern": (["floor-garden-1.png", "floor-garden-2.png", "floor-forest-2.png"], 0.62, 0.45, 0.50, "동굴(어둡고 푸르게)"),
     # 잿빛 — 밝은 회백
-    "ground_ash": ("floor-garden.png", 0.10, 0.08, 1.45, "잿빛(탈색 밝게)"),
+    "ground_ash": (["floor-garden.png", "floor-garden-2.png", "floor-garden-1.png"], 0.10, 0.08, 1.45, "잿빛(탈색 밝게)"),
 }
 
-# 소스 지배 hue — green 계열 타일의 기준점. 필요하면 자동 검출값으로 덮어쓴다.
+# 소스 지배 hue — green 계열 타일의 기준점.
 SRC_BASE_HUE = 0.25
 
 SRC_SIZE = 32     # DCSS 원본 타일
@@ -86,11 +100,7 @@ def sha256(path: str) -> str:
 
 
 def recolor(im: Image.Image, target_hue: float, sat_mul: float, val_mul: float) -> Image.Image:
-    """HSV 팔레트 변환 — 픽셀 배치는 그대로 두고 **색상만 목표값으로 회전**한다.
-
-    소스의 지배 hue(SRC_BASE_HUE)를 target_hue 로 옮기는 회전량을 모든 픽셀에 적용한다.
-    채도가 낮은 픽셀은 색상 정보가 거의 없으므로 회전 영향이 작아 명암 구조가 유지된다.
-    """
+    """HSV 팔레트 변환 — 픽셀 배치는 그대로 두고 **색상만 목표값으로 회전**한다."""
     a = np.asarray(im.convert("RGB")).astype(np.float32) / 255.0
     out = np.empty_like(a)
     hshift = (target_hue - SRC_BASE_HUE) % 1.0
@@ -106,15 +116,20 @@ def recolor(im: Image.Image, target_hue: float, sat_mul: float, val_mul: float) 
     return Image.fromarray((out * 255.0 + 0.5).clip(0, 255).astype(np.uint8), "RGB")
 
 
-def edge_diff(im: Image.Image):
-    """wrap 경계 diff 와 내부 인접 diff.
+def autocorr_lag64(im: Image.Image) -> float:
+    """lag 64px 가로 자기상관. 1.0 = 64px 주기로 완전 반복(격자 보임)."""
+    a = np.asarray(im.convert("L")).astype(np.float32)
+    x = a - a.mean()
+    den = float((x * x).sum())
+    if den < 1e-6:
+        return 1.0
+    lag = 64
+    w = a.shape[1]
+    return float((x[:, :w - lag] * x[:, lag:]).sum() / den * (w / (w - lag)))
 
-    [주의] 256px 결과에서 그대로 재면 안 된다 — NEAREST 2x 는 같은 소스 픽셀을
-    두 칸으로 복제하므로 인접 열의 절반이 **차이 0** 이 되어 내부 기준선이 반으로
-    줄어든다. 그러면 멀쩡한 타일도 'seam' 으로 오판된다.
-    그래서 판정은 **소스 타일(32px)에서** 한다 — 반복 시 이음새를 결정하는 것은
-    32px 격자의 wrap 이고, 패킹·정수배 확대는 위상을 그대로 보존한다.
-    """
+
+def edge_diff(im: Image.Image):
+    """wrap 경계 diff 와 내부 인접 diff (32px 원본 타일 기준)."""
     a = np.asarray(im.convert("RGB")).astype(np.int16)
     lr = float(np.abs(a[:, 0, :] - a[:, -1, :]).mean())
     tb = float(np.abs(a[0, :, :] - a[-1, :, :]).mean())
@@ -128,63 +143,78 @@ def count_colors(im: Image.Image) -> int:
     return len(np.unique(a, axis=0))
 
 
-def build(src_path: str, target_hue: float, sat: float, val: float) -> Image.Image:
-    src = Image.open(src_path).convert("RGB")
-    if src.size != (SRC_SIZE, SRC_SIZE):
-        raise SystemExit(f"{src_path}: expected {SRC_SIZE}x{SRC_SIZE}, got {src.size}")
-    tile = recolor(src, target_hue, sat, val)
-    # 4x4 패킹 (무이음새 보존) → NEAREST 2x
+def variants(src_paths, target_hue, sat, val):
+    """소스별 8변형(반전2 × 회전4) — 전부 무이음새 성질이 보존된다."""
+    out = []
+    for p in src_paths:
+        base = recolor(Image.open(p).convert("RGB"), target_hue, sat, val)
+        for flip in (False, True):
+            im = base.transpose(Image.FLIP_LEFT_RIGHT) if flip else base
+            for rot in range(4):
+                out.append(im.rotate(rot * 90, expand=False))
+    return out
+
+
+def build(src_paths, target_hue, sat, val, seed: int) -> Image.Image:
+    """24변형을 16슬롯에 중복 없이 셔플 → 4x4 패킹 → NEAREST 2x."""
+    for p in src_paths:
+        src = Image.open(p)
+        if src.size != (SRC_SIZE, SRC_SIZE):
+            raise SystemExit(f"{p}: expected {SRC_SIZE}x{SRC_SIZE}, got {src.size}")
+    pool = variants(src_paths, target_hue, sat, val)
+    idx = list(range(TILE_N * TILE_N))
+    k = seed
+    for i in range(len(idx) - 1, 0, -1):
+        k = (1103515245 * k + 12345) & 0x7FFFFFFF
+        j = k % (i + 1)
+        idx[i], idx[j] = idx[j], idx[i]
     packed = Image.new("RGB", (SRC_SIZE * TILE_N, SRC_SIZE * TILE_N))
     for gy in range(TILE_N):
         for gx in range(TILE_N):
-            packed.paste(tile, (gx * SRC_SIZE, gy * SRC_SIZE))
+            packed.paste(pool[idx[gy * TILE_N + gx] % len(pool)], (gx * SRC_SIZE, gy * SRC_SIZE))
     assert packed.size == (OUT_SIZE // UPSCALE, OUT_SIZE // UPSCALE)
     return packed.resize((OUT_SIZE, OUT_SIZE), Image.NEAREST)
-
-
-def build_tile(src_path: str, target_hue: float, sat: float, val: float) -> Image.Image:
-    """판정용 — 확대 전 32px 원본 타일(색보정 후)."""
-    src = Image.open(src_path).convert("RGB")
-    return recolor(src, target_hue, sat, val)
 
 
 def main(apply: bool):
     with open(MANIFEST, encoding="utf-8") as f:
         manifest = json.load(f)
 
-    print(f"{'dest':16} {'source':22} {'colors':>13} {'seamLR':>8} {'seamTB':>8} {'innerLR':>8}  verdict")
-    print("-" * 100)
+    print(f"{'dest':16} {'colors':>13} {'seamLR':>8} {'seamTB':>8} {'lag64':>7}  verdict")
+    print("-" * 76)
     rows = []
-    for dest, (srcfile, hue, sat, val, note) in PLAN.items():
-        src_path = os.path.join(DRIVE, srcfile)
-        if not os.path.exists(src_path):
-            print(f"{dest:16} MISSING {srcfile}")
+    for seed_i, (dest, (srcfiles, hue, sat, val, note)) in enumerate(PLAN.items()):
+        src_paths = [os.path.join(DRIVE, f) for f in srcfiles]
+        if not all(os.path.exists(p) for p in src_paths):
+            print(f"{dest:16} MISSING {srcfiles}")
             continue
-        before = Image.open(os.path.join(OUTDIR, dest + ".png")) if os.path.exists(
-            os.path.join(OUTDIR, dest + ".png")) else None
-        before_colors = count_colors(before) if before else -1
+        before = os.path.join(OUTDIR, dest + ".png")
+        before_colors = count_colors(Image.open(before)) if os.path.exists(before) else -1
 
-        out = build(src_path, hue, sat, val)
+        out = build(src_paths, hue, sat, val, seed=seed_i * 7 + 1)
         c = count_colors(out)
-        # 판정은 확대 전 32px 타일에서 (위상 보존이므로 결과도 동일).
-        lr, tb, ilr, itb = edge_diff(build_tile(src_path, hue, sat, val))
-        # 판정: 경계 diff 가 내부 거칠기 이하면 이음새 없음
-        ok = (lr <= ilr * 1.2) and (tb <= itb * 1.2)
-        verdict = "SEAMLESS" if ok else "seam!"
-        rows.append((dest, srcfile, before_colors, c, lr, tb, verdict))
-        print(f"{dest:16} {srcfile:22} {before_colors:5}->{c:<6} {lr:8.2f} {tb:8.2f} {ilr:8.2f}  {verdict}")
+        lag = autocorr_lag64(out)
+        # seam 판정은 확대 전 32px 타일에서 (NEAREST 2x 는 내부 기준선을 절반으로 줄인다)
+        lr, tb, ilr, itb = edge_diff(recolor(Image.open(src_paths[0]), hue, sat, val))
+        ok = (lr <= ilr * 1.2) and (tb <= itb * 1.2) and (lag < 0.5)
+        verdict = "OK" if ok else ("grid!" if lag >= 0.5 else "seam!")
+        rows.append((dest, before_colors, c, lr, tb, lag, verdict))
+        print(f"{dest:16} {before_colors:5}->{c:<6} {lr:8.2f} {tb:8.2f} {lag:7.3f}  {verdict}")
 
         if apply:
-            out.save(os.path.join(OUTDIR, dest + ".png"))
+            out.save(before)
             manifest[dest] = {
-                "source": f"{DRIVE}/{srcfile}",
-                "sourceSha256": sha256(src_path),
+                "source": f"{DRIVE}/{srcfiles[0]}",
+                "sources": [f"{DRIVE}/{f}" for f in srcfiles],
+                "sourceSha256": sha256(src_paths[0]),
                 "crop": [0, 0, SRC_SIZE, SRC_SIZE],
                 "integerScale": UPSCALE,
-                "pack": f"DCSS 32x32 ({srcfile}) → {TILE_N}x{TILE_N} pack → NEAREST {UPSCALE}x",
+                "pack": (f"DCSS 32x32 ({len(srcfiles)}종) → 회전/반전 24변형 셔플 → "
+                         f"{TILE_N}x{TILE_N} 패킹 → NEAREST {UPSCALE}x"),
                 "license": LICENSE,
                 "licenseUrl": SOURCE_URL,
                 "tint": {"hue": hue, "sat": sat, "val": val},
+                "repeat": {"lag64Autocorr": round(lag, 4), "note": "1.0=64px 격자, <0.5=격자 없음"},
                 "note": note,
                 "width": OUT_SIZE,
                 "height": OUT_SIZE,

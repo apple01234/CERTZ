@@ -127,6 +127,49 @@ test('96px/64px 격자가 다시 보이지 않는다 (seam ratio)', () => {
   }
 });
 
+/* ═══ vc283 — seam ratio 만으로는 "반복 격자"를 못 잡는다 ═══
+ *
+ * [왜 이 테스트가 필요한가]
+ *  위 seam 측정은 경계 이음새가 **내부 거칠기와 비슷한가**만 본다. 그런데 실제
+ *  사용자 지적("사각형으로 뚝 끊기는 지형")의 정체는 이음새가 아니라
+ *  **텍스처가 짧은 주기로 완전히 반복되는 것**이었다.
+ *  실측: vc283 1차 지면은 32px 원본 타일 **하나를 16번 복붙**해 만들어서
+ *  lag 64px 에서 자기상관이 **1.000**(=완전 동일)이었다. 화면에는 64px 격자가 보인다.
+ *  그런데 seam ratio 로는 0.94~1.01 로 "정상" 판정됐다 — 통과시키는 지표가 틀렸다.
+ *
+ *  반대로 인위적 체커보드도 seam ratio 는 1.000 으로 통과한다(셀 내부가 단색이라
+ *  내부 거칠기가 0에 가까워 비율이 무의미해진다). 두 지표는 서로 다른 결함을 잡는다.
+ *
+ * [측정] 가로 방향 자기상관(lag 64px). 1.0 이면 그 주기로 완전 반복 = 격자.
+ *  같은 32px 타일을 2x 확대해 붙이면 반드시 64px 주기가 생기므로 이 값이 1.0 이 된다.
+ *  회전/반전 변형을 섞어 패킹하면 같은 격자가 반복되지 않아 값이 낮아진다.
+ *
+ * [임계 0.5] 실측 근거:
+ *   같은 타일 16장 복붙         → 1.000 (격자)
+ *   소스 3종만 섞기(회전없이)    → 0.829 (여전히 격자)
+ *   변형 24종 셔플              → -0.006 ~ 0.210 (격자 없음)
+ *  0.5 는 "격자 있음"과 "없음" 사이의 명확한 골짜기다. */
+test('짧은 주기 반복 격자가 없다 (자기상관 lag 64px)', () => {
+  const py = `
+from PIL import Image
+import numpy as np
+for n in ${JSON.stringify(SWAPPED)}:
+    a = np.asarray(Image.open(f'public/assets/ground/{n}.png').convert('L')).astype(np.float32)
+    x = a - a.mean(); den = float((x*x).sum())
+    lag = 64
+    c = float((x[:, :a.shape[1]-lag] * x[:, lag:]).sum()/den*(a.shape[1]/(a.shape[1]-lag))) if den > 1e-6 else 1.0
+    print(n, round(c, 4))
+`;
+  const out = execFileSync(PY, ['-c', py], { cwd: ROOT, encoding: 'utf8', env: pythonEnv }).trim().split(/\r?\n/);
+  assert.equal(out.length, SWAPPED.length, '교체된 지면 전부를 검사해야 한다');
+  for (const line of out) {
+    const [n, c] = line.trim().split(/\s+/);
+    assert.ok(Number(c) < 0.5,
+      `${n} lag64 자기상관 ${c} — 64px 주기로 반복되는 격자가 보인다(<0.5 필요). ` +
+      `같은 32px 타일을 16번 복붙하면 1.000 이 된다.`);
+  }
+});
+
 test('평면 단색으로 퇴화하지 않았다 (최빈색 점유)', () => {
   const py = `
 from PIL import Image

@@ -390,7 +390,7 @@
     "knight": {
       "url": "/assets/npcbody/npcbody_knight.png",
       "archivePath": "CERTZ/public/assets/npcbody/npcbody_knight.png",
-      "sha256": "d2eb3d8c57f403814a3b8d8162d46e7d0fc16407815a58d0600a749a2649db56",
+      "sha256": "255a4674817192efb6f9d780f2657c11e27075c3d80263a28cfc104ca09ce5c9",
       "width": 96,
       "height": 96,
       "provenance": "Existing user-supplied project art; SPUM purchased prefab renders"
@@ -398,7 +398,7 @@
     "archer": {
       "url": "/assets/npcbody/npcbody_scout.png",
       "archivePath": "CERTZ/public/assets/npcbody/npcbody_scout.png",
-      "sha256": "2ed7d5e52a1d06f747660fa19894a5a2fe4232c861b8db5e0f20991ade19c373",
+      "sha256": "f378091b6c5ec3e904266fc99823a437d7895d56cae1412e607ff6443140bd64",
       "width": 96,
       "height": 96,
       "provenance": "Existing user-supplied project art; SPUM purchased prefab renders"
@@ -406,7 +406,7 @@
     "mage": {
       "url": "/assets/npcbody/npcbody_mage.png",
       "archivePath": "CERTZ/public/assets/npcbody/npcbody_mage.png",
-      "sha256": "246b663e5555f379f15a346f63b91fa6198c67b0496fcf858ab88d159d121bb0",
+      "sha256": "30ce741562e6f119eae2a96de894cb79d7144cff4d5737c65847588e29e353a4",
       "width": 96,
       "height": 96,
       "provenance": "Existing user-supplied project art; SPUM purchased prefab renders"
@@ -414,7 +414,7 @@
     "duelist": {
       "url": "/assets/npcbody/npcbody_devil.png",
       "archivePath": "CERTZ/public/assets/npcbody/npcbody_devil.png",
-      "sha256": "1489a983f7e9ecb48ac066ed242a99f092f1ecfdb8dbc8243ca3ded6d841ef58",
+      "sha256": "8b145fd6589d4543cb25e3dda95c1bace9ce90bb8a0fe6613c2b864f90e88029",
       "width": 96,
       "height": 96,
       "provenance": "Existing user-supplied project art; SPUM purchased prefab renders"
@@ -422,7 +422,7 @@
     "captain": {
       "url": "/assets/npcbody/npcbody_fisher.png",
       "archivePath": "CERTZ/public/assets/npcbody/npcbody_fisher.png",
-      "sha256": "1681a9d0a4db75ce83570259997f035bd67ca744ab728eca6586e6a13bcb3c7d",
+      "sha256": "b3d125070abd91f9bfb38d2cb8bfd5a7de0ca34b75888ecbc0b8e979636af9a9",
       "width": 96,
       "height": 96,
       "provenance": "Existing user-supplied project art; SPUM purchased prefab renders"
@@ -430,7 +430,7 @@
     "sage": {
       "url": "/assets/npcbody/npcbody_mystic.png",
       "archivePath": "CERTZ/public/assets/npcbody/npcbody_mystic.png",
-      "sha256": "8515dd37a89e186b1902fce996facd5b850673a8db9226a1dbedad1741498596",
+      "sha256": "932320636585a940ed7ea2efff9d32105d663b91d65d52f587cdd9333931b8f4",
       "width": 96,
       "height": 96,
       "provenance": "Existing user-supplied project art; SPUM purchased prefab renders"
@@ -438,7 +438,7 @@
     "healer": {
       "url": "/assets/npcbody/npcbody_priest.png",
       "archivePath": "CERTZ/public/assets/npcbody/npcbody_priest.png",
-      "sha256": "dbb2f36e74c280b80bd30b73e302f5cc93d69b29cffd81376a7a9b15e6b663ca",
+      "sha256": "1eb7565c851de6f22653a6b3acdb5570388197e4968d689ff9148fef1d715861",
       "width": 96,
       "height": 96,
       "provenance": "Existing user-supplied project art; SPUM purchased prefab renders"
@@ -446,7 +446,7 @@
     "guardian": {
       "url": "/assets/npcbody/npcbody_elf.png",
       "archivePath": "CERTZ/public/assets/npcbody/npcbody_elf.png",
-      "sha256": "56943959bffb571b7a1af281b17dbcfd46f5ea487a30832a58a4f7fb57724877",
+      "sha256": "826eed2a58ff10bc0d52a27c5b6adc5b2e176b07756f4f5dcc8b3670fd07d730",
       "width": 96,
       "height": 96,
       "provenance": "Existing user-supplied project art; SPUM purchased prefab renders"
@@ -454,7 +454,7 @@
     "shadow-knight": {
       "url": "/assets/npcbody/npcbody_butler.png",
       "archivePath": "CERTZ/public/assets/npcbody/npcbody_butler.png",
-      "sha256": "5bb4696882af0628cd5668cf369d12a30041770cf4d452695dead0e82f542f9a",
+      "sha256": "91c6dc3530b723d7ceff2660214d09f45ffb26284150f4f2f36329e2daa8572e",
       "width": 96,
       "height": 96,
       "provenance": "Existing user-supplied project art; SPUM purchased prefab renders"
@@ -517,14 +517,6 @@
       "height": 112,
       "provenance": "Existing user-supplied project art; Tiny RPG Forest / Dungeon Tale / town props"
     },
-    "town-house": {
-      "url": "/assets/objects/town/obj_town_house_blue.png",
-      "archivePath": "CERTZ/public/assets/objects/town/obj_town_house_blue.png",
-      "sha256": "71fd835ea9a6bac3e39d83525a7b8b431c009d579b5ad64b2878030bc534011e",
-      "width": 160,
-      "height": 112,
-      "provenance": "Existing user-supplied project art; Tiny RPG Forest / Dungeon Tale / town props"
-    },
     "town-stall": {
       "url": "/assets/objects/town/obj_town_stall_stripe.png",
       "archivePath": "CERTZ/public/assets/objects/town/obj_town_stall_stripe.png",
@@ -552,7 +544,7 @@
     "portrait-knight": {
       "url": "/assets/npcportrait/npcbody_knight.png",
       "archivePath": "CERTZ/public/assets/npcportrait/npcbody_knight.png",
-      "sha256": "b439bde58429f71fbd6c9c07325411c6ebd92c07a328513899afe29bb01e3adc",
+      "sha256": "0f151e8d515f27cbf786aa48cf755751b78a559e2b26b5634a6e09573706f92e",
       "width": 84,
       "height": 84,
       "provenance": "Existing DialogueBox exact-source SPUM portrait crop; docs/assets_license/spum_npc_restore.json"
@@ -560,7 +552,7 @@
     "portrait-archer": {
       "url": "/assets/npcportrait/npcbody_scout.png",
       "archivePath": "CERTZ/public/assets/npcportrait/npcbody_scout.png",
-      "sha256": "b395730b493547a122febb1522e04a8b81f19ba6c3cd1b8a7682d87c46f8e6b0",
+      "sha256": "6b9176cb2e68a802251233954e8c8490dbf397552086dd95ab10e564d3f8f3ad",
       "width": 84,
       "height": 84,
       "provenance": "Existing DialogueBox exact-source SPUM portrait crop; docs/assets_license/spum_npc_restore.json"
@@ -568,7 +560,7 @@
     "portrait-mage": {
       "url": "/assets/npcportrait/npcbody_mage.png",
       "archivePath": "CERTZ/public/assets/npcportrait/npcbody_mage.png",
-      "sha256": "294ec74d23bc689d0acce514767ee8d9712dd3da07ad3f02b92db357fe75bd06",
+      "sha256": "b95993c98593ba353a5d90a4dfe1b626f2ca6b40f4f7215cd98e742991564206",
       "width": 84,
       "height": 84,
       "provenance": "Existing DialogueBox exact-source SPUM portrait crop; docs/assets_license/spum_npc_restore.json"
@@ -576,7 +568,7 @@
     "portrait-duelist": {
       "url": "/assets/npcportrait/npcbody_devil.png",
       "archivePath": "CERTZ/public/assets/npcportrait/npcbody_devil.png",
-      "sha256": "2eb22ea4ff349198cb937fc39e9cb24ac3ae08839fa2950beeca0ff965944639",
+      "sha256": "3d352c53bace8778c911cf97e200d77cdd8e0446017b9db6413dfd9db4e08469",
       "width": 84,
       "height": 84,
       "provenance": "Existing DialogueBox exact-source SPUM portrait crop; docs/assets_license/spum_npc_restore.json"
@@ -584,7 +576,7 @@
     "portrait-captain": {
       "url": "/assets/npcportrait/npcbody_fisher.png",
       "archivePath": "CERTZ/public/assets/npcportrait/npcbody_fisher.png",
-      "sha256": "5568e29d70a9707093603006ad72b1b3cb7669b9f0d0a3ad52e5ccb77d7d50e7",
+      "sha256": "993921aefd9931234cd228251bda5068e3ab7e191430ce7d58321066c343ea65",
       "width": 84,
       "height": 84,
       "provenance": "Existing DialogueBox exact-source SPUM portrait crop; docs/assets_license/spum_npc_restore.json"
@@ -592,7 +584,7 @@
     "portrait-sage": {
       "url": "/assets/npcportrait/npcbody_mystic.png",
       "archivePath": "CERTZ/public/assets/npcportrait/npcbody_mystic.png",
-      "sha256": "b2d334ae3b4ec393b6ec5c917404c00e3f536a4a12b7614816229658ea5d233c",
+      "sha256": "328350b25ceefc1fd566523e8226a93af23285c9c0b1037dedd90f8de6c2bf70",
       "width": 84,
       "height": 84,
       "provenance": "Existing DialogueBox exact-source SPUM portrait crop; docs/assets_license/spum_npc_restore.json"
@@ -600,7 +592,7 @@
     "portrait-healer": {
       "url": "/assets/npcportrait/npcbody_priest.png",
       "archivePath": "CERTZ/public/assets/npcportrait/npcbody_priest.png",
-      "sha256": "8fdbc9d7a7c196d4da228fd7bad784e7b63479c0beb160c18f93113193940887",
+      "sha256": "b923c54c3429670f2db0ccedd1858db85f61bdcebf42a7edc4f2eb6bd4219718",
       "width": 84,
       "height": 84,
       "provenance": "Existing DialogueBox exact-source SPUM portrait crop; docs/assets_license/spum_npc_restore.json"
@@ -608,7 +600,7 @@
     "portrait-guardian": {
       "url": "/assets/npcportrait/npcbody_elf.png",
       "archivePath": "CERTZ/public/assets/npcportrait/npcbody_elf.png",
-      "sha256": "6167e9efa54c1239b3db31a8691c20dabaf9eb5420647a69bcc7c8a7344b418d",
+      "sha256": "2cdc5cbc8a05ac5df0bcd47149babf14688394306b0650468882b45e1ec1cbc3",
       "width": 84,
       "height": 84,
       "provenance": "Existing DialogueBox exact-source SPUM portrait crop; docs/assets_license/spum_npc_restore.json"
@@ -616,7 +608,7 @@
     "portrait-shadow-knight": {
       "url": "/assets/npcportrait/npcbody_butler.png",
       "archivePath": "CERTZ/public/assets/npcportrait/npcbody_butler.png",
-      "sha256": "1602fb85c9cacea58e55f27fdce02ec83c1c1fa6240b934ac9b07ad3cd2cec67",
+      "sha256": "a2271deb60443bd8dc7646e49a9c228313ed4f3eedb6aed9116ca948a63fe742",
       "width": 84,
       "height": 84,
       "provenance": "Existing DialogueBox exact-source SPUM portrait crop; docs/assets_license/spum_npc_restore.json"

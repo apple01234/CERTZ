@@ -1,6 +1,11 @@
 {
  "ground_meadow": {
   "source": "public/assets/campaign/drive/floor-garden.png",
+  "sources": [
+   "public/assets/campaign/drive/floor-garden.png",
+   "public/assets/campaign/drive/floor-garden-1.png",
+   "public/assets/campaign/drive/floor-forest-2.png"
+  ],
   "sourceSha256": "42ab5d43aaf0f56079d4487ab0d698784350f513be7fad5b4d5433263e977eb9",
   "crop": [
    0,
@@ -9,13 +14,17 @@
    32
   ],
   "integerScale": 2,
-  "pack": "DCSS 32x32 (floor-garden.png) → 4x4 pack → NEAREST 2x",
+  "pack": "DCSS 32x32 (3종) → 회전/반전 24변형 셔플 → 4x4 패킹 → NEAREST 2x",
   "license": "CC0-1.0",
   "licenseUrl": "https://opengameart.org/content/dungeon-crawl-32x32-tiles",
   "tint": {
    "hue": 0.25,
    "sat": 1.0,
    "val": 1.0
+  },
+  "repeat": {
+   "lag64Autocorr": 0.1173,
+   "note": "1.0=64px 격자, <0.5=격자 없음"
   },
   "note": "잔디(원색)",
   "width": 256,
@@ -39,6 +48,11 @@
  },
  "ground_sand": {
   "source": "public/assets/campaign/drive/floor-garden.png",
+  "sources": [
+   "public/assets/campaign/drive/floor-garden.png",
+   "public/assets/campaign/drive/floor-garden-2.png",
+   "public/assets/campaign/drive/floor-forest-2.png"
+  ],
   "sourceSha256": "42ab5d43aaf0f56079d4487ab0d698784350f513be7fad5b4d5433263e977eb9",
   "crop": [
    0,
@@ -47,7 +61,7 @@
    32
   ],
   "integerScale": 2,
-  "pack": "DCSS 32x32 (floor-garden.png) → 4x4 pack → NEAREST 2x",
+  "pack": "DCSS 32x32 (3종) → 회전/반전 24변형 셔플 → 4x4 패킹 → NEAREST 2x",
   "license": "CC0-1.0",
   "licenseUrl": "https://opengameart.org/content/dungeon-crawl-32x32-tiles",
   "tint": {
@@ -55,14 +69,23 @@
    "sat": 0.75,
    "val": 1.22
   },
+  "repeat": {
+   "lag64Autocorr": -0.0128,
+   "note": "1.0=64px 격자, <0.5=격자 없음"
+  },
   "note": "모래(황갈색)",
   "width": 256,
   "height": 256,
   "generatedBy": "tools/ground_pixelart.py"
  },
  "ground_forest": {
-  "source": "public/assets/campaign/drive/floor-forest-2.png",
-  "sourceSha256": "f5cc01324d66647dc59bd35fd332b468f23097bcd09e03097e852f14f26f2cd8",
+  "source": "public/assets/campaign/drive/floor-garden-1.png",
+  "sources": [
+   "public/assets/campaign/drive/floor-garden-1.png",
+   "public/assets/campaign/drive/floor-forest-2.png",
+   "public/assets/campaign/drive/floor-garden.png"
+  ],
+  "sourceSha256": "2fc22ef0d9bd3a254678ab38fe45f2c4a5a253cf313b848c840f8366453f353c",
   "crop": [
    0,
    0,
@@ -70,13 +93,17 @@
    32
   ],
   "integerScale": 2,
-  "pack": "DCSS 32x32 (floor-forest-2.png) → 4x4 pack → NEAREST 2x",
+  "pack": "DCSS 32x32 (3종) → 회전/반전 24변형 셔플 → 4x4 패킹 → NEAREST 2x",
   "license": "CC0-1.0",
   "licenseUrl": "https://opengameart.org/content/dungeon-crawl-32x32-tiles",
   "tint": {
    "hue": 0.28,
    "sat": 0.9,
    "val": 0.78
+  },
+  "repeat": {
+   "lag64Autocorr": 0.0453,
+   "note": "1.0=64px 격자, <0.5=격자 없음"
   },
   "note": "숲 바닥(어둡게)",
   "width": 256,
@@ -85,6 +112,11 @@
  },
  "ground_slate": {
   "source": "public/assets/campaign/drive/floor-garden.png",
+  "sources": [
+   "public/assets/campaign/drive/floor-garden.png",
+   "public/assets/campaign/drive/floor-garden-1.png",
+   "public/assets/campaign/drive/floor-forest-2.png"
+  ],
   "sourceSha256": "42ab5d43aaf0f56079d4487ab0d698784350f513be7fad5b4d5433263e977eb9",
   "crop": [
    0,
@@ -93,13 +125,17 @@
    32
   ],
   "integerScale": 2,
-  "pack": "DCSS 32x32 (floor-garden.png) → 4x4 pack → NEAREST 2x",
+  "pack": "DCSS 32x32 (3종) → 회전/반전 24변형 셔플 → 4x4 패킹 → NEAREST 2x",
   "license": "CC0-1.0",
   "licenseUrl": "https://opengameart.org/content/dungeon-crawl-32x32-tiles",
   "tint": {
    "hue": 0.58,
    "sat": 0.14,
    "val": 0.95
+  },
+  "repeat": {
+   "lag64Autocorr": -0.0254,
+   "note": "1.0=64px 격자, <0.5=격자 없음"
   },
   "note": "석재(탈색 회청)",
   "width": 256,
@@ -108,6 +144,11 @@
  },
  "ground_ash": {
   "source": "public/assets/campaign/drive/floor-garden.png",
+  "sources": [
+   "public/assets/campaign/drive/floor-garden.png",
+   "public/assets/campaign/drive/floor-garden-2.png",
+   "public/assets/campaign/drive/floor-garden-1.png"
+  ],
   "sourceSha256": "42ab5d43aaf0f56079d4487ab0d698784350f513be7fad5b4d5433263e977eb9",
   "crop": [
    0,
@@ -116,13 +157,17 @@
    32
   ],
   "integerScale": 2,
-  "pack": "DCSS 32x32 (floor-garden.png) → 4x4 pack → NEAREST 2x",
+  "pack": "DCSS 32x32 (3종) → 회전/반전 24변형 셔플 → 4x4 패킹 → NEAREST 2x",
   "license": "CC0-1.0",
   "licenseUrl": "https://opengameart.org/content/dungeon-crawl-32x32-tiles",
   "tint": {
    "hue": 0.1,
    "sat": 0.08,
    "val": 1.45
+  },
+  "repeat": {
+   "lag64Autocorr": 0.0162,
+   "note": "1.0=64px 격자, <0.5=격자 없음"
   },
   "note": "잿빛(탈색 밝게)",
   "width": 256,
@@ -131,6 +176,11 @@
  },
  "ground_violet": {
   "source": "public/assets/campaign/drive/floor-garden-1.png",
+  "sources": [
+   "public/assets/campaign/drive/floor-garden-1.png",
+   "public/assets/campaign/drive/floor-garden-2.png",
+   "public/assets/campaign/drive/floor-garden.png"
+  ],
   "sourceSha256": "2fc22ef0d9bd3a254678ab38fe45f2c4a5a253cf313b848c840f8366453f353c",
   "crop": [
    0,
@@ -139,13 +189,17 @@
    32
   ],
   "integerScale": 2,
-  "pack": "DCSS 32x32 (floor-garden-1.png) → 4x4 pack → NEAREST 2x",
+  "pack": "DCSS 32x32 (3종) → 회전/반전 24변형 셔플 → 4x4 패킹 → NEAREST 2x",
   "license": "CC0-1.0",
   "licenseUrl": "https://opengameart.org/content/dungeon-crawl-32x32-tiles",
   "tint": {
    "hue": 0.78,
    "sat": 0.55,
    "val": 0.9
+  },
+  "repeat": {
+   "lag64Autocorr": 0.0076,
+   "note": "1.0=64px 격자, <0.5=격자 없음"
   },
   "note": "보랏빛",
   "width": 256,
@@ -154,6 +208,11 @@
  },
  "ground_cavern": {
   "source": "public/assets/campaign/drive/floor-garden-1.png",
+  "sources": [
+   "public/assets/campaign/drive/floor-garden-1.png",
+   "public/assets/campaign/drive/floor-garden-2.png",
+   "public/assets/campaign/drive/floor-forest-2.png"
+  ],
   "sourceSha256": "2fc22ef0d9bd3a254678ab38fe45f2c4a5a253cf313b848c840f8366453f353c",
   "crop": [
    0,
@@ -162,13 +221,17 @@
    32
   ],
   "integerScale": 2,
-  "pack": "DCSS 32x32 (floor-garden-1.png) → 4x4 pack → NEAREST 2x",
+  "pack": "DCSS 32x32 (3종) → 회전/반전 24변형 셔플 → 4x4 패킹 → NEAREST 2x",
   "license": "CC0-1.0",
   "licenseUrl": "https://opengameart.org/content/dungeon-crawl-32x32-tiles",
   "tint": {
    "hue": 0.62,
    "sat": 0.45,
    "val": 0.5
+  },
+  "repeat": {
+   "lag64Autocorr": 0.0047,
+   "note": "1.0=64px 격자, <0.5=격자 없음"
   },
   "note": "동굴(어둡고 푸르게)",
   "width": 256,
