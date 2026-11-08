@@ -26,7 +26,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 
 const CREDITS = "public/assets/CREDITS.md";
 const AUDIO_DIR = "public/assets/audio";
@@ -140,6 +140,76 @@ test("게임 아트에는 AI 생성 표기가 없다 (철칙)", () => {
   assert.deepEqual(offenders.map(String), [], "CREDITS 에 AI 생성 아트 표기가 있다 — 철칙 위반");
 });
 
+test("textures.ts 가 참조하는 스프라이트가 CREDITS 에 있다 (vc288 실제 결함)", () => {
+  /* [발견 경위]
+   *  textures.ts 의 BOSS_ATLAS 가 `file: "boss_*.png"` 로 참조하는 스프라이트 6개가
+   *  CREDITS 에 **전혀 없었다.** 보스는 게임에서 가장 눈에 띄는 아트인데
+   *  출처가 문서화되지 않은 상태였다.
+   *
+   *  코드 주석에 "AI 생성 원본" 이라는 문구가 있어 AI 생성물로 오해했으나,
+   *  실제로는 vc235 에서 라이선스 팩으로 교체된 뒤였다
+   *  (근거: docs/BOSS_SPRITE_PLAN.md — AI 생성 13종 중 11종 하단 잘림).
+   *  빠진 것은 **출처 표시**뿐이었다.
+   *
+   *  이 테스트는 새 보스 스프라이트를 추가하면서 CREDITS 를 잊는 것을 막는다. */
+  const tex = readFileSync("src/game/textures.ts", "utf8");
+  const refs = new Set([...tex.matchAll(/file:\s*"([^"]+\.png)"/g)].map((m) => m[1]));
+  assert.ok(refs.size > 0, "textures.ts 에서 스프라이트 참조를 찾지 못했다");
+
+  const text = creditText();
+
+  /* 파일이 실재하는지 */
+  const assetFiles = new Set();
+  const walk = (dir) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = `${dir}/${e.name}`;
+      if (e.isDirectory()) walk(p);
+      else assetFiles.add(e.name);
+    }
+  };
+  assert.ok(existsSync("public/assets"), "public/assets 가 없다");
+  walk("public/assets");
+
+  const missingFile = [...refs].filter((r) => !assetFiles.has(r));
+  assert.deepEqual(missingFile, [], `참조했지만 파일이 없는 스프라이트: ${missingFile.join(", ")}`);
+
+  /* CREDITS 에 이름이 있는지 */
+  const uncredited = [...refs].filter((r) => !text.includes(r.replace(/\.png$/, "")));
+  assert.deepEqual(
+    uncredited,
+    [],
+    `CREDITS 에 출처가 없는 스프라이트: ${uncredited.join(", ")} — 라이선스 표시 의무`,
+  );
+});
+
+test("저장소의 용량 큰 에셋 팩이 CREDITS 에 언급돼 있다", () => {
+  /* 이미지·오디오 팩을 새로 넣으면서 출처를 빠뜨리는 것을 막는다.
+   * 1MB 이상 파일이 있는 하위 디렉터리는 출처를 남겨야 한다. */
+  const roots = readdirSync("public/assets", { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name);
+
+  const text = creditText();
+  const big = [];
+  for (const r of roots) {
+    let bytes = 0;
+    let count = 0;
+    const walk = (dir) => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const p = `${dir}/${e.name}`;
+        if (e.isDirectory()) walk(p);
+        else if (/\.(png|webp|ogg|mp3)$/i.test(e.name)) {
+          count++;
+          bytes += statSync(p).size;
+        }
+      }
+    };
+    walk(`public/assets/${r}`);
+    if (bytes < 1048576) continue; // 1MB 미만은 대상 아님
+    if (!text.includes(r)) big.push(`${r} (${(bytes / 1048576).toFixed(1)}MB, ${count}개)`);
+  }
+  assert.deepEqual(big, [], `CREDITS 에 출처가 없는 대용량 에셋 루트: ${big.join(" | ")}`);
+});
 test("CREDITS 가 가리키는 저장소 경로가 실제로 있다", () => {
   /* CREDITS 는 팩을 **글롭**으로 적기도 한다
    * (예: `public/assets/ground/ground_*`, `public/assets/npcbody/*.png`).

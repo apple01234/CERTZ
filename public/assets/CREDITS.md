@@ -472,3 +472,51 @@ ghostIce_48x32(3동작×6프레임), wraith 21프레임 HD(150×159) 등 35종.
 - `bgm_cave1` → `bgm_cave_1` · `bgm_cave2` → `bgm_cave_2` · `bgm_cave3` → `bgm_cave_3`
 - `bgm_abyss1` → `bgm_abyss_1` · `bgm_abyss2` → `bgm_abyss_2` · `bgm_abyss3` → `bgm_abyss_3`
 - `bgm_alfheim1` → `bgm_alfheim_1` · `bgm_alfheim2` → `bgm_alfheim_2` · `bgm_alfheim3` → `bgm_alfheim_3`
+---
+
+## vc288 — 보스 스프라이트 출처
+
+> vc288 감사에서 `src/game/textures.ts` 가 참조하는 보스 png 6개가
+> CREDITS 에 전혀 없음을 발견해 보완했다. 이 6개는 vc235 에서 **AI 생성 원본을
+> 대체한 외부 제작 팩**이다(AI 생성 보스 13종 중 11종이 프레임 하단에서 아트가
+> 수평으로 잘려 있어 교체했다 — 근거: `docs/BOSS_SPRITE_PLAN.md`).
+>
+> 파일 1개가 여러 보스에 재사용된다(예: `boss_dragon.png` → 니드호그·요르문간드·아부디토스).
+> 전송량을 줄이려는 의도적 공유이며, 각 보스의 `tex` 키는 별도다.
+
+| 파일 | 원본 | 라이선스 | 프레임 |
+|---|---|---|---|
+| `boss_frost.png` | [Boss: Frost Guardian](https://chierit.itch.io/boss-frost-guardian) — Chierit | 무료(itch.io) | 192x128 |
+| `boss_slime.png` | [Boss: Demon Slime](https://chierit.itch.io/boss-demon-slime) — Chierit | 무료(itch.io) | 288x160 |
+| `boss_mino.png` | [Boss: Minotaur](https://chierit.itch.io/boss-minotaur) — Chierit | 무료(itch.io) | 288x160 |
+| `boss_golem.png` | [Boss: Mecha-Stone Golem](https://darkpixel-kronovi.itch.io/mecha-golem-free) — DarkPixel/Kronovi | 무료(itch.io) | 100x100 |
+| `boss_skeleton.png` | [Boss: Undead Executioner](https://darkpixel-kronovi.itch.io/undead-executioner) — DarkPixel/Kronovi | 무료(itch.io) | 100x100 |
+| `boss_dragon.png` | [Dragon - Fully Animated](https://opengameart.org/content/dragon-fully-animated) | **CC0 1.0** | 가변 |
+
+**주의**: itch.io 무료 팩은 사이트마다 약관이 다르다. 상업 배포 전 각 페이지의
+이용 조건(상업적 사용·수정·재배포 허용 여부)을 확인해야 한다. CC0 인 `boss_dragon` 은 제약이 없다.
+
+**AI 생성 원본에 대한 판단(2026-11-09 사용자 지시)**: AI 생성 보스라도 품질이 좋고
+스토리에 맞으면 사용 가능하다. 현재 파일은 위 표의 외부 팩이므로 AI 생성물이 아니다.
+
+근거 문서: `docs/BOSS_SPRITE_PLAN.md` (교체 배분표) · `docs/BOSS_ATLAS_PROMPTS.md`
+(교체 전 AI 생성 프롬프트 — 이력 보존용이며 현재 런타임에는 쓰이지 않는다)
+
+---
+
+## vc288 — 에셋 루트 경로 색인
+
+> CREDITS 본문은 파일명·팩명으로 출처를 적어 왔다. 그런데 신규 팩을 추가할 때
+> \public/assets/<루트>/\ 기준으로 찾기가 어려워, 아래 색인을 덧붙인다.
+
+| 루트 | 내용 | 출처 표기 위치 |
+|---|---|---|
+| \public/assets/audio/\ | BGM 114곡(150.8MB) · 효과음·스킬음 | 위쪽 「BGM 40트랙」(Kevin MacLeod, CC-BY 4.0) · 「효과음」(soundeffect-lab) · vc288 보완 섹션 |
+| \public/assets/vfx3/\ | Cartoon FX Remaster 텍스처(\gv_cfxr_*\) | 위쪽 「Cartoon FX Remaster — JMO Assets (유료 구매)」 |
+| \public/assets/fx/\ · \x2/\ | Warped Shooting Fx(Anokolisa) · Cartoon FX Remaster | 위쪽 VFX 섹션 |
+| \public/assets/campaign/\ | DCSS 32px 타일 · SPUM 캐릭터 | 위쪽 DCSS 항목(CC0 1.0) |
+| \public/assets/ground/\ · \	iles/\ | DCSS 지형 타일(CC0 1.0) | 위쪽 DCSS 항목 |
+| \public/assets/npcportrait/\ · \
+pcbody/\ · \
+pcface/\ | SPUM 캐릭터 부위 | 위쪽 SPUM 항목 |
+| \public/assets/boss_*.png\ | 보스 스프라이트 6종 | 아래 「vc288 — 보스 스프라이트 출처」 |
