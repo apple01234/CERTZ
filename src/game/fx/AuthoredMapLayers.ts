@@ -12,8 +12,8 @@ import * as core from "../tilemapEditorCore";
 export const AUTHORED_GROUND_SOURCES: Record<string, { size: number; unit: number }> = {
   ground_meadow: { size: 256, unit: 32 },
   ground_dirt: { size: 84, unit: 28 },
-  ground_sand: { size: 84, unit: 28 },
-  ground_forest: { size: 96, unit: 32 },
+  ground_sand: { size: 256, unit: 32 },
+  ground_forest: { size: 256, unit: 32 },
   ground_slate: { size: 256, unit: 32 },
   ground_ash: { size: 256, unit: 32 },
   ground_violet: { size: 256, unit: 32 },

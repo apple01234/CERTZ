@@ -31,34 +31,38 @@
   "height": 84
  },
  "ground_sand": {
-  "source": "assets_dl/tilesets/simple_tiles_32px.png",
-  "sourceSha256": "2a7977993c48191dbad9095305d8c886142037d01be1f4ebf7cf711fdfe30ce5",
-  "crop": [
-   66,
-   2,
-   28,
-   28
-  ],
-  "integerScale": 3,
-  "pack": "Simple tiles",
+  "source": "public/assets/tile_gold.webp",
+  "sourceSha256": "619a833f98bf3d240cf5b285ee45100b26d30978b4c29046e0b7890b5a24cb8b",
+  "note": "84px·58색·이음선(비율 1.4e7) → 256px 무이음새 황금빛 모래",
+  "pack": "SERTZ 256px terrain (tile_gold)",
   "license": "CC0-1.0",
-  "width": 84,
-  "height": 84
+  "width": 256,
+  "height": 256,
+  "crop": [
+   0,
+   0,
+   256,
+   256
+  ],
+  "integerScale": 1,
+  "sha256": "06c6920bddad051907a108f7e116197724f74deec3c8f61d4a0aaada9311df92"
  },
  "ground_forest": {
-  "source": "assets_dl/tilesets/simple_tiles_32px.png",
-  "sourceSha256": "2a7977993c48191dbad9095305d8c886142037d01be1f4ebf7cf711fdfe30ce5",
-  "crop": [
-   192,
-   32,
-   32,
-   32
-  ],
-  "integerScale": 3,
-  "pack": "Simple tiles",
+  "source": "public/assets/tile_rust.webp",
+  "sourceSha256": "f4356f2b697933aa6b289f05a5c50b369bf23d140fc8c545ca637c808f0058bf",
+  "note": "96px·29색·가로 이음선(1.98) → 256px 무이음새 어두운 흙(폐허)",
+  "pack": "SERTZ 256px terrain (tile_rust)",
   "license": "CC0-1.0",
-  "width": 96,
-  "height": 96
+  "width": 256,
+  "height": 256,
+  "crop": [
+   0,
+   0,
+   256,
+   256
+  ],
+  "integerScale": 1,
+  "sha256": "ec7bcd500e2f2bd7bc6dd26b17334593deed90f4436f7422c9c5a7c0c47e3bd3"
  },
  "ground_slate": {
   "source": "public/assets/tile_tech.webp",

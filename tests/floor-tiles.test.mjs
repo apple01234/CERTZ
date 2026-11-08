@@ -54,7 +54,13 @@ print(round(slr/max(inner,0.01),3), round(stb/max(inner,0.01),3))
 }
 
 /** 교체된 5종 — 256px 무이음새 고색수 타일이어야 한다. */
-const SWAPPED = ['ground_meadow', 'ground_slate', 'ground_ash', 'ground_violet', 'ground_cavern'];
+const SWAPPED = ['ground_meadow', 'ground_slate', 'ground_ash', 'ground_violet', 'ground_cavern',
+  /* vc278 — P3 대안. DCSS(CC0) 32px 는 32px 격자가 드러나(lag=32) 도입을 취소하고,
+   * 기존 지면의 실제 결함 2건을 프로젝트 내 CC0 256px 로 교체했다.
+   *   ground_sand   84×84·58색·이음선 비율 1.4e7 → tile_gold  256px·1045색·seam 0.84/0.99
+   *   ground_forest 96×96·29색·가로 이음선 1.98 → tile_rust  256px· 808색·seam 1.21/0.85
+   * 두 타일 모두 이 목록에 넣어 256px 규격·색 수·seam 기준을 계속 강제한다. */
+  'ground_sand', 'ground_forest'];
 
 test('5색 얼룩 타일로 회귀하지 않았다', () => {
   const s = floorStats(SWAPPED);

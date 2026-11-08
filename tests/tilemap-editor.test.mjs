@@ -30,11 +30,15 @@ test('바닥 소스 규격이 게임과 일치한다', () => {
   /* vc274 — 지면 5종이 256px 무이음새 타일로 교체됐다(96/64px 얼룩 타일 폐기).
    *  아래 expected 를 옛 규격에서 갱신한다. 검사 본질(size % unit === 0, 팔레트 일치)은
    *  그대로 유지하며 기준값만 새 소스에 맞춘다. */
+  /* vc278 — P3 대안으로 나머지 2종도 256px 로 교체했다.
+   *   ground_sand   84×84(unit 28) → 256×256(unit 32)  [tile_gold]
+   *   ground_forest 96×96(unit 32) → 256×256(unit 32)  [tile_rust]
+   *  이로써 8종 전부 256px·unit 32 로 통일됐다(ground_dirt 는 84px 유지 — 교체 대상 아님). */
   const expected = {
     ground_meadow: { size: 256, unit: 32 },
     ground_dirt: { size: 84, unit: 28 },
-    ground_sand: { size: 84, unit: 28 },
-    ground_forest: { size: 96, unit: 32 },
+    ground_sand: { size: 256, unit: 32 },
+    ground_forest: { size: 256, unit: 32 },
     ground_slate: { size: 256, unit: 32 },
     ground_ash: { size: 256, unit: 32 },
     ground_violet: { size: 256, unit: 32 },
