@@ -61,9 +61,24 @@ for (const { stage, q, mixKeys } of huntQuests) {
   );
 }
 /* vc251 — 수련 원정 9지역(90스테이지) 삭제로 hunt 퀘스트 총량이 200 미만이 됐다.
- *  임계값은 "회귀 방지용 하한"이므로 삭제 후 실제 규모에 맞춘다(현재 175건).
+ *  임계값은 "회귀 방지용 하한"이므로 삭제 후 실제 규모에 맞춘다.
+ *  vc288 — 보스맵 hunt 퀘스트를 걷어내 175 → 150건이 됐다(요구사항 8.2).
  *  이 숫자를 낮추는 게 목적이 아니라, 남은 콘텐츠가 통째로 사라지면 잡히게 하는 것이다. */
-ok(`hunt 퀘스트 전수 검사 (${huntQuests.length}건)`, huntQuests.length > 150);
+ok(`hunt 퀘스트 전수 검사 (${huntQuests.length}건)`, huntQuests.length >= 140);
+
+/* [vc288 — 보스맵 격리] 보스맵에는 일반몹도 일반 hunt 퀘스트도 없어야 한다.
+ *  요구사항 8.2: "보스맵에는 … 일반 몬스터를 배치하지 않는다. 보스맵에 연결되는 퀘스트는
+ *  해당 보스의 토벌 목표만 사용한다." 위 루프는 "대상이 스폰되는가"를 보는데, 보스맵은
+ *  스폰 자체가 0이라 구조적으로 성립하지 않는다. 그래서 보스맵은 **반대 계약**으로 검사한다. */
+for (const [key, def] of Object.entries(STAGES)) {
+  if (!def.boss) continue;
+  const mobs = (def.enemies ?? []).reduce((t, g) => t + g.count, 0);
+  ok(`${key}: 보스맵에 일반몹이 없다`, mobs === 0);
+  const hunts = (def.quests ?? []).filter((q) => q.type === 'hunt');
+  ok(`${key}: 보스맵에 일반 처치 퀘스트가 없다`, hunts.length === 0);
+  const bosses = (def.quests ?? []).filter((q) => q.type === 'boss');
+  ok(`${key}: 보스 토벌 퀘스트가 있다`, bosses.length === 1);
+}
 
 /* collect 은 맵의 파편을 줍고 boss 는 bossKey 스폰 경로를 쓴다 — 다른 경로라 따로 본다. */
 for (const { stage, q, def } of collectLikeQuests) {
@@ -81,6 +96,10 @@ for (const [key, def] of Object.entries(STAGES)) {
   for (const k of keys) bounties.push({ stage: key, key: k, mixKeys });
 }
 for (const { stage, key, mixKeys } of bounties) {
+  /* [vc288 — 보스맵 격리] 보스맵은 일반몹이 0이라 반복 의뢰 대상이 스폰될 수 없다.
+   *  보스맵의 반복 의뢰는 정의상 성립하지 않으므로 검사에서 뺀다(별도 계약으로 검사). */
+  const def = STAGES[stage];
+  if (def?.boss) continue;
   ok(`${stage}: 반복 의뢰 대상 ${key} 가 스폰된다`, mixKeys.has(key));
 }
 ok(`반복 의뢰 전수 검사 (${bounties.length}건)`, bounties.length > 400);

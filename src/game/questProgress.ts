@@ -32,6 +32,18 @@ export function huntProgressOf(progress: HuntProgress, scope: string): number {
  * 처치 1회 반영. 그 퀘스트의 대상 종이 아니면 아무 것도 하지 않는다.
  * 목표치를 넘겨 세지 않고(초과 집계 금지), 이미 목표에 도달한 퀘스트도 더 오르지 않는다
  * (완료 후 추가 집계 금지 — 다른 맵에서 잡아도 넘치지 않는다).
+ *
+ * [vc288 — 보스맵 격리] `opts.bossMap` 이 true 면 **항상 false** 를 돌려주고 카운터를
+ *  건드리지 않는다. 요구사항 원문: "보스맵에 연결되는 퀘스트는 해당 보스의 토벌 목표만
+ *  사용한다. 일반 처치 퀘스트가 보스맵에서 집계되지 않도록 수정한다."
+ *
+ *  지금은 보스 구역에 hunt 퀘스트 자체가 없어(`buildQuests` 가 빈 배열) 이 경로가
+ *  실제로 불릴 일이 드물다. 그래도 플래그를 두는 이유: 보스가 소환한 몬스터를 잡았을 때
+ *  다른 스테이지의 진행 중인 hunt 퀘스트로 새는 경로를 **타입 수준에서** 막아 둔다.
+ *  나중에 누가 보스맵에 hunt 퀘스트를 다시 넣어도 이 가드가 있으면 오염되지 않는다.
+ *
+ *  ponytail: 보스맵에도 잡몹 사냥 퀘스트를 넣고 싶어지면 이 플래그를 지우지 말고,
+ *  보스 토벌 전용 카운터를 따로 만들어라. 같은 카운터를 공유하면 이 버그가 되살아난다.
  * @returns 이번 처치가 진행도에 반영됐는가
  */
 export function recordHuntKill(
@@ -40,7 +52,9 @@ export function recordHuntKill(
   targets: readonly string[],
   species: string,
   need: number,
+  opts?: { bossMap?: boolean },
 ): boolean {
+  if (opts?.bossMap) return false;
   if (!targets.includes(species)) return false;
   const cur = progress[scope] ?? 0;
   if (need > 0 && cur >= need) return false;

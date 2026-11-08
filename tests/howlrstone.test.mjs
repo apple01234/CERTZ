@@ -37,7 +37,15 @@ for (const ch of HOWLRSTONE_CHAPTERS) {
     const def = STAGES[key];
     assert.ok(def, `${key} 스테이지가 실제로 생성되어야 한다`);
     assert.equal(def.quests.length > 0, true, `${key}: 퀘스트가 비어 있으면 진행이 막힌다`);
-    assert.equal(def.enemies.length > 0, true, `${key}: 스폰 몬스터가 없으면 사냥이 불가능하다`);
+    /* [vc288 — 보스맵 격리] 보스 구역은 일반몹 0마리가 계약이다(요구사항 8.2).
+     *  종전엔 모든 구역에 몹이 있어야 한다고 강제했는데, 그 규칙 때문에 보스맵에
+     *  잡몹이 깔려 보스 패턴을 읽을 수 없었다. 보스 구역만 예외로 둔다. */
+    const expectedBoss = ch.boss !== null && sub === ch.stages;
+    assert.equal(
+      def.enemies.length > 0,
+      !expectedBoss,
+      `${key}: 보스 구역은 일반몹 0, 그 외는 1마리 이상이어야 한다`,
+    );
     /* 보스가 있는 장은 마지막 구역이 보스전, 없는 장은 보스 없음. */
     assert.equal(def.boss, ch.boss !== null && sub === ch.stages, `${key}: 보스는 마지막 구역에만`);
     assert.ok(STAGE_SHORT[key], `${key}: 구역 라벨 필요`);

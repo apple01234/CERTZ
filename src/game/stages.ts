@@ -1025,6 +1025,62 @@ export function zoneSpawnCap(chapterNo: number): number {
   return 32; // 후반 (DLC 후반 · 영프 12장+)
 }
 
+/**
+ * 구역 번호 → 맵 추가 폭(px).
+ *
+ * [왜 바꿨나 — vc288] 종전엔 `width = spec.width + sub * 130` 이었다. 구역이 뒤로 갈수록
+ * 맵이 커지는 구조라 **10구역(보스)이 한 챕터에서 가장 큰 맵**이 됐다. 실측하면
+ * 아레나 맵 면적이 일반 구역의 1.33배, 걸을 수 있는 면적은 **2.70배**(일반 61칸 /
+ * 아레나 164칸)였다. 유저가 "보스맵이 지나치게 넓고 일반 사냥터처럼 구성돼 있다"고
+ * 한 그 상태다. 보스전은 넓을 이유가 없다 — 넓으면 회피가 쉬워져 긴장이 사라지고,
+ * 보스가 화면 밖으로 나가 패턴을 읽을 수 없게 된다.
+ *
+ * [보스 아레나 크기 근거 — Boss.ts 실측]
+ *   · `startZones` 는 플레이어 주변 ±220px(X) / ±180px(Y) 에 장판 3개를 깐다
+ *   · 장판 반경 92px → 필요한 지름 X 624px / Y 544px
+ *   · 탄속 165px/s 로 1.2초 날아오면 198px 를 커버하므로 그만큼 옆으로 빠질 여유가 필요
+ *   → 셀 144x128 기준 cols≈7 / rows≈7 이 최소. 벽·입구 여유를 감안해 **8x8** 을 쓴다.
+ *
+ * [일반 구역] 종전과 완전히 동일하다(`sub * 130`). 보스만 줄인다 — 이 함수의 유일한
+ * 책임이 그것이다. 일반 구역 수치가 1px 이라도 달라지면 회귀다.
+ *
+ * ponytail: 보스 패턴의 최대 사거리가 지금보다 늘어나면 ARENA_SCALE 을 올려라.
+ *  지금 0.62 는 위 실측(±220px + 반경 92px = 최소 624×544px)의 2배가 넘는 여유다.
+ *  그 상수를 크게 넘는 패턴을 추가하면 아레나가 모자라져 "피할 곳이 없는" 불공정 패턴이
+ *  된다. 테스트가 둘의 정합을 강제한다.
+ */
+
+/**
+ * 보스맵 최종 크기 = 챕터 기본 크기 × ARENA_SCALE.
+ *
+ * 왜 덧셈이 아니라 비율인가: 챕터마다 `spec.width` 가 2000~2300 으로 다르다.
+ * 고정값을 더하면 작은 챕터와 큰 챕터의 아레나가 서로 달라진다. 비율이면 어느
+ * 챕터든 "일반 구역의 62%" 로 일정하다.
+ *
+ * 0.62 근거: 카메라 뷰포트가 1080p 에서 약 995×560px 이다(zoom = innerHeight/560).
+ * 0.62 면 아레나가 약 1300×700px = **1.3 × 1.25 화면**이 되어, 보스가 화면 밖으로
+ * 나가지 않으면서도 회피할 공간은 남는다. 위 실측한 최소 요구(624×544px)의 2배가 넘는다.
+ */
+export const ARENA_SCALE = 0.78;
+
+/** 보스맵 크기(px). 아레나가 아니면 종전과 동일하게 구역당 +130/+30. */
+export function stageSize(
+  specW: number,
+  specH: number,
+  sub: number,
+  stageCount: number,
+  hasBoss: boolean,
+): { width: number; height: number } {
+  if (hasBoss && sub === stageCount) {
+    return { width: Math.round(specW * ARENA_SCALE), height: Math.round(specH * ARENA_SCALE) };
+  }
+  return { width: specW + sub * 130, height: specH + sub * 30 };
+}
+
+/** 본편 보스 구역 번호. 영프 편은 챕터마다 달라서 `stageSize` 의 stageCount 로 판정한다. */
+export const BOSS_SUB = 10;
+
+
 /** v2.9 (지시 #1) — 구역 → 몬스터 조합. 2구역마다 주력몬 교체로 단조로움 해소
  *  v3.0 (사용자 지시 #6) — 구역당 동시 몬스터 상한 20마리 (최적화):
  *  기존 grp()가 그룹별 20 캡이라 9~10구역 합계 26마리까지 늘었음 → 총량제로 재편
@@ -1074,14 +1130,18 @@ function subEnemyMix(spec: ChapterSpec, sub: number): { key: EnemyKey; count: nu
         ? [{ key: d, base: 10 }, { key: e, base: 6 }, { key: f, base: 4 }]
         : [{ key: e, base: 10 }, { key: d, base: 6 }, { key: f, base: 4 }],
     );
-  if (sub === 10)
-    return spread([
-      // 10구역은 보스 1기 별도 스폰 → 잡몹 total + 보스 1 = cap
-      { key: b, base: 7 },
-      { key: c, base: 5 },
-      { key: e, base: 4 },
-      { key: f, base: 3 },
-    ]);
+  /* [vc288 — 보스맵 격리] 10구역(보스)에는 **일반 몹을 깔지 않는다**.
+   *  요구사항 원문: "보스맵에는 보스가 자신의 능력으로 몬스터를 소환하는 경우를 제외하고
+   *  일반 몬스터를 배치하지 않는다."
+   *
+   *  종전엔 10구역도 `spread([{b,7},{c,5},{e,4},{f,3}])` 로 잡몹 19마리를 깔았다.
+   *  그래서 보스전이 "보스 + 잡몹 19마리"가 되어, 보스 패턴을 읽어야 할 화면에
+   *  잡몹이 가득 차 telegraph 를 볼 수 없었다. 보스가 부르는 소환수는
+   *  `Boss.ts` 의 summon 패턴이 따로 처리하므로 여기서는 **빈 배열**이 맞다.
+   *
+   *  이 배열이 비면 WorldScene 의 스폰 루프가 아무것도 만들지 않고,
+   *  보스만 `stageDef.boss` 경로로 스폰된다. */
+  if (sub === BOSS_SUB) return [];
   return spread([
     { key: b, base: 7 },
     { key: c, base: 5 },
@@ -1125,7 +1185,15 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
      *   · 원본 리터럴이 그보다 크면 원본 유지(작아지는 회귀 금지).
      *   · collect/boss 등 hunt 가 아닌 퀘스트는 건드리지 않는다. */
     const q = beat.quest;
-    if (q.type === "hunt" && q.need) {
+    /* [vc288 — 보스맵 격리] 보스 구역에는 hunt 퀘스트를 넣지 않는다.
+     *  DLC·영프 편의 story beat 에는 10구역(=보스)에 `[기믹]` hunt 퀘스트가 붙어 있는데,
+     *  보스맵에서 일반몹을 없앤 이상 그 퀘스트는 **달성 불가능**해진다.
+     *  요구사항 8.2 "보스맵에 연결되는 퀘스트는 해당 보스의 토벌 목표만 사용한다"에 맞춰
+     *  hunt 는 건너뛰고, boss/reach 퀘스트는 아래 분기가 보장한다. */
+    const isBossMapHere = sub === BOSS_SUB && !!spec.boss;
+    if (isBossMapHere && q.type === "hunt") {
+      /* skip — 보스 토벌 퀘스트가 대신 들어간다 */
+    } else if (q.type === "hunt" && q.need) {
       const curveNeed = Math.round(questNeedByLv(spec.lvGate.enter + (sub - 1) * 2) * 0.6);
       quests.push({ ...q, id: `${prefix}-${q.id}`, need: clampHuntNeed(Math.max(q.need, curveNeed)) });
     } else {
@@ -1154,9 +1222,13 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
    *  자동 토벌 대상을 spec.main(챕터 대표)이 아니라 이 구역에서 실제 스폰되는 몬스터로 지정.
    *  v2.9 구역별 몬스터 로테이션(1~6구역 단일종)과 퀘스트 대상이 어긋난 것이 원인 */
   const zoneMix = subEnemyMix(spec, sub);
-  const zoneMon = zoneMix.reduce((m, g) => (g.count > m.count ? g : m), zoneMix[0]).key;
+  /* [vc288] 보스 구역(10)은 잡몹 조합이 빈 배열이다. 여기서 reduce 하면 undefined 에서
+   *  터진다. 보스맵 퀘스트는 아래 `sub === 10 && spec.boss` 분기가 boss/reach 만 만드는데,
+   *  그게 요구사항 "보스맵에 연결되는 퀘스트는 해당 보스의 토벌 목표만 사용한다"와 정확히
+   *  일치한다. 그러니 hunt 퀘스트 생성 자체를 건너뛴다. */
+  const zoneMon = zoneMix.length ? zoneMix.reduce((m, g) => (g.count > m.count ? g : m), zoneMix[0]).key : spec.main;
   const main = labels[zoneMon];
-  if (quests.length < 2) {
+  if (quests.length < 2 && zoneMix.length) {
     // 자동 토벌 퀘스트 — v1.4.0 (Task 1-6 — 유저 지시 #14): 스킬이 강해질수록 요구 마릿수도 성장
     //   vc143 (#3) — 곡선 재조정(중반부터 100~200단위) + 구역 스타일 로테이션 다양화:
     //   sub%3==2 구역은 “단일종 집중 사냥”(최다 종만 카운트, 요구량 ×0.6) — 전종 합산과 번갈아 나온다
@@ -1263,18 +1335,23 @@ function buildStage(spec: ChapterSpec, sub: number): StageDef {
    *  1~2구역 풀[0] 1종 / 3~4 풀[1] 1종 / 5~6 풀[2] 1종 (2구역마다 몬스터 교체)
    *  7~8구역 2종 / 9구역 3종 / 10구역 보스 + 3종(잡몹 소규모) */
   const enemies = subEnemyMix(spec, sub);
+  /* [vc288 — 보스맵 격리] 보스 구역은 잡몹 0마리를 유지한다.
+   *  아래 편입 로직(ensureQuestSpawns)은 "퀘스트 대상이 맵에 없으면 3마리 넣는다"라서
+   *  빈 배열에 그대로 적용하면 잡몹 3~6마리가 다시 생긴다. 보스맵 퀘스트는 boss/reach
+   *  뿐이라 편입할 hunt 대상 자체가 없으므로 이 블록 전체를 건너뛴다. */
+  const isBossMap = boss;
   /* v3.0.2 — 스토리(beat) 토벌 대상이 이 구역 스폰 조합에 없으면 대상 몬스터를 스폰에 편입.
    *  v2.9 구역별 단일종 로테이션 때문에 "퀘스트는 늑대 소탕인데 맵엔 유령만" 오류가 생김.
    *  최다 그룹에서 3마리를 덜어 편입 — 총량 20 유지 (정예/보스 포함) */
   const beatHere = spec.beats.find((b) => b.sub === sub);
-  if (beatHere && beatHere.quest.type === "hunt" && beatHere.quest.targetKey && !enemies.some((g) => g.key === beatHere.quest.targetKey)) {
+  if (!isBossMap && beatHere && beatHere.quest.type === "hunt" && beatHere.quest.targetKey && !enemies.some((g) => g.key === beatHere.quest.targetKey)) {
     /* v3.0.2 — 공용 헬퍼로 추출 (영프 편 생성기와 동일 로직 사용) */
     ensureQuestSpawns(enemies, [beatHere.quest.targetKey]);
   }
   /* v3.0.6 (지시 #1 — "반복 의뢰 안됨") — [반복] 토벌 의뢰 대상(spec.main)이 이 구역 스폰 조합에 없으면 편입.
    *  구역별 단일종 로테이션(1~6구역은 풀 1종만 스폰) 때문에 반복 의뢰 대상 몬스터가 맵에 아예 없어
    *  사냥해도 카운트가 전혀 오르지 않던 근본 원인 제거 (스토리 beat 편입과 동일 패턴) */
-  if (!enemies.some((g) => g.key === spec.main)) {
+  if (!isBossMap && !enemies.some((g) => g.key === spec.main)) {
     const beatTarget = beatHere && beatHere.quest.type === "hunt" ? beatHere.quest.targetKey : undefined;
     ensureQuestSpawns(enemies, [spec.main], [beatTarget as EnemyKey | undefined]);
   }
@@ -1348,8 +1425,8 @@ function buildStage(spec: ChapterSpec, sub: number): StageDef {
     key,
     name: `제${spec.num}장 ${spec.title}`,
     subtitle: `${sub}구역 — ${spec.subtitle}`,
-    width: spec.width + sub * 130,
-    height: spec.height + sub * 30,
+    width: stageSize(spec.width, spec.height, sub, BOSS_SUB, !!spec.boss).width,
+    height: stageSize(spec.width, spec.height, sub, BOSS_SUB, !!spec.boss).height,
     groundTint: spec.groundTint,
     flowerCount: spec.flowers,
     treeCount: spec.trees,
@@ -1499,8 +1576,14 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
       const pool = spec.enemies.map((g) => g.key);
       const n = Math.min(20, 8 + Math.floor(sub / 2) * 2);
       const grp = (k: string, c: number) => ({ key: k as EnemyKey, count: c });
+      /* [vc288 — 보스맵 격리] 보스 구역에는 일반 몹을 깔지 않는다.
+       *  요구사항: "보스맵에는 보스가 자신의 능력으로 몬스터를 소환하는 경우를 제외하고
+       *  일반 몬스터를 배치하지 않는다." 보스가 부르는 소환수는 Boss.ts summon 패턴이
+       *  따로 처리하므로 여기서는 빈 배열이 맞다.
+       *  영프 편은 보스가 마지막 구역(4~5)이라 `sub === stageCount` 로 판정한다. */
       const mix: { key: EnemyKey; count: number }[] =
-        sub <= 2 ? [grp(pool[0], n)]
+        isBoss ? []
+        : sub <= 2 ? [grp(pool[0], n)]
         : sub <= 4 ? [grp(pool[0], Math.ceil(n * 0.6)), grp(pool[1] ?? pool[0], Math.ceil(n * 0.4))]
         : sub <= 6 ? [grp(pool[1] ?? pool[0], Math.ceil(n * 0.6)), grp(pool[2] ?? pool[0], Math.ceil(n * 0.4))]
         : sub <= 8 ? [grp(pool[0], Math.ceil(n * 0.4)), grp(pool[1] ?? pool[0], Math.ceil(n * 0.35)), grp(pool[2] ?? pool[0], Math.ceil(n * 0.25))]
@@ -1511,10 +1594,14 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
       /* 토벌 대상이 이 구역 mix 에 실제로 스폰되도록 보장 — 본편 buildStage 와 같은 헬퍼.
        *  이 생성기가 헬퍼를 안 써서 hw3("거대한 해적선") 등 12개 퀘스트가 완료 불가였다.
        *  반복 의뢰 대표 종(spec.main)도 같은 이유로 보장한다 — pool[1] 이 하위 구역엔 없었다. */
-      ensureQuestSpawns(
-        mix,
-        [beat?.quest.type === "hunt" ? (beat.quest.targetKey as EnemyKey) : undefined, spec.main as EnemyKey],
-      );
+      /* [vc288 — 보스맵 격리] 보스 구역은 잡몹을 편입하지 않는다(위 mix 가 이미 빈 배열).
+       *  편입 로직을 그대로 두면 빈 배열에 3마리가 다시 들어가 보스전이 잡몹전이 된다. */
+      if (!isBoss) {
+        ensureQuestSpawns(
+          mix,
+          [beat?.quest.type === "hunt" ? (beat.quest.targetKey as EnemyKey) : undefined, spec.main as EnemyKey],
+        );
+      }
       let quests: QuestDef[];
       /* vc238 (P4) — 영프 편도 같은 곡선을 탄다. 종전엔 beat.need 리터럴(8~12)과
        *  `t.count + 4`(≈12~24)가 그대로 나와, 챕터 15 에서도 "8마리"가 뜨는 등
@@ -1542,6 +1629,11 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
             reward: Math.round(140 * spec.scaleMul.gold * G),
             expReward: Math.round(200 * spec.scaleMul.exp),
           }];
+        } else if (isBoss) {
+          /* [vc288] 보스 구역의 퀘스트는 보스 토벌 하나뿐이다 — 잡몹 조합이 없으므로
+           *  자동 토벌 퀘스트를 만들 수 없고, 만들면 달성 불가능한 퀘스트가 된다.
+           *  실제 boss 퀘스트는 아래 `if (isBoss)` 블록이 보장한다. */
+          quests = [];
         } else {
           const t = mix[0];
           const label = ENEMIES[t.key]?.name ?? t.key;
@@ -1616,8 +1708,8 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
         key,
         name: `${spec.title} ${sub}구역`,
         subtitle: `${spec.episodes} — ${spec.subtitle}`,
-        width: spec.width + sub * 130,
-        height: spec.height + sub * 30,
+        width: stageSize(spec.width, spec.height, sub, stageCount, spec.boss !== null).width,
+        height: stageSize(spec.width, spec.height, sub, stageCount, spec.boss !== null).height,
         groundTint: spec.groundTint,
         flowerCount: spec.flowers,
         treeCount: spec.trees,
@@ -1917,7 +2009,9 @@ const REBIRTH_STAGES: RebirthSpec[] = [
   {
     key: "r5", name: "재림 5 — 파수꾼의 대문", subtitle: "재림을 감시하는 첫 보스가 서 있다",
     groundTex: "tile_stone", pathTex: "tile_path_dark", bg: "#1a1208", groundTint: 0xb89868, flowers: 0, trees: 2, rocks: 12,
-    enemies: [{ key: "x3_orcwarrior", count: 8 }, { key: "x3_maskedorc", count: 6 }, { key: "x3_orcshaman", count: 4 }], main: "x3_orcwarrior",
+    /* [vc288 — 보스맵 격리] 재림 보스맵도 일반몹을 깔지 않는다(요구사항 8.2).
+     *  종전엔 오크 18마리가 함께 스폰돼 보스 패턴이 가려졌다. */
+    enemies: [], main: "x3_orcwarrior",
     bossKey: "vord",
     mul: { hp: 26, atk: 7.1, exp: 14.8, gold: 7.6 }, reward: { gold: 700, exp: 2600 },
   },
@@ -1949,7 +2043,8 @@ const REBIRTH_STAGES: RebirthSpec[] = [
   {
     key: "r10", name: "재림 10 — 뱀의 소용돌이", subtitle: "연합를 감은 뱀이 기다린다",
     groundTex: "tile_abyss", pathTex: "tile_path_dark", bg: "#0e0618", groundTint: 0x5a4a7a, flowers: 0, trees: 0, rocks: 14,
-    enemies: [{ key: "x2_darkhound", count: 8 }, { key: "helhound", count: 6 }, { key: "x3_chort", count: 4 }], main: "helhound",
+    /* [vc288] 재림 보스맵 — 일반몹 없음. */
+    enemies: [], main: "helhound",
     bossKey: "jorm",
     mul: { hp: 39, atk: 8.7, exp: 20.8, gold: 10.1 }, reward: { gold: 1000, exp: 3600 },
   },
@@ -1981,7 +2076,8 @@ const REBIRTH_STAGES: RebirthSpec[] = [
   {
     key: "r15", name: "재림 15 — 종언의 왕좌 앞", subtitle: "재림의 종언과 마주하는 자리",
     groundTex: "tile_abyss", pathTex: "tile_path_dark", bg: "#120616", groundTint: 0x6a4a5a, flowers: 0, trees: 0, rocks: 16,
-    enemies: [{ key: "x3_necromancer", count: 8 }, { key: "helhound", count: 6 }, { key: "x3_bigzombie", count: 5 }], main: "x3_bigzombie",
+    /* [vc288] 재림 보스맵 — 일반몹 없음. */
+    enemies: [], main: "x3_bigzombie",
     bossKey: "nagr",
     mul: { hp: 56, atk: 9.9, exp: 27, gold: 12.7 }, reward: { gold: 1500, exp: 5200 },
   },
@@ -1996,20 +2092,25 @@ function buildRebirthStage(spec: RebirthSpec): StageDef {
   /* vc238 (P4 후속) — 재림 퀘스트도 곡선에 연결. 종전엔 12 고정이라
    *  유저 목표표 초반 하한(20) 미만이었고, 재림은 후반 콘텐츠인데도 가장 가벼웠다. */
   const rbNeed = clampHuntNeed(questNeedByLv(RBIRTH_NEED_LV));
-  const quests: QuestDef[] = [
-    {
-      id: `${spec.key}-hunt`,
-      type: "hunt",
-      title: `${spec.name.split("— ")[1]} 정화`,
-      desc: `${spec.subtitle} — 이 땅의 몬스터 ${rbNeed}마리를 처치해라. (무엇을 잡아도 카운트된다)`,
-      need: rbNeed,
-      targetKey: spec.main,
-      targetKeys: [...new Set(spec.enemies.map((g) => g.key))],
-      targetLabel: `${ENEMIES[spec.main].name} 등 재림 몬스터`,
-      reward: spec.reward.gold,
-      expReward: spec.reward.exp,
-    },
-  ];
+  /* [vc288 — 보스맵 격리] 보스 스테이지에는 hunt 퀘스트를 넣지 않는다.
+   *  요구사항 8.2: "보스맵에 연결되는 퀘스트는 해당 보스의 토벌 목표만 사용한다."
+   *  보스맵에서 일반몹을 없앴으므로 hunt 퀘스트는 달성 불가능해진다. */
+  const quests: QuestDef[] = spec.bossKey
+    ? []
+    : [
+        {
+          id: `${spec.key}-hunt`,
+          type: "hunt",
+          title: `${spec.name.split("— ")[1]} 정화`,
+          desc: `${spec.subtitle} — 이 땅의 몬스터 ${rbNeed}마리를 처치해라. (무엇을 잡아도 카운트된다)`,
+          need: rbNeed,
+          targetKey: spec.main,
+          targetKeys: [...new Set(spec.enemies.map((g) => g.key))],
+          targetLabel: `${ENEMIES[spec.main].name} 등 재림 몬스터`,
+          reward: spec.reward.gold,
+          expReward: spec.reward.exp,
+        },
+      ];
   /* 보스 구역 — 보스 토벌 + 다음 구역 안내 퀘스트 */
   if (spec.bossKey) {
     quests.push({

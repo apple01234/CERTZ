@@ -6572,7 +6572,9 @@ export class WorldScene extends Phaser.Scene {
          * 대상 종이 아니면 recordHuntKill 이 false 를 돌려주고 아무 것도 안 한다.
          * 목표치 초과/완료 후 추가 집계도 여기서 막힌다. */
         const targets = q.targetKeys ?? (q.targetKey ? [q.targetKey] : []);
-        if (recordHuntKill(this.huntProgress, this.huntScopeKey(q), targets, key, q.need ?? 0)) {
+        /* vc288 — 보스맵 처치는 일반 hunt 퀘스트에 집계하지 않는다(요구사항 8.2).
+         *  보스가 소환한 몬스터를 잡은 것이 다른 스테이지의 사냥 퀘스트로 새는 것을 막는다. */
+        if (recordHuntKill(this.huntProgress, this.huntScopeKey(q), targets, key, q.need ?? 0, { bossMap: !!this.stageDef.boss })) {
           this.huntCount = Math.min(this.huntProgressSum(q), q.need ?? 0);
           this.tryCompleteHunt(key);
         }
