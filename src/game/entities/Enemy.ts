@@ -17,6 +17,8 @@ import {
   hasAffix, WARDED_TRIGGER_HP01, type EliteAffixRoll, type EliteAffixKey,
 } from "../combat/eliteAffix";
 import { receivedDamageMult, applyStatus, tickStatuses, type ActiveStatus } from "../combat/statusEffects";
+import { makeDamage, resolveDamage, applyDamage } from "../combat/damageData"; // vc277 — 피해 파이프라인 (JENNY DamageData 이식)
+import { makeEntry, updateEntry, type AwarenessEntry } from "../ai/awareness"; // vc277 — 시야/인지 (JENNY AwarenessTrait 이식)
 
 /* vc236 — 사망 폭발 반경(px). 코어는 피해량만 export 하고 반경은 연출 소관이라 여기 둔다.
  * 정예 스케일(1.55) 기준 몸통 2~3배 — 눈에 보이는 폭발 범위와 판정이 어긋나지 않게. */
@@ -82,7 +84,14 @@ interface AICtx {
   toPlayer: Phaser.Math.Vector2;
   vx: number;
   vy: number;
+  /** vc277 — 시야/인지로 "안다"(visible) 상태인가. JENNY AwarenessTrait 이식. */
+  seesPlayer: boolean;
 }
+
+/** vc277 — 시야에서 사라진 뒤에도 "안다"를 유지하는 시간(ms).
+ *  JENNY 원본 `vision_omniscient_time` 기본 1.0초와 동일.
+ *  0 이면 벽 하나로 즉시 추격이 끊기고, 너무 길면 벽 너머로 계속 쫓아온다. */
+const AWARE_OMNISCIENT_MS = 1000;
 
 /**
  * 일반 몬스터 — 거리 기반 FSM 상태머신 AI (풀링 친화적 단순 구조)
@@ -238,6 +247,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
    * 갱신한다(틱마다 객체 생성 금지 — GC 스파이크 방지). */
   private morale: "fight" | "retreat" | "flee" = "fight";
   private moraleAcc = 0;
+  /** vc277 — 시야/인지 상태 (JENNY AwarenessTrait 이식). 적마다 자기 상태를 갖는다. */
+  private awareness: AwarenessEntry = makeEntry();
   private readonly moraleCtx = { hp01: 1, dist: 0, aggro: 300, allies: 0, playerHp01: 1 };
 
   private ai: FSM<AICtx>;
@@ -367,6 +378,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       toPlayer: new Phaser.Math.Vector2(),
       vx: 0,
       vy: 0,
+      seesPlayer: false,
     };
     this.ai = new FSM<AICtx>(this.aiCtx);
     const prof = this.def.profile;
@@ -394,8 +406,16 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         c.vx = e.wanderDir.x * e.effSpeed * 0.35;
         c.vy = e.wanderDir.y * e.effSpeed * 0.35;
         if (c.dist < e.def.aggro && c.player.hp > 0) {
-          e.modeTimer = 400;
-          return "chase";
+          /* vc277 — 시야 판정 (JENNY AwarenessTrait 이식).
+           * [종전] 거리만 봤다 → 벽 뒤에 숨어도 추격.
+           * [지금] 시야선이 열려 있을 때만 chase 로 전이한다.
+           *  단 `seesPlayer` 는 유예(1초)를 포함한 "안다" 플래그이므로,
+           *  한 번 추격을 시작하면 벽 뒤로 숨는다고 즉시 끊기지 않는다.
+           *  마을(layout 없음)은 hasLineOfSight 가 항상 true 라 기존과 동일하다. */
+          if (c.seesPlayer) {
+            e.modeTimer = 400;
+            return "chase";
+          }
         }
       },
     };
@@ -437,8 +457,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
           e.modeTimer = prof?.charge ? 480 : 340;
           return "windup"; // SHORT — 근접/돌진 조준: 예고 동작 진입
         } else if (c.dist > e.def.aggro * 1.5) {
-          e.modeTimer = 600;
-          return "wander";
+          /* vc277 — 거리로도 멀고 **시야로도 놓쳤을 때** 배회로 복귀.
+           * 종전엔 거리만 봤다. 유예(1초) 안이면 seesPlayer 가 true 라
+           *  벽 뒤로 숨은 직후에도 잠깐 더 추격한다(자연스러운 추격). */
+          if (!c.seesPlayer) {
+            e.modeTimer = 600;
+            return "wander";
+          }
         }
       },
     };
@@ -602,6 +627,29 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     c.toPlayer.set(player.x - this.x, player.y - this.y).normalize();
     c.vx = 0;
     c.vy = 0;
+    /* ═══ vc277 — 시야/인지 갱신 (JENNY AwarenessTrait 이식) ═══
+     * [종전] `c.dist < def.aggro` 하나만 봤다. 그래서 벽 뒤에 숨어도 거리만
+     *  가까우면 추격당했다(시야 개념 없음).
+     * [지금] 시야 반경 + 벽 차단을 함께 본다. 시야에서 사라져도
+     *  AWARE_OMNISCIENT_MS 동안은 마지막 목격 지점으로 추격을 이어간다.
+     *  이 유예가 없으면 벽 하나로 즉시 배회로 돌아가 추격이 부자연스럽다.
+     * [보존] flee(도주형)·보스·기절 등 기존 분기는 그대로 동작한다.
+     *  c.dist 는 그대로 두고 c.seesPlayer 만 추가했다 — 기존 상태 전이식은
+     *  건드리지 않았으므로 회귀 없음. */
+    this.awareness = updateEntry(
+      this.awareness,
+      {
+        x: this.x, y: this.y, tx: player.x, ty: player.y,
+        range: this.def.aggro,
+        blocked: this.scene.hasLineOfSight
+          ? (fx, fy, tx, ty) => !this.scene.hasLineOfSight!(fx, fy, tx, ty)
+          : undefined,
+      },
+      this.scene.time.now,
+      AWARE_OMNISCIENT_MS,
+      false,
+    );
+    c.seesPlayer = this.awareness.visible;
 
     /* ══════════════════════════════════════════════════════════════════
      * vc234 — 우선순위 분기를 BT 로 위임한다.
@@ -850,13 +898,24 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     /* vc236 — chill/shock/mark 는 **방어력 계산 후** 받는 피해에 곱한다(최소 1 보장).
      *  상태이상이 없으면 raw 를 **가공 없이** 넘긴다 — 미리 반올림하면 정액 방어 감산
      *  순서가 달라져 소수 피해에서 1 이 어긋난다(무상태 개체의 수치 보존). */
+    /* ═══ vc277 — 피해 파이프라인 연결 (JENNY HealthTrait.DamageData 이식) ═══
+     * [왜] 종전엔 배율을 인라인으로 곱하고(`Math.max(1, Math.round(raw * rcvd))`)
+     *  hp 를 직접 뺐다. 값은 맞지만 **원본 피해량이 어디에도 남지 않아**
+     *  "치명타로 3000 넣었는데 표시는 2400" 같은 상황을 추적할 수 없었다.
+     *  JENNY 는 피해를 객체로 다뤄 originalDamage 를 보존한다.
+     * [보존] 계산 결과는 종전과 **완전히 동일**하다. resolveDamage 는
+     *  `rcvd === 1` 이면 곱하지 않고(종전과 동일), 아니면 `max(1, round(x*rcvd))`.
+     *  applyDamage 는 hp 를 체력까지만 깎는다(종전 `hp -= dealt` 와 die() 판정 동일). */
+    const dmgData = makeDamage(raw, this.scene.playerRef ?? null);
+    dmgData.targetPos = { x: this.x, y: this.y };
     const rcvd = this.debuffs.length > 0 ? receivedDamageMult(this.debuffs) : 1;
+    const preDefense = resolveDamage(dmgData, { received: rcvd });
     const dealt = mitigateEnemyDamage(
-      rcvd === 1 ? raw : Math.max(1, Math.round(raw * rcvd)),
+      preDefense,
       { def: this.defDef, defPct: this.defPctVal },
     );
     trackDamage(dealt); // v1.4.30 (#9) — 교실 모드: 공유 보스 레이드 딜 합산 (교실 밖 no-op)
-    this.hp -= dealt;
+    this.hp = applyDamage(dmgData, this.hp, this.maxHp).health;
     this.hitFlash = 90;
     // 타격감: 화이트 플래시 (기존 빨간 틴트보다 명확한 피격 피드백)
     this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);

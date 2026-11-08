@@ -2716,6 +2716,37 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.useBounds = false;
   }
 
+  /**
+   * vc277 — 두 점 사이에 시야가 통과하는가 (JENNY AwarenessTrait 대응).
+   *
+   * [왜 필요한가] JENNY 는 `vision_raycast` 로 적의 시야를 벽이 막는지 검사한다.
+   *  SERTZ 는 거리(`aggro`)만 봐서 벽 뒤에 숨어도 추격당했다.
+   *
+   * [구현] 물리 레이캐스트 대신 `lay.open` 그리드를 **샘플링**한다.
+   *  · 물리 바디는 벽 셀마다 1개씩 있어 레이캐스트 비용이 크고,
+   *    벽 두께/모서리에서 판정이 흔들린다.
+   *  · `lay.open` 은 충돌의 **단일 출처**이므로(WorldScene 주석 참조) 이걸 보는 게
+   *    더 정확하고 결정적이다.
+   *  · 샘플 수는 거리에 비례(최대 20) — 적 60마리 × 프레임당 호출을 고려한 상한.
+   *
+   * 주의: pad 를 0 으로 준다. 기본 pad(26)를 쓰면 통로 폭보다 커져
+   *  좁은 복도에서 항상 "가려짐"으로 판정된다.
+   */
+  hasLineOfSight(x0: number, y0: number, x1: number, y1: number): boolean {
+    const lay = this.layout;
+    if (!lay) return true; /* 마을/실내는 벽 그리드가 없어 항상 통과로 본다 */
+    const dist = Math.hypot(x1 - x0, y1 - y0);
+    if (dist < 1) return true;
+    const steps = Math.min(20, Math.max(3, Math.ceil(dist / 48)));
+    for (let i = 1; i < steps; i++) {
+      const t = i / steps;
+      const px = x0 + (x1 - x0) * t;
+      const py = y0 + (y1 - y0) * t;
+      if (!isOpenXY(lay, px, py, 0)) return false;
+    }
+    return true;
+  }
+
   /* ================= vc146 (#5) — 2.5D 카메라 구현부 ================= */
 
   /** 2.5D 설정 로드 — localStorage "sertz_persp" (기본 켬) */
