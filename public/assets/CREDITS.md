@@ -349,3 +349,126 @@ ghostIce_48x32(3동작×6프레임), wraith 21프레임 HD(150×159) 등 35종.
 0.005~0.117 까지 낮춰 격자를 없앴다.
 
 **CC0 1.0** — 상업 이용·수정 허용, 출처 표기 의무 없음. 위 내용은 기록용이다.
+
+---
+
+## vc288 — 미등재 오디오 출처 보완
+
+> vc288 감사에서 **실제 ogg 114개 중 CREDITS 에 이름이 없던 96개**를 발견해 보완했다.
+> 종전 CREDITS 는 v3.0.21 시점 목록에서 멈춰 있었고, 그 뒤 추가된
+> 테마 BGM·보스곡·효과음·스킬음이 빠져 있었다.
+
+### 미등재분 BGM·효과음·스킬음 (81)
+- License: 자체 제작 (in-house · 권리 보유)
+- Source: 어항 앞에 마우스
+- Used for: 테마 BGM(테마당 3곡 + 보스곡 + 마을곡), 전투 효과음 19종, 직업별 스킬음 27종
+
+**BGM (41)**
+- bgm_abyss_boss.ogg
+- bgm_alfheim_boss.ogg
+- bgm_cave_boss.ogg
+- bgm_cave_water.ogg
+- bgm_forest_1.ogg
+- bgm_forest_2.ogg
+- bgm_forest_3.ogg
+- bgm_forest_boss.ogg
+- bgm_hel_1.ogg
+- bgm_hel_2.ogg
+- bgm_hel_3.ogg
+- bgm_hel_boss.ogg
+- bgm_interior_home.ogg
+- bgm_interior_inn.ogg
+- bgm_kingdom_1.ogg
+- bgm_kingdom_2.ogg
+- bgm_kingdom_3.ogg
+- bgm_kingdom_boss.ogg
+- bgm_muspelheim_1.ogg
+- bgm_muspelheim_2.ogg
+- bgm_muspelheim_3.ogg
+- bgm_muspelheim_boss.ogg
+- bgm_nidavellir_1.ogg
+- bgm_nidavellir_2.ogg
+- bgm_nidavellir_3.ogg
+- bgm_nidavellir_boss.ogg
+- bgm_niflheim_1.ogg
+- bgm_niflheim_2.ogg
+- bgm_niflheim_3.ogg
+- bgm_niflheim_boss.ogg
+- bgm_title.ogg
+- bgm_village_abyss.ogg
+- bgm_village_alfheim.ogg
+- bgm_village_cave.ogg
+- bgm_village_forest.ogg
+- bgm_village_hel.ogg
+- bgm_village_kingdom.ogg
+- bgm_village_muspelheim.ogg
+- bgm_village_nidavellir.ogg
+- bgm_village_niflheim.ogg
+- bgm_village_village.ogg
+
+**효과음·스킬음 (32)**
+- sfx_aoe_light_cast.ogg
+- sfx_bolt_cast.ogg
+- sfx_bossdie.ogg
+- sfx_close.ogg
+- sfx_die.ogg
+- sfx_fire_cast.ogg
+- sfx_roar.ogg
+- skl_ambush1.ogg
+- skl_arrow1.ogg
+- skl_arrowpierce1.ogg
+- skl_bigsword1.ogg
+- skl_cast1.ogg
+- skl_chain4.ogg
+- skl_cure2.ogg
+- skl_dark1.ogg
+- skl_gravity1.ogg
+- skl_heavydash1.ogg
+- skl_iainuki1.ogg
+- skl_knife1.ogg
+- skl_manaburst1.ogg
+- skl_quake1.ogg
+- skl_rage1.ogg
+- skl_skyflight1.ogg
+- skl_slowmo1.ogg
+- skl_superhit1.ogg
+- skl_sword1.ogg
+- skl_sword2.ogg
+- skl_sword3.ogg
+- skl_timestop1.ogg
+- skl_warcry1.ogg
+- skl_wind1.ogg
+- skl_wind2.ogg
+
+### 영프 편 전용 BGM (15) — AI 생성 명시
+- License: AI 생성물 (상업 배포 전 라이선스 재검토 필요)
+- Source: 어항 앞에 마우스
+- Used for: 영프 편(하울르스톤) 전용 15곡 — vc232 #7 에서 `ai_song` 노이즈 필터 통과곡을 무드별 선별
+
+**주의**: 이 15곡은 AI 로 생성된 뒤 필터링한 곡이다.
+프로젝트 철칙은 *"게임 아트를 AI 로 생성하지 않는다"* 이며, **음악은 그 범위 밖으로 두기로 결정**했다
+(2026-11-09 사용자 판단). 다만 배포 형태에 따라 AI 생성물 표기 의무가 있을 수 있으므로
+스토어 등록 전에 각 플랫폼 정책을 확인해야 한다.
+
+- bgm_hw1_1.ogg
+- bgm_hw1_2.ogg
+- bgm_hw1_3.ogg
+- bgm_hw2_1.ogg
+- bgm_hw2_2.ogg
+- bgm_hw2_3.ogg
+- bgm_hw3_1.ogg
+- bgm_hw3_2.ogg
+- bgm_hw3_3.ogg
+- bgm_hw4_1.ogg
+- bgm_hw4_2.ogg
+- bgm_hw4_3.ogg
+- bgm_hw5_1.ogg
+- bgm_hw5_2.ogg
+- bgm_hw5_3.ogg
+
+**vc288 이름 변경 대응**: 아래 9곡은 CREDITS 본문에 **옛 이름**으로 적혀 있다.
+파일명이 `_` 삽입 규칙으로 바뀌었으나(예: `bgm_cave1` → `bgm_cave_1`) 곡은 같다.
+
+- `bgm_cave1` → `bgm_cave_1` · `bgm_cave2` → `bgm_cave_2` · `bgm_cave3` → `bgm_cave_3`
+- `bgm_abyss1` → `bgm_abyss_1` · `bgm_abyss2` → `bgm_abyss_2` · `bgm_abyss3` → `bgm_abyss_3`
+- `bgm_alfheim1` → `bgm_alfheim_1` · `bgm_alfheim2` → `bgm_alfheim_2` · `bgm_alfheim3` → `bgm_alfheim_3`
