@@ -3021,7 +3021,6 @@ export class WorldScene extends Phaser.Scene {
      *  · 마스크 0(사방 막힘)은 그리지 않는다 — 벽에 완전히 둘러싸인 1칸짜리 구멍에
      *    네 방향 어두운 띠를 전부 덮으면 그 칸만 검게 죽는다.
      */
-    const EDGE = 256;       // 아틀라스 프레임 원본 크기
     const ALPHA = 0.32;     // 0.55 → 0.32 (경계선으로만 읽히게)
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
@@ -3033,24 +3032,36 @@ export class WorldScene extends Phaser.Scene {
         const y0 = Math.round(r * cellH);
         const x1 = Math.round((c + 1) * cellW);
         const y1 = Math.round((r + 1) * cellH);
-        /* 셀을 256px 격자로 분할 — 마지막 조각은 남는 크기만큼만(원본 크롭) */
-        for (let ty = y0; ty < y1; ty += EDGE) {
-          for (let tx = x0; tx < x1; tx += EDGE) {
-            const w = Math.min(EDGE, x1 - tx);
-            const h = Math.min(EDGE, y1 - ty);
-            const img = this.add
-              .image(tx, ty, "autotile_edge", frame)
-              .setOrigin(0)
-              .setDepth(0.5)                   // 지면(0) 위, 벽/오브젝트 아래
-              .setAlpha(ALPHA);
-            if (w !== EDGE || h !== EDGE) {
-              /* 잘린 조각은 원본의 같은 픽셀만 보여준다(늘리지 않음).
-               *  setCrop 만 쓰면 렌더 크기 = 크롭 크기 × scale(1) 이므로 추가 보정이 없다.
-               *  setDisplaySize 를 함께 주면 크롭 영역을 다시 늘려 이중 스케일이 된다. */
-              img.setCrop(0, 0, w, h);
-            }
-          }
-        }
+        const w = x1 - x0;
+        const h = y1 - y0;
+        if (w <= 0 || h <= 0) continue;
+        /* ═══ vc286 — 프레임을 256px 격자로 자르던 것을 **셀 크기로 스케일**로 교체 ═══
+         *
+         * [실측한 결함] 셀은 144×128(authoredLayouts 기본)인데 프레임은 256×256 이다.
+         *  종전 코드는 `setCrop(0, 0, 144, 128)` 로 **원본 좌상단만** 잘라 썼다.
+         *  그런데 아틀라스 프레임의 띠는 가장자리에 있다:
+         *    왼쪽 x∈[0,66) · 오른쪽 x∈[190,256) · 위 y∈[0,66) · 아래 y∈[190,256)
+         *  셀이 144×128 이면 오른쪽 띠(190~255)와 아래 띠(190~255)는 크롭 범위 밖이라
+         *  **매번 통째로 잘려나간다.** 남는 것은 위·왼쪽 띠뿐이다.
+         *
+         *  그래서 경계 셀은 한쪽으로만 어두워지고, 인접 셀과 만나는 자리에서
+         *  띠 시작/끝이 어긋나 **대각선으로 그어진 바닥선**처럼 읽혔다
+         *  (사용자 지적: 스크린샷 1의 사선 경계).
+         *
+         * [해결] setCrop 을 버리고 setDisplaySize(셀 폭, 셀 높이)로 **늘려서** 그린다.
+         *  띠는 프레임 대비 26% 비율이므로, 스케일하면 셀 크기와 무관하게
+         *  네 변 가장자리에 정확히 붙는다. 셀이 아무리 작아도 대칭이 유지된다.
+         *  (확대에 따른 흐림은 경계 음영이라 문제되지 않는다 — 지면 원본은 스케일하지 않는다.)
+         *
+         * [조각 분할 제거] 종전엔 셀을 256px 격자로 쪼개 여러 장을 붙였다.
+         *  셀이 144×128 이라 항상 1조각이었고, 분할 로직은 죽은 코드였다.
+         *  스케일 방식에서는 셀 1개 = 이미지 1장이면 충분하다. */
+        this.add
+          .image(x0, y0, "autotile_edge", frame)
+          .setOrigin(0)
+          .setDepth(0.5)                   // 지면(0) 위, 벽/오브젝트 아래
+          .setAlpha(ALPHA)
+          .setDisplaySize(w, h);
       }
     }
   }
