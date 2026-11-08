@@ -134,37 +134,51 @@ export type CanonFamily = {
   true15: boolean;
   /** 7.txt 의 # 표시 — 몰락한 가문 */
   fallen: boolean;
+  /** vc279 — 정본 7.txt 의 영주/가주 이름("가문의 X" 표기). 없으면 null.
+   *
+   *  [왜 추가했나] 7.txt 는 가문마다 영주(또는 가주)를 명시한다:
+   *    에버포스=벨리카 / 샌티널=비에르 / 카르테르=에이리 / 라바이즈=피닉스 /
+   *    유월=종려 / 하나사키=카즈하 / 페르티에스=레이지스 …
+   *  그런데 코드에는 이름만 있고 **영주 정보가 통째로 빠져 있었다**(vc278 대조:
+   *  비에르·에이리·피닉스·종려·카즈하·레이지스 6개가 src/game 어디에도 없음).
+   *  도감·대사에서 "○○ 가문의 영주"를 쓰려면 정본 이름이 필요하다.
+   *
+   *  [주의] 정본에 사람 이름이 없는 가문(이그니션='대장장이의 가문', 리버스=설명만)은
+   *  null 로 둔다. **없는 이름을 만들어내지 않는다**(지시서 §0-1). */
+  lord: string | null;
+  /** 영주의 칭호 — '영주' | '가주' | '왕' 등 정본 표기 그대로. lord 가 null 이면 null. */
+  lordTitle: string | null;
 };
 
 /** 7.txt 순서 그대로. 라일락 월드 5 · 그랜드 플레닛 13 · 제로세계 7 = 25가문. */
 export const CANON_FAMILIES: readonly CanonFamily[] = [
   /* 라일락 월드 */
-  { key: "edeliona", name: "에델리오나", world: "lilac", power: "빛과 어둠", element: "light", true15: true, fallen: false },
-  { key: "esteban", name: "에스테반", world: "lilac", power: "물", element: "water", true15: true, fallen: false },
-  { key: "crenrelve", name: "크렌렐브", world: "lilac", power: "대지", element: "earth", true15: false, fallen: false },
-  { key: "idenmir", name: "이덴미르", world: "lilac", power: "눈", element: "ice", true15: true, fallen: false },
-  { key: "ecredit", name: "에크레디트", world: "lilac", power: "자연과 제작", element: "nature", true15: true, fallen: false },
+  { key: "edeliona", name: "에델리오나", world: "lilac", power: "빛과 어둠", element: "light", true15: true, lord: "스칼렛", lordTitle: "여왕", fallen: false },
+  { key: "esteban", name: "에스테반", world: "lilac", power: "물", element: "water", true15: true, lord: "카르텔", lordTitle: "가주", fallen: false },
+  { key: "crenrelve", name: "크렌렐브", world: "lilac", power: "대지", element: "earth", true15: false, lord: "시엘", lordTitle: "가주", fallen: false },
+  { key: "idenmir", name: "이덴미르", world: "lilac", power: "눈", element: "ice", true15: true, lord: "아덴", lordTitle: "가주", fallen: false },
+  { key: "ecredit", name: "에크레디트", world: "lilac", power: "자연과 제작", element: "nature", true15: true, lord: "루시", lordTitle: "가주", fallen: false },
   /* 그랜드 플레닛 */
-  { key: "grast", name: "그래스트", world: "grand", power: "우주", element: "light", true15: true, fallen: false },
-  { key: "destiny", name: "데스티니", world: "grand", power: "태양", element: "fire", true15: true, fallen: false },
-  { key: "fate", name: "페이트", world: "grand", power: "달", element: "ice", true15: true, fallen: false },
-  { key: "carrion", name: "카르리온", world: "grand", power: "어둠", element: "dark", true15: true, fallen: true },
-  { key: "ariano", name: "아리아노", world: "grand", power: "아트", element: "none", true15: true, fallen: false },
-  { key: "flame", name: "엘리자베스-플래임", world: "grand", power: "불", element: "fire", true15: true, fallen: false },
-  { key: "orpheus", name: "오르페우스", world: "grand", power: "주문과 주술", element: "dark", true15: false, fallen: false },
-  { key: "selina", name: "셀리나", world: "grand", power: "무기", element: "none", true15: false, fallen: false },
-  { key: "ignition", name: "이그니션", world: "grand", power: "도공", element: "fire", true15: false, fallen: false },
-  { key: "jillian", name: "질리언", world: "grand", power: "조종", element: "none", true15: true, fallen: false },
-  { key: "reverse", name: "리버스", world: "grand", power: "반전", element: "electric", true15: false, fallen: false },
-  { key: "pertiers", name: "페르티에스", world: "grand", power: "지배", element: "dark", true15: true, fallen: true },
+  { key: "grast", name: "그래스트", world: "grand", power: "우주", element: "light", true15: true, lord: "리안", lordTitle: "가주", fallen: false },
+  { key: "destiny", name: "데스티니", world: "grand", power: "태양", element: "fire", true15: true, lord: "아리", lordTitle: "가주", fallen: false },
+  { key: "fate", name: "페이트", world: "grand", power: "달", element: "ice", true15: true, lord: "루나", lordTitle: "가주", fallen: false },
+  { key: "carrion", name: "카르리온", world: "grand", power: "어둠", element: "dark", true15: true, lord: "페르온", lordTitle: "가주", fallen: true },
+  { key: "ariano", name: "아리아노", world: "grand", power: "아트", element: "none", true15: true, lord: "란", lordTitle: "가주", fallen: false },
+  { key: "flame", name: "엘리자베스-플래임", world: "grand", power: "불", element: "fire", true15: true, lord: "제니퍼", lordTitle: "가주", fallen: false },
+  { key: "orpheus", name: "오르페우스", world: "grand", power: "주문과 주술", element: "dark", true15: false, lord: "제르", lordTitle: "가주", fallen: false },
+  { key: "selina", name: "셀리나", world: "grand", power: "무기", element: "none", true15: false, lord: "시아", lordTitle: "가주", fallen: false },
+  { key: "ignition", name: "이그니션", world: "grand", power: "도공", element: "fire", true15: false, lord: null, lordTitle: null, fallen: false },
+  { key: "jillian", name: "질리언", world: "grand", power: "조종", element: "none", true15: true, lord: "캐스터", lordTitle: "가주", fallen: false },
+  { key: "reverse", name: "리버스", world: "grand", power: "반전", element: "electric", true15: false, lord: null, lordTitle: null, fallen: false },
+  { key: "pertiers", name: "페르티에스", world: "grand", power: "지배", element: "dark", true15: true, lord: "레이지스", lordTitle: "가주", fallen: true },
   /* 제로세계 — 이 7가문이 코드에 전혀 없었다 */
-  { key: "everforce", name: "에버포스", world: "zero", power: "번개", element: "electric", true15: true, fallen: false },
-  { key: "sentinel", name: "샌티널", world: "zero", power: "모래", element: "earth", true15: true, fallen: false },
-  { key: "carter", name: "카르테르", world: "zero", power: "저울과 체스", element: "none", true15: true, fallen: false },
-  { key: "cloches", name: "클로체스", world: "zero", power: "얼음", element: "ice", true15: false, fallen: true },
-  { key: "ravais", name: "라바이즈", world: "zero", power: "용암", element: "fire", true15: false, fallen: true },
-  { key: "yuwol", name: "유월", world: "zero", power: "바위", element: "earth", true15: true, fallen: false },
-  { key: "hanasaki", name: "하나사키", world: "zero", power: "바람", element: "wind", true15: true, fallen: false },
+  { key: "everforce", name: "에버포스", world: "zero", power: "번개", element: "electric", true15: true, lord: "벨리카", lordTitle: "영주", fallen: false },
+  { key: "sentinel", name: "샌티널", world: "zero", power: "모래", element: "earth", true15: true, lord: "비에르", lordTitle: "영주", fallen: false },
+  { key: "carter", name: "카르테르", world: "zero", power: "저울과 체스", element: "none", true15: true, lord: "에이리", lordTitle: "영주", fallen: false },
+  { key: "cloches", name: "클로체스", world: "zero", power: "얼음", element: "ice", true15: false, lord: "클로체스", lordTitle: "가주", fallen: true },
+  { key: "ravais", name: "라바이즈", world: "zero", power: "용암", element: "fire", true15: false, lord: "피닉스", lordTitle: "영주", fallen: true },
+  { key: "yuwol", name: "유월", world: "zero", power: "바위", element: "earth", true15: true, lord: "종려", lordTitle: "영주", fallen: false },
+  { key: "hanasaki", name: "하나사키", world: "zero", power: "바람", element: "wind", true15: true, lord: "카즈하", lordTitle: "영주", fallen: false },
   /* 스노리카는 왕국명(6.txt). 클로체스 가문의 왕국이므로 가문 목록과 분리해 둔다. */
 ] as const;
 
@@ -183,6 +197,56 @@ export const CANON_PLACES = {
 export const CANON_FAMILY_BY_NAME: Readonly<Record<string, CanonFamily>> = Object.fromEntries(
   CANON_FAMILIES.map((f) => [f.name, f]),
 );
+
+/** vc279 — 영주 이름 빠른 조회. 대사에서 "○○ 가문의 영주"를 쓸 때.
+ *  정본에 사람 이름이 없는 가문(이그니션·리버스)은 undefined. 만들어내지 않는다. */
+export const CANON_FAMILY_BY_LORD: Readonly<Record<string, CanonFamily>> = Object.fromEntries(
+  CANON_FAMILIES.filter((f) => f.lord !== null).map((f) => [f.lord as string, f]),
+);
+
+/**
+ * vc279 — 가문의 정본 한 줄 소개. 대사·도감 공용.
+ *
+ * 정본 7.txt 의 표기를 그대로 조합한다. 없는 정보(영주 이름)는 문장에서
+ * **생략**한다 — "null 영주" 같은 문구가 나오면 안 되고, 추측으로 채우지도 않는다.
+ *
+ * @example familyBlurb(CANON_FAMILY_BY_NAME["에버포스"])
+ *   → "에버포스 — 번개. 벨리카 영주. 15가문."
+ */
+export function familyBlurb(f: CanonFamily): string {
+  const parts: string[] = [`${f.power}.`];
+  if (f.lord) parts.push(`${f.lord} ${f.lordTitle ?? "영주"}.`);
+  if (f.fallen) parts.push("몰락한 가문.");
+  else if (f.true15) parts.push("15가문.");
+  return `${f.name} — ${parts.join(" ")}`;
+}
+
+/**
+ * vc279 (P7c) — 스토리 선택지 정본. `storyChoices[key]` 에는 **id** 가 저장되고,
+ * 표시에는 label 을 쓴다. 이 표가 id↔label 의 단일 출처다.
+ *
+ * [왜 정본 모듈에 두나] 선택지 문구는 스토리 정본(1.txt)에서 나온 것이므로
+ * 시나리오 파일과 분리해 한 곳에서만 관리한다. 시나리오/lilacScenarios.ts 의
+ * `choice` 스텝과 이 표가 **같은 id 집합**이어야 하며, 테스트가 그것을 강제한다.
+ *
+ * [주의] key 와 id 는 식별자다 — **절대 바꾸지 않는다**(세이브 호환).
+ * label(표시 문구)만 바꿀 수 있다.
+ */
+export const CANON_STORY_CHOICES: Readonly<Record<string, readonly { id: string; label: string }[]>> = {
+  /* 1.txt — 라일락의 질문 "너는 어떤 사람이 되고 싶니?" 에 대한 세 갈래.
+   * 정본에 네 번째 갈래는 없다. */
+  haruWho: [
+    { id: "kill", label: "누군가를 죽이는 사람" },
+    { id: "flee", label: "두려움에 도망치는 사람" },
+    { id: "save", label: "누군가를 살리는 사람" },
+  ],
+};
+
+/** 저장된 id 를 표시 라벨로 바꾼다. 없으면 undefined(대사 원문 유지). */
+export function storyChoiceLabel(key: string, id: string | undefined): string | undefined {
+  if (!id) return undefined;
+  return CANON_STORY_CHOICES[key]?.find((o) => o.id === id)?.label;
+}
 
 /** Directly merge only these keys into BOSS_DEFS; existing training bosses keep their identities. */export const GRAND_PLANET_BOSSES: Record<GrandPlanetBossKey, Omit<BossDef, "key"> & { key: GrandPlanetBossKey }> = {
   littlestar: {

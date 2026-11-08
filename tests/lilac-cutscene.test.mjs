@@ -11,7 +11,8 @@ const ok = (name, cond) => { assert.ok(cond, name); checks++; };
 const ids = Object.keys(LILAC_SCENARIOS);
 ok("시나리오 16편", ids.length === 16);
 
-const VALID = new Set(["cam","enter","exit","move","say","wait","flash","fade","shake"]);
+/* vc279 (P7c) — "choice" 추가: 중심 질문에 플레이어가 답하는 스텝. */
+const VALID = new Set(["cam","enter","exit","move","say","wait","flash","fade","shake","choice"]);
 for (const id of ids) {
   const s = LILAC_SCENARIOS[id];
   ok(`${id}: id 일치`, s.id === id);

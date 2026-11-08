@@ -74,6 +74,16 @@ export type SaveData = {
   cleared: boolean;
   /** 영프 엔딩을 실제로 본 기록. 본편 cleared/dlcTalked에서 자동 승격하지 않는다. */
   youngPrincessCleared?: boolean;
+  /* vc279 (P7c) — 스토리 선택 flag. key → 선택한 옵션 id.
+   *
+   *  [왜] 지시서 P7c "스토리를 텍스트 대화만으로 처리하지 말고 게임플레이와 연결".
+   *  중심 질문("너는 어떤 사람이 되고 싶니?")에 대한 답을 저장해, 이후 대사·분기에서
+   *  플레이어의 자기 규정을 참조한다.
+   *
+   *  [세이브 호환] optional 이며 로드 시 `?? {}` 로 채운다 — 필드 **추가**만이므로
+   *  SAVE_VERSION 을 올리지 않는다(config.ts 규칙). 구 세이브는 빈 객체가 된다.
+   *  key 는 식별자이므로 **절대 바꾸지 않는다**. 표시 문구만 바꿀 수 있다. */
+  storyChoices?: Record<string, string>;
   /* 기존 DLC 안내 대화 기록(구 세이브 호환). 세계관 엔딩 판정으로 사용하지 않는다. */
   dlcTalked?: boolean;
   /* ↓ 레벨업 MP 성장 복원 (v1.9 — 구 세이브 호환: 없으면 60 기본) */

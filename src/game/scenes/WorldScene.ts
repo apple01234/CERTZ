@@ -31,6 +31,7 @@ import { playStoryCutscene } from "../fx/StoryCutscene";
 import { sceneCinematicPlaying } from "../fx/sceneCinematic";
 import { chapterIntroOf, resolveChapterIntroShots, stageIntroOf, stageIntroSeenKey } from "../storyCutscenes";
 import { playAutoCutscene } from "../fx/AutoCutscene"; // v4.9.0 — 메이플식 자동 컷씬
+import { CANON_STORY_CHOICES } from "../grandPlanetCanon"; // vc279 — P7c 선택지 정본(id→label)
 import { PixelFxManager } from "../fx/PixelFxManager"; // v4.9.3 — pixelfx 통합 매니저
 import { LILAC_SCENARIOS, lilacScenarioIdAt } from "../lilacScenarios"; // v4.9.0 — 1기 시나리오 데이터
 import { Lighting, ambientFor } from "../fx/Lighting";
@@ -244,6 +245,8 @@ export class WorldScene extends Phaser.Scene {
   startTime = 0;
   cleared = false;
   youngPrincessCleared = false;
+  /** vc279 (P7c) — 스토리 선택 flag. key → 선택 id. SaveData.storyChoices 와 1:1. */
+  storyChoices: Record<string, string> = {};
   /** 구 세이브의 DLC 안내 대화 기록. 엔딩 해금 조건으로 쓰지 않는다. */
   dlcTalked = false;
 
@@ -1437,6 +1440,8 @@ export class WorldScene extends Phaser.Scene {
      *  복원이 누락돼 재접속 시 cleared 상태가 유실됐다. 일퀘 해금 판정의 전제 */
     this.cleared = savedPlayer.cleared ?? false;
     this.youngPrincessCleared = savedPlayer.youngPrincessCleared ?? false;
+    /* vc279 — 구 세이브 호환: 필드가 없으면 빈 객체. 값 검증은 문자열만 통과시킨다. */
+    this.storyChoices = { ...(savedPlayer.storyChoices ?? {}) };
     this.dlcTalked = savedPlayer.dlcTalked ?? false;
     /* v3.0.6 — 자동 물약/자동 버프 설정 복원 (지시 #5) */
     if (savedPlayer.autoUse) {
@@ -2539,6 +2544,46 @@ export class WorldScene extends Phaser.Scene {
         const cancel = this.onCutsceneDialogueEnd(done);
         EventBus.emit("dialogue:show", { speaker, lines });
         return cancel;
+      },
+      /* ═══ vc279 (P7c) — 선택지를 게임플레이로 연결 ═══
+       * [왜] 지시서 요구: "스토리를 텍스트 대화만으로 처리하지 말고 게임플레이와 연결".
+       *  선택은 storyChoices[key] 로 저장되고, 이후 시나리오가 recall 로 읽는다.
+       *  이로써 1막의 답이 15막 대사에 실제로 나타난다(장식이 아니라 상태).
+       *
+       * [기존 UI 재사용] DialogueBox 에는 이미 선택지 버튼이 있다(퀘스트 수주용).
+       *  규약도 이미 정해져 있다 — `dialogue:show` 에 choices 를 실어 보내고
+       *  응답은 `dialogue:choice { id }` 로 온다. 새 오버레이·새 이벤트를 만들지 않는다.
+       *  (vc264 주석: 선택지가 뜬 상태에서는 hold 진행을 막아야 취소되지 않는다 → 이미 처리됨)
+       *
+       * [안전] 응답이 없으면 진행이 멈추므로 cancel 등록 + 20초 워치독이 보호한다. */
+      choice: (prompt, options, done) => {
+        const onPick = (ev: { id: string }) => {
+          EventBus.off("dialogue:choice", onPick);
+          offDone();
+          done(ev.id);
+        };
+        const offDone = () => EventBus.off("dialogue:done", onDone);
+        /* 사용자가 선택지 없이 대화를 닫으면(ESC·스킵) 진행이 멈추지 않게 첫 옵션으로 확정한다. */
+        const onDone = () => { EventBus.off("dialogue:choice", onPick); done(options[0]?.id ?? ""); };
+        EventBus.on("dialogue:choice", onPick);
+        EventBus.on("dialogue:done", onDone);
+        EventBus.emit("dialogue:show", {
+          speaker: prompt,
+          lines: [],
+          choices: options.map((o) => ({ id: o.id, label: o.label })),
+        });
+        return () => { EventBus.off("dialogue:choice", onPick); offDone(); EventBus.emit("dialogue:hide"); };
+      },
+      onChoice: (key, picked) => {
+        this.storyChoices = { ...this.storyChoices, [key]: picked };
+        this.saveSoon();
+      },
+      recall: (key) => {
+        /* 저장된 **id** 를 표시 **라벨**로 바꾼다. id 가 그대로 대사에 나가면 안 된다. */
+        const id = this.storyChoices[key];
+        if (!id) return undefined;
+        const opt = CANON_STORY_CHOICES[key]?.find((o) => o.id === id);
+        return opt?.label;
       },
     });
     if (!started) EventBus.emit("cinematic:state", { active: false });
@@ -17402,6 +17447,7 @@ export class WorldScene extends Phaser.Scene {
       atk: this.player.atk,
       cleared: this.cleared,
       youngPrincessCleared: this.youngPrincessCleared,
+      storyChoices: { ...this.storyChoices }, // vc279 — P7c 선택 flag
       dlcTalked: this.dlcTalked,
       cutsceneSeen: this.cutsceneSeen, /* v1.4.41 — 챕터 진입 컷씬 시청 기록 */
       gold: this.player.gold,
