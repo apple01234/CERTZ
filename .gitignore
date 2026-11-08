@@ -214,3 +214,4 @@ memory-oath-title.png
 /tests/.*.mjs
 /tests/_*.tmp.mjs
 /tests/.shots/
+_msg.txt
