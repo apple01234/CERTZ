@@ -22,6 +22,15 @@ const eq = (n, a, b) => { assert.deepEqual(a, b, `✗ ${n}`); checks++; };
   /* 종전 520×96 에서 축소. 상한을 수치로 고정해 다시 커지지 않게 한다. */
   ok(`PANEL_W ${w} <= 440 (종전 520)`, w <= 440);
   ok(`PANEL_H ${h} <= 88 (종전 96)`, h <= 88);
+
+  /* ═══ vc286 — 절대 상한만으로는 부족하다 (실측) ═══
+   *  위 `<=440` 조건은 PANEL_W=420 을 통과시키는데, 모바일 CSS 폭은 360~414 다.
+   *  420 은 360 화면의 117%, 390 화면의 108% → **패널이 화면 밖으로 삐져나온다**.
+   *  사용자 지적 "튜토리얼이 정신없다"의 직접 원인 중 하나다.
+   *  그래서 가장 좁은 기준 화면(360px)에서도 화면 안에 들어오도록 상한을 건다. */
+  const NARROWEST = 360;
+  ok(`PANEL_W ${w} 가 최소 화면폭 ${NARROWEST}px 의 92% 이하`, w <= NARROWEST * 0.92);
+
   const before = 520 * 96, after = w * h;
   ok(`면적 ${after} < 종전 ${before}`, after < before);
   ok(`면적 감소율 ${Math.round((1 - after / before) * 100)}% >= 20%`, 1 - after / before >= 0.2);
