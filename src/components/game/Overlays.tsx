@@ -238,7 +238,20 @@ export function BossBar({ boss }: { boss: { name: string; hp: number; maxHp: num
             {boss.name}
           </span>
           <span className={compact ? "text-[8px] font-bold text-white/70" : "text-[9px] font-bold text-white/70 sm:text-[10px]"}>
-            {Math.ceil(pct)}%
+            {/* vc288 — 퍼센트만으로는 "얼마나 남았나"가 안 읽힌다. 절대 HP 를 함께 보여 준다.
+             *  유저 요구 "모든 주요 보스는 단순 체력 많은 몬스터가 되어서는 안 된다"의 반대편:
+             *  체력이 많다는 사실 자체는 보여 줘야 판이 길어지는 것을 예상할 수 있다.
+             *  compact(가로 폰)에서는 폭이 좁아 퍼센트를 유지하고, 그 외에는 둘 다 보여 준다. */}
+            {compact ? (
+              <>{Math.ceil(pct)}%</>
+            ) : (
+              <>
+                <span className="tabular-nums">{Math.max(0, Math.ceil(boss.hp)).toLocaleString()}</span>
+                <span className="text-white/40"> / </span>
+                <span className="tabular-nums">{Math.ceil(boss.maxHp).toLocaleString()}</span>
+                <span className="ml-1.5 text-[#ffb0b0]/70">{Math.ceil(pct)}%</span>
+              </>
+            )}
           </span>
         </div>
         <div className={compact ? "h-2.5 overflow-hidden rounded-full border border-black/70 bg-black/70" : "h-2.5 overflow-hidden rounded-full border border-black/70 bg-black/70 sm:h-4"}>
