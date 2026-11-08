@@ -31,7 +31,12 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # vc288 (REVAMP_100 #28) — ubuntu-latest 대신 ubuntu-24.04 로 **핀**한다.
+    #  `-latest` 는 GitHub 가 러너 이미지를 올릴 때마다 조용히 바뀐다. 이 워크플로는
+    #  Android SDK 경로·JDK·Gradle 캐시에 의존하므로, 이미지가 바뀌면 빌드가 이유 없이
+    #  깨질 수 있다(2026-10-19 부터 ubuntu-latest 가 새 버전으로 이동 중).
+    #  24.04 는 현재 안정이고 필요한 툴체인이 다 있다. 올릴 때는 여기 숫자만 바꾼다.
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4

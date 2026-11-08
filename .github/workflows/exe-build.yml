@@ -28,7 +28,11 @@ permissions:
 
 jobs:
   build:
-    runs-on: windows-latest
+    # vc288 (REVAMP_100 #28) — windows-latest 대신 windows-2022 로 **핀**한다.
+    #  `-latest` 는 러너 이미지가 올라갈 때마다 조용히 바뀐다. 이 워크플로는 rcedit
+    #  (exe 아이콘·버전 리소스 편집)와 NSIS 설치본 생성에 의존하는데, 두 툴 모두
+    #  Windows 이미지 버전에 민감하다. 코드 변경 없이 빌드가 깨지는 것을 막는다.
+    runs-on: windows-2022
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4

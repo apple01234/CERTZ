@@ -1,42 +1,32 @@
-feat(vc288): REVAMP_100 #14·#15 마감 — 색 토큰화 + 대비 계약 고정
+fix(vc288): CI 러너 이미지 핀 (REVAMP_100 #28) + 문서 상태 갱신
 
-## #15 HUD 대비 WCAG AA — 실측 결과 "이미 통과"였다
+## #28 ubuntu-latest → 핀
 
-`docs/REVAMP_100.md` 가 "#15 HUD 텍스트 대비 WCAG AA 미달 구간"을 근거 없이 ⬜ 로
-남겨 두고 있었다. 실제로 재 봤다.
+`runs-on: -latest` 는 GitHub 가 러너 이미지를 올릴 때마다 조용히 바뀐다.
+이 저장소의 워크플로는 툴체인에 민감하다:
+  android-build  Android SDK 경로·JDK·Gradle 캐시
+  exe-build      rcedit(아이콘·버전 리소스 편집)·NSIS
 
-처음엔 배경을 "밝은 풀밭(캔버스)"으로 가정해 21개 전부 FAIL 로 나왔다.
-그건 **틀린 측정**이었다 — HUD 텍스트는 거의 전부 game-chip(bg-stone-950/90) 위에
-얹히고, 대화창 텍스트는 .px 패널(어두운 보라) 위에 있다. 배경을 실제 값으로 바꾸니:
+이미지가 바뀌면 **코드 변경이 없는데도** 빌드가 깨지고, 원인 찾기가 매우 어렵다.
+2026-10-19 부터 ubuntu-latest 가 새 버전으로 이동 중이라 지금 핀이 특히 중요하다.
 
-  21개 전부 8.71:1 이상 (최악 #ff8a8a = 8.71:1, AA 기준 4.5:1)
+  android-build.yml  ubuntu-latest  → ubuntu-24.04
+  exe-build.yml      windows-latest → windows-2022
+  ios-build.yml      macos-15       (이미 버전 고정, 변경 없음)
 
-즉 미달 구간은 없었다. 대신 **측정을 영구 테스트로 남겼다**
-(tests/hud-contrast.test.mjs 6개). 앞으로 누가 글자색을 어둡게 바꾸거나 칩 배경을
-밝게 바꾸면 그 자리에서 깨진다. 대비 계산기 자체도 흰색/검정 21:1 로 자기검증한다.
+tests/ci-runner-pin.test.mjs 6개가 `-latest` 재도입을 막는다.
+테스트는 주석 줄을 제외하므로 "예전엔 -latest 였다"는 설명은 쓸 수 있다.
 
-## #14 디자인 토큰 산재 — 55% 가 중복이었다
+## 문서 상태 갱신
 
-실측: tsx 22개에 hex 색 284회, 고유값 134개.
-그중 **29종이 3회 이상 반복되어 전체 사용의 55%** 를 차지했다.
-"제각각 색"이 아니라 "같은 색을 여기저기서 다시 적은" 상태였다.
+docs/REVAMP_100.md 의 ⬜ 3건을 실제 근거와 함께 ✅ 로 바꿨다.
+  #14 디자인 토큰    — 반복 29종(사용 55%)을 토큰 11종으로
+  #15 HUD 대비       — 실측 미달 0개(21색 전부 8.71:1 이상)
+  #28 CI 러너        — 3종 전부 핀
 
-반복 상위만 @theme 토큰으로 올렸다(11종). 134개 전부 토큰화하지 않았다 —
-1회짜리 색까지 이름을 붙이면 읽기만 나빠지고 이득이 없다(YAGNI).
-  --color-game-gold(#ffd98a, 27회) --color-game-gold-deep --color-game-gold-dim
-  --color-game-danger --color-game-info --color-game-surface 계열
-
-HUD 의 실제 사용처 1곳을 text-[#ffd98a] → text-game-gold 로 바꿔 동작을 확인했다
-(빌드 CSS 에 --color-game-gold 와 .text-game-gold 가 실제로 생성됨).
-나머지 283곳은 건드리지 않았다 — 한 번에 치환하면 회귀 위험이 이득보다 크다.
-
-## 곁들여: goal 10개 결함 전수 감사 도구
-
-tools/audit-goal.mjs — goal 의 10개 결함이 실제 코드/에셋에 반영됐는지 기계 검증.
-주석에 적힌 설명 문구에 속지 않도록 주석을 걷어낸 뒤 실제 호출만 본다
-(이 감사에서 setCrop 오탐을 한 번 겪고 고쳤다).
-  결과: 10/10 통과
+남은 ⬜ 4건은 전부 사용자 조치가 필요하다:
+  #26 상위 항목(다른 항목의 묶음), #27 Vercel 계정 연동,
+  #29 BGM 32테마(외부 음원 저작권), #30 APK 실기기 확인
 
 ## 검증
-tsc 0 · eslint 0 · 테스트 436 pass / 0 fail (이전 430 → +6)
-빌드 ✓ Compiled successfully in 9.5s · BUILD_ID=UqPedrk0PcXPK4Gp4w3zi
+tsc 0 · eslint 0 · 테스트 442 pass / 0 fail (이전 436 → +6)
