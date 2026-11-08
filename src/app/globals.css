@@ -1,5 +1,39 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
 @import "tw-animate-css";
+
+/* ═══ vc288 — Tailwind 스캔 범위 한정 (프로덕션 빌드 무한 대기의 실제 원인) ═══
+ *
+ * [증상] `npm run build:next` 가 "Creating an optimized production build ..." 에서
+ *  끝나지 않았다. 프로세스는 살아 있고 CPU 는 계속 올라가는데(측정: 1,610초) 진전이 없었다.
+ *
+ * [추적] 멈춘 프로세스의 커맨드라인을 보니 `.next/build/postcss.js` 였다.
+ *  즉 Next 가 아니라 **Tailwind(CSS 처리)** 가 멈춘 것이다.
+ *  `@tailwindcss/postcss` 를 직접 호출해 재현 → 5분 넘게 반환하지 않았다.
+ *
+ * [원인 — 실측] Tailwind v4 는 소스를 지정하지 않으면 **프로젝트 전체**를 스캔한다.
+ *  이 저장소의 스캔 가능 파일 수(node_modules/.git/.next 제외):
+ *    android  40,340개 (2,378MB)   ← APK 빌드 산출물
+ *    public    7,500개 (232MB)
+ *    reports   1,717개 (217MB)
+ *    src         212개 (5MB)       ← 실제로 Tailwind 클래스를 쓰는 곳
+ *    합계 46만여 개 중 99.9% 가 스캔할 필요 없는 파일이다.
+ *
+ * [중요 — `@source` 만으로는 안 된다]
+ *  `@source "../"` 만 추가해도 **자동 감지가 꺼지지 않아** 여전히 전체를 스캔했다
+ *  (실측: 5분+ 타임아웃). Tailwind v4 에서 자동 감지를 끄려면 import 쪽에
+ *  `source(none)` 을 줘야 한다. 둘을 함께 써야 아래처럼 빨라진다.
+ *    변경 전: 5분+ (타임아웃)   →   변경 후: **225ms**
+ *
+ * [해결] 아래 두 줄이 한 쌍이다. 하나만 지우면 빌드가 다시 46만 파일을 스캔하며 멈춘다.
+ *   1) 위 `@import "tailwindcss" source(none)` — 자동 감지 끔
+ *   2) 아래 `@source "../"` — 이 파일이 src/app/globals.css 이므로 "../" = src/
+ *
+ * [유지보수] 새 소스 루트를 추가하면 `@source` 를 함께 추가해야 그 클래스가 생성된다.
+ *  예: 최상위 `app/` 을 쓰게 되면 `@source "../../app";` 를 더한다.
+ *  Tailwind 클래스는 이 저장소에서 전부 `src/` 안에서만 쓰인다
+ *  (public/reports/scripts/android 의 html·tsx 는 4~11개뿐이고 빌드 대상이 아니다).
+ */
+@source "../";
 
 @custom-variant dark (&:is(.dark *));
 
