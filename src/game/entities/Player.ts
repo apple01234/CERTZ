@@ -16,7 +16,7 @@ import { ULT_CLASSES,
   SKILL5_INFO, SKILL5B_INFO, FIFTH_SKILL_MULT, FIFTH_CD_MULT, FIFTH_LEVEL, FIFTH1_MULT, FIFTH2_MULT,
   type Skill1Kind, type Skill2Kind, type Skill3Kind, type Skill4Kind,
 } from "../classes";
-import { isZEvolved, isCEvolved } from "../skillEvolution"; // vc252 P5 — 전직 스킬 진화 데이터(개수·범위·관통)
+import { isZEvolved, isCEvolved, isVEvolved, isBEvolved } from "../skillEvolution"; // vc252 P5 · vc280 — V/B 확장
 import { ModStack, ModOp } from "../combat/modStack"; // vc276 — 배율 스택 (JENNY FloatModStack 이식)
 import { sweptHitsTarget } from "../collision/sweep";
 import { loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드
@@ -429,6 +429,82 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (t >= 4) return 1.4;
     if (t >= 3) return 1.2;
     return 1;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+   * vc280 (P5 확장) — V(3차)·B(4차) 슬롯 진화 헬퍼
+   *
+   * [vc252 상태] Z 12개만 진화. V/B 는 데이터 자체가 없어 "이름만 바뀐 승계"였다.
+   *  유저 요구는 "n차 → (n+1)차에서 **보유한 모든** 스킬이 강화 또는 상위 교체".
+   *
+   * [설계] Z/C 와 같은 방식으로 **이산적 값만** 바꾼다(개수·범위·관통·지속).
+   *  피해는 `rollDamage(a + b*t)` 가 이미 차수로 올리고 있으므로 **여기서 곱하지 않는다**
+   *  (중복 곱 = 밸런스 회귀, skillEvolution.ts 주석 참조).
+   *
+   * [하위호환] 진화 목록에 없는 직업은 종전과 **완전히 동일한 값**(1 또는 base)을 돌려준다.
+   * ══════════════════════════════════════════════════════════════════════════ */
+
+  /** V 슬롯(3차)이 실제 진화 대상인가. */
+  get vEvolved(): boolean {
+    return isVEvolved(this.cls);
+  }
+
+  /** B 슬롯(4차)이 실제 진화 대상인가. */
+  get bEvolved(): boolean {
+    return isBEvolved(this.cls);
+  }
+
+  /** V 슬롯 범위/반경 배율 — 3차 +20%, 4차 +40%. 대상 아니면 1. */
+  private evoRangeV(): number {
+    if (!this.vEvolved) return 1;
+    const t = this.sTier;
+    return t >= 4 ? 1.4 : 1.2;
+  }
+
+  /** B 슬롯 범위/반경 배율 — 4차 전용이므로 4차에서 +35%. 대상 아니면 1. */
+  private evoRangeB(): number {
+    if (!this.bEvolved) return 1;
+    return this.sTier >= 4 ? 1.35 : 1;
+  }
+
+  /**
+   * V 슬롯 타격/소환 개수 가산 — 3차 +1, 4차 +2.
+   * `changes` 에 "count" 가 있는 직업만.
+   */
+  private evoCountV(base: number): number {
+    if (!this.vEvolved) return base;
+    const t = this.sTier;
+    return t >= 4 ? base + 2 : base + 1;
+  }
+
+  /** B 슬롯 타격/소환 개수 가산 — 4차 +2. */
+  private evoCountB(base: number): number {
+    if (!this.bEvolved) return base;
+    return this.sTier >= 4 ? base + 2 : base;
+  }
+
+  /** V 슬롯 지속시간 배율 — 3차 ×1.15, 4차 ×1.3. 대상 아니면 1. */
+  private evoDurV(): number {
+    if (!this.vEvolved) return 1;
+    return this.sTier >= 4 ? 1.3 : 1.15;
+  }
+
+  /** B 슬롯 지속시간 배율 — 4차 ×1.25. */
+  private evoDurB(): number {
+    if (!this.bEvolved) return 1;
+    return this.sTier >= 4 ? 1.25 : 1;
+  }
+
+  /** V 슬롯 관통 가산 — 3차 +1, 4차 +2. */
+  private evoPierceV(): number {
+    if (!this.vEvolved) return 0;
+    return this.sTier >= 4 ? 2 : 1;
+  }
+
+  /** B 슬롯 관통 가산 — 4차 +2. */
+  private evoPierceB(): number {
+    if (!this.bEvolved) return 0;
+    return this.sTier >= 4 ? 2 : 0;
   }
 
   private mpRegenAcc = 0;
@@ -2937,25 +3013,29 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* 워로드 — 전장의 함성: 광역 외침 + 공격력 버프 (v3.0.4 — 임팩트 대폭 상향) */
       case "warcry": {
         const t = this.sTier; // v1.4.30 — 지속시간 티어 스케일용
+        /* vc280 (P5 확장) — V 슬롯 진화: 범위·지속이 차수에 따라 실제로 넓어진다.
+         *  대상이 아니면 evoRangeV()=1, evoDurV()=1 이라 종전과 완전히 동일하다. */
+        const vr = this.evoRangeV();
+        const vd = this.evoDurV();
         this.scene.spawnSpinSlash(this.x, this.y, 1);
         this.scene.spawnBurstAt(this.x, this.y, 26, hex);
         this.scene.spawnCrack?.(this.x, this.y);
         this.scene.impactFX.shake(140, 0.009);
         this.scene.cameras.main.flash(90, 255, 120, 90);
-        for (const e of this.getAllTargetsIn(280)) {
+        for (const e of this.getAllTargetsIn(Math.round(280 * vr))) {
           const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
           const { dmg, crit } = this.rollDamage(2.0, true);
           if (crit) this.scene.sfxCrit();
           e.takeDamage(dmg, away, 380, crit);
         }
-        this.selfAtkBuff = { mult: 1.35, until: this.scene.time.now + 8000 + 800 * t }; // v1.4.30 (#2) 지속 티어 스케일
+        this.selfAtkBuff = { mult: 1.35, until: this.scene.time.now + Math.round((8000 + 800 * t) * vd) }; // vc280 — V 진화 지속 반영
         this.scene.spawnPickupText(this.x, this.y - 44, "전장의 함성! 공격력 크게 증가", "#ff9a8a");
         break;
       }
       /* 팔라딘 — 성역: 빛의 결계 필드 (적 지속 피해 + 결계 내 자힐) — v3.0.4 임팩트 상향 */
       case "sanctuary": {
         this.scene.spawnField({
-          x: this.x, y: this.y + 12, radius: 190, dur: 10000,
+          x: this.x, y: this.y + 12, radius: Math.round(190 * this.evoRangeV()), dur: Math.round(10000 * this.evoDurV()),
           dps: Math.max(10, Math.round(this.atkTotal * 0.95)),
           kind: "light", owner: "player", heal: true,
         });
@@ -2991,7 +3071,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "tornado": {
         const aim = this.aimDirFree();
         const base = Math.atan2(aim.y, aim.x);
-        const n = 5;
+        /* vc280 (P5) — V 진화: 회오리 개수 5 → 차수별 증가. 대상 아니면 5 그대로. */
+        const n = this.evoCountV(5);
         for (let i = 0; i < n; i++) {
           this.scene.time.delayedCall(i * 90, () => {
             if (this.state === "dead") return;
@@ -3011,7 +3092,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
       /* 스톰브링어 — 낙뢰: 하늘에서 다수 직격 — v3.0.4 임팩트 상향 (6타·기절 추가) */
       case "thunder": {
-        const targets = this.nearestTargets(6, 460);
+        /* vc280 (P5) — V 진화: 낙뢰 대상 6 → 차수별 증가. */
+        const targets = this.nearestTargets(this.evoCountV(6), 460);
         targets.forEach((e, i) => {
           this.scene.time.delayedCall(i * 110, () => {
             if (!e.active || this.state === "dead") return;
@@ -3030,7 +3112,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* 크로니컬 — 시간 왜곡: 감속 필드 — v3.0.4 임팩트 상향 */
       case "timewarp": {
         this.scene.spawnField({
-          x: this.x, y: this.y + 12, radius: 300, dur: 9000,
+          /* vc280 (P5) — V 진화: 시간 왜곡 반경·지속. */
+          x: this.x, y: this.y + 12, radius: Math.round(300 * this.evoRangeV()), dur: Math.round(9000 * this.evoDurV()),
           dps: Math.max(8, Math.round(this.atkTotal * 0.7)),
           kind: "time", owner: "player", slow: true,
           /* v3.0.7 — 크로니컬 힐러 강화: 필드가 자신의 HP를 틱마다 회복 (시간이 상처를 되감음) */
@@ -3044,7 +3127,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
       /* 나이트블레이드 — 그림자 칼날: 선회 오비트 — v3.0.4 임팩트 상향 */
       case "shadowblad": {
-        this.scene.startOrbitBlades(1.8, hex, 9000);
+        /* vc280 (P5) — V 진화: 궤도 칼날 지속 연장. */
+        this.scene.startOrbitBlades(1.8, hex, Math.round(9000 * this.evoDurV()));
         this.scene.spawnBurstAt(this.x, this.y, 18, hex);
         this.scene.impactFX.shake(80, 0.004);
         break;
@@ -3052,7 +3136,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* 듀얼리스트 — 연격 무도: 연속 급습 + 피해 흡수 — v3.0.4 임팩트 상향 (6연격) */
       case "flurry": {
         const target = this.nearestTargets(1, 280)[0];
-        const hits = 6;
+        /* vc280 (P5) — V 진화: 연격 횟수 6 → 차수별 증가. */
+        const hits = this.evoCountV(6);
         for (let i = 0; i < hits; i++) {
           this.scene.time.delayedCall(i * 130, () => {
             if (this.state === "dead") return;
@@ -3082,7 +3167,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.spawnBurstAt(this.x, this.y, 26, 0xff2d2d);
         this.scene.impactFX.shake(130, 0.008);
         this.scene.cameras.main.flash(90, 255, 60, 60);
-        for (const e of this.getAllTargetsIn(250)) {
+        for (const e of this.getAllTargetsIn(Math.round(250 * this.evoRangeV()))) {
           const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
           const { dmg } = this.rollDamage(1.2, true);
           e.takeDamage(dmg, away, 120, false);
@@ -3109,7 +3194,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.spawnBurstAt(this.x, this.y, 34, 0xffe9a0);
         this.scene.cameras.main.flash(120, 255, 240, 190);
         this.scene.impactFX.shake(150, 0.009);
-        for (const e of this.getAllTargetsIn(280)) {
+        for (const e of this.getAllTargetsIn(Math.round(280 * this.evoRangeV()))) {
           const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
           const { dmg, crit } = this.rollDamage(2.6, true);
           if (crit) this.scene.sfxCrit();
@@ -3128,7 +3213,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const cx = Phaser.Math.Clamp(this.x + aim.x * 190, 80, wb.width - 80);
         const cy = Phaser.Math.Clamp(this.y + aim.y * 190, 80, wb.height - 80);
         this.scene.spawnBurstAt(cx, cy, 12, hex);
-        const N = 14;
+        /* vc280 (P5) — V 진화: 화살비 발수 14 → 차수별 증가. */
+        const N = this.evoCountV(14);
         for (let i = 0; i < N; i++) {
           this.scene.time.delayedCall(80 + i * 70, () => {
             if (this.state === "dead") return;
@@ -3153,8 +3239,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "cyclone": {
         const aim = this.aimDirFree();
         const base = Math.atan2(aim.y, aim.x);
-        // 대형 토네이도 2기 — 좌우로 살짝 벌려 전진, 강한 빨아들이기
-        for (let i = 0; i < 2; i++) {
+        // 대형 토네이도 — 좌우로 살짝 벌려 전진, 강한 빨아들이기
+        /* vc280 (P5) — V 진화: 토네이도 개수 2 → 차수별 증가. */
+        for (let i = 0; i < this.evoCountV(2); i++) {
           this.scene.time.delayedCall(i * 180, () => {
             if (this.state === "dead") return;
             const { dmg, crit } = this.rollDamage(1.7, true);
@@ -3183,7 +3270,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.spawnPickupText(this.x, this.y - 44, "하늘의 희망!", "#ccffe8");
         break;
       }
-      /* 아크로드 — 연쇄 번개: 적→적으로 최대 6회 도약 (낙뢰와 완전 별개) */
+      /* 아크로드 — 연쇄 번개: 적→적으로 연쇄 도약 (낙뢰와 완전 별개) */
       case "chainlight": {
         const hitList: (Enemy | Boss)[] = [];
         const first = this.nearestTargets(1, 420)[0] ?? null;
@@ -3261,7 +3348,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* 섀도우로드 — 그림자 지뢰: 3기 설치, 접촉 시 출혈 폭발 (그림자 칼날과 완전 별개) */
       case "shadowmine": {
         const aim = this.aimDirFree().normalize();
-        for (let i = 0; i < 3; i++) {
+        /* vc280 (P5) — V 진화: 그림자 지뢰 3기 → 차수별 증가. */
+        for (let i = 0; i < this.evoCountV(3); i++) {
           const off = (i - 1) * 56;
           const mx = Phaser.Math.Clamp(this.x + aim.x * 90 + (aim.y !== 0 ? off : 0), 60, this.scene.physics.world.bounds.width - 60);
           const my = Phaser.Math.Clamp(this.y + aim.y * 90 + (aim.x !== 0 ? off : 0), 60, this.scene.physics.world.bounds.height - 60);
@@ -3313,7 +3401,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* 블레이드마스터 — 파동 검기: 전방 340px 전부 관통하는 검기 3연파 (연격 무도와 완전 별개) */
       case "swordaura": {
         const dir = this.aimDirFree().normalize();
-        for (let i = 0; i < 3; i++) {
+        /* vc280 (P5) — V 진화: 파동 검기 3연파 → 차수별 증가. */
+        for (let i = 0; i < this.evoCountV(3); i++) {
           this.scene.time.delayedCall(i * 80, () => {
             if (this.state === "dead") return;
             const px = this.x + dir.x * (70 + i * 90);
@@ -3374,8 +3463,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
        *  기존 spawnField(장판)를 재사용해 새 시스템을 만들지 않았다. */
       case "minefield": {
         this.scene.spawnBurstAt(this.x, this.y, 12, hex);
-        for (let i = 0; i < 4; i++) {
-          const ang = (Math.PI * 2 * i) / 4 + Math.random() * 0.4;
+        /* vc280 (P5) — V 진화: 지뢰 4기 → 차수별 증가(배치 각도도 개수에 맞춰 재계산). */
+        const mines = this.evoCountV(4);
+        for (let i = 0; i < mines; i++) {
+          const ang = (Math.PI * 2 * i) / mines + Math.random() * 0.4;
           const rad = 70 + Math.random() * 90;
           this.scene.spawnField({
             x: this.x + Math.cos(ang) * rad,
@@ -3396,7 +3487,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "tidalwave": {
         const dir = this.aimDirFree().normalize();
         this.scene.cameras.main.flash(140, 120, 200, 255);
-        for (let w = 0; w < 5; w++) {
+        /* vc280 (P5) — V 진화: 해일 파도 5파 → 차수별 증가. */
+        for (let w = 0; w < this.evoCountV(5); w++) {
           this.scene.time.delayedCall(w * 90, () => {
             if (this.state === "dead") return;
             const px = this.x + dir.x * (60 + w * 110);
@@ -3529,7 +3621,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
       /* 크루세이더 — 심판의 빛기둥: 다수 빛 기둥 + 성스러운 방어/치유 — v3.0.4 임팩트 상향 */
       case "judgment": {
-        const targets = this.nearestTargets(5, 480);
+        /* vc280 (P5) — B 진화: 심판 대상 5 → 4차에서 증가. */
+        const targets = this.nearestTargets(this.evoCountB(5), 480);
         targets.forEach((e, i) => {
           this.scene.time.delayedCall(i * 140, () => {
             if (!e.active || this.state === "dead") return;
@@ -3556,10 +3649,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
       /* 데드아이 — 신의 화살비: 유도 화살 12발 — v3.0.4 임팩트 상향 */
       case "godarrow": {
-        for (let i = 0; i < 12; i++) {
+        /* vc280 (P5) — B 진화: 신의 화살 12발 → 4차에서 증가(각도도 개수에 맞춰 재계산). */
+        const arrows = this.evoCountB(12);
+        for (let i = 0; i < arrows; i++) {
           this.scene.time.delayedCall(i * 70, () => {
             if (this.state === "dead") return;
-            const ang = (i / 12) * Math.PI * 2;
+            const ang = (i / arrows) * Math.PI * 2;
             const { dmg, crit } = this.rollDamage(2.0, true);
             this.scene.firePlayerProj({
               x: this.x, y: this.y - 8, angle: ang, speed: 480, pierce: 2,
@@ -3579,10 +3674,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* 스카이로드 — 천공의 폭풍: 나선 미니 토네이도 12기 + 중심 대형 회오리 + 신속 버프
    *  v3.0.11 — 매직볼트 → 회오리 스프라이트 (시전 자리 대형 토네이도 = 폭풍의 눈) */
       case "skystorm": {
-        for (let i = 0; i < 12; i++) {
+        /* vc280 (P5) — B 진화: 천공 폭풍 12기 → 4차에서 증가. */
+        const cyclones = this.evoCountB(12);
+        for (let i = 0; i < cyclones; i++) {
           this.scene.time.delayedCall(i * 55, () => {
             if (this.state === "dead") return;
-            const ang = (i / 12) * Math.PI * 2 + Math.random() * 0.2;
+            const ang = (i / cyclones) * Math.PI * 2 + Math.random() * 0.2;
             const { dmg, crit } = this.rollDamage(1.8, true);
             this.scene.fireCyclone({
               x: this.x, y: this.y - 8, angle: ang, speed: 400,
@@ -3638,11 +3735,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
        *  보스도 시간 잠금(최대 1.4초 경직 — Boss.applyStun)이 먹어 보스전 실성능 확보. */
       case "eternalloop": {
         const t = this.sTier;
+        /* vc280 (P5) — B 진화: 영원 회귀 반경·지속. */
+        const er = this.evoRangeB();
+        const ed = this.evoDurB();
         this.scene.spawnField({
-          x: this.x, y: this.y + 10, radius: 380, dur: 1100,
+          x: this.x, y: this.y + 10, radius: Math.round(380 * er), dur: Math.round(1100 * ed),
           dps: 0, kind: "time", owner: "player",
         });
-        for (const e of this.getAllTargetsIn(380)) {
+        for (const e of this.getAllTargetsIn(Math.round(380 * er))) {
           (e as Enemy).applyStun?.(3200);
           const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
           const { dmg } = this.rollDamage(4.4 + 0.3 * t, true);
@@ -3737,7 +3837,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.doShake?.(300, 0.007);
         const cx = this.x, cy = this.y;
         /* 3단계: 소용돌이 생성 → 흡입 → 종말 폭발 */
-        for (let w = 0; w < 6; w++) {
+        /* vc280 (P5) — B 진화: 소용돌이 6연타 → 4차에서 증가. */
+        for (let w = 0; w < this.evoCountB(6); w++) {
           this.scene.time.delayedCall(w * 130, () => {
             if (this.state === "dead") return;
             const rad = 260 - w * 34;
@@ -3777,8 +3878,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "decksweep": {
         this.scene.cameras.main.flash(140, 255, 180, 120);
         this.scene.doShake?.(260, 0.006);
-        for (let i = 0; i < 8; i++) {
-          const ang = (Math.PI * 2 * i) / 8;
+        /* vc280 (P5) — B 진화: 갑판 폭격 8지점 → 4차에서 증가(각도 재계산). */
+        const strikes = this.evoCountB(8);
+        for (let i = 0; i < strikes; i++) {
+          const ang = (Math.PI * 2 * i) / strikes;
           const dist = 180 + (i % 2) * 90;
           const px = this.x + Math.cos(ang) * dist;
           const py = this.y + Math.sin(ang) * dist;

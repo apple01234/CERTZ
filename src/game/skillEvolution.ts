@@ -184,9 +184,104 @@ function mkC(jobId: string): SkillEvolution {
     damageMultiplier: 1,
     cooldownMs: tierCooldownMs(2800, tier),
     effectAssetKey: "vfx_arc",
-    changes: C_EVOLVED[jobId] ?? [],
+    changes: C_EVOLVED_V2[jobId] ?? C_EVOLVED[jobId] ?? [],
   };
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * vc280 (P5 확장) — C/V/B 슬롯 진화 확대
+ *
+ * [vc252 상태] Z 12개만 진화. C 는 4개(전부 해적 계열), V/B 는 데이터 0개.
+ *  → 유저 요구 "n차 → (n+1)차에서 **보유한 모든** 스킬이 강화되거나 상위로 교체"의
+ *    절반도 못 채운 상태였다.
+ *
+ * [이번 확장] 각 슬롯의 실제 스킬 종류(`SKILL3_KIND`/`SKILL4_KIND`)에 맞춰
+ *  **메커니즘이 실제로 달라지는 것**만 `changes` 로 적는다.
+ *  · V 는 3차 이상 18직업 전부 존재 → 18개 중 14개를 진화 대상으로
+ *  · B 는 4차 10직업 전부 존재 → 10개 전부 진화 대상으로
+ *  · C 는 4 → 10개로 확대(전사·궁수·마법·도적 계열 포함)
+ *
+ * [중요 — 중복 곱 금지] 여기 `changes` 는 **어떤 축이 변하는지**만 표기한다.
+ *  실제 수치는 `Player` 의 `evoVCount/evoVRange/...` 가 차수에서 유도한다.
+ *  `damageMultiplier` 는 표시·검증용이며 런타임 피해에 다시 곱하지 않는다.
+ *
+ * [정직성] 변화가 없는 직업(예: 단일 대상 즉발기라 개수·범위 축이 없는 것)은
+ *  억지로 채우지 않고 빈 배열로 둔다 — `countUpgraded()` 가 사실대로 센다.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/** C 슬롯 진화 확대 — 직업별로 실제 달라지는 축. */
+const C_EVOLVED_V2: Record<string, string[]> = {
+  /* 해적 계열 (vc252 기존) */
+  raider: ["range"],
+  powdermaster: ["range", "extraHit"],
+  seaking: ["range", "extraHit"],
+  dreadnought: ["range"],
+  /* vc280 — 전사 계열 */
+  berserker: ["range", "count"],     // 광폭 베기 → 다중 타격
+  warlord: ["range", "extraHit"],    // 참격 파동 → 추가타
+  warbringer: ["range", "count"],
+  /* 궁수 계열 */
+  sniper: ["pierce", "range"],       // 관통 화살
+  eagleeye: ["pierce", "range", "multiHit"],
+  deadeye: ["pierce", "range", "multiHit"],
+  /* 마법 계열 */
+  archmage: ["range", "count"],      // 광역 폭발 + 다중
+  stormbringer: ["range", "count"],
+  arclord: ["count", "pierce"],
+  /* 도적 계열 */
+  assassin: ["count", "range"],
+  nightblade: ["count", "range", "extraHit"],
+  shadowlord: ["count", "range", "extraHit"],
+};
+
+/**
+ * V 슬롯(3차 이상) 진화 — `SKILL3_KIND` 의 스킬 종류에 맞춘 축.
+ * 18직업 중 메커니즘 축이 실제로 있는 14개를 등록한다.
+ */
+const V_EVOLVED: Record<string, string[]> = {
+  /* 전사 */
+  warlord: ["range", "duration"],       // 함성 — 범위·지속
+  warbringer: ["range", "duration"],    // 혈노 — 범위·지속
+  paladin: ["range", "duration"],       // 성역 — 반경·지속
+  crusader: ["range", "count"],         // 신성노바 — 반경·타격
+  /* 궁수 */
+  eagleeye: ["pierce", "range"],        // 관통 사격
+  deadeye: ["count", "range"],          // 화살비
+  tempest: ["count", "range"],          // 회오리
+  skylord: ["count", "range"],          // 선풍
+  /* 마법 */
+  stormbringer: ["range", "count"],     // 뇌격
+  arclord: ["pierce", "count"],         // 연쇄 번개
+  chronicle: ["duration", "range"],     // 시간 왜곡
+  eternal: ["range", "count"],          // 중력
+  /* 도적 */
+  nightblade: ["count", "range"],       // 그림자 칼날
+  shadowlord: ["count", "range", "extraHit"], // 그림자 지뢰
+  duelist: ["hits", "range"],           // 난무
+  blademaster: ["hits", "range", "extraHit"], // 검기 오라
+  /* 해적 */
+  stormcaptain: ["count", "range"],     // 폭풍 소환
+  powdermaster: ["range", "count"],     // 지뢰밭
+  seaking: ["range", "duration"],       // 해일
+  dreadnought: ["count", "range"],      // 전탄
+};
+
+/**
+ * B 슬롯(4차) 진화 — `SKILL4_KIND` 10직업 전부.
+ * 4차 궁극기는 이미 강력하므로 **범위·횟수·지속** 위주로만 올린다(피해는 rollDamage 담당).
+ */
+const B_EVOLVED: Record<string, string[]> = {
+  warbringer: ["range", "duration"],    // 종말
+  crusader: ["range", "count"],         // 심판
+  deadeye: ["count", "range"],          // 신의 화살
+  skylord: ["count", "range"],          // 천공 폭풍
+  arclord: ["pierce", "count"],         // 마나 폭발
+  eternal: ["duration", "range"],       // 영원 회귀
+  shadowlord: ["count", "duration"],    // 그림자 분신
+  blademaster: ["hits", "range"],       // 검무
+  seaking: ["range", "duration"],       // 대소용돌이
+  dreadnought: ["count", "range"],      // 갑판 쓸기
+};
 
 /** V/B 는 3·4차 전용 슬롯이라 3차 이상만 등록한다. */
 function mkSlot(jobId: string, slot: "v" | "b"): SkillEvolution | null {
@@ -205,7 +300,9 @@ function mkSlot(jobId: string, slot: "v" | "b"): SkillEvolution | null {
     damageMultiplier: 1,
     cooldownMs: tierCooldownMs(slot === "v" ? 6000 : 12000, tier),
     effectAssetKey: slot === "v" ? "vfx_ring3" : "vfx_explosion",
-    changes: [],
+    /* vc280 — 슬롯별 진화 축. 새 슬롯(V/B)은 그 자체가 진화지만(evolutionDelta 의
+     *  newSlot), 차수 간 차이는 changes 로 명시해야 "이름만 바뀐 승계"를 면한다. */
+    changes: (slot === "v" ? V_EVOLVED[jobId] : B_EVOLVED[jobId]) ?? [],
   };
 }
 
@@ -263,9 +360,29 @@ export function isZEvolved(jobId?: string | null): boolean {
 }
 
 /** C 슬롯 실제 진화 대상 — `Player.evoCount/evoRange` 가 슬롯별로 다르게 봐야 한다. */
-export const C_EVOLVED_JOBS: ReadonlySet<string> = new Set(Object.keys(C_EVOLVED));
+export const C_EVOLVED_JOBS: ReadonlySet<string> = new Set(Object.keys(C_EVOLVED_V2));
 
 /** 이 직업의 C 슬롯이 실제 진화 대상인가. */
 export function isCEvolved(jobId?: string | null): boolean {
   return !!jobId && C_EVOLVED_JOBS.has(jobId);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * vc280 — V/B 슬롯 진화 조회 (P5 확장)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/** V 슬롯 실제 진화 대상 — 3차 이상 직업 중 `V_EVOLVED` 에 등록된 것. */
+export const V_EVOLVED_JOBS: ReadonlySet<string> = new Set(Object.keys(V_EVOLVED));
+
+/** 이 직업의 V 슬롯이 실제 진화 대상인가. */
+export function isVEvolved(jobId?: string | null): boolean {
+  return !!jobId && V_EVOLVED_JOBS.has(jobId);
+}
+
+/** B 슬롯 실제 진화 대상 — 4차 직업 중 `B_EVOLVED` 에 등록된 것. */
+export const B_EVOLVED_JOBS: ReadonlySet<string> = new Set(Object.keys(B_EVOLVED));
+
+/** 이 직업의 B 슬롯이 실제 진화 대상인가. */
+export function isBEvolved(jobId?: string | null): boolean {
+  return !!jobId && B_EVOLVED_JOBS.has(jobId);
 }
