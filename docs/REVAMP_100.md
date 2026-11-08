@@ -54,10 +54,10 @@
 | # | 항목 | 상태 | 비고 |
 |---|---|---|---|
 | 26 | 개편 100가지 중 나머지 | ✅ | vc288 — 후보 22개를 `node tools/audit-candidates.mjs` 로 전수 감사: **21개 이미 구현**(파일:줄 근거 포함), 1개(침묵 전용 사운드)는 기존 sfxHurt 재사용이 맞아 의도적 미구현 |
-| 27 | 웹 자동배포(Vercel Git 연동) 미동작 | ⬜ | push해도 배포 안 됨 — CLI 수동 필요 |
+| 27 | 웹 자동배포(Vercel Git 연동) 미동작 | 🟡 | vc288 — **코드는 정상**. vercel.json(framework·buildCommand)·.vercel/project.json(projectId·orgId)·.vercelignore 모두 확인. 죽은 `DATABASE_URL: file:/tmp` 제거(GitHub-as-DB 사용, 코드가 읽지 않음). `tests/vercel-deploy.test.mjs` 로 고정. **남은 것 = GitHub↔Vercel Git 연동(계정 소유자 대시보드 작업)** |
 | 28 | CI `ubuntu-latest` → Ubuntu 26 마이그레이션(2026-10-19 시작) | ✅ | vc288 — `ubuntu-24.04` / `windows-2022` / `macos-15` 로 전부 핀. `tests/ci-runner-pin.test.mjs` 가 `-latest` 재도입을 막는다 |
 | 29 | BGM 잔여 32테마 수집 | ✅ | vc288 실측 — 실제 재생 테이블(BOSS_OF·REBIRTH_BOSS_OF·BOSS_TRACKS)이 참조하는 트랙 **21개 누락 0** · ogg 114개 보유. `tests/bgm-coverage.test.mjs` 로 고정. 남은 것은 신규 작곡(저작권)이며 코드 밖 |
-| 30 | APK 기기 실측(회피 제거·BGM 전환 청취) | ⬜ | 사용자 확인 필요 |
+| 30 | APK 기기 실측(회피 제거·BGM 전환 청취) | 🟡 | **실기기 필요 — 코드로 대체 불가**. 이 환경은 Linux 전용 APK 툴체인(`JAVA_HOME=/home/z/jdk`)이 없어 빌드도 못 한다. 대신 검증 절차를 `docs/APK_DEVICE_CHECKLIST.md` 에 정리했다. CI(`.github/workflows/android-build.yml`)는 ubuntu-24.04 고정으로 정상 |
 
 ## 개편 후보 (미착수 — 우선순위 제안)
 
