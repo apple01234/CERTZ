@@ -246,3 +246,45 @@ export function mergeBest(best: RushBest, run: RushRun): RushBest {
     totalEmerald: best.totalEmerald + Math.max(0, run.emerald),
   };
 }
+
+/* ─────────────── 세이브 연동 ─────────────── */
+
+/**
+ * 세이브에서 읽은 값을 **안전한 RushBest 로 정규화**한다.
+ *
+ * [왜 필요한가]
+ *  세이브는 유저가 고칠 수 있고, 구버전 세이브에는 이 필드가 없다.
+ *  `undefined` 나 문자열이 들어와도 게임이 멈추면 안 된다 —
+ *  `loadMapOverrides` 가 throw 하지 않는 것과 같은 원칙이다.
+ *
+ *  숫자가 아닌 값은 0 으로, 음수는 0 으로, 소수는 내림한다.
+ *  `bestWave` 는 웨이브 수를 넘을 수 없다(초과분은 조작된 값).
+ */
+export function normalizeBest(raw: unknown): RushBest {
+  if (!raw || typeof raw !== "object") return { ...EMPTY_BEST };
+  const o = raw as Record<string, unknown>;
+  const num = (v: unknown, max: number): number => {
+    const n = typeof v === "number" && Number.isFinite(v) ? Math.floor(v) : 0;
+    return Math.max(0, Math.min(max, n));
+  };
+  return {
+    bestWave: num(o.bestWave, BOSS_RUSH_WAVES.length),
+    clears: num(o.clears, 100000),
+    totalEmerald: num(o.totalEmerald, 1000000000),
+  };
+}
+
+/**
+ * 보스 러시가 해금됐는지 판단한다.
+ *
+ * [왜 해금 조건이 필요한가]
+ *  신규 유저가 첫 보스도 못 잡고 러시에 들어가면 1웨이브에서 즉사하고
+ *  "이 게임은 어렵다" 만 남는다. 최소한 보스 하나는 잡아 본 뒤 열어 준다.
+ *
+ *  판단 근거는 기존 세이브 필드만 쓴다 — 새 진행 플래그를 만들지 않는다.
+ */
+export function isBossRushUnlocked(save: { visited?: unknown; bossKills?: unknown }): boolean {
+  const visited = Array.isArray(save.visited) ? save.visited : [];
+  const bossKills = typeof save.bossKills === "number" ? save.bossKills : 0;
+  return visited.length >= 3 || bossKills >= 1;
+}

@@ -30,6 +30,8 @@ import {
   isValidBossKey,
   mergeBest,
   EMPTY_BEST,
+  normalizeBest,
+  isBossRushUnlocked,
 } from "../src/game/bossRush.ts";
 import { BOSS_DEFS } from "../src/game/stages.ts";
 
@@ -196,4 +198,55 @@ test("에메랄드는 음수가 되지 않는다", () => {
   const bad = { ...newRun(1), emerald: -999 };
   const best = mergeBest(EMPTY_BEST, bad);
   assert.ok(best.totalEmerald >= 0, "누적 에메랄드가 음수다");
+});
+
+/* ─────────────── 세이브 연동 ─────────────── */
+
+test("normalizeBest 가 없는 값·깨진 값을 0 기록으로 바꾼다", () => {
+  /* 구버전 세이브에는 bossRushBest 필드가 없다. 게임이 멈추면 안 된다. */
+  assert.deepEqual(normalizeBest(undefined), EMPTY_BEST, "undefined 를 처리하지 못했다");
+  assert.deepEqual(normalizeBest(null), EMPTY_BEST, "null 을 처리하지 못했다");
+  assert.deepEqual(normalizeBest("garbage"), EMPTY_BEST, "문자열을 처리하지 못했다");
+  assert.deepEqual(normalizeBest(12345), EMPTY_BEST, "숫자를 처리하지 못했다");
+});
+
+test("normalizeBest 가 음수·소수·NaN 을 정리한다", () => {
+  const r = normalizeBest({ bestWave: -3, clears: 2.9, totalEmerald: NaN });
+  assert.equal(r.bestWave, 0, "음수가 그대로 남았다");
+  assert.equal(r.clears, 2, "소수를 내림하지 않았다");
+  assert.equal(r.totalEmerald, 0, "NaN 이 그대로 남았다");
+});
+
+test("normalizeBest 가 웨이브 수를 넘는 값을 자른다 (조작 방지)", () => {
+  const r = normalizeBest({ bestWave: 9999, clears: 1, totalEmerald: 10 });
+  assert.equal(
+    r.bestWave,
+    BOSS_RUSH_WAVES.length,
+    "웨이브 수를 넘는 bestWave 가 그대로 통과했다 — 세이브 조작이다",
+  );
+});
+
+test("normalizeBest 가 정상값을 보존한다", () => {
+  const ok = { bestWave: 7, clears: 2, totalEmerald: 55 };
+  assert.deepEqual(normalizeBest(ok), ok, "정상값이 변형됐다");
+});
+
+test("보스 러시는 진행도가 있어야 해금된다 (신규 유저 즉사 방지)", () => {
+  /* 첫 보스도 못 잡은 유저가 들어가면 1웨이브에서 죽고 "어렵다"만 남는다. */
+  assert.equal(isBossRushUnlocked({}), false, "빈 세이브에서 해금됐다");
+  assert.equal(isBossRushUnlocked({ visited: [] }), false, "방문 0 인데 해금됐다");
+  assert.equal(isBossRushUnlocked({ visited: ["a", "b"] }), false, "방문 2 로는 해금되지 않아야 한다");
+
+  /* 방문 3곳 이상이면 해금 */
+  assert.equal(isBossRushUnlocked({ visited: ["a", "b", "c"] }), true, "방문 3곳에서 해금되지 않았다");
+
+  /* 보스를 하나라도 잡았으면 해금 */
+  assert.equal(isBossRushUnlocked({ bossKills: 1 }), true, "보스 1킬에서 해금되지 않았다");
+});
+
+test("해금 판정이 깨진 세이브 값에 throw 하지 않는다", () => {
+  /* visited 가 배열이 아니거나 문자열이어도 게임이 멈추면 안 된다. */
+  for (const bad of [null, undefined, "x", 42, { visited: "not-array" }, { bossKills: "3" }]) {
+    assert.doesNotThrow(() => isBossRushUnlocked(bad ?? {}), `깨진 값 ${JSON.stringify(bad)} 에서 throw 했다`);
+  }
 });

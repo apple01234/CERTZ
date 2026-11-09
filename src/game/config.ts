@@ -84,6 +84,17 @@ export type SaveData = {
    *  SAVE_VERSION 을 올리지 않는다(config.ts 규칙). 구 세이브는 빈 객체가 된다.
    *  key 는 식별자이므로 **절대 바꾸지 않는다**. 표시 문구만 바꿀 수 있다. */
   storyChoices?: Record<string, string>;
+  /* vc291 — 보스 러시 최고 기록. `bossRush.ts` 의 RushBest 형태.
+   *
+   * [세이브 호환] optional 이며 로드 시 `?? EMPTY_BEST` 로 채운다 — 필드 **추가**만이므로
+   *  SAVE_VERSION 을 올리지 않는다(config.ts 규칙). 구 세이브는 기록 0 으로 시작한다.
+   *  런 도중 상태(현재 웨이브·강화 배율)는 **저장하지 않는다** — 런은 이어하기가 없고,
+   *  중간 저장을 허용하면 재접속으로 죽음을 회피하는 어뷰징이 생긴다. */
+  bossRushBest?: {
+    bestWave: number;
+    clears: number;
+    totalEmerald: number;
+  };
   /* 기존 DLC 안내 대화 기록(구 세이브 호환). 세계관 엔딩 판정으로 사용하지 않는다. */
   dlcTalked?: boolean;
   /* ↓ 레벨업 MP 성장 복원 (v1.9 — 구 세이브 호환: 없으면 60 기본) */
