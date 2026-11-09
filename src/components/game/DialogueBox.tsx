@@ -19,20 +19,20 @@ import portraitCrops from "../../../public/assets/npcportrait/_map.json";
  *  v4.1.8 — 무료 플레이스홀더 npc_* 초상화 → 유료 SPUM 캐릭터 전면 교체 +
  *  챕터 마을 주민 17종 초상화 신설 (게임 내 NPC와 동일한 SPUM 스프라이트) */
 const NPC_PORTRAITS: Record<string, { tex: string; tone: string }> = {
-  "연합 안내인": { tex: "pet_pixie", tone: "#67e8f9" }, // 시안 — 룬 정령
-  "여관 주인 로안": { tex: "spum_mage", tone: "#fcd34d" },
-  "마을 주민": { tex: "spum_villager_m", tone: "#fcd34d" },
+  "연합 안내인": { tex: "dxp_29tl", tone: "#67e8f9" }, // 시안 — 룬 정령
+  "여관 주인 로안": { tex: "dxp_26tl", tone: "#fcd34d" },
+  "마을 주민": { tex: "dxp_30bl", tone: "#fcd34d" },
   "마을 아이": { tex: "spum_villager_f", tone: "#fcd34d" },
   "호족 소녀 엘렌": { tex: "spum_villager_f", tone: "#fcd34d" },
-  "상인 라고스": { tex: "npc_merchant", tone: "#fcd34d" },
-  "직업 교관 카이엔": { tex: "spum_knight", tone: "#fbbf24" },
+  "상인 라고스": { tex: "dxp_07bl", tone: "#fcd34d" },
+  "직업 교관 카이엔": { tex: "dxp_27tl", tone: "#fbbf24" },
   "쿠소디아 기사단장": { tex: "spum_knight", tone: "#fbbf24" },
   "라이언 드 쿠소디아 국왕": { tex: "spum_knight", tone: "#fbbf24" },
   "알프헤임의 여왕 요정": { tex: "spum_elf", tone: "#a7f3d0" },
   "땅의 요정 여왕": { tex: "spum_elf", tone: "#a7f3d0" },
   "난쟁이 광산 조합장": { tex: "spum_miner", tone: "#fcd34d" },
   "마법사 흐레스": { tex: "npc_gm", tone: "#c4b5fd" },
-  "연합 기록관": { tex: "tree", tone: "#7dd3fc" },
+  "연합 기록관": { tex: "dxp_24tl", tone: "#7dd3fc" },
   // v4.1.8 — 챕터 마을 주민 (게임 내 SPUM NPC와 동일 비주얼)
   "허브 채집가 베르": { tex: "spum_forager", tone: "#b8f0a0" },
   "신전 관리인 노아": { tex: "spum_mage", tone: "#b8f0a0" },
@@ -53,7 +53,7 @@ const NPC_PORTRAITS: Record<string, { tex: string; tone: string }> = {
   "폐허 학자 테일": { tex: "spum_mage", tone: "#b09aff" },
   "마지막 항해사": { tex: "spum_fisher", tone: "#b09aff" },
   "종언의 마룡 아부디토스": { tex: "boss_abudditos_idle0", tone: "#fda4af" }, // v1.4.31 — 구형 프레임 경로 유지 (아부디토스는 미아틀라스)
-  "{name}": { tex: "hero_idle0", tone: "#86efac" }, // 플레이어
+  "{name}": { tex: "dxp_15tl", tone: "#86efac" }, // 플레이어
   // v1.0.2 (#초상화) — 매핑 누락 화자 보강 (가름은 bossPortrait 토큰 매칭으로도 자동 해결, 여기선 명시 우선)
   "헬의 문지기 가름": { tex: "boss_gram_idle0", tone: "#8affc0" }, // 구형 프레임 경로 (가름은 미아틀라스)
   "전사 계열의 시조 '강철의 마르테'": { tex: "spum_knight", tone: "#fbbf24" },
@@ -70,12 +70,12 @@ const NPC_PORTRAITS: Record<string, { tex: string; tone: string }> = {
    * [해결] 화자명을 바꾸지 않고 **표에 별칭을 추가**한다. 대사 데이터가 정본이므로
    *  문구를 손대지 않는 쪽이 안전하고 diff 도 작다.
    *  초상화는 이미 배포 중인 npc_*.png 를 그대로 쓴다(새 에셋 생성 0). */
-  "라일락 연합의 기록자": { tex: "npc_lilac", tone: "#c9b3ff" },
-  "라일락 월드의 안내인": { tex: "npc_lilac", tone: "#c9b3ff" },
-  "라일락 연합": { tex: "npc_lilac", tone: "#c9b3ff" },
-  "스칼렛의 환영": { tex: "npc_scarlet", tone: "#fda4af" },
-  "어둠의 군주 스칼렛": { tex: "npc_scarlet", tone: "#fda4af" },
-  "에벤트왕국 근위대장 아리스텔라": { tex: "npc_aristella", tone: "#fcd34d" },};
+  "라일락 연합의 기록자": { tex: "dxp_26br", tone: "#c9b3ff" },
+  "라일락 월드의 안내인": { tex: "dxp_36br", tone: "#c9b3ff" },
+  "라일락 연합": { tex: "dxp_21bl", tone: "#c9b3ff" },
+  "스칼렛의 환영": { tex: "dxp_35tl", tone: "#fda4af" },
+  "어둠의 군주 스칼렛": { tex: "dxp_30tr", tone: "#fda4af" },
+  "에벤트왕국 근위대장 아리스텔라": { tex: "dxp_35tr", tone: "#fcd34d" },};
 
 /** 보스 대사 — BOSS_DEFS의 보스 이름과 일치하면 해당 보스 스프라이트 사용
  *  v3.0.25 (#이미지 안불러와짐) — 보스 텍스처는 idle 프레임 분할 파일(boss_*_idle0.png)이므로
@@ -112,8 +112,11 @@ function portraitOf(speaker: string, portraitId?: string): { tex: string; tone: 
    *  들어 있어 그것들이 서양풍 지적의 원인이었다. `_map.json` 은 생성 파이프라인이 자동
    *  갱신하므로 1순위로 두면 매핑 누락과 서양풍 스프라이트가 동시에 해결된다.
    *  생성 초상화가 없을 때만 표/보스로 폴백한다. */
+  /* [vc260] 생성 초상화(src 가 npcportrait/ 아래 PNG)를 1순위로 둔다.
+   *  vc290 — 종전엔 "/npc_" 하드코딩이라 새 규격 dxp_*.png 가 전부 걸러졌다.
+   *  경로 디렉터리(npcportrait/)로 판정해 규격 추가 시 또 깨지지 않게 한다. */
   const gen = portraitCrops[speaker];
-  if (gen?.src && String(gen.src).includes("/npc_")) return { tex: speaker, tone: "#c9b3ff" };
+  if (gen?.src && String(gen.src).includes("/npcportrait/")) return { tex: speaker, tone: "#c9b3ff" };
   if (NPC_PORTRAITS[speaker]) return NPC_PORTRAITS[speaker];
   return bossPortrait(speaker);
 }
@@ -128,7 +131,8 @@ function portraitOf(speaker: string, portraitId?: string): { tex: string; tone: 
 function faceFor(tex: string): string | null {
   const crops: Record<string, { src: string }> = portraitCrops;
   const direct = crops[tex]?.src;
-  if (direct && String(direct).includes("/npc_")) return direct;
+  /* vc290 — "/npc_" 하드코딩은 dxp_* 를 배제했다. 디렉터리 기준으로 판정. */
+  if (direct && String(direct).includes("/npcportrait/")) return direct;
   /* 화자명이 그대로 키인 경우 (mapped_as 로 등록된 별칭) */
   const byAlias = crops[tex];
   return byAlias?.src ?? direct ?? null;

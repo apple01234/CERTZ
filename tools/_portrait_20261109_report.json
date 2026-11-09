@@ -1,0 +1,986 @@
+[
+ {
+  "name": "dxp_00tl",
+  "src": "from-PixAI-2076326710804665189-0.png",
+  "quad": "tl",
+  "file": "dxp_00tl.png"
+ },
+ {
+  "name": "dxp_00tr",
+  "src": "from-PixAI-2076326710804665189-0.png",
+  "quad": "tr",
+  "file": "dxp_00tr.png"
+ },
+ {
+  "name": "dxp_00bl",
+  "src": "from-PixAI-2076326710804665189-0.png",
+  "quad": "bl",
+  "file": "dxp_00bl.png"
+ },
+ {
+  "name": "dxp_00br",
+  "src": "from-PixAI-2076326710804665189-0.png",
+  "quad": "br",
+  "file": "dxp_00br.png"
+ },
+ {
+  "name": "dxp_01tl",
+  "src": "from-PixAI-2076326710804665189-1.png",
+  "quad": "tl",
+  "file": "dxp_01tl.png"
+ },
+ {
+  "name": "dxp_01tr",
+  "src": "from-PixAI-2076326710804665189-1.png",
+  "quad": "tr",
+  "file": "dxp_01tr.png"
+ },
+ {
+  "name": "dxp_01bl",
+  "src": "from-PixAI-2076326710804665189-1.png",
+  "quad": "bl",
+  "file": "dxp_01bl.png"
+ },
+ {
+  "name": "dxp_01br",
+  "src": "from-PixAI-2076326710804665189-1.png",
+  "quad": "br",
+  "file": "dxp_01br.png"
+ },
+ {
+  "name": "dxp_02tl",
+  "src": "from-PixAI-2076326710804665189-2.png",
+  "quad": "tl",
+  "file": "dxp_02tl.png"
+ },
+ {
+  "name": "dxp_02tr",
+  "src": "from-PixAI-2076326710804665189-2.png",
+  "quad": "tr",
+  "file": "dxp_02tr.png"
+ },
+ {
+  "name": "dxp_02bl",
+  "src": "from-PixAI-2076326710804665189-2.png",
+  "quad": "bl",
+  "file": "dxp_02bl.png"
+ },
+ {
+  "name": "dxp_02br",
+  "src": "from-PixAI-2076326710804665189-2.png",
+  "quad": "br",
+  "file": "dxp_02br.png"
+ },
+ {
+  "name": "dxp_03tl",
+  "src": "from-PixAI-2076326710804665189-3.png",
+  "quad": "tl",
+  "file": "dxp_03tl.png"
+ },
+ {
+  "name": "dxp_03tr",
+  "src": "from-PixAI-2076326710804665189-3.png",
+  "quad": "tr",
+  "file": "dxp_03tr.png"
+ },
+ {
+  "name": "dxp_03bl",
+  "src": "from-PixAI-2076326710804665189-3.png",
+  "quad": "bl",
+  "file": "dxp_03bl.png"
+ },
+ {
+  "name": "dxp_03br",
+  "src": "from-PixAI-2076326710804665189-3.png",
+  "quad": "br",
+  "file": "dxp_03br.png"
+ },
+ {
+  "name": "dxp_04tl",
+  "src": "from-PixAI-2076326842431970452-0.png",
+  "quad": "tl",
+  "file": "dxp_04tl.png"
+ },
+ {
+  "name": "dxp_04tr",
+  "src": "from-PixAI-2076326842431970452-0.png",
+  "quad": "tr",
+  "file": "dxp_04tr.png"
+ },
+ {
+  "name": "dxp_04bl",
+  "src": "from-PixAI-2076326842431970452-0.png",
+  "quad": "bl",
+  "file": "dxp_04bl.png"
+ },
+ {
+  "name": "dxp_04br",
+  "src": "from-PixAI-2076326842431970452-0.png",
+  "quad": "br",
+  "file": "dxp_04br.png"
+ },
+ {
+  "name": "dxp_05tl",
+  "src": "from-PixAI-2076326842431970452-1.png",
+  "quad": "tl",
+  "file": "dxp_05tl.png"
+ },
+ {
+  "name": "dxp_05tr",
+  "src": "from-PixAI-2076326842431970452-1.png",
+  "quad": "tr",
+  "file": "dxp_05tr.png"
+ },
+ {
+  "name": "dxp_05bl",
+  "src": "from-PixAI-2076326842431970452-1.png",
+  "quad": "bl",
+  "file": "dxp_05bl.png"
+ },
+ {
+  "name": "dxp_05br",
+  "src": "from-PixAI-2076326842431970452-1.png",
+  "quad": "br",
+  "file": "dxp_05br.png"
+ },
+ {
+  "name": "dxp_06tl",
+  "src": "from-PixAI-2076326842431970452-2.png",
+  "quad": "tl",
+  "file": "dxp_06tl.png"
+ },
+ {
+  "name": "dxp_06tr",
+  "src": "from-PixAI-2076326842431970452-2.png",
+  "quad": "tr",
+  "file": "dxp_06tr.png"
+ },
+ {
+  "name": "dxp_06bl",
+  "src": "from-PixAI-2076326842431970452-2.png",
+  "quad": "bl",
+  "file": "dxp_06bl.png"
+ },
+ {
+  "name": "dxp_06br",
+  "src": "from-PixAI-2076326842431970452-2.png",
+  "quad": "br",
+  "file": "dxp_06br.png"
+ },
+ {
+  "name": "dxp_07tl",
+  "src": "from-PixAI-2076326842431970452-3.png",
+  "quad": "tl",
+  "file": "dxp_07tl.png"
+ },
+ {
+  "name": "dxp_07tr",
+  "src": "from-PixAI-2076326842431970452-3.png",
+  "quad": "tr",
+  "file": "dxp_07tr.png"
+ },
+ {
+  "name": "dxp_07bl",
+  "src": "from-PixAI-2076326842431970452-3.png",
+  "quad": "bl",
+  "file": "dxp_07bl.png"
+ },
+ {
+  "name": "dxp_07br",
+  "src": "from-PixAI-2076326842431970452-3.png",
+  "quad": "br",
+  "file": "dxp_07br.png"
+ },
+ {
+  "name": "dxp_08tl",
+  "src": "from-PixAI-2076326963301535378-0.png",
+  "quad": "tl",
+  "file": "dxp_08tl.png"
+ },
+ {
+  "name": "dxp_08tr",
+  "src": "from-PixAI-2076326963301535378-0.png",
+  "quad": "tr",
+  "file": "dxp_08tr.png"
+ },
+ {
+  "name": "dxp_08bl",
+  "src": "from-PixAI-2076326963301535378-0.png",
+  "quad": "bl",
+  "file": "dxp_08bl.png"
+ },
+ {
+  "name": "dxp_08br",
+  "src": "from-PixAI-2076326963301535378-0.png",
+  "quad": "br",
+  "file": "dxp_08br.png"
+ },
+ {
+  "name": "dxp_09tl",
+  "src": "from-PixAI-2076326963301535378-1.png",
+  "quad": "tl",
+  "file": "dxp_09tl.png"
+ },
+ {
+  "name": "dxp_09tr",
+  "src": "from-PixAI-2076326963301535378-1.png",
+  "quad": "tr",
+  "file": "dxp_09tr.png"
+ },
+ {
+  "name": "dxp_09bl",
+  "src": "from-PixAI-2076326963301535378-1.png",
+  "quad": "bl",
+  "file": "dxp_09bl.png"
+ },
+ {
+  "name": "dxp_09br",
+  "src": "from-PixAI-2076326963301535378-1.png",
+  "quad": "br",
+  "file": "dxp_09br.png"
+ },
+ {
+  "name": "dxp_10tl",
+  "src": "from-PixAI-2076326963301535378-2.png",
+  "quad": "tl",
+  "file": "dxp_10tl.png"
+ },
+ {
+  "name": "dxp_10tr",
+  "src": "from-PixAI-2076326963301535378-2.png",
+  "quad": "tr",
+  "file": "dxp_10tr.png"
+ },
+ {
+  "name": "dxp_10bl",
+  "src": "from-PixAI-2076326963301535378-2.png",
+  "quad": "bl",
+  "file": "dxp_10bl.png"
+ },
+ {
+  "name": "dxp_10br",
+  "src": "from-PixAI-2076326963301535378-2.png",
+  "quad": "br",
+  "file": "dxp_10br.png"
+ },
+ {
+  "name": "dxp_11tl",
+  "src": "from-PixAI-2076326963301535378-3.png",
+  "quad": "tl",
+  "file": "dxp_11tl.png"
+ },
+ {
+  "name": "dxp_11tr",
+  "src": "from-PixAI-2076326963301535378-3.png",
+  "quad": "tr",
+  "file": "dxp_11tr.png"
+ },
+ {
+  "name": "dxp_11bl",
+  "src": "from-PixAI-2076326963301535378-3.png",
+  "quad": "bl",
+  "file": "dxp_11bl.png"
+ },
+ {
+  "name": "dxp_11br",
+  "src": "from-PixAI-2076326963301535378-3.png",
+  "quad": "br",
+  "file": "dxp_11br.png"
+ },
+ {
+  "name": "dxp_12tl",
+  "src": "from-PixAI-2076327017260734245-0.png",
+  "quad": "tl",
+  "file": "dxp_12tl.png"
+ },
+ {
+  "name": "dxp_12tr",
+  "src": "from-PixAI-2076327017260734245-0.png",
+  "quad": "tr",
+  "file": "dxp_12tr.png"
+ },
+ {
+  "name": "dxp_12bl",
+  "src": "from-PixAI-2076327017260734245-0.png",
+  "quad": "bl",
+  "file": "dxp_12bl.png"
+ },
+ {
+  "name": "dxp_12br",
+  "src": "from-PixAI-2076327017260734245-0.png",
+  "quad": "br",
+  "file": "dxp_12br.png"
+ },
+ {
+  "name": "dxp_13tl",
+  "src": "from-PixAI-2076327017260734245-2.png",
+  "quad": "tl",
+  "file": "dxp_13tl.png"
+ },
+ {
+  "name": "dxp_13tr",
+  "src": "from-PixAI-2076327017260734245-2.png",
+  "quad": "tr",
+  "file": "dxp_13tr.png"
+ },
+ {
+  "name": "dxp_13bl",
+  "src": "from-PixAI-2076327017260734245-2.png",
+  "quad": "bl",
+  "file": "dxp_13bl.png"
+ },
+ {
+  "name": "dxp_13br",
+  "src": "from-PixAI-2076327017260734245-2.png",
+  "quad": "br",
+  "file": "dxp_13br.png"
+ },
+ {
+  "name": "dxp_14tl",
+  "src": "from-PixAI-2076327017260734245-3.png",
+  "quad": "tl",
+  "file": "dxp_14tl.png"
+ },
+ {
+  "name": "dxp_14tr",
+  "src": "from-PixAI-2076327017260734245-3.png",
+  "quad": "tr",
+  "file": "dxp_14tr.png"
+ },
+ {
+  "name": "dxp_14bl",
+  "src": "from-PixAI-2076327017260734245-3.png",
+  "quad": "bl",
+  "file": "dxp_14bl.png"
+ },
+ {
+  "name": "dxp_14br",
+  "src": "from-PixAI-2076327017260734245-3.png",
+  "quad": "br",
+  "file": "dxp_14br.png"
+ },
+ {
+  "name": "dxp_15tl",
+  "src": "from-PixAI-2076327102811954962-0.png",
+  "quad": "tl",
+  "file": "dxp_15tl.png"
+ },
+ {
+  "name": "dxp_15tr",
+  "src": "from-PixAI-2076327102811954962-0.png",
+  "quad": "tr",
+  "file": "dxp_15tr.png"
+ },
+ {
+  "name": "dxp_15bl",
+  "src": "from-PixAI-2076327102811954962-0.png",
+  "quad": "bl",
+  "file": "dxp_15bl.png"
+ },
+ {
+  "name": "dxp_15br",
+  "src": "from-PixAI-2076327102811954962-0.png",
+  "quad": "br",
+  "file": "dxp_15br.png"
+ },
+ {
+  "name": "dxp_16tl",
+  "src": "from-PixAI-2076327102811954962-1.png",
+  "quad": "tl",
+  "file": "dxp_16tl.png"
+ },
+ {
+  "name": "dxp_16tr",
+  "src": "from-PixAI-2076327102811954962-1.png",
+  "quad": "tr",
+  "file": "dxp_16tr.png"
+ },
+ {
+  "name": "dxp_16bl",
+  "src": "from-PixAI-2076327102811954962-1.png",
+  "quad": "bl",
+  "file": "dxp_16bl.png"
+ },
+ {
+  "name": "dxp_16br",
+  "src": "from-PixAI-2076327102811954962-1.png",
+  "quad": "br",
+  "file": "dxp_16br.png"
+ },
+ {
+  "name": "dxp_17tl",
+  "src": "from-PixAI-2076327102811954962-2.png",
+  "quad": "tl",
+  "file": "dxp_17tl.png"
+ },
+ {
+  "name": "dxp_17tr",
+  "src": "from-PixAI-2076327102811954962-2.png",
+  "quad": "tr",
+  "file": "dxp_17tr.png"
+ },
+ {
+  "name": "dxp_17bl",
+  "src": "from-PixAI-2076327102811954962-2.png",
+  "quad": "bl",
+  "file": "dxp_17bl.png"
+ },
+ {
+  "name": "dxp_17br",
+  "src": "from-PixAI-2076327102811954962-2.png",
+  "quad": "br",
+  "file": "dxp_17br.png"
+ },
+ {
+  "name": "dxp_18tl",
+  "src": "from-PixAI-2076327102811954962-3.png",
+  "quad": "tl",
+  "file": "dxp_18tl.png"
+ },
+ {
+  "name": "dxp_18tr",
+  "src": "from-PixAI-2076327102811954962-3.png",
+  "quad": "tr",
+  "file": "dxp_18tr.png"
+ },
+ {
+  "name": "dxp_18bl",
+  "src": "from-PixAI-2076327102811954962-3.png",
+  "quad": "bl",
+  "file": "dxp_18bl.png"
+ },
+ {
+  "name": "dxp_18br",
+  "src": "from-PixAI-2076327102811954962-3.png",
+  "quad": "br",
+  "file": "dxp_18br.png"
+ },
+ {
+  "name": "dxp_19tl",
+  "src": "from-PixAI-2076327153814993644-0.png",
+  "quad": "tl",
+  "file": "dxp_19tl.png"
+ },
+ {
+  "name": "dxp_19tr",
+  "src": "from-PixAI-2076327153814993644-0.png",
+  "quad": "tr",
+  "file": "dxp_19tr.png"
+ },
+ {
+  "name": "dxp_19bl",
+  "src": "from-PixAI-2076327153814993644-0.png",
+  "quad": "bl",
+  "file": "dxp_19bl.png"
+ },
+ {
+  "name": "dxp_19br",
+  "src": "from-PixAI-2076327153814993644-0.png",
+  "quad": "br",
+  "file": "dxp_19br.png"
+ },
+ {
+  "name": "dxp_20tl",
+  "src": "from-PixAI-2076327153814993644-1.png",
+  "quad": "tl",
+  "file": "dxp_20tl.png"
+ },
+ {
+  "name": "dxp_20tr",
+  "src": "from-PixAI-2076327153814993644-1.png",
+  "quad": "tr",
+  "file": "dxp_20tr.png"
+ },
+ {
+  "name": "dxp_20bl",
+  "src": "from-PixAI-2076327153814993644-1.png",
+  "quad": "bl",
+  "file": "dxp_20bl.png"
+ },
+ {
+  "name": "dxp_20br",
+  "src": "from-PixAI-2076327153814993644-1.png",
+  "quad": "br",
+  "file": "dxp_20br.png"
+ },
+ {
+  "name": "dxp_21tl",
+  "src": "from-PixAI-2076327153814993644-2.png",
+  "quad": "tl",
+  "file": "dxp_21tl.png"
+ },
+ {
+  "name": "dxp_21tr",
+  "src": "from-PixAI-2076327153814993644-2.png",
+  "quad": "tr",
+  "file": "dxp_21tr.png"
+ },
+ {
+  "name": "dxp_21bl",
+  "src": "from-PixAI-2076327153814993644-2.png",
+  "quad": "bl",
+  "file": "dxp_21bl.png"
+ },
+ {
+  "name": "dxp_21br",
+  "src": "from-PixAI-2076327153814993644-2.png",
+  "quad": "br",
+  "file": "dxp_21br.png"
+ },
+ {
+  "name": "dxp_22tl",
+  "src": "from-PixAI-2076327153814993644-3.png",
+  "quad": "tl",
+  "file": "dxp_22tl.png"
+ },
+ {
+  "name": "dxp_22tr",
+  "src": "from-PixAI-2076327153814993644-3.png",
+  "quad": "tr",
+  "file": "dxp_22tr.png"
+ },
+ {
+  "name": "dxp_22bl",
+  "src": "from-PixAI-2076327153814993644-3.png",
+  "quad": "bl",
+  "file": "dxp_22bl.png"
+ },
+ {
+  "name": "dxp_22br",
+  "src": "from-PixAI-2076327153814993644-3.png",
+  "quad": "br",
+  "file": "dxp_22br.png"
+ },
+ {
+  "name": "dxp_23tl",
+  "src": "from-PixAI-2076327207156316758-0.png",
+  "quad": "tl",
+  "file": "dxp_23tl.png"
+ },
+ {
+  "name": "dxp_23tr",
+  "src": "from-PixAI-2076327207156316758-0.png",
+  "quad": "tr",
+  "file": "dxp_23tr.png"
+ },
+ {
+  "name": "dxp_23bl",
+  "src": "from-PixAI-2076327207156316758-0.png",
+  "quad": "bl",
+  "file": "dxp_23bl.png"
+ },
+ {
+  "name": "dxp_23br",
+  "src": "from-PixAI-2076327207156316758-0.png",
+  "quad": "br",
+  "file": "dxp_23br.png"
+ },
+ {
+  "name": "dxp_24tl",
+  "src": "from-PixAI-2076327207156316758-1.png",
+  "quad": "tl",
+  "file": "dxp_24tl.png"
+ },
+ {
+  "name": "dxp_24tr",
+  "src": "from-PixAI-2076327207156316758-1.png",
+  "quad": "tr",
+  "file": "dxp_24tr.png"
+ },
+ {
+  "name": "dxp_24bl",
+  "src": "from-PixAI-2076327207156316758-1.png",
+  "quad": "bl",
+  "file": "dxp_24bl.png"
+ },
+ {
+  "name": "dxp_24br",
+  "src": "from-PixAI-2076327207156316758-1.png",
+  "quad": "br",
+  "file": "dxp_24br.png"
+ },
+ {
+  "name": "dxp_25tl",
+  "src": "from-PixAI-2076327207156316758-2.png",
+  "quad": "tl",
+  "file": "dxp_25tl.png"
+ },
+ {
+  "name": "dxp_25tr",
+  "src": "from-PixAI-2076327207156316758-2.png",
+  "quad": "tr",
+  "file": "dxp_25tr.png"
+ },
+ {
+  "name": "dxp_25bl",
+  "src": "from-PixAI-2076327207156316758-2.png",
+  "quad": "bl",
+  "file": "dxp_25bl.png"
+ },
+ {
+  "name": "dxp_25br",
+  "src": "from-PixAI-2076327207156316758-2.png",
+  "quad": "br",
+  "file": "dxp_25br.png"
+ },
+ {
+  "name": "dxp_26tl",
+  "src": "from-PixAI-2076327207156316758-3.png",
+  "quad": "tl",
+  "file": "dxp_26tl.png"
+ },
+ {
+  "name": "dxp_26tr",
+  "src": "from-PixAI-2076327207156316758-3.png",
+  "quad": "tr",
+  "file": "dxp_26tr.png"
+ },
+ {
+  "name": "dxp_26bl",
+  "src": "from-PixAI-2076327207156316758-3.png",
+  "quad": "bl",
+  "file": "dxp_26bl.png"
+ },
+ {
+  "name": "dxp_26br",
+  "src": "from-PixAI-2076327207156316758-3.png",
+  "quad": "br",
+  "file": "dxp_26br.png"
+ },
+ {
+  "name": "dxp_27tl",
+  "src": "from-PixAI-2076327255072045527-0.png",
+  "quad": "tl",
+  "file": "dxp_27tl.png"
+ },
+ {
+  "name": "dxp_27tr",
+  "src": "from-PixAI-2076327255072045527-0.png",
+  "quad": "tr",
+  "file": "dxp_27tr.png"
+ },
+ {
+  "name": "dxp_27bl",
+  "src": "from-PixAI-2076327255072045527-0.png",
+  "quad": "bl",
+  "file": "dxp_27bl.png"
+ },
+ {
+  "name": "dxp_27br",
+  "src": "from-PixAI-2076327255072045527-0.png",
+  "quad": "br",
+  "file": "dxp_27br.png"
+ },
+ {
+  "name": "dxp_28tl",
+  "src": "from-PixAI-2076327255072045527-1.png",
+  "quad": "tl",
+  "file": "dxp_28tl.png"
+ },
+ {
+  "name": "dxp_28tr",
+  "src": "from-PixAI-2076327255072045527-1.png",
+  "quad": "tr",
+  "file": "dxp_28tr.png"
+ },
+ {
+  "name": "dxp_28bl",
+  "src": "from-PixAI-2076327255072045527-1.png",
+  "quad": "bl",
+  "file": "dxp_28bl.png"
+ },
+ {
+  "name": "dxp_28br",
+  "src": "from-PixAI-2076327255072045527-1.png",
+  "quad": "br",
+  "file": "dxp_28br.png"
+ },
+ {
+  "name": "dxp_29tl",
+  "src": "from-PixAI-2076327255072045527-2.png",
+  "quad": "tl",
+  "file": "dxp_29tl.png"
+ },
+ {
+  "name": "dxp_29tr",
+  "src": "from-PixAI-2076327255072045527-2.png",
+  "quad": "tr",
+  "file": "dxp_29tr.png"
+ },
+ {
+  "name": "dxp_29bl",
+  "src": "from-PixAI-2076327255072045527-2.png",
+  "quad": "bl",
+  "file": "dxp_29bl.png"
+ },
+ {
+  "name": "dxp_29br",
+  "src": "from-PixAI-2076327255072045527-2.png",
+  "quad": "br",
+  "file": "dxp_29br.png"
+ },
+ {
+  "name": "dxp_30tl",
+  "src": "from-PixAI-2076327255072045527-3.png",
+  "quad": "tl",
+  "file": "dxp_30tl.png"
+ },
+ {
+  "name": "dxp_30tr",
+  "src": "from-PixAI-2076327255072045527-3.png",
+  "quad": "tr",
+  "file": "dxp_30tr.png"
+ },
+ {
+  "name": "dxp_30bl",
+  "src": "from-PixAI-2076327255072045527-3.png",
+  "quad": "bl",
+  "file": "dxp_30bl.png"
+ },
+ {
+  "name": "dxp_30br",
+  "src": "from-PixAI-2076327255072045527-3.png",
+  "quad": "br",
+  "file": "dxp_30br.png"
+ },
+ {
+  "name": "dxp_31tl",
+  "src": "from-PixAI-2076327300400205644-0.png",
+  "quad": "tl",
+  "file": "dxp_31tl.png"
+ },
+ {
+  "name": "dxp_31tr",
+  "src": "from-PixAI-2076327300400205644-0.png",
+  "quad": "tr",
+  "file": "dxp_31tr.png"
+ },
+ {
+  "name": "dxp_31bl",
+  "src": "from-PixAI-2076327300400205644-0.png",
+  "quad": "bl",
+  "file": "dxp_31bl.png"
+ },
+ {
+  "name": "dxp_31br",
+  "src": "from-PixAI-2076327300400205644-0.png",
+  "quad": "br",
+  "file": "dxp_31br.png"
+ },
+ {
+  "name": "dxp_32tl",
+  "src": "from-PixAI-2076327300400205644-2.png",
+  "quad": "tl",
+  "file": "dxp_32tl.png"
+ },
+ {
+  "name": "dxp_32tr",
+  "src": "from-PixAI-2076327300400205644-2.png",
+  "quad": "tr",
+  "file": "dxp_32tr.png"
+ },
+ {
+  "name": "dxp_32bl",
+  "src": "from-PixAI-2076327300400205644-2.png",
+  "quad": "bl",
+  "file": "dxp_32bl.png"
+ },
+ {
+  "name": "dxp_32br",
+  "src": "from-PixAI-2076327300400205644-2.png",
+  "quad": "br",
+  "file": "dxp_32br.png"
+ },
+ {
+  "name": "dxp_33tl",
+  "src": "from-PixAI-2076327335309358575-0.png",
+  "quad": "tl",
+  "file": "dxp_33tl.png"
+ },
+ {
+  "name": "dxp_33tr",
+  "src": "from-PixAI-2076327335309358575-0.png",
+  "quad": "tr",
+  "file": "dxp_33tr.png"
+ },
+ {
+  "name": "dxp_33bl",
+  "src": "from-PixAI-2076327335309358575-0.png",
+  "quad": "bl",
+  "file": "dxp_33bl.png"
+ },
+ {
+  "name": "dxp_33br",
+  "src": "from-PixAI-2076327335309358575-0.png",
+  "quad": "br",
+  "file": "dxp_33br.png"
+ },
+ {
+  "name": "dxp_34tl",
+  "src": "from-PixAI-2076327335309358575-1.png",
+  "quad": "tl",
+  "file": "dxp_34tl.png"
+ },
+ {
+  "name": "dxp_34tr",
+  "src": "from-PixAI-2076327335309358575-1.png",
+  "quad": "tr",
+  "file": "dxp_34tr.png"
+ },
+ {
+  "name": "dxp_34bl",
+  "src": "from-PixAI-2076327335309358575-1.png",
+  "quad": "bl",
+  "file": "dxp_34bl.png"
+ },
+ {
+  "name": "dxp_34br",
+  "src": "from-PixAI-2076327335309358575-1.png",
+  "quad": "br",
+  "file": "dxp_34br.png"
+ },
+ {
+  "name": "dxp_35tl",
+  "src": "from-PixAI-2076327335309358575-3.png",
+  "quad": "tl",
+  "file": "dxp_35tl.png"
+ },
+ {
+  "name": "dxp_35tr",
+  "src": "from-PixAI-2076327335309358575-3.png",
+  "quad": "tr",
+  "file": "dxp_35tr.png"
+ },
+ {
+  "name": "dxp_35bl",
+  "src": "from-PixAI-2076327335309358575-3.png",
+  "quad": "bl",
+  "file": "dxp_35bl.png"
+ },
+ {
+  "name": "dxp_35br",
+  "src": "from-PixAI-2076327335309358575-3.png",
+  "quad": "br",
+  "file": "dxp_35br.png"
+ },
+ {
+  "name": "dxp_36tl",
+  "src": "from-PixAI-2076327671847449007-0.png",
+  "quad": "tl",
+  "file": "dxp_36tl.png"
+ },
+ {
+  "name": "dxp_36tr",
+  "src": "from-PixAI-2076327671847449007-0.png",
+  "quad": "tr",
+  "file": "dxp_36tr.png"
+ },
+ {
+  "name": "dxp_36bl",
+  "src": "from-PixAI-2076327671847449007-0.png",
+  "quad": "bl",
+  "file": "dxp_36bl.png"
+ },
+ {
+  "name": "dxp_36br",
+  "src": "from-PixAI-2076327671847449007-0.png",
+  "quad": "br",
+  "file": "dxp_36br.png"
+ },
+ {
+  "name": "dxp_37tl",
+  "src": "from-PixAI-2076327671847449007-1.png",
+  "quad": "tl",
+  "file": "dxp_37tl.png"
+ },
+ {
+  "name": "dxp_37tr",
+  "src": "from-PixAI-2076327671847449007-1.png",
+  "quad": "tr",
+  "file": "dxp_37tr.png"
+ },
+ {
+  "name": "dxp_37bl",
+  "src": "from-PixAI-2076327671847449007-1.png",
+  "quad": "bl",
+  "file": "dxp_37bl.png"
+ },
+ {
+  "name": "dxp_37br",
+  "src": "from-PixAI-2076327671847449007-1.png",
+  "quad": "br",
+  "file": "dxp_37br.png"
+ },
+ {
+  "name": "dxp_38tl",
+  "src": "from-PixAI-2076327671847449007-2.png",
+  "quad": "tl",
+  "file": "dxp_38tl.png"
+ },
+ {
+  "name": "dxp_38tr",
+  "src": "from-PixAI-2076327671847449007-2.png",
+  "quad": "tr",
+  "file": "dxp_38tr.png"
+ },
+ {
+  "name": "dxp_38bl",
+  "src": "from-PixAI-2076327671847449007-2.png",
+  "quad": "bl",
+  "file": "dxp_38bl.png"
+ },
+ {
+  "name": "dxp_38br",
+  "src": "from-PixAI-2076327671847449007-2.png",
+  "quad": "br",
+  "file": "dxp_38br.png"
+ },
+ {
+  "name": "dxp_39tl",
+  "src": "from-PixAI-2076327671847449007-3.png",
+  "quad": "tl",
+  "file": "dxp_39tl.png"
+ },
+ {
+  "name": "dxp_39tr",
+  "src": "from-PixAI-2076327671847449007-3.png",
+  "quad": "tr",
+  "file": "dxp_39tr.png"
+ },
+ {
+  "name": "dxp_39bl",
+  "src": "from-PixAI-2076327671847449007-3.png",
+  "quad": "bl",
+  "file": "dxp_39bl.png"
+ },
+ {
+  "name": "dxp_39br",
+  "src": "from-PixAI-2076327671847449007-3.png",
+  "quad": "br",
+  "file": "dxp_39br.png"
+ },
+ {
+  "name": "dxp_40tl",
+  "src": "from-PixAI-2076328208591402514.png",
+  "quad": "tl",
+  "file": "dxp_40tl.png"
+ },
+ {
+  "name": "dxp_40tr",
+  "src": "from-PixAI-2076328208591402514.png",
+  "quad": "tr",
+  "file": "dxp_40tr.png"
+ },
+ {
+  "name": "dxp_40bl",
+  "src": "from-PixAI-2076328208591402514.png",
+  "quad": "bl",
+  "file": "dxp_40bl.png"
+ },
+ {
+  "name": "dxp_40br",
+  "src": "from-PixAI-2076328208591402514.png",
+  "quad": "br",
+  "file": "dxp_40br.png"
+ }
+]

@@ -1,0 +1,300 @@
+{
+ "monsters": [
+  {
+   "key": "dx_hornbunny",
+   "anim": "idle",
+   "idx": 0,
+   "file": "dx_hornbunny_idle0",
+   "src_frames": 4
+  },
+  {
+   "key": "dx_hornbunny",
+   "anim": "idle",
+   "idx": 1,
+   "file": "dx_hornbunny_idle1",
+   "src_frames": 4
+  },
+  {
+   "key": "dx_hornbunny",
+   "anim": "idle",
+   "idx": 2,
+   "file": "dx_hornbunny_idle2",
+   "src_frames": 4
+  },
+  {
+   "key": "dx_hornbunny",
+   "anim": "idle",
+   "idx": 3,
+   "file": "dx_hornbunny_idle3",
+   "src_frames": 4
+  },
+  {
+   "key": "dx_hornbunny",
+   "anim": "run",
+   "idx": 0,
+   "file": "dx_hornbunny_run0",
+   "src_frames": 6
+  },
+  {
+   "key": "dx_hornbunny",
+   "anim": "run",
+   "idx": 1,
+   "file": "dx_hornbunny_run1",
+   "src_frames": 6
+  },
+  {
+   "key": "dx_hornbunny",
+   "anim": "run",
+   "idx": 2,
+   "file": "dx_hornbunny_run2",
+   "src_frames": 6
+  },
+  {
+   "key": "dx_hornbunny",
+   "anim": "run",
+   "idx": 3,
+   "file": "dx_hornbunny_run3",
+   "src_frames": 6
+  },
+  {
+   "key": "dx_hornbunny",
+   "anim": "run",
+   "idx": 4,
+   "file": "dx_hornbunny_run4",
+   "src_frames": 6
+  },
+  {
+   "key": "dx_hornbunny",
+   "anim": "run",
+   "idx": 5,
+   "file": "dx_hornbunny_run5",
+   "src_frames": 6
+  },
+  {
+   "key": "dx_hornrabbit",
+   "anim": "atk",
+   "idx": 0,
+   "file": "dx_hornrabbit_atk0",
+   "src_frames": 6
+  },
+  {
+   "key": "dx_hornrabbit",
+   "anim": "atk",
+   "idx": 1,
+   "file": "dx_hornrabbit_atk1",
+   "src_frames": 6
+  },
+  {
+   "key": "dx_hornrabbit",
+   "anim": "atk",
+   "idx": 2,
+   "file": "dx_hornrabbit_atk2",
+   "src_frames": 6
+  },
+  {
+   "key": "dx_hornrabbit",
+   "anim": "atk",
+   "idx": 3,
+   "file": "dx_hornrabbit_atk3",
+   "src_frames": 6
+  },
+  {
+   "key": "dx_hornrabbit",
+   "anim": "atk",
+   "idx": 4,
+   "file": "dx_hornrabbit_atk4",
+   "src_frames": 6
+  },
+  {
+   "key": "dx_hornrabbit",
+   "anim": "atk",
+   "idx": 5,
+   "file": "dx_hornrabbit_atk5",
+   "src_frames": 6
+  },
+  {
+   "key": "dx_hornrabbit",
+   "anim": "idle",
+   "idx": 0,
+   "file": "dx_hornrabbit_idle0",
+   "src_frames": 4
+  },
+  {
+   "key": "dx_hornrabbit",
+   "anim": "idle",
+   "idx": 1,
+   "file": "dx_hornrabbit_idle1",
+   "src_frames": 4
+  },
+  {
+   "key": "dx_hornrabbit",
+   "anim": "idle",
+   "idx": 2,
+   "file": "dx_hornrabbit_idle2",
+   "src_frames": 4
+  },
+  {
+   "key": "dx_hornrabbit",
+   "anim": "idle",
+   "idx": 3,
+   "file": "dx_hornrabbit_idle3",
+   "src_frames": 4
+  },
+  {
+   "key": "dx_hornrabbit",
+   "anim": "run",
+   "idx": 0,
+   "file": "dx_hornrabbit_run0",
+   "src_frames": 6
+  },
+  {
+   "key": "dx_hornrabbit",
+   "anim": "run",
+   "idx": 1,
+   "file": "dx_hornrabbit_run1",
+   "src_frames": 6
+  },
+  {
+   "key": "dx_hornrabbit",
+   "anim": "run",
+   "idx": 2,
+   "file": "dx_hornrabbit_run2",
+   "src_frames": 6
+  },
+  {
+   "key": "dx_hornrabbit",
+   "anim": "run",
+   "idx": 3,
+   "file": "dx_hornrabbit_run3",
+   "src_frames": 6
+  },
+  {
+   "key": "dx_hornrabbit",
+   "anim": "run",
+   "idx": 4,
+   "file": "dx_hornrabbit_run4",
+   "src_frames": 6
+  },
+  {
+   "key": "dx_hornrabbit",
+   "anim": "run",
+   "idx": 5,
+   "file": "dx_hornrabbit_run5",
+   "src_frames": 6
+  }
+ ],
+ "fx": [
+  {
+   "fx": "storm",
+   "frames": 24,
+   "frameSize": [
+    128,
+    128
+   ],
+   "sheet": [
+    3072,
+    128
+   ],
+   "fps": 24,
+   "loop": true
+  },
+  {
+   "fx": "shockwave-big",
+   "frames": 24,
+   "frameSize": [
+    128,
+    128
+   ],
+   "sheet": [
+    3072,
+    128
+   ],
+   "fps": 26,
+   "loop": false
+  },
+  {
+   "fx": "plasma",
+   "frames": 24,
+   "frameSize": [
+    128,
+    128
+   ],
+   "sheet": [
+    3072,
+    128
+   ],
+   "fps": 22,
+   "loop": true
+  },
+  {
+   "fx": "energy-crack",
+   "frames": 24,
+   "frameSize": [
+    128,
+    128
+   ],
+   "sheet": [
+    3072,
+    128
+   ],
+   "fps": 24,
+   "loop": true
+  },
+  {
+   "fx": "pentagram",
+   "frames": 24,
+   "frameSize": [
+    128,
+    128
+   ],
+   "sheet": [
+    3072,
+    128
+   ],
+   "fps": 20,
+   "loop": true
+  },
+  {
+   "fx": "implosion-drive",
+   "frames": 24,
+   "frameSize": [
+    128,
+    128
+   ],
+   "sheet": [
+    3072,
+    128
+   ],
+   "fps": 26,
+   "loop": false
+  },
+  {
+   "fx": "orbit-rings",
+   "frames": 24,
+   "frameSize": [
+    128,
+    128
+   ],
+   "sheet": [
+    3072,
+    128
+   ],
+   "fps": 22,
+   "loop": true
+  },
+  {
+   "fx": "sparks-glow",
+   "frames": 24,
+   "frameSize": [
+    128,
+    128
+   ],
+   "sheet": [
+    3072,
+    128
+   ],
+   "fps": 24,
+   "loop": false
+  }
+ ]
+}

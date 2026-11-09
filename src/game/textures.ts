@@ -206,6 +206,16 @@ export function buildAllAnims(scene: Phaser.Scene) {
     a.create({ key: `${k}-run`, ...fr(`${k}_run`, 4, 10, -1) });
     a.create({ key: `${k}-atk`, ...fr(`${k}_atk`, 1, 1, 0) });
   }
+  /* vc289 — 2026-11-09 Drive 배급 토끼 2종 (idle 4 / run 6).
+   *  run 이 6프레임인 종은 기존 4프레임 규격으로 자르면 뒷다리 2프레임이 유실된다. */
+  for (const k of ["dx_hornbunny", "dx_hornrabbit"]) {
+    if (!scene.textures.exists(`${k}_idle0`)) continue; // 미변환 시 스킵(안전)
+    a.create({ key: `${k}-idle`, ...fr(`${k}_idle`, 4, 6, -1) });
+    a.create({ key: `${k}-run`, ...fr(`${k}_run`, 6, 12, -1) });
+    if (scene.textures.exists(`${k}_atk0`)) {
+      a.create({ key: `${k}-atk`, ...fr(`${k}_atk`, 1, 1, 0) });
+    }
+  }
   /* v3.0.2 — 마법 투사체/시전 이펙트 (Pixelart Spells, CC0) */
   a.create({ key: "fx-arcane", frames: Array.from({ length: 6 }, (_, i) => ({ key: "x2_sp_arcane", frame: i })), frameRate: 14, repeat: -1 });
   a.create({ key: "fx-magicorb", frames: Array.from({ length: 6 }, (_, i) => ({ key: "x2_sp_magicorb", frame: i })), frameRate: 12, repeat: -1 });

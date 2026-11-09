@@ -62,7 +62,11 @@ export type EnemyKey =
   /* vc263c — Layer Lab "Monsters Creatures Fantasy" 팩 4종 (드라이브 제공 에셋).
    *  기존 x3_* 보다 도트 밀도가 촘촘하고 톤이 어두운 다크판타지 계열이라
    *  밝은 카툰 톤인 본편 대신 **DLC/재림(고유 테마 유지 구간)** 전용으로 쓴다. */
-  | "ll_goblin" | "ll_skeleton" | "ll_mushroom" | "ll_flyingeye";
+  | "ll_goblin" | "ll_skeleton" | "ll_mushroom" | "ll_flyingeye"
+  /* vc289 — 2026-11-09 Drive 배급 "Monster Pack (Free)" 토끼 2종.
+   *  원본 4방향 그리드 시트 → 측면 행 64px 추출(tools/import_drive_20261109.py).
+   *  밝은 카툰 톤이라 본편 필드에 바로 어울린다. */
+  | "dx_hornbunny" | "dx_hornrabbit";
 
 export type EnemyDef = {
   key: EnemyKey;
@@ -586,6 +590,12 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
   ll_skeleton: { key: "ll_skeleton", name: "무덤 수호 스켈레톤", hp: 132, atk: 21, speed: 96, aggro: 330, exp: 62, gold: [10, 16], def: 8, defPct: 0.12, dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "bleed", chance: 0.25, dps: 4, dur: 3000 } } },
   ll_mushroom: { key: "ll_mushroom", name: "포자 버섯", hp: 104, atk: 15, speed: 68, aggro: 300, exp: 52, gold: [9, 14], dropHp: 0.34, dropMp: 0.26, profile: { apply: { kind: "poison", chance: 0.42, dps: 5, dur: 4200 }, fieldOnDeath: { kind: "poison", dps: 5, dur: 3000, radius: 86 } } },
   ll_flyingeye: { key: "ll_flyingeye", name: "감시하는 눈", hp: 76, atk: 19, speed: 140, aggro: 400, exp: 48, gold: [8, 13], dropHp: 0.26, dropMp: 0.3, scale: 0.9, profile: { ranged: { projAnim: "fx-magicorb", projSpeed: 250, range: 300, cd: 2600 } } },
+  /* ══ vc289 — 2026-11-09 Drive 배급 토끼 2종 ══
+   *  출처: "Monster Pack (Free)" (4방향 그리드 시트 → 측면 64px, tools/import_drive_20261109.py)
+   *  팩 특성: 뿔없는 갈색(idle/run)은 순한 초반 잡몹, 뿔 있는 종은 atk 프레임까지 있어
+   *  돌진형으로 배치했다. 기존 ll_* 보다 밝아 본편 초반 구간에 어울린다. */
+  dx_hornbunny: { key: "dx_hornbunny", name: "뿔없는 들토끼", hp: 54, atk: 11, speed: 196, aggro: 300, exp: 24, gold: [4, 8], dropHp: 0.3, dropMp: 0.18 },
+  dx_hornrabbit: { key: "dx_hornrabbit", name: "뿔토끼", hp: 86, atk: 18, speed: 214, aggro: 420, exp: 46, gold: [8, 14], dropHp: 0.28, dropMp: 0.22, profile: { charge: { cd: 2900, speed: 430, time: 380 } } },
 };
 
 /* ================= 보스 정의 (v1.5 데이터 이관 + 챕터 보강) ================= */
@@ -1216,6 +1226,8 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
     /* vc263c — Layer Lab 4종 */
     ll_goblin: "그림자 고블린", ll_skeleton: "무덤 수호 스켈레톤",
     ll_mushroom: "포자 버섯", ll_flyingeye: "감시하는 눈",
+    /* vc289 — 2026-11-09 Drive 배급 토끼 2종 */
+    dx_hornbunny: "뿔없는 들토끼", dx_hornrabbit: "뿔토끼",
   };
   const verbs = ["토벌", "소탕", "박멸", "정찰 지원", "제거"];
   /* v3.0.2 (버그 수정 — "퀘스트는 늑대 소탕인데 맵에는 유령만"):

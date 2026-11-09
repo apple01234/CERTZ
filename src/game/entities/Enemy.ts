@@ -71,6 +71,10 @@ const BODY_CFG: Record<EnemyKey, { bw: number; bh: number; hw: number; hh: numbe
   ll_skeleton: { bw: 24, bh: 28, hw: 40, hh: 42, burst: 0xd8d8e0 },
   ll_mushroom: { bw: 26, bh: 22, hw: 40, hh: 34, burst: 0xc86a5a },
   ll_flyingeye: { bw: 22, bh: 18, hw: 40, hh: 30, burst: 0xe8b06a },
+  /* vc289 — 2026-11-09 Drive 배급 토끼 2종 (64px 셀, 하단 정렬).
+   *  귀가 길어 실높이가 크므로 hh 를 여유 있게 잡았다. */
+  dx_hornbunny: { bw: 18, bh: 20, hw: 30, hh: 30, burst: 0xd8b48a },
+  dx_hornrabbit: { bw: 20, bh: 22, hw: 34, hh: 34, burst: 0xc89878 },
 };
 
 /**

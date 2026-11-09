@@ -45,6 +45,11 @@ const X3_MONSTERS = [
    *  개별 프레임 파일(ll_<name>_<anim><i>.webp)로 로드한다. */
   "ll_goblin", "ll_skeleton", "ll_mushroom", "ll_flyingeye",
 ] as const;
+/* vc289 — 2026-11-09 Drive 배급 "Monster Pack (Free)" 토끼 2종.
+ *  `X3_MONSTERS` 에 넣으면 안 된다: 그 루프는 atk0 을 일괄 요청하는데
+ *  dx_hornbunny 원본에는 Attack 시트가 없어 404 가 난다.
+ *  프레임 구성이 다른 종은 이 배열로 분리하고 전용 루프에서 로드한다. */
+const DX_MONSTERS = ["dx_hornbunny", "dx_hornrabbit"] as const;
 /** [키, 시트폭, 프레임폭] — 프레임폭은 시트 높이와 동일 (가로 나열) */
 const X2_SPELLS: [string, number, number][] = [
   ["x2_sp_arcane", 96, 16],
@@ -432,6 +437,10 @@ const PIXELFX_SHEETS = [
   "level-up", "pixel-dissolve", "poisoned", "poof", "portal", "quest-complete", "rage",
   "resurrection", "shadow-flames", "shatter-death", "shield-block", "smite", "soul-rise",
   "spawn-portal", "spin-slash", "splash", "summon-rise", "sunburst", "sword-slash", "zap-hit",
+  /* vc289 — 2026-11-09 Drive 배급 "FX Pack 1" 8종 (128px 24f).
+   *  tools/import_drive_20261109.py 가 원본 시트를 CERTZ pixelfx 스키마로 변환했다. */
+  "storm", "shockwave-big", "plasma", "energy-crack",
+  "pentagram", "implosion-drive", "orbit-rings", "sparks-glow",
 ];
 
 const VFX_PACK_LIST = [
@@ -828,6 +837,18 @@ export class BootScene extends Phaser.Scene {
      *  + 무기 스프라이트 (활/지팡이/단검/표창) + GM NPC */
     for (const k of X3_MONSTERS) {
       for (const f of ["idle0", "idle1", "idle2", "idle3", "run0", "run1", "run2", "run3", "atk0"]) {
+        this.load.image(`${k}_${f}`, `${k}_${f}.webp`);
+      }
+    }
+    /* vc289 — 2026-11-09 Drive 배급분. 토끼 2종은 run 이 6프레임이라
+     *  x3/ll 의 run0..3 규격으로는 5·6번째 프레임이 로드되지 않는다.
+     *  vc290 — dx_hornbunny 는 원본에 Attack 시트가 없어 atk 프레임을 요청하면
+     *  404 가 난다. 종별로 실제 존재하는 프레임만 로드한다. */
+    for (const k of DX_MONSTERS) {
+      const frames = ["idle0", "idle1", "idle2", "idle3",
+        "run0", "run1", "run2", "run3", "run4", "run5"];
+      if (k === "dx_hornrabbit") frames.push("atk0"); // 뿔토끼만 Attack 시트 보유
+      for (const f of frames) {
         this.load.image(`${k}_${f}`, `${k}_${f}.webp`);
       }
     }
