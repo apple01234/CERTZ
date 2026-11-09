@@ -34,6 +34,8 @@ import { playAutoCutscene } from "../fx/AutoCutscene"; // v4.9.0 — 메이플�
 import { CANON_STORY_CHOICES } from "../grandPlanetCanon"; // vc279 — P7c 선택지 정본(id→label)
 import { PixelFxManager } from "../fx/PixelFxManager"; // v4.9.3 — pixelfx 통합 매니저
 import { LILAC_SCENARIOS, lilacScenarioIdAt } from "../lilacScenarios"; // v4.9.0 — 1기 시나리오 데이터
+import { castAnimation, castTexture, cutsceneCharacter } from "../cutsceneCast";
+import { createCastSprite } from "../fx/cutsceneActors";
 import { Lighting, ambientFor } from "../fx/Lighting";
 import { addPortalSwirl, type PortalSwirl } from "../fx/PortalFX"; // v4.7.0 — Phaser 4 셰이더 차원문 오라
 import { Pet } from "../entities/Pet";
@@ -2525,12 +2527,17 @@ export class WorldScene extends Phaser.Scene {
     if (!scen) return false;
     const seenKey = `lilacCut_rea1_${scen.id}`;
     if (this.cutsceneSeen.includes(seenKey)) return false;
+    const cliff = this.layout?.authored?.landmarks.find((p) => p.kind === "cliff");
+    const feature = cliff && this.layout ? {
+      x: (cliff.cell % this.layout.cols + 0.5) * this.layout.cellW,
+      y: (Math.floor(cliff.cell / this.layout.cols) + 0.5) * this.layout.cellH,
+    } : this.cutsceneActorPosition({ x: this.portalHome.x - 128, y: this.portalHome.y + 48 });
     EventBus.emit("cinematic:state", { active: true });
     const started = playAutoCutscene(this, {
       id: scen.id,
       stageW: this.stageW,
       stageH: this.stageH,
-      anchors: { entry: this.entryHome, feature: this.portalHome },
+      anchors: { entry: this.entryHome, feature },
       steps: scen.steps,
     }, () => {
       if (!this.cutsceneSeen.includes(seenKey)) {
@@ -2538,6 +2545,7 @@ export class WorldScene extends Phaser.Scene {
         this.saveSoon();
       }
     }, {
+      actorPosition: (p, occupied) => this.cutsceneActorPosition(p, occupied),
       onFinish: () => EventBus.emit("cinematic:state", { active: false }),
       /* 하루 v2 — 연출 대사도 NPC 대화와 같은 공용 대사창(DialogueBox)으로 보낸다. */
       say: (speaker, lines, done) => {
@@ -2620,6 +2628,11 @@ export class WorldScene extends Phaser.Scene {
     if (!spec?.shots.length || (spec.once !== false && this.cutsceneSeen.includes(seenKey))) return false;
     const shots = resolveChapterIntroShots(spec, {
       width: this.stageW, height: this.stageH, entry: this.entryHome, feature: this.portalHome, player: this.player,
+    }).map((shot) => {
+      const who = shot.dialogue ? cutsceneCharacter(DIALOGUES[shot.dialogue]?.speaker) : undefined;
+      if (!who) return shot;
+      const p = this.cutsceneActorPosition(shot);
+      return { ...shot, x: p.x, y: p.y - 14, actor: { character: who.id, ...p } };
     });
     EventBus.emit("cinematic:state", { active: true });
     const started = playStoryCutscene(this, {
@@ -2642,6 +2655,25 @@ export class WorldScene extends Phaser.Scene {
     });
     if (!started) EventBus.emit("cinematic:state", { active: false });
     return started;
+  }
+
+  /** Find a real floor tile: portraits' actors must not stand in a wall, prop or each other. */
+  private cutsceneActorPosition(p: { x: number; y: number }, occupied: readonly { x: number; y: number }[] = []) {
+    const clamp = (x: number, y: number) => ({ x: Phaser.Math.Clamp(x, 32, this.stageW - 32), y: Phaser.Math.Clamp(y, 56, this.stageH - 32) });
+    for (const r of [0, 24, 48, 72, 96, 128, 160]) {
+      for (let i = 0; i < (r ? 12 : 1); i++) {
+        const q = clamp(p.x + Math.cos(i * Math.PI / 6) * r, p.y + Math.sin(i * Math.PI / 6) * r);
+        if (this.inOpenArea(q.x, q.y) && !this.nearSolidObstacle(q.x, q.y, 22)
+          && Phaser.Math.Distance.Between(q.x, q.y, this.portalHome.x, this.portalHome.y) >= 90
+          && occupied.every((o) => Phaser.Math.Distance.Between(o.x, o.y, q.x, q.y) >= 32)) return q;
+      }
+    }
+    return clamp(this.player.x, this.player.y);
+  }
+
+  cinematicObstructions() {
+    return [this.portal, this.portalSwirl?.obj ?? null, this.portalMagicA, this.portalMagicB,
+      this.portalBeacon, this.portalLabel, this.edgeArrow, this.edgeLabel, this.questMark].filter((o) => o !== null);
   }
 
   private applyManualCameraFollow(dt: number) {
@@ -4585,7 +4617,9 @@ export class WorldScene extends Phaser.Scene {
       /* v4.1.8 — 유료 SPUM 캐릭터(96px 캔버스) 배율 보정: 32px 무료 NPC × 1.6과 동일 화면 크기
        * vc212 (#npc-body) — 자체 제작 전신 텍스처로 교체. 규격이 96×96 으로 같아 배율은 그대로.
        *  로드 실패(텍스처 없음) 시 기존 spum_* 로 폴백해 NPC 가 사라지지 않게 한다. */
-      const bodyTex = this.textures.exists(NPC_BODY_OF[v.tex] ?? "") ? NPC_BODY_OF[v.tex] : v.tex;
+      const cast = cutsceneCharacter(v.name);
+      const hasCast = cast && this.textures.exists(castTexture(cast.id));
+      const bodyTex = hasCast ? castTexture(cast.id) : this.textures.exists(NPC_BODY_OF[v.tex] ?? "") ? NPC_BODY_OF[v.tex] : v.tex;
       /* vc212b — 그림자를 스프라이트에 굽지 않고 **별도 오브젝트**로 깐다.
        *  스프라이트에 구우면 scale 0.62 + nearest 샘플링에서 반투명 픽셀이
        *  뭉개져 지면에 안 보였다(스크린샷 실측). 별도 ellipse 는 축소와 무관하다. */
@@ -4596,8 +4630,10 @@ export class WorldScene extends Phaser.Scene {
        * 종전 y+15 는 발보다 10px 위에 떠서 다리에 겹쳤다. */
       this.add.ellipse(v.x, v.y + 40 * 0.62, 44, 14, 0x000000, 0.55)
         .setDepth(this.yDepthFor(v.y) - 0.5);
-      const img = this.add.image(v.x, v.y, bodyTex).setDepth(this.yDepthFor(v.y)).setScale(0.62);
-      this.tweens.add({ targets: img, y: v.y - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      const img = hasCast ? createCastSprite(this, cast.id, v.x, v.y + 24)!
+        : this.add.image(v.x, v.y, bodyTex).setScale(0.62);
+      img.setDepth(this.yDepthFor(v.y));
+      if (!hasCast) this.tweens.add({ targets: img, y: v.y - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
       this.add
         .text(v.x, v.y - 34, v.name, {
           fontFamily: "Galmuri11, sans-serif",
@@ -5644,12 +5680,16 @@ export class WorldScene extends Phaser.Scene {
       if (this.inOpenArea(tx, ty) && !this.nearSolidObstacle(tx, ty, 44)) { px = tx; py = ty; break; }
     }
     /* vc212b — 챕터 마을 NPC 도 같은 이유로 그림자를 별도 ellipse 로 깐다 */
-    const bodyTex2 = this.textures.exists(NPC_BODY_OF[s.tex] ?? "") ? NPC_BODY_OF[s.tex] : s.tex;
+    const cast = cutsceneCharacter(s.name);
+    const hasCast = cast && this.textures.exists(castTexture(cast.id));
+    const bodyTex2 = hasCast ? castTexture(cast.id) : this.textures.exists(NPC_BODY_OF[s.tex] ?? "") ? NPC_BODY_OF[s.tex] : s.tex;
     this.add.ellipse(px, py + 40 * 0.62, 44, 14, 0x000000, 0.55)
       .setDepth(this.yDepthFor(py) - 0.5);
     this.fieldNpcPortrait = bodyTex2;
-    const img = this.add.image(px, py, bodyTex2).setDepth(this.yDepthFor(py)).setScale(0.62);
-    this.tweens.add({ targets: img, y: py - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    const img = hasCast ? createCastSprite(this, cast.id, px, py + 24)!
+      : this.add.image(px, py, bodyTex2).setScale(0.62);
+    img.setDepth(this.yDepthFor(py));
+    if (!hasCast) this.tweens.add({ targets: img, y: py - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.add
       .text(px, py - 34, s.name, {
         fontFamily: "Galmuri11, sans-serif",
@@ -9473,6 +9513,15 @@ export class WorldScene extends Phaser.Scene {
 
   /** v3.0.10 — 보스 조우 시네마틱: 물리 정지 + 카메라 팬(보스) + 인트로 대사 + 카메라 복귀
    *  v3.3.0 (#흑화) — 전체 try/catch: 시네마틱 도중 예외로 physics 정지가 누출되는 것 차단 */
+  private bossIntroActor: Phaser.GameObjects.Sprite | null = null;
+  private bossIntroHidden: { boss: Boss; visible: boolean } | null = null;
+
+  private clearBossIntroActor() {
+    this.bossIntroActor?.destroy(); this.bossIntroActor = null;
+    if (this.bossIntroHidden?.boss.active) this.bossIntroHidden.boss.setVisible(this.bossIntroHidden.visible);
+    this.bossIntroHidden = null;
+  }
+
   private bossIntroCinematic(bx: number, by: number, introId: string) {
     try {
       /* v1.0.10 (#보스카메라 버그) — 이미 본 인트로 대사면 카메라 우회를 아예 하지 않는다.
@@ -9480,6 +9529,22 @@ export class WorldScene extends Phaser.Scene {
        *  반복 — 대사 없는 카메라 왕복이 “보스를 잠깐 가리키고 플레이어를 바라보는 버그”로 인식됨.
        *  신규: 첫 조우(미본 대사)에만 시네마틱, 이후는 배너·포효·진동만으로 즉시 전투 개시. */
       if (!DIALOGUES[introId] || this.seenSet.has(introId)) return;
+      this.clearBossIntroActor();
+      const who = cutsceneCharacter(DIALOGUES[introId].speaker);
+      if (who) {
+        const isBoss = ["harold", "veronica", "feron", "scarlet"].includes(who.id);
+        const p = this.cutsceneActorPosition({ x: bx + (isBoss ? 0 : -64), y: by });
+        this.bossIntroActor = createCastSprite(this, who.id, p.x, p.y)?.setDepth(this.yDepthFor(p.y) + 1) ?? null;
+        if (this.bossIntroActor) {
+          this.bossIntroActor.play(castAnimation(who.id, "talk"));
+          // Human conversation form; the existing battle/kraken form resumes after the dialogue.
+          if (isBoss && this.boss?.active) {
+            this.bossIntroHidden = { boss: this.boss, visible: this.boss.visible };
+            this.boss.setVisible(false);
+          }
+        }
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.clearBossIntroActor, this);
+      }
       const cam = this.cameras.main;
       this.dialoguing = true;
       this.dialogueSince = this.time.now; // v3.3.0 — 붙임 자가치유 기준
@@ -9519,6 +9584,7 @@ export class WorldScene extends Phaser.Scene {
         }
       });
     } catch (err) {
+      this.clearBossIntroActor();
       console.error("[SERTZ] 보스 인트로 시네마틱 실패 — 즉시 복구", err);
       this.bossIntroPending = false;
       this.dialoguing = false;
@@ -9529,6 +9595,7 @@ export class WorldScene extends Phaser.Scene {
   /** v1.0.2 (#보스컷씬) — 인트로 종료 후 플레이어 시점 복귀(순간이동 아닌 보간 팬).
    *  대사 종료·20초 자가치유·이미 본 대사 홀드 종료 3경로에서 모두 호출되어 상태 정합 보장 */
   private restoreBossIntroCam() {
+    this.clearBossIntroActor();
     if (!this.bossIntroPending) return;
     this.bossIntroPending = false;
     try {

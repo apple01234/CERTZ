@@ -1,7 +1,6 @@
 # SERTZ — Third-party Asset Credits
 
-이 게임의 그래픽/오디오 에셋은 아래 무료 에셋 팩에서 추출/가공하여 사용했습니다.
-(자체 절차 생성 에셋 없음 — 전부 외부 실제 에셋)
+이 게임은 아래 외부 에셋과 출처를 명시한 게임 전용 생성 에셋을 사용합니다.
 
 ## 그래픽
 
@@ -537,3 +536,13 @@ pcface/\ | SPUM 캐릭터 부위 | 위쪽 SPUM 항목 |
   겹쳐 이식하지 않았다(약 40MB 절감). 필요 시 `tools/import_gigapack.py`로 재추출 가능.
 - **주의**: 이 팩의 PNG는 15fps 전제로 제작됐다. `tools/import_gigapack.py`가
   `meta.pixelfx.fps=15`로 기록하므로 그대로 재생하면 원작 의도 속도가 나온다.
+
+## 초상화에 맞춘 컷씬 등장인물 — cutscene-cast
+
+- **제작**: 사용자가 인물별 아틀라스 생성과 잘못된 초상화의 수정을 요청하여 `image_gen.imagegen`으로 AI 생성한 게임 전용 아트.
+- **사용 범위**: `public/assets/cutscene-cast/`의 인물별 PNG/Phaser JSON 26쌍과 같은 시트에서 추출한 초상화 26장, 총 416프레임.
+- **참조**: 기존 `npcportrait/npc_*.png`, 사용자 Drive의 `npcportrait/dxp_*.png`, 기존 레지스터 역의 `chf5_idle0.webp`. 원본 참조 자료의 출처 기록은 위 항목을 유지한다.
+- **기획 근거**: 지정된 `evernote-approved/1.txt`~`8.txt`의 우선순위. 인물별 근거·기존 안내 NPC 여부·외모 미지정 부분은 `manifest.json`에 구분해 기록했다.
+- **수정**: 아리의 성별과 검, 벨리카의 여성 궁수·우편배달 외형, 하루의 강철 카타나, 해롤드의 무기 없음, 베로니카의 저주 지팡이. 라일락 본인과 연합 기록자의 신원을 분리했다.
+- **가공**: `scripts/build-cutscene-cast.py`는 생성 시트를 자르고 알파·발 기준점·규격을 맞춘다. 새 자세를 코드로 그리거나 정지 이미지를 걷기라고 복제하지 않는다.
+- **생성 기록**: `scripts/cutscene-cast-sources.json`의 프롬프트·원본 파일명과 각 atlas JSON의 원본 SHA-256. 구동 시 생성 서비스나 외부 URL에 의존하지 않는다.

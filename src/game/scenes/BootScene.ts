@@ -8,6 +8,7 @@ import { CORE_BODY_PREFIXES } from "../data";
 import { loadMapOverrides } from "../mapOverrides"; // vc258 — 에디터 저장 맵
 import { BGM_PRELOAD_TRACKS, SKILL_SFX_TRACKS } from "../audio";
 import { hookLoaderForGuard, runTexGuardCycle, getTexGuardStats, installEngineFrameGuard } from "../texGuard";
+import { preloadCutsceneCast, registerCutsceneCast } from "../fx/cutsceneActors";
 
 /**
  * 외부 에셋 로드 (public/assets/)
@@ -735,6 +736,7 @@ export class BootScene extends Phaser.Scene {
      *  p2/p3 은 로드하지 않는다 — 참조하는 코드가 0곳이라 180프레임이 버려지고 있었다.
      *  아트는 `public/assets/fa/p2·p3` 에 남아 있고, 캐릭터 선택에 붙일 때 로드하면 된다. */
     this.load.atlas("fa_p1", "fa/p1.png", "fa/p1.json");
+    preloadCutsceneCast(this);
     /* vc239 — PixelLab 생성 에셋 (지시 #2·#12).
      *  · VFX 3종: 성광 심판 / 공허 붕괴 / 조류 파도 — Phaser 아틀라스(프레임 다수).
      *  경로를 `vc239/` 하위 폴더로 분리해 기존 팩과 섞이지 않게 한다.
@@ -995,6 +997,7 @@ export class BootScene extends Phaser.Scene {
     this.bootUi?.destroy();
     this.bootUi = undefined;
     buildAllAnims(this);
+    registerCutsceneCast(this);
     /* vc140 — 보스 화질 복구 2차(엔진 측): pixelArt:true(antialias:false)는 모든 텍스처를
      *  NEAREST(1)로 업로드한다 — 그림체 고해상 보스 아트가 카메라 줌(1.25~2.5배) 확대 시
      *  계단 픽셀·격자 뭉개짐이 됐다("보스 화질 ㅈ구림"의 엔진 측 근본 원인).

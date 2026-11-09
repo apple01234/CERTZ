@@ -2,7 +2,7 @@ import { HOWLRSTONE_CHAPTERS } from "./howlrstone";
 import type { RoomLayout } from "./mapgen";
 import { overrideToLayout } from "./mapOverrides";
 
-export type AuthoredTheme = "library" | "coast" | "grove" | "citadel" | "town" | "ruins" | "conduit" | "arena";
+export type AuthoredTheme = "library" | "cliff" | "coast" | "grove" | "citadel" | "town" | "ruins" | "conduit" | "arena";
 export type AuthoredPresentation = {
   theme: AuthoredTheme;
   /** Walkable route surface; never a second collision definition. */
@@ -20,6 +20,7 @@ export type AuthoredPresentation = {
 
 const THEMES: Record<AuthoredTheme, Pick<AuthoredPresentation, "ground" | "path" | "structure" | "structureTint">> = {
   library: { ground: "ground_ash", path: "ground_slate", structure: "ground_cavern", structureTint: 0x967958 },
+  cliff: { ground: "ground_meadow", path: "ground_dirt", structure: "ground_slate", structureTint: 0x788474 },
   coast: { ground: "ground_sand", path: "ground_dirt", structure: "ground_slate", structureTint: 0x467d9a },
   grove: { ground: "ground_meadow", path: "ground_dirt", structure: "ground_forest", structureTint: 0x64855a },
   citadel: { ground: "ground_ash", path: "ground_violet", structure: "ground_slate", structureTint: 0x807891 },
@@ -77,7 +78,8 @@ export function authoredRoomLayout(seed: string, mapW: number, mapH: number): Ro
     const chapter = Number(story[1]), sub = Number(story[2]);
     const spec = HOWLRSTONE_CHAPTERS.find((item) => item.key === `howlrstone${chapter}`);
     if (!spec || sub < 1 || sub > spec.stages) return null;
-    theme = spec.boss && sub === spec.stages ? "arena" : CHAPTER_THEMES[chapter - 1];
+    // 1.txt:5-18: Lilac rescues the young Haru at a cliff, before the later castle scenes.
+    theme = chapter === 1 && sub === 1 ? "cliff" : spec.boss && sub === spec.stages ? "arena" : CHAPTER_THEMES[chapter - 1];
     variant = sub;
   } else if (planet && PLANET_THEMES[planet[1]]) {
     variant = Number(planet[2]);
@@ -113,7 +115,12 @@ export function authoredRoomLayout(seed: string, mapW: number, mapH: number): Ro
   };
   const mark = (kind: string, x: number, y: number) => landmarks.push({ kind, cell: y * cols + x });
 
-  if (theme === "library") {
+  if (theme === "cliff") {
+    // A broad ledge above an unwalkable rock face; the existing entry/exit route stays connected.
+    route([[1, mid], [left, mid], [right, mid], [cols - 3, mid]]);
+    rect(left - 1, Math.max(1, mid - 2), right + 1, mid + 1);
+    mark("cliff", right, mid + 1);
+  } else if (theme === "library") {
     // Reading rooms above/below a spine, with solid stack islands between aisles.
     route([[1, mid], [cols - 3, mid]]);
     for (let x = 2; x <= cols - 4; x += 4) {

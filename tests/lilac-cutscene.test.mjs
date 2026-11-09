@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { LILAC_SCENARIOS, LILAC_CHAPTER_MAP, lilacScenarioIdAt } from "../src/game/lilacScenarios.ts";
 import { HOWLRSTONE_CHAPTERS } from "../src/game/howlrstone.ts";
 import { chapterIntroOf, resolveChapterIntroShots } from "../src/game/storyCutscenes.ts";
+import { cutsceneCharacter, castTexture } from "../src/game/cutsceneCast.ts";
 
 let checks = 0;
 const ok = (name, cond) => { assert.ok(cond, name); checks++; };
@@ -12,7 +13,7 @@ const ids = Object.keys(LILAC_SCENARIOS);
 ok("시나리오 16편", ids.length === 16);
 
 /* vc279 (P7c) — "choice" 추가: 중심 질문에 플레이어가 답하는 스텝. */
-const VALID = new Set(["cam","enter","exit","move","say","wait","flash","fade","shake","choice"]);
+const VALID = new Set(["cam","enter","exit","move","pose","say","wait","flash","fade","shake","choice"]);
 for (const id of ids) {
   const s = LILAC_SCENARIOS[id];
   ok(`${id}: id 일치`, s.id === id);
@@ -70,7 +71,9 @@ ok("개정판 펜던트", opening.some((step) => step.lines.some((line) => line.
 ok("구판 스칼렛 구조자 아님", !opening.some((step) => step.speaker === "스칼렛"));
 for (const scenario of Object.values(LILAC_SCENARIOS)) {
   for (const step of scenario.steps.filter((step) => step.t === "enter")) {
-    ok(`${scenario.id}: 부팅 기본 몸체`, /^ch[mf][0-5]_idle0$/.test(step.actor.tex));
+    const c = cutsceneCharacter(step.actor.character);
+    ok(`${scenario.id}: 인물별 전용 아틀라스`, c && step.actor.tex === castTexture(c.id));
+    ok(`${scenario.id}: 초상과 같은 인물`, step.actor.frame === "idle-down-0");
   }
 }
 for (const chapter of HOWLRSTONE_CHAPTERS) {

@@ -60,7 +60,7 @@ test('all 65 story rooms and 100 planet fields have one connected, protected rou
 });
 
 test('story geography has distinct authored structures and no changes to feature maps', () => {
-  const expected = { howlrstone1x1: 'library', howlrstone3x1: 'coast', howlrstone6x1: 'grove', howlrstone10x1: 'citadel' };
+  const expected = { howlrstone1x1: 'cliff', howlrstone3x1: 'coast', howlrstone6x1: 'grove', howlrstone10x1: 'citadel' };
   const masks = [];
   for (const [key, theme] of Object.entries(expected)) {
     const lay = authoredRoomLayout(key, 2400, 1280);
@@ -68,6 +68,10 @@ test('story geography has distinct authored structures and no changes to feature
     masks.push(lay.open.join(','));
   }
   assert.equal(new Set(masks).size, 4);
+  const cliff = authoredRoomLayout('howlrstone1x1', 2400, 1280);
+  assert.ok(cliff.authored.landmarks.some((p) => p.kind === 'cliff'));
+  assert.equal(cliff.authored.ground, 'ground_meadow');
+  assert.equal(authoredRoomLayout('howlrstone1x2', 2400, 1280).authored.theme, 'library', 'later castle/library fields remain intact');
   const citadel = authoredRoomLayout('howlrstone10x2', 2400, 1280);
   assert.deepEqual(citadel.authored.landmarks.map(x => x.kind), ['gate-water','gate-wind','gate-lightning','gate-fire']);
   assert.equal(citadel.open[citadel.cols + 6], false, 'gate rooms retain walls between their north entrances');

@@ -332,7 +332,9 @@ export default function GameRoot() {
 
         {/* 인트로 이름 짓기 패널 */}
         <NamePanel />
-        <FeatureTutorialOverlay />
+        <div className={cinematic ? "hidden" : "contents"}>
+          <FeatureTutorialOverlay />
+        </div>
 
         <GamePanels panel={panel} rpg={rpg} hud={hud} questLog={questLog} onClose={() => { audio.sfx.uiClose(); setPanel(null); }} />
 

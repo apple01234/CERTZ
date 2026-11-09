@@ -7,6 +7,7 @@ import { BOSS_DEFS } from "@/game/data";
 import { BOSS_ATLAS } from "@/game/textures"; // v1.4.31 — 보스 아틀라스 초상화 분기
 import * as audio from "@/game/audio"; // v1.4.8 — 대화 진행 클릭음
 import portraitCrops from "../../../public/assets/npcportrait/_map.json";
+import { castPortrait, cutsceneCharacter } from "@/game/cutsceneCast";
 
 /**
  * 대화창: 타이프라이터 + 스페이스/엔터·탭으로 진행, 마지막 줄 완료 시 게임 재개.
@@ -99,6 +100,8 @@ function bossPortraitKey(tex: string): string {
 }
 
 function portraitOf(speaker: string, portraitId?: string): { tex: string; tone: string } | null {
+  const cast = cutsceneCharacter(portraitId ?? speaker);
+  if (cast) return { tex: `cast_${cast.id}`, tone: "#c9b3ff" };
   /* v1.0.2 (#초상화) — portraitId 명시 > 화자명 직접 매핑 > 보스 토큰 자동 매칭 순 */
   if (portraitId) {
     if (NPC_PORTRAITS[portraitId]) return NPC_PORTRAITS[portraitId];
@@ -129,6 +132,8 @@ function portraitOf(speaker: string, portraitId?: string): { tex: string; tone: 
  *  주면서 `_map.json` 키와 일치하지 않는 경우가 있어(예: "아리" vs "npc_ari") 매칭이 깨졌다.
  *  여기서 `npc_<key>` 형태를 직접 조회해 경로를 확정한다. */
 function faceFor(tex: string): string | null {
+  const cast = cutsceneCharacter(tex);
+  if (cast) return castPortrait(cast.id);
   const crops: Record<string, { src: string }> = portraitCrops;
   const direct = crops[tex]?.src;
   /* vc290 — "/npc_" 하드코딩은 dxp_* 를 배제했다. 디렉터리 기준으로 판정. */

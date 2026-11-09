@@ -1,17 +1,16 @@
-/** Existing-map direction, using Boot-preloaded body frames only. Story precedence:
+/** Existing-map direction, using portrait-matched character atlases. Story precedence:
  * evernote-approved/1 (Lilac + pendant), 2 (Haru's journey), 3/4 (abilities),
  * 5 (reconstruction), 6/7/8 (world links). No standalone campaign plot is imported. */
 import type { CutStep } from "./fx/AutoCutscene";
+import { castActor, cutsceneCharacter } from "./cutsceneCast";
 
 export type LilacScenario = { id: string; chapter: number; title: string; steps: CutStep[] };
 
 const BODY = {
-  haru: "chm0", lilac: "chf2", dio: "chm3", riel: "chm4", vellica: "chf1",
-  cartel: "chm1", lucy: "chf3", ari: "chf0", feron: "chm5", scarlet: "chf4", register: "chf5",
+  haru: "haru", lilac: "lilac", riel: "riel", vellica: "vellica",
+  cartel: "cartel", lucy: "lucy", ari: "ari", feron: "feron", scarlet: "scarlet", register: "register",
 } as const;
-const actor = (body: string, x = -34, y = 0) => ({
-  tex: `${body}_idle0`, anim: `${body}-idle`, anchor: "feature" as const, x, y, fadeIn: true,
-});
+const actor = castActor;
 const cam = (focus: string, zoom: number, panMs = 780): CutStep => ({ t: "cam", focus, rx: 0.5, ry: 0.5, zoom, panMs });
 const say = (speaker: string, ...lines: string[]): CutStep => ({ t: "say", speaker, lines });
 const exit = (id: string): CutStep => ({ t: "exit", id, ms: 160 });
@@ -37,7 +36,7 @@ export const LILAC_SCENARIOS: Record<string, LilacScenario> = {
     steps: [
       cam("entry", 0.82, 520),
       say("하루 · 회상", "그날 절벽에서 나를 구해 준 사람의 이름은 라일락이었다."),
-      { t: "enter", id: "haru", actor: actor(BODY.haru, -42, 22) },
+      { t: "enter", id: "haru", actor: { ...actor(BODY.haru, -42, 22), scale: 0.46 } },
       cam("feature", 0.9, 1050),
       { t: "enter", id: "lilac", actor: actor(BODY.lilac, 54, 0) },
       { t: "move", id: "lilac", anchor: "feature", rx: 5, ry: 8, ms: 850 },
@@ -82,7 +81,7 @@ export const LILAC_SCENARIOS: Record<string, LilacScenario> = {
   ], [{ t: "flash", color: 0xffedbf, ms: 180 }]),
 
   /* 비트 4(촉매제) — 이웃 부부의 죽음, 반란군 대장의 구조. */
-  lilac02: directed("lilac02", 2, "돌아보아야 할 사람들", BODY.register, "레지스터", [
+  lilac02: directed("lilac02", 2, "돌아보아야 할 사람들", BODY.register, "하루", [
     "나를 키워 준 이웃이 어둠의 피조물에게 죽는 걸 눈앞에서 봤다.",
     "피조물에게 덤볐지만 손끝 하나 닿지 못했어. 나약했다.",
   ], [
@@ -94,7 +93,7 @@ export const LILAC_SCENARIOS: Record<string, LilacScenario> = {
   ]),
 
   /* 비트 6 — 칼리야로 가는 길, 탈진, 도깨비, 리엘의 구조. */
-  lilac03: directed("lilac03", 3, "칼리야의 수련", BODY.riel, "리엘", [
+  lilac03: directed("lilac03", 3, "칼리야의 수련", BODY.riel, "하루", [
     "칼리야까지 걸어오다 언덕에서 쓰러졌다. 도깨비들이 내 몸을 뒤지던 순간이 마지막 기억이다.",
     "눈을 떴을 땐 주막이었고, 나를 업고 온 사람이 있었다.",
   ], [
@@ -109,7 +108,7 @@ export const LILAC_SCENARIOS: Record<string, LilacScenario> = {
   ]),
 
   /* 비트 8 앞 — 에벤트로 가는 길, 벨리카와 동행. */
-  lilac04: directed("lilac04", 4, "천문대로 향하는 길", BODY.vellica, "벨리카", [
+  lilac04: directed("lilac04", 4, "천문대로 향하는 길", BODY.vellica, "하루", [
     "에벤트로 가는 길을 잃고 헤매고 있었다.",
     "대공립천문대에서 일을 마치고 돌아오던 사람이 먼저 말을 걸어왔다.",
   ], [
@@ -120,7 +119,7 @@ export const LILAC_SCENARIOS: Record<string, LilacScenario> = {
   ]),
 
   /* 비트 9.X 앞 — 스칼렛의 전쟁 선포, 남부 침공 3일. */
-  lilac05: directed("lilac05", 5, "석양으로 물든 바다", BODY.cartel, "카르텔", [
+  lilac05: directed("lilac05", 5, "석양으로 물든 바다", BODY.cartel, "하루", [
     "스칼렛이 모든 왕국에 전쟁을 선포했다. 3일 뒤 남부 지방을 침공한다고 했다.",
     "에벤트는 벨리카와 나를 대공립천문대로 보냈다. 나머지는 침공에 대비했다.",
   ], [
@@ -155,12 +154,12 @@ export const LILAC_SCENARIOS: Record<string, LilacScenario> = {
   ]),
 
   /* 비트 11 후반 — 아리와 페르온, 라일락의 진실. */
-  lilac08: directed("lilac08", 8, "아리와 페르온", BODY.ari, "아리", [
+  lilac08: directed("lilac08", 8, "아리와 페르온", BODY.ari, "하루", [
     "에벤트에는 두 용사의 싸움이 계속되고 있었다. 근위대장 아리와 암흑의 그림자 페르온.",
     "둘은 과거 같은 왕국의 기사 단장과 근위 대장이었다.",
   ], [
     say("아리", "이 펜던트, 기억하지? 라일락이 남긴 것이야."),
-    say("아리", "라일락은 내 어린 동생이자 기사단의 유능한 기사였어. 그리고 네 연인이었지."),
+    say("아리", "라일락은 내 여동생이자 기사단의 유능한 기사였어. 그리고 페르온의 연인이었지."),
     { t: "enter", id: "feron", actor: actor(BODY.feron, 38) },
     cam("feron", 1.4, 520),
     say("페르온", "라일락……."),
@@ -171,7 +170,7 @@ export const LILAC_SCENARIOS: Record<string, LilacScenario> = {
   ]),
 
   /* 비트 12 전반 — 연합의 총공격, 어둠의 성채 진입. */
-  lilac09: directed("lilac09", 9, "다시 모인 연합", BODY.riel, "리엘", [
+  lilac09: directed("lilac09", 9, "다시 모인 연합", BODY.riel, "하루", [
     "연합이 어둠의 성채로 진입했다. 최상층까지 가려면 군단장들의 사념체를 모두 상대하거나 지하통로를 써야 했다.",
     "반란군이 비밀 통로를 이미 확보해 두었다. 하지만 그건 스칼렛의 함정이었다.",
   ], [
@@ -182,7 +181,7 @@ export const LILAC_SCENARIOS: Record<string, LilacScenario> = {
   ]),
 
   /* 비트 12 중반 — 함정, 반란군의 희생, 최상층 도달. */
-  lilac10: directed("lilac10", 10, "성채의 비밀 통로", BODY.register, "시스터즈", [
+  lilac10: directed("lilac10", 10, "성채의 비밀 통로", BODY.register, "하루", [
     "통로는 함정이었다. 문이 닫히고 사념체들이 몰려왔다.",
     "반란군이 우리 대신 길을 막아섰다. 그렇게 우리는 최상층에 닿았다.",
   ], [
@@ -193,7 +192,7 @@ export const LILAC_SCENARIOS: Record<string, LilacScenario> = {
   ]),
 
   /* 비트 12 후반 — 15대 1, 피의 영역. */
-  lilac11: directed("lilac11", 11, "피의 영역", BODY.scarlet, "연합", [
+  lilac11: directed("lilac11", 11, "피의 영역", BODY.scarlet, "하루", [
     "최상층에서 열다섯 명이 하나를 둘러쌌다. 그런데 밀리는 쪽은 우리였다.",
     "원소 공격이 스칼렛에게 닿는 순간 흡수돼 사라졌다.",
   ], [
@@ -216,29 +215,28 @@ export const LILAC_SCENARIOS: Record<string, LilacScenario> = {
   ]),
 
   /* 정본 14 — 페르온의 마지막 영역. */
-  lilac13: directed("lilac13", 13, "붙잡아야 할 일 분", BODY.feron, "페르온", [
-    "페르온이 스칼렛의 편에서 돌아섰다. 그리고 마지막 영역을 펼쳤다.",
-    "그 힘은 상처를 주는 대신 저자를 가두는 것이었다.",
+  lilac13: directed("lilac13", 13, "붙잡아야 할 일 분", BODY.feron, "하루", [
+    "페르온이 스칼렛을 붙잡겠다고 나섰다. 루시는 마지막 자연의 힘을 응축할 준비를 했다.",
+    "스칼렛이 루시에게 접근한 순간, 페르온이 영역을 펼쳐 그녀를 가뒀다.",
   ], [
-    say("페르온", "일 분은 확실하게 잡아둘 수 있다. 내 영역은 상처를 주는 대신 저자를 가둘 거다."),
+    say("페르온", "일 분은 확실하게 잡아둘 수 있다. 내 영역 안에 스칼렛을 가둘 거다."),
     say("페르온", "라일락이 지키려던 것을 이번엔 내가 지킨다."),
     say("페르온", "그 사이에 준비해. 우리가 지키려는 것은 아직 끝나지 않았어."),
   ]),
 
   /* 정본 15 — 리엘과 데스크니스, 무의 원소(에테르). */
-  lilac14: directed("lilac14", 14, "시간의 힘", BODY.riel, "리엘", [
-    "어둠에 잠식된 세계에서 리엘이 데스크니스와 마주했다.",
+  lilac14: directed("lilac14", 14, "무의 원소와 시간의 힘", BODY.haru, "하루", [
+    "어둠에 잠식된 세계에서 나의 내면을 돌아보았다.",
     "빛으로는 어둠을 없앨 수 없다. 빛은 어둠을 밝힐 뿐이다.",
   ], [
-    say("리엘", "되도록이면 이 힘을 쓰지 않으려고 했는데……."),
-    say("리엘", "시간과 생명과 빛이 있는 한, 다시 돌릴 수 있어."),
-    /* 정본 15: "어둠을 없애는 건 빛이 아니다 …… 모든 것을 무(無)로 돌리는 태초의 힘, 그것이 무의 원소(에테르)" */
-    say("리엘", "어둠을 없애는 건 빛이 아니다. 어둠이 사라지기 위해선 어둠조차 없으면 된다."),
-    say("리엘", "모든 것을 무로 돌리는 태초의 힘. 그것이 무의 원소, 에테르다."),
+    /* 2.txt:289-301 takes precedence over the older 5.txt ending: Haru discovers Ether, Riel resolves the time lines. */
+    say("하루", "어둠을 없애는 건 빛이 아니다. 어둠이 사라지기 위해선 어둠조차 없으면 된다."),
+    say("하루", "모든 것을 무로 돌리는 태초의 힘. 그것이 무의 원소, 에테르다."),
+    say("리엘", "왜 돌려? 재미없게.", "사태 수습하기 귀찮으니까 빨리 끝내자?"),
   ]),
 
   lilac15: directed("lilac15", 15, "끝이 아닌 새로운 시작", BODY.haru, "이야기꾼", [
-    "파괴된 것들이 돌아와도 함께한 시간과 추억까지 지워지지는 않았다.",
+    "잠식된 세계와 흡수된 사람들은 돌아왔다. 하지만 전쟁으로 죽은 사람들과 파괴된 곳까지 돌아오지는 않았다.",
     "라일락 연합은 재건을 시작했다. 세르니움에서 온 연락은 그랜드 플레닛으로 이어질 다음 여정의 시작이었다.",
   ], [
     /* ═══ vc279 (P7c) — 첫 선택을 마지막에 **회수**한다 ═══
@@ -264,6 +262,69 @@ export const LILAC_SCENARIOS: Record<string, LilacScenario> = {
     },
   ]),
 };
+
+/** Stage the actual speaker, not a shared chm/chf stand-in. Narration never resurrects a character. */
+export function stageLilacCast(scenario: LilacScenario): CutStep[] {
+  const output: CutStep[] = [];
+  const present = new Map<string, string>();
+  const added = new Set<string>();
+  const slots = [{ x: -62, y: 20 }, { x: 56, y: 16 }, { x: -42, y: 62 }, { x: 44, y: 62 }];
+  let slot = 0;
+  const enter = (character: string): string => {
+    const existing = present.get(character);
+    if (existing) return existing;
+    const id = `cast:${character}`;
+    const staging: Record<string, { x: number; y: number }> = scenario.id === "lilac13"
+      ? { scarlet: { x: 62, y: 0 }, lucy: { x: -60, y: 54 }, haru: { x: -24, y: 82 } } : {};
+    const p = staging[character] ?? slots[slot++ % slots.length];
+    output.push({ t: "enter", id, actor: actor(character, p.x, p.y) });
+    present.set(character, id); added.add(id);
+    if (scenario.id === "lilac06" && character === "haru") output.push({ t: "move", id, anchor: "feature", rx: -20, ry: 38, ms: 480 });
+    return id;
+  };
+  for (const step of scenario.steps) {
+    // Lucy cannot walk off her injury pose; Haru approaches her instead.
+    if (scenario.id === "lilac06" && step.t === "move" && step.id === "lead") continue;
+    if (step.t === "enter" && step.actor.character) {
+      present.set(step.actor.character, step.id);
+      output.push(step);
+      if (scenario.id === "lilac06" && step.actor.character === "lucy") output.push({ t: "pose", id: step.id, pose: "hurt" });
+      continue;
+    }
+    if (step.t === "exit") {
+      for (const [who, id] of present) if (id === step.id) present.delete(who);
+      output.push(step); continue;
+    }
+    // These two are present in the source's one-minute trap: Lucy prepares, Feron holds Scarlet.
+    if (scenario.id === "lilac13" && step.t === "say" && !present.has("scarlet")) {
+      const scarlet = enter("scarlet");
+      output.push({ t: "pose", id: scarlet, pose: "ready" });
+      enter("lucy");
+    }
+    if (step.t === "say" && !step.speaker.includes("회상")) {
+      const who = cutsceneCharacter(step.speaker);
+      if (who) {
+        const id = enter(who.id);
+        const reaching = (scenario.id === "lilac00" && who.id === "lilac" && step.lines.some((l) => l.includes("펜던트")))
+          || (scenario.id === "lilac06" && who.id === "haru" && step.lines.some((l) => l.includes("흡수해")));
+        const ready = (scenario.id === "lilac07" && (who.id === "rasion" || step.lines.some((l) => l.includes("뇌전일섬"))))
+          || (scenario.id === "lilac11" && who.id === "scarlet") || (scenario.id === "lilac13" && who.id === "feron");
+        if (reaching || ready) output.push({ t: "pose", id, pose: reaching ? "reach" : "ready" });
+        output.push(cam(id, scenario.id === "lilac13" ? 1.18 : 1.35, 320), { ...step, actor: id });
+        if (reaching) output.push({ t: "pose", id, pose: "idle" });
+        continue;
+      }
+    }
+    if (step.t === "cam" && step.focus === "player") {
+      for (const id of added) output.push(exit(id));
+      added.clear();
+    }
+    output.push(step);
+  }
+  for (const id of added) output.push(exit(id));
+  return output;
+}
+for (const scenario of Object.values(LILAC_SCENARIOS)) scenario.steps = stageLilacCast(scenario);
 
 export type LilacPlacement = { sub: number; id: string };
 /** 15 chapters have 4–5 real fields. Never schedule scenes at nonexistent sub9/10. */

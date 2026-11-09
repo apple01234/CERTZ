@@ -1,5 +1,7 @@
 import type Phaser from "phaser";
 import { beginSceneCinematic, sceneCinematicPlaying, type CinematicEnd } from "./sceneCinematic";
+import { createCastSprite } from "./cutsceneActors";
+import { castAnimation } from "../cutsceneCast";
 
 export type StoryShot = {
   x: number;
@@ -9,6 +11,7 @@ export type StoryShot = {
   dialogue?: string;
   /** Multiplier of the scene's base zoom. */
   zoom?: number;
+  actor?: { character: string; x: number; y: number };
 };
 export type StoryCutsceneOpts = {
   shots: StoryShot[];
@@ -36,17 +39,22 @@ export function playStoryCutscene(scene: Phaser.Scene, opts: StoryCutsceneOpts):
     if (reason === "complete") for (const key of dialogueKeys) opts.showDialogue?.(key);
   });
   if (!session) return false;
+  let actor: Phaser.GameObjects.Sprite | null = null;
+  session.own(() => { actor?.destroy(); actor = null; });
   let index = 0;
   const next = () => {
     if (!session.active) return;
     const shot = shots[index++];
     if (!shot) { session.finish(); return; }
+    actor?.destroy(); actor = null;
+    if (shot.actor) actor = createCastSprite(scene, shot.actor.character, shot.actor.x, shot.actor.y)?.setDepth(50) ?? null;
     if (shot.dialogue && !opts.playDialogue) dialogueKeys.add(shot.dialogue);
     /* 컷 하나(이동 + 감상/대사 대기)가 멈춰 있으면 끝내는 idle 워치독. 종전 '전체 길이' 합산은
      *  키 대기가 늘어난 뒤 느린 독자를 중간에 끊을 수 있었다. */
     session.watch((shot.panMs ?? 700) + Math.max(2600, (shot.holdMs ?? 450) * 6) + 1500);
     session.pan(shot.x, shot.y, Math.max(120, shot.panMs ?? 700), shot.zoom, () => {
       if (shot.dialogue && opts.playDialogue) {
+        if (shot.actor && actor) actor.play(castAnimation(shot.actor.character, "talk"));
         let settled = false;
         const cancel = opts.playDialogue(shot.dialogue, () => { if (!settled) { settled = true; next(); } });
         if (cancel) {

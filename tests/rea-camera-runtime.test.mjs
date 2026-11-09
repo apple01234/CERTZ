@@ -30,16 +30,17 @@ const BARE_MODULE = new Set(['phaser', 'node:events', 'events']);
 function load(relative) {
   const file = path.resolve(relative);
   if (cache.has(file)) return cache.get(file).exports;
+  if (file.endsWith('.json')) return JSON.parse(fs.readFileSync(file, 'utf8'));
   const module = { exports: {} };
   cache.set(file, module);
   const js = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, esModuleInterop: true },
   }).outputText;
   vm.runInNewContext(`(function(require,module,exports){${js}\n})`, { console, Map, Set, WeakMap })(
     (name) => {
       if (name === 'phaser') return { __esModule: true, default: PHASER_STUB, ...PHASER_STUB };
       if (BARE_MODULE.has(name) || !name.startsWith('.')) return {};
-      return load(path.resolve(path.dirname(file), `${name}.ts`));
+      return load(path.resolve(path.dirname(file), name.endsWith('.json') ? name : `${name}.ts`));
     },
     module, module.exports,
   );
@@ -49,6 +50,18 @@ const { playAutoCutscene, autoCutscenePlaying } = load('src/game/fx/AutoCutscene
 const { playStoryCutscene, storyCutscenePlaying } = load('src/game/fx/StoryCutscene.ts');
 const { sceneCinematicPlaying } = load('src/game/fx/sceneCinematic.ts');
 const { LILAC_SCENARIOS } = load('src/game/lilacScenarios.ts');
+
+test('cinematics hide obstructing portal art and restore exact visibility on skip', () => {
+  const fake = fakeScene();
+  const shown = { active: true, visible: true, setVisible(v) { this.visible = v; } };
+  const hidden = { active: true, visible: false, setVisible(v) { this.visible = v; } };
+  fake.scene.cinematicObstructions = () => [shown, hidden];
+  playStoryCutscene(fake.scene, { shots: [{ x: 200, y: 200, holdMs: 5000 }] });
+  assert.equal(shown.visible, false);
+  fake.scene.input.keyboard.emit('keydown-ESC');
+  assert.equal(shown.visible, true); assert.equal(hidden.visible, false);
+  assertReleased(fake);
+});
 
 function fakeScene({ paused = false, cameraSignals = true } = {}) {
   let now = 0;
@@ -116,7 +129,8 @@ function fakeScene({ paused = false, cameraSignals = true } = {}) {
     /* vc242 — waitForKey 가 scene.time.now 로 최소 감상 시간을 판정한다.
      *  종전 스텁엔 delayedCall 만 있어 now 가 undefined 였고, 키 입력이 항상 무시됐다. */
     time: { delayedCall, get now() { return now; } },
-    textures: { exists: (key) => /^ch[mf]\d_idle0$/.test(key) }, anims: { exists: (key) => /^ch[mf]\d-/.test(key) },
+    textures: { exists: (key) => /^ch[mf]\d_idle0$/.test(key) || /^cast_[a-z_]+$/.test(key) },
+    anims: { exists: (key) => /^ch[mf]\d-/.test(key) || /^cast_[a-z_]+-/.test(key) },
     add: {
       rectangle: (x, y) => object('rectangle', x, y), text: (x, y, text) => object('text', x, y).setText(text),
       sprite: (x, y, tex) => object('sprite', x, y, tex), graphics: () => object('graphics'),

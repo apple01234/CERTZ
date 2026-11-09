@@ -37,6 +37,7 @@ export type AuthoredMapRender = {
  *  바닥 위에서 윤곽이 사라졌다(픽셀 검사로 확인). 그래서 테마별로 **밝거나 큰**
  *  소품을 고른다 — torch(불꽃 192px), sign/chest(짙은 대비), bush(7024px) 등. */
 const EDGE_PROP: Record<string, { key: string; scale: number }[]> = {
+  cliff: [],
   library: [{ key: "obj_dungeon_torch", scale: 1.4 }, { key: "obj_dungeon_chest", scale: 1 }],
   coast: [{ key: "obj_dungeon_torch", scale: 1.4 }, { key: "obj_dungeon_carpet_v", scale: 1 }],
   grove: [{ key: "obj_forest_bush", scale: 1 }, { key: "obj_forest_bush_tall", scale: 1 }],

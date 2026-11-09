@@ -9,6 +9,7 @@ export type CinematicScene = Phaser.Scene & {
   stageW?: number;
   stageH?: number;
   player?: { x: number; y: number; active: boolean };
+  cinematicObstructions?: () => { active: boolean; visible: boolean; setVisible: (on: boolean) => unknown }[];
 };
 
 const sessions = new WeakMap<Phaser.Scene, CinematicSession>();
@@ -59,6 +60,12 @@ export class CinematicSession {
     scene.camCinema = true;
     scene.dialoguing = true;
     scene.physics?.world?.pause();
+    // Portal blooms and route labels must not cover the story actors. Restore exact prior visibility.
+    for (const object of scene.cinematicObstructions?.() ?? []) {
+      const visible = object.visible;
+      object.setVisible(false);
+      this.own(() => { if (object.active) object.setVisible(visible); });
+    }
     scene.input.keyboard?.resetKeys();
     const skip = () => this.finish("skip");
     const shutdown = () => this.finish("shutdown");

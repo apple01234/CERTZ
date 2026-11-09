@@ -1,10 +1,13 @@
 import type Phaser from "phaser";
 import { beginSceneCinematic, sceneCinematicPlaying, type CinematicEnd } from "./sceneCinematic";
+import { CAST_FRAME, castAnimation, cutsceneCharacter, type CastPose } from "../cutsceneCast";
 
 type Point = { x: number; y: number };
 export type CutAnchor = "entry" | "feature";
 export type CutActorSpec = {
   tex: string;
+  frame?: string;
+  character?: string;
   x: number;
   y: number;
   /** An anchor makes x/y pixel offsets from an actual map landmark. */
@@ -21,7 +24,9 @@ export type CutStep =
   | { t: "enter"; id: string; actor: CutActorSpec }
   | { t: "exit"; id: string; ms?: number }
   | { t: "move"; id: string; rx: number; ry: number; anchor?: CutAnchor; ms?: number }
+  | { t: "pose"; id: string; pose: CastPose }
   | { t: "say"; speaker: string; lines: string[]; holdPerChar?: number; minHold?: number;
+      actor?: string;
       /** vc279 (P7c) — 대사 치환용 flag 키. lines 안의 `{키}` 를 저장된 선택 라벨로 바꾼다.
        *  예: lines: ["나는 '{haruWho}' 라고 답했어"] + recall: "haruWho"
        *       → "나는 '두려움에 도망치는 사람' 라고 답했어"
@@ -52,6 +57,7 @@ export type AutoCutsceneSpec = {
 };
 export type AutoCutsceneOptions = {
   onFinish?: (reason: CinematicEnd) => void;
+  actorPosition?: (point: Point, occupied: readonly Point[]) => Point;
   /** 하루 v2 — 연출 대사를 게임 공용 대사창(DialogueBox)으로 재생한다(NPC 대화와 같은 창·초상화).
    *  `done` 은 플레이어가 마지막 줄을 넘겼을 때 부른다. 반환값은 취소 함수(스킵 시 대사창을 닫는다).
    *  없으면 아래 Phaser 패널로 폴백 — 씬 없이 도는 단위 테스트와 호환. */
@@ -78,7 +84,18 @@ export function playAutoCutscene(scene: Phaser.Scene, spec: AutoCutsceneSpec, on
   const cam = scene.cameras.main;
   const actors = new Map<string, Phaser.GameObjects.Sprite>();
   const actorPrefixes = new Map<string, string>();
-  session.own(() => { for (const actor of actors.values()) actor.destroy(); actors.clear(); actorPrefixes.clear(); });
+  const identities = new Map<string, string>();
+  const resting = new Map<string, CastPose>();
+  const facingLeft = new Map<string, boolean>();
+  session.own(() => { for (const actor of actors.values()) actor.destroy(); actors.clear(); actorPrefixes.clear(); identities.clear(); resting.clear(); facingLeft.clear(); });
+  const pose = (id: string, state: CastPose) => {
+    const who = identities.get(id);
+    const actor = actors.get(id);
+    if (who && actor && scene.anims.exists(castAnimation(who, state))) {
+      actor.setFlipX(state.endsWith("side") && (facingLeft.get(id) ?? false));
+      actor.play(castAnimation(who, state));
+    }
+  };
   const anchor = (key: CutAnchor): Point => spec.anchors?.[key] ?? {
     x: spec.stageW * (key === "entry" ? 0.25 : 0.7), y: spec.stageH * 0.5,
   };
@@ -124,14 +141,17 @@ export function playAutoCutscene(scene: Phaser.Scene, spec: AutoCutsceneSpec, on
         if (!scene.textures.exists(step.actor.tex)) { next(); break; }
         actors.get(step.id)?.destroy();
         const a = step.actor;
-        const p = actorPoint(a);
-        const actor = scene.add.sprite(p.x, p.y, a.tex).setName(`rea:actor:${step.id}`).setDepth(a.depth ?? 50).setOrigin(0.5, 1);
+        const target = actorPoint(a);
+        const p = opts.actorPosition?.(target, [...actors.values()]) ?? target;
+        const actor = scene.add.sprite(p.x, p.y, a.tex, a.frame).setName(`rea:actor:${step.id}`).setDepth(a.depth ?? 50)
+          .setOrigin(a.character ? CAST_FRAME.origin.x : 0.5, a.character ? CAST_FRAME.origin.y : 1);
         actor.setScale(a.scale ?? 1).setFlipX(a.flip ?? false);
         if (a.anim && scene.anims.exists(a.anim)) actor.play(a.anim);
         if (a.ratio) actor.setScrollFactor(0);
         if (a.fadeIn) { actor.setAlpha(0); session.tween({ targets: actor, alpha: 1, duration: 220 }); }
         actors.set(step.id, actor);
         actorPrefixes.set(step.id, a.tex.replace(/_idle\d+$/, ""));
+        if (a.character) { identities.set(step.id, a.character); resting.set(step.id, "idle"); }
         session.delay(a.fadeIn ? 220 : 0, next);
         break;
       }
@@ -141,28 +161,41 @@ export function playAutoCutscene(scene: Phaser.Scene, spec: AutoCutsceneSpec, on
         const ms = Math.max(0, step.ms ?? 220);
         session.tween({ targets: actor, alpha: 0, duration: ms, onComplete: () => {
           if (!session.active) return;
-          actor.destroy(); actors.delete(step.id); next();
+          actor.destroy(); actors.delete(step.id); actorPrefixes.delete(step.id); identities.delete(step.id); resting.delete(step.id); facingLeft.delete(step.id); next();
         } });
         break;
       }
       case "move": {
         const actor = actors.get(step.id);
         if (!actor) { next(); break; }
-        const p = step.anchor ? { x: anchor(step.anchor).x + step.rx, y: anchor(step.anchor).y + step.ry }
+        const target = step.anchor ? { x: anchor(step.anchor).x + step.rx, y: anchor(step.anchor).y + step.ry }
           : { x: step.rx * spec.stageW, y: step.ry * spec.stageH };
+        const p = opts.actorPosition?.(target, [...actors.values()].filter((a) => a !== actor)) ?? target;
         const prefix = actorPrefixes.get(step.id) ?? "";
         const side = Math.abs(p.x - actor.x) >= Math.abs(p.y - actor.y);
-        const walk = `${prefix}-walk${side ? "-side" : p.y < actor.y ? "-up" : ""}`;
-        if (side) actor.setFlipX(p.x < actor.x);
+        const up = p.y < actor.y;
+        const walk = `${prefix}-walk${side ? "-side" : up ? "-up" : ""}`;
+        facingLeft.set(step.id, side && p.x < actor.x);
+        actor.setFlipX(side && p.x < actor.x);
         if (scene.anims.exists(walk)) actor.play(walk);
         session.tween({ targets: actor, ...p, duration: Math.max(120, step.ms ?? 600), ease: "Sine.easeInOut", onComplete: () => {
           if (!session.active) return;
-          if (scene.anims.exists(`${prefix}-idle`)) actor.play(`${prefix}-idle`);
+          const idle: CastPose = side ? "idle-side" : up ? "idle-up" : "idle";
+          if (identities.has(step.id)) { resting.set(step.id, idle); pose(step.id, idle); }
+          else if (scene.anims.exists(`${prefix}-idle`)) actor.play(`${prefix}-idle`);
           next();
         } });
         break;
       }
+      case "pose": resting.set(step.id, step.pose); pose(step.id, step.pose); next(); break;
       case "say": {
+        const who = cutsceneCharacter(step.speaker);
+        const speaking = step.actor ?? [...identities].find(([, id]) => id === who?.id)?.[0];
+        for (const [id] of identities) {
+          const state = resting.get(id) ?? "idle";
+          // An injured character keeps kneeling while speaking; a held-out hand stays held out.
+          pose(id, id === speaking && state.startsWith("idle") ? "talk" : state);
+        }
         /* vc279 (P7c) — recall 치환. 저장된 선택 라벨을 대사에 넣는다.
          *  저장값이 없으면 recallFallback → 원문 유지. 빈 칸으로 문장이 깨지면 안 된다. */
         let lines = step.lines;
@@ -174,7 +207,9 @@ export function playAutoCutscene(scene: Phaser.Scene, spec: AutoCutsceneSpec, on
           /* 공용 대사창: 읽는 시간에는 상한이 없다(플레이어가 키/탭으로 넘김). 워치독은 끄고 ESC 스킵만 둔다. */
           session.unwatch();
           let settled = false;
-          const cancel = opts.say(step.speaker, lines, () => { if (!settled) { settled = true; next(); } });
+          const cancel = opts.say(step.speaker, lines, () => {
+            if (!settled) { settled = true; if (speaking) pose(speaking, resting.get(speaking) ?? "idle"); next(); }
+          });
           if (typeof cancel === "function") session.own(() => { if (!settled) { settled = true; cancel(); } });
           break;
         }

@@ -1,0 +1,137 @@
+{
+  "generator": "image_gen.imagegen",
+  "layout": "4 columns x 4 rows, transparent; reference portrait + approved Haru atlas style",
+  "framePrompt": "Production game sprite atlas PNG. First reference is the character's EXISTING PORTRAIT, follow its identity exactly. Second reference is APPROVED SPRITE ART STYLE ONLY, do not copy the second character. Transparent background, EXACTLY 4 columns and 4 rows of evenly spaced full-body sprites, 16 cells, no labels or grid lines. Row 1 facing DOWN: neutral idle, breathing idle, walk left leg forward, walk RIGHT leg forward (MUST alternate actual legs). Row 2 facing RIGHT: neutral idle, breathing idle, walk left leg forward, walk RIGHT leg forward. Row 3 facing UP back view: neutral idle, breathing idle, walk left leg forward, walk RIGHT leg forward. Row 4 facing DOWN: talking small hand gesture, reaching hand out, kneeling injured/exhausted, ready/combat stance. Identical outfit, hair and face throughout all 16 poses. Crisp top-down JRPG pixel art at about 48x64 logical pixels per body, mature 3-head-tall proportions, restrained cel shading, exact portrait palette, dark clean outlines, no white border, NO ground shadows, no effects, no scenery. Characters centered with feet on same baseline per row and same height throughout, occupy 70 percent of each cell with generous transparent margins. Keep full head and shoes and all weapons inside cell. This is to slice into a playable animation atlas. CHARACTER: ",
+  "sources": [
+    {
+      "id": "haru",
+      "file": "exec-093937b2-4f6b-4ac4-8411-c5b4b3d95a5e.png",
+      "prompt": "Haru, young male orphan protagonist with short dark brown hair, dark eyes, serious face, dark charcoal wrap-collar travel robe with pale grey crossed V collar, tan rope belt, brown boots. His canonical weapon is a REAL SHARP STEEL KATANA (approved4.txt75), carried in a plain brown wooden SCABBARD on back. CRITICAL the ready pose must visibly show a polished SILVER STEEL blade with a curved katana profile and dark handle, NOT a wooden practice sword, NOT a staff. His scabbard may be wooden, blade must be SILVER METAL. Same portrait face and black hair, no magic effects."
+    },
+    {
+      "id": "lilac",
+      "file": "exec-3989fef4-5a1e-4952-8a3e-77042cf6ffc4.png",
+      "prompt": "Lilac, woman with very long pale lilac hair with straight fringe, pale violet eyes, gentle expression, cream lavender collared dress/coat with warm grey trim and a silver pendant on her chest. Ivory boots and long modest skirt, slim sword sheathed at waist."
+    },
+    {
+      "id": "riel",
+      "file": "exec-573593d8-67eb-469c-aa6c-a95c301ff0a3.png",
+      "prompt": "Riel the Taoist master, older man with grey-streaked black hair tied in high topknot, sharp brows, sleeveless layered white and grey martial robes with brown waist sash and black armguards, long Taoist staff with silver ornaments."
+    },
+    {
+      "id": "cartel",
+      "file": "exec-1412923b-d7d5-4f15-96cc-d1b3344e99e9.png",
+      "prompt": "Cartel, adult man with dark indigo hair, tan skin, sea-green and ivory cross-collared robes, gold trim, teal waist sash, holding tall THREE-pronged silver trident with brown shaft."
+    },
+    {
+      "id": "lucy",
+      "file": "exec-1a718209-9c73-4794-bf18-2b41b5ab1271.png",
+      "prompt": "Lucy, green-haired young adult woman, gold headband and leafy gold ornaments, green eyes, sleeveless green and ivory modest dress with brown belt and leafy patterns, small curved natural wooden staff with green leaves."
+    },
+    {
+      "id": "ari",
+      "file": "exec-19fb43eb-62fb-4c04-90c3-ca0284bc460a.png",
+      "prompt": "Ari / Aristella Destiny is a WOMAN, canonical elder SISTER of Lilac, royal guard captain and solar sword master. Repair the ambiguous masculine appearance and WRONG BOW in the portrait: depict an unmistakably young adult woman with the same warm brown hair, gold sun circlet, gold-black armored coat and golden pauldrons, feminine face and practical armored trousers/boots, NOT sexualized. Her weapon is ONE solar steel SWORD (Solaflame Ignition Sword), NOT a bow. Preserve colors, replace bow completely with sword. No flames/effects."
+    },
+    {
+      "id": "feron",
+      "file": "exec-4e48f89f-9e03-4c95-88f9-b5308513d7d1.png",
+      "prompt": "Feron, pale adult male knight, swept back black hair, stern dark eyes, charcoal armor with white silver edging, purple chest scarf/lining and long purple-black cloak. Large dark STEEL longsword, Dark Excalibur, carried at back and drawn in ready pose, no magical effects."
+    },
+    {
+      "id": "scarlet",
+      "file": "exec-27579523-6a4b-4421-bb7a-2891dc924a0b.png",
+      "prompt": "Scarlet Edelyona, young adult QUEEN, long deep crimson hair, gold crown, red eyes, red and black royal layered dress with gold ornament and dark cape. Weapon is slender steel katana with rapier-like guard (NOT staff). Full boots visible, formal noble presence, no flames or aura."
+    },
+    {
+      "id": "vellica",
+      "file": "exec-0c946754-1ab8-475f-8b8c-14571f549b4a.png",
+      "prompt": "CRITICAL REPAIR: the first portrait is WRONG: it depicts a burly bearded armored MAN. Canonical VELLICA EVERFORCE is a young WOMAN and lightning archer / postal courier (approved5.txt846-850, approved4.txt139-142). REPLACE completely with attractive young adult female courier swordswoman: dark blue hair tied in practical ponytail, blue eyes, navy/light ivory traveling jacket, blue scarf, brown leather postal satchel, practical fitted dark trousers and boots. Slender lightning BOW and sheathed family steel KATANA on belt. NO beard, NO bulky armor, NO helmet, no modern uniform or electrical effects. Retain blue-gold palette only from old portrait. Her new appearance must be clear across front side back frames."
+    },
+    {
+      "id": "register",
+      "file": "exec-7d13b6d7-ddad-4090-be6a-801be6529122.png",
+      "prompt": "Register, FEMALE former royal guard captain and leader of the Sisters rebels (approved1.txt62-72). Existing tiny sprite reference gives auburn/chestnut hair and grey-brown travel clothes; expand into a competent adult woman with short auburn hair, practical grey tunic, muted maroon short cloak, brown belt and leather boots. Her weapon is a DAGGER as in approved1.txt72, not a magic staff. No invented royal crown or powers."
+    },
+    {
+      "id": "rasion",
+      "file": "exec-b90690ae-42bb-4346-b76c-717cf1e6b3e7.png",
+      "prompt": "Rasion, ancient resurrected swordsman (approved2.txt121-125). Canon only specifies a powerful ancient warrior wielding a sword, appearance is an art interpretation: adult man with weathered pale face, long ash-grey hair tied back, layered worn charcoal armor and dark wine cloak, plain old STEEL SWORD. Human form, NOT a dragon or giant monster, no horns, no glow/effects. Make distinct from young Haru and Feron."
+    },
+    {
+      "id": "storyteller",
+      "file": "exec-16e81fbb-a09a-464a-8e85-54b07b6ce360.png",
+      "prompt": "Storyteller, adult woman with long red hair, black gat scholar hat, ivory and grey traditional scholar robes, folding paper fan. Match attached face, hair, hat and grey-cream colors, remove reference effects or decorative portrait border."
+    },
+    {
+      "id": "recorder",
+      "file": "exec-f1069c6a-853d-4739-9162-f025b5d3730f.png",
+      "prompt": "Lilac alliance record keeper, adult MALE scholar with long white hair, stern neutral face, black traditional scholar hat, dark navy and grey scholarly robes, a closed bound book and writing brush. This character is an alliance RECORD KEEPER, NOT Lilac herself; never depict a resurrected Lilac. Match this white-haired male portrait."
+    },
+    {
+      "id": "union_guide",
+      "file": "exec-f83869c8-2a45-4845-b41a-61a76f46ed9d.png",
+      "prompt": "Alliance guide, young adult man with medium short DARK NAVY hair and blue eyes, white and blue travel tunic and SILVER light shoulder armor, blue scarf, brown boots. Match portrait face and outfit. Guide has no needed new weapon or supernatural effects, do not draw the circular orange halo from portrait."
+    },
+    {
+      "id": "navigator",
+      "file": "exec-789c7fdc-d2a3-4b6e-a49d-1dbfc537a9fc.png",
+      "prompt": "Star-route navigator: adult male traveler with very long SILVER WHITE hair, black broad-brimmed Korean gat hat, pale blue and dark navy layered traveling robes, brown travel boots and belt with folded paper map. Follow face and clothing precisely, no new powers, weapons or effects."
+    },
+    {
+      "id": "fiona",
+      "file": "exec-79e30d14-3b83-419c-a9ab-37f2f60d289f.png",
+      "prompt": "Fiona, existing magic engineer guide. Follow portrait blue hair, red eyes, black square scholar hat and white veil, blue ivory scholar tunic, gold trim and small folded decorative fan. Adult, practical long skirt/trousers and brown boots, no new weapons or effects."
+    },
+    {
+      "id": "sailor",
+      "file": "exec-b13c1bf2-7633-4262-af05-92f3412c714a.png",
+      "prompt": "Star sea sailor: adult man with black hair tied into high bun with red tie, pale skin, focused black eyes, layered black navy travel robe with muted red inner trim and sash, sturdy boots. Match portrait silhouette, sheathed steel sword on hip, NO blue curved water spell visible in portrait, no effects."
+    },
+    {
+      "id": "rail_guide",
+      "file": "exec-e13283a9-6614-4674-8e97-bfda59394cbe.png",
+      "prompt": "Underground railway guide: adult man with hair precisely split half WHITE and half BLACK, dark purple/black coat with high ivory-lined collar, red inner vest and muted red cravat, black trousers and boots, closed paper route map. Match asymmetrical hair and face exactly, no floating red jewels and no effects."
+    },
+    {
+      "id": "investigator",
+      "file": "exec-5ba57e55-7069-4604-8895-2023bf5c9bca.png",
+      "prompt": "Company investigator: adult man with slicked-back GREEN hair, dark green eyes, dark hunter green and grey uniform coat, brown cross strap and satchel, practical boots, neutral serious expression. Match portrait's green hair and angular face. One closed notebook at belt. Remove all floating green magic effects."
+    },
+    {
+      "id": "scrapkeeper",
+      "file": "exec-bb62d3cb-278f-4db4-bbf7-9a18815c9e48.png",
+      "prompt": "Scrapyard keeper: adult blond man with short golden blond hair and black forehead/eye band, white fur collar, ivory and blue utility coat with gold buckle, brown gloves and boots. Match existing portrait face. Remove floating green halo and large white spectral horse behind portrait; those are NOT part of the person. A small wrench at belt is enough, no magic effects."
+    },
+    {
+      "id": "sky_ferryman",
+      "file": "exec-d17e3db5-c877-4ab2-b701-b3f027db2b7b.png",
+      "prompt": "Sky-island ferryman: adult man with grey-blue eyes, short brown hair partly covered by silver-gold open-face helmet with ONE horn ornament, silver-grey light armor and white shoulder cloak, blue undershirt, brown boots. Match portrait face and costume, a simple coiled rope on belt, remove spectral horse and background effects."
+    },
+    {
+      "id": "scribe",
+      "file": "exec-a25dd55c-9179-43a4-bc00-1d98aba5500f.png",
+      "prompt": "Citadel scribe: adult man with neat short BLACK hair, red and gold TRICORNE hat, red scholar coat, ivory cravat, gold buttons, black trousers and brown boots. Match portrait. A bound ledger and quill in reaching/talking pose, NO gun or sword, no background swirl effects."
+    },
+    {
+      "id": "archivist",
+      "file": "exec-7da82ca4-c0bf-44d8-9deb-617828a51163.png",
+      "prompt": "Archive keeper: adult man with bright ORANGE messy hair, warm amber eyes, red and gold scholarly coat with dark undershirt, brown trousers, sturdy boots, two closed books at belt. Follow portrait face and colors, remove all flames and magic effects so this is a person standing on the map."
+    },
+    {
+      "id": "star_keeper",
+      "file": "exec-7721513a-875d-45a2-9cb9-3e8df5904056.png",
+      "prompt": "Last star keeper: adult young woman with GOLDEN BLOND high ponytail and straight fringe, gentle brown eyes, blue and gold light armor, white scarf and royal blue knee-length cloak, practical dark leggings and boots. Match portrait, remove all blue swirls and water/magic effects, small plain star medallion only."
+    },
+    {
+      "id": "harold",
+      "file": "exec-959d95e2-673e-4ed1-9022-1ecce976e08e.png",
+      "prompt": "Harold, the sea legion commander whose power is KRAKEN TRANSFORMATION (approved4.txt103-104). Existing portrait: adult commander with bright RED hair, dark eyes, confident expression, small GOLD crown/insignia, red and dark gold naval military coat, dark trousers, boots. Human form for conversation. CRITICAL canon says NO weapon: remove the fire staff from the reference, empty hands or clenched fists in ready pose. NO fire or magical effects, don't add fire powers."
+    },
+    {
+      "id": "veronica",
+      "file": "exec-b8e0636f-3a0e-4e89-b8cc-3dac3eb19164.png",
+      "prompt": "Veronica, curse sorceress and legion commander (approved4.txt103-104). Match existing portrait as adult woman with bright PINK hair, teal eyes, dark TEAL tricorn hat with feather and small skull emblem, black teal coat with ivory ruffled collar, dark trousers and boots. Canonical weapon is a CURSED WOODEN STAFF with a small dark crystal, NOT the trident from the old portrait. Remove all whirlpool/background effects, keep slim staff visible in ready pose."
+    }
+  ]
+}
