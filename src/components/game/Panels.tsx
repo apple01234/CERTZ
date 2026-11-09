@@ -4573,7 +4573,22 @@ function KingdomRankTab() {
           ) : (
             (state?.list ?? []).map((e) => (
               <div key={`${e.rank}-${e.name}-${e.cid ?? ""}`} className={`flex items-center gap-2 border-b border-white/[0.05] px-2.5 py-1.5 last:border-0 ${e.rank <= 3 ? "bg-amber-400/[0.06]" : ""}`}>
-                <span className={`w-7 shrink-0 text-center text-[11px] font-black ${e.rank === 1 ? "text-amber-300" : e.rank === 2 ? "text-slate-200" : e.rank === 3 ? "text-orange-300" : "text-white/55"}`}>{e.rank === 1 ? "👑1" : e.rank === 2 ? "🥈2" : e.rank === 3 ? "🥉3" : e.rank}</span>
+                <span className={`w-7 shrink-0 text-center text-[11px] font-black ${e.rank === 1 ? "text-amber-300" : e.rank === 2 ? "text-slate-200" : e.rank === 3 ? "text-orange-300" : "text-white/55"}`}>
+                  {/* vc290 — 이모지(👑🥈🥉) → 픽셀 메달 아이콘. Super Pixel Effects Gigapack
+                   *  symbol_place_* 포즈를 1프레임으로 구워 public/assets/ui_sym 에 두었다.
+                   *  도트 게임에서 OS 이모지는 폰트/기기마다 크기·색이 달라 튀었다. */}
+                  {e.rank <= 3 ? (
+                    <img
+                      src={`/assets/ui_sym/symbol-place-${e.rank === 1 ? "1st-001-large-yellow" : e.rank === 2 ? "2nd-001-large-green" : "3rd-001-large-orange"}.png`}
+                      alt={`${e.rank}위`}
+                      className="inline-block h-5 w-5 align-middle object-contain"
+                      style={{ imageRendering: "pixelated" }}
+                      draggable={false}
+                    />
+                  ) : (
+                    e.rank
+                  )}
+                </span>
                 <span className="min-w-0 flex-1 truncate text-[11px] font-black text-white/90">{e.name}</span>
                 {/* v1.0.13 피드백#16 — 직업 배지 (한글명 · 클래스 컬러) */}
                 {(() => {

@@ -1,0 +1,1337 @@
+{
+ "frames": [
+  {
+   "filename": "symbol-game-over-text-002-small-red 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 1",
+   "frame": {
+    "x": 176,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 2",
+   "frame": {
+    "x": 352,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 3",
+   "frame": {
+    "x": 528,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 4",
+   "frame": {
+    "x": 704,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 5",
+   "frame": {
+    "x": 0,
+    "y": 48,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 6",
+   "frame": {
+    "x": 176,
+    "y": 48,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 7",
+   "frame": {
+    "x": 352,
+    "y": 48,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 8",
+   "frame": {
+    "x": 528,
+    "y": 48,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 9",
+   "frame": {
+    "x": 704,
+    "y": 48,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 10",
+   "frame": {
+    "x": 0,
+    "y": 96,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 11",
+   "frame": {
+    "x": 176,
+    "y": 96,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 12",
+   "frame": {
+    "x": 352,
+    "y": 96,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 13",
+   "frame": {
+    "x": 528,
+    "y": 96,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 14",
+   "frame": {
+    "x": 704,
+    "y": 96,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 15",
+   "frame": {
+    "x": 0,
+    "y": 144,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 16",
+   "frame": {
+    "x": 176,
+    "y": 144,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 17",
+   "frame": {
+    "x": 352,
+    "y": 144,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 18",
+   "frame": {
+    "x": 528,
+    "y": 144,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 19",
+   "frame": {
+    "x": 704,
+    "y": 144,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 20",
+   "frame": {
+    "x": 0,
+    "y": 192,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 21",
+   "frame": {
+    "x": 176,
+    "y": 192,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 22",
+   "frame": {
+    "x": 352,
+    "y": 192,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 23",
+   "frame": {
+    "x": 528,
+    "y": 192,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 24",
+   "frame": {
+    "x": 704,
+    "y": 192,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 25",
+   "frame": {
+    "x": 0,
+    "y": 240,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 26",
+   "frame": {
+    "x": 176,
+    "y": 240,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 27",
+   "frame": {
+    "x": 352,
+    "y": 240,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 28",
+   "frame": {
+    "x": 528,
+    "y": 240,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 29",
+   "frame": {
+    "x": 704,
+    "y": 240,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 30",
+   "frame": {
+    "x": 0,
+    "y": 288,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 31",
+   "frame": {
+    "x": 176,
+    "y": 288,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 32",
+   "frame": {
+    "x": 352,
+    "y": 288,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 33",
+   "frame": {
+    "x": 528,
+    "y": 288,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 34",
+   "frame": {
+    "x": 704,
+    "y": 288,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 35",
+   "frame": {
+    "x": 0,
+    "y": 336,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 36",
+   "frame": {
+    "x": 176,
+    "y": 336,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 37",
+   "frame": {
+    "x": 352,
+    "y": 336,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 38",
+   "frame": {
+    "x": 528,
+    "y": 336,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 39",
+   "frame": {
+    "x": 704,
+    "y": 336,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 40",
+   "frame": {
+    "x": 0,
+    "y": 384,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 41",
+   "frame": {
+    "x": 176,
+    "y": 384,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 42",
+   "frame": {
+    "x": 352,
+    "y": 384,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 43",
+   "frame": {
+    "x": 528,
+    "y": 384,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 44",
+   "frame": {
+    "x": 704,
+    "y": 384,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 45",
+   "frame": {
+    "x": 0,
+    "y": 432,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 46",
+   "frame": {
+    "x": 176,
+    "y": 432,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 47",
+   "frame": {
+    "x": 352,
+    "y": 432,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 48",
+   "frame": {
+    "x": 528,
+    "y": 432,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 49",
+   "frame": {
+    "x": 704,
+    "y": 432,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 50",
+   "frame": {
+    "x": 0,
+    "y": 480,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 51",
+   "frame": {
+    "x": 176,
+    "y": 480,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 52",
+   "frame": {
+    "x": 352,
+    "y": 480,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 53",
+   "frame": {
+    "x": 528,
+    "y": 480,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 54",
+   "frame": {
+    "x": 704,
+    "y": 480,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 55",
+   "frame": {
+    "x": 0,
+    "y": 528,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 56",
+   "frame": {
+    "x": 176,
+    "y": 528,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 57",
+   "frame": {
+    "x": 352,
+    "y": 528,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-game-over-text-002-small-red 58",
+   "frame": {
+    "x": 528,
+    "y": 528,
+    "w": 176,
+    "h": 48
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 48
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 48
+   },
+   "duration": 67
+  }
+ ],
+ "meta": {
+  "app": "Super Pixel Effects Gigapack (Will Tice / unTied Games)",
+  "version": "1",
+  "image": "symbol-game-over-text-002-small-red.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1024,
+   "h": 1024
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "symbol-game-over-text-002-small-red",
+    "from": 0,
+    "to": 58,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "gigapack/symbol_game_over_text_002_small_red",
+   "name": "symbol_game_over_text_002_small_red",
+   "fps": 15,
+   "loop": false,
+   "frames": 59,
+   "frameSize": [
+    176,
+    48
+   ],
+   "pivot": [
+    88,
+    42
+   ],
+   "columns": 5
+  }
+ }
+}

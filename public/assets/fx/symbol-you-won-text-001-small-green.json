@@ -1,0 +1,941 @@
+{
+ "frames": [
+  {
+   "filename": "symbol-you-won-text-001-small-green 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 1",
+   "frame": {
+    "x": 144,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 2",
+   "frame": {
+    "x": 288,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 3",
+   "frame": {
+    "x": 432,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 4",
+   "frame": {
+    "x": 576,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 5",
+   "frame": {
+    "x": 720,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 6",
+   "frame": {
+    "x": 864,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 7",
+   "frame": {
+    "x": 0,
+    "y": 64,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 8",
+   "frame": {
+    "x": 144,
+    "y": 64,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 9",
+   "frame": {
+    "x": 288,
+    "y": 64,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 10",
+   "frame": {
+    "x": 432,
+    "y": 64,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 11",
+   "frame": {
+    "x": 576,
+    "y": 64,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 12",
+   "frame": {
+    "x": 720,
+    "y": 64,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 13",
+   "frame": {
+    "x": 864,
+    "y": 64,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 14",
+   "frame": {
+    "x": 0,
+    "y": 128,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 15",
+   "frame": {
+    "x": 144,
+    "y": 128,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 16",
+   "frame": {
+    "x": 288,
+    "y": 128,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 17",
+   "frame": {
+    "x": 432,
+    "y": 128,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 18",
+   "frame": {
+    "x": 576,
+    "y": 128,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 19",
+   "frame": {
+    "x": 720,
+    "y": 128,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 20",
+   "frame": {
+    "x": 864,
+    "y": 128,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 21",
+   "frame": {
+    "x": 0,
+    "y": 192,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 22",
+   "frame": {
+    "x": 144,
+    "y": 192,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 23",
+   "frame": {
+    "x": 288,
+    "y": 192,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 24",
+   "frame": {
+    "x": 432,
+    "y": 192,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 25",
+   "frame": {
+    "x": 576,
+    "y": 192,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 26",
+   "frame": {
+    "x": 720,
+    "y": 192,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 27",
+   "frame": {
+    "x": 864,
+    "y": 192,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 28",
+   "frame": {
+    "x": 0,
+    "y": 256,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 29",
+   "frame": {
+    "x": 144,
+    "y": 256,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 30",
+   "frame": {
+    "x": 288,
+    "y": 256,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 31",
+   "frame": {
+    "x": 432,
+    "y": 256,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 32",
+   "frame": {
+    "x": 576,
+    "y": 256,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 33",
+   "frame": {
+    "x": 720,
+    "y": 256,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 34",
+   "frame": {
+    "x": 864,
+    "y": 256,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 35",
+   "frame": {
+    "x": 0,
+    "y": 320,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 36",
+   "frame": {
+    "x": 144,
+    "y": 320,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 37",
+   "frame": {
+    "x": 288,
+    "y": 320,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 38",
+   "frame": {
+    "x": 432,
+    "y": 320,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 39",
+   "frame": {
+    "x": 576,
+    "y": 320,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-you-won-text-001-small-green 40",
+   "frame": {
+    "x": 720,
+    "y": 320,
+    "w": 144,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 144,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 144,
+    "h": 64
+   },
+   "duration": 67
+  }
+ ],
+ "meta": {
+  "app": "Super Pixel Effects Gigapack (Will Tice / unTied Games)",
+  "version": "1",
+  "image": "symbol-you-won-text-001-small-green.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1024,
+   "h": 512
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "symbol-you-won-text-001-small-green",
+    "from": 0,
+    "to": 40,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "gigapack/symbol_you_won_text_001_small_green",
+   "name": "symbol_you_won_text_001_small_green",
+   "fps": 15,
+   "loop": false,
+   "frames": 41,
+   "frameSize": [
+    144,
+    64
+   ],
+   "pivot": [
+    72,
+    56
+   ],
+   "columns": 7
+  }
+ }
+}

@@ -520,3 +520,20 @@ ghostIce_48x32(3동작×6프레임), wraith 21프레임 HD(150×159) 등 35종.
 pcbody/\ · \
 pcface/\ | SPUM 캐릭터 부위 | 위쪽 SPUM 항목 |
 | \public/assets/boss_*.png\ | 보스 스프라이트 6종 | 아래 「vc288 — 보스 스프라이트 출처」 |
+
+---
+
+## vc290 — Super Pixel Effects Gigapack (UI 심볼)
+
+- **Asset**: Super Pixel Effects Gigapack (Free Version) v3.2.0
+- **Author**: Will Tice / unTied Games — https://untiedgames.itch.io/super-pixel-effects-gigapack
+- **License**: 무료판 라이선스 — 상업적/비상업적 이용 허용, 게임에 번들 포함 가능,
+  **크레딧 표기 요청**(본 항목이 그 표기다). 에셋팩 자체의 재배포·재판매는 금지.
+- **Used for**: UI 피드백 픽셀 심볼 38종 — 등급(S/A/B/C/D/F)·순위(1~8위)·
+  성공/실패/경고/레벨업 텍스트·왕관·물음표·엄지척. 랭킹 1~3위 메달 표시에 사용 중.
+- **경로**: `public/assets/ui_sym/` (대표 프레임 1장씩 굽고 트림한 156KB),
+  `public/assets/fx/symbol-*` (원본 애니메이션 시트 76종·1.4MB)
+- **제외**: 같은 팩의 폭발/타격/마법 210종 중 127종은 기존 pixelfx 142종과 역할이
+  겹쳐 이식하지 않았다(약 40MB 절감). 필요 시 `tools/import_gigapack.py`로 재추출 가능.
+- **주의**: 이 팩의 PNG는 15fps 전제로 제작됐다. `tools/import_gigapack.py`가
+  `meta.pixelfx.fps=15`로 기록하므로 그대로 재생하면 원작 의도 속도가 나온다.

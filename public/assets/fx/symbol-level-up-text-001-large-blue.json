@@ -1,0 +1,1007 @@
+{
+ "frames": [
+  {
+   "filename": "symbol-level-up-text-001-large-blue 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 1",
+   "frame": {
+    "x": 320,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 2",
+   "frame": {
+    "x": 640,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 3",
+   "frame": {
+    "x": 960,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 4",
+   "frame": {
+    "x": 1280,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 5",
+   "frame": {
+    "x": 1600,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 6",
+   "frame": {
+    "x": 0,
+    "y": 128,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 7",
+   "frame": {
+    "x": 320,
+    "y": 128,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 8",
+   "frame": {
+    "x": 640,
+    "y": 128,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 9",
+   "frame": {
+    "x": 960,
+    "y": 128,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 10",
+   "frame": {
+    "x": 1280,
+    "y": 128,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 11",
+   "frame": {
+    "x": 1600,
+    "y": 128,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 12",
+   "frame": {
+    "x": 0,
+    "y": 256,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 13",
+   "frame": {
+    "x": 320,
+    "y": 256,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 14",
+   "frame": {
+    "x": 640,
+    "y": 256,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 15",
+   "frame": {
+    "x": 960,
+    "y": 256,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 16",
+   "frame": {
+    "x": 1280,
+    "y": 256,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 17",
+   "frame": {
+    "x": 1600,
+    "y": 256,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 18",
+   "frame": {
+    "x": 0,
+    "y": 384,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 19",
+   "frame": {
+    "x": 320,
+    "y": 384,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 20",
+   "frame": {
+    "x": 640,
+    "y": 384,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 21",
+   "frame": {
+    "x": 960,
+    "y": 384,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 22",
+   "frame": {
+    "x": 1280,
+    "y": 384,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 23",
+   "frame": {
+    "x": 1600,
+    "y": 384,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 24",
+   "frame": {
+    "x": 0,
+    "y": 512,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 25",
+   "frame": {
+    "x": 320,
+    "y": 512,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 26",
+   "frame": {
+    "x": 640,
+    "y": 512,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 27",
+   "frame": {
+    "x": 960,
+    "y": 512,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 28",
+   "frame": {
+    "x": 1280,
+    "y": 512,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 29",
+   "frame": {
+    "x": 1600,
+    "y": 512,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 30",
+   "frame": {
+    "x": 0,
+    "y": 640,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 31",
+   "frame": {
+    "x": 320,
+    "y": 640,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 32",
+   "frame": {
+    "x": 640,
+    "y": 640,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 33",
+   "frame": {
+    "x": 960,
+    "y": 640,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 34",
+   "frame": {
+    "x": 1280,
+    "y": 640,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 35",
+   "frame": {
+    "x": 1600,
+    "y": 640,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 36",
+   "frame": {
+    "x": 0,
+    "y": 768,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 37",
+   "frame": {
+    "x": 320,
+    "y": 768,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 38",
+   "frame": {
+    "x": 640,
+    "y": 768,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 39",
+   "frame": {
+    "x": 960,
+    "y": 768,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 40",
+   "frame": {
+    "x": 1280,
+    "y": 768,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 41",
+   "frame": {
+    "x": 1600,
+    "y": 768,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 42",
+   "frame": {
+    "x": 0,
+    "y": 896,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-level-up-text-001-large-blue 43",
+   "frame": {
+    "x": 320,
+    "y": 896,
+    "w": 320,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 320,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 320,
+    "h": 128
+   },
+   "duration": 67
+  }
+ ],
+ "meta": {
+  "app": "Super Pixel Effects Gigapack (Will Tice / unTied Games)",
+  "version": "1",
+  "image": "symbol-level-up-text-001-large-blue.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 2048,
+   "h": 1024
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "symbol-level-up-text-001-large-blue",
+    "from": 0,
+    "to": 43,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "gigapack/symbol_level_up_text_001_large_blue",
+   "name": "symbol_level_up_text_001_large_blue",
+   "fps": 15,
+   "loop": false,
+   "frames": 44,
+   "frameSize": [
+    320,
+    128
+   ],
+   "pivot": [
+    160,
+    112
+   ],
+   "columns": 6
+  }
+ }
+}

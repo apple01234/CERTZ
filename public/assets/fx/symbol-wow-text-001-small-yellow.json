@@ -1,0 +1,765 @@
+{
+ "frames": [
+  {
+   "filename": "symbol-wow-text-001-small-yellow 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 1",
+   "frame": {
+    "x": 80,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 2",
+   "frame": {
+    "x": 160,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 3",
+   "frame": {
+    "x": 240,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 4",
+   "frame": {
+    "x": 320,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 5",
+   "frame": {
+    "x": 400,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 6",
+   "frame": {
+    "x": 0,
+    "y": 64,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 7",
+   "frame": {
+    "x": 80,
+    "y": 64,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 8",
+   "frame": {
+    "x": 160,
+    "y": 64,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 9",
+   "frame": {
+    "x": 240,
+    "y": 64,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 10",
+   "frame": {
+    "x": 320,
+    "y": 64,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 11",
+   "frame": {
+    "x": 400,
+    "y": 64,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 12",
+   "frame": {
+    "x": 0,
+    "y": 128,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 13",
+   "frame": {
+    "x": 80,
+    "y": 128,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 14",
+   "frame": {
+    "x": 160,
+    "y": 128,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 15",
+   "frame": {
+    "x": 240,
+    "y": 128,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 16",
+   "frame": {
+    "x": 320,
+    "y": 128,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 17",
+   "frame": {
+    "x": 400,
+    "y": 128,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 18",
+   "frame": {
+    "x": 0,
+    "y": 192,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 19",
+   "frame": {
+    "x": 80,
+    "y": 192,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 20",
+   "frame": {
+    "x": 160,
+    "y": 192,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 21",
+   "frame": {
+    "x": 240,
+    "y": 192,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 22",
+   "frame": {
+    "x": 320,
+    "y": 192,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 23",
+   "frame": {
+    "x": 400,
+    "y": 192,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 24",
+   "frame": {
+    "x": 0,
+    "y": 256,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 25",
+   "frame": {
+    "x": 80,
+    "y": 256,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 26",
+   "frame": {
+    "x": 160,
+    "y": 256,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 27",
+   "frame": {
+    "x": 240,
+    "y": 256,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 28",
+   "frame": {
+    "x": 320,
+    "y": 256,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 29",
+   "frame": {
+    "x": 400,
+    "y": 256,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 30",
+   "frame": {
+    "x": 0,
+    "y": 320,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 31",
+   "frame": {
+    "x": 80,
+    "y": 320,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  },
+  {
+   "filename": "symbol-wow-text-001-small-yellow 32",
+   "frame": {
+    "x": 160,
+    "y": 320,
+    "w": 80,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 64
+   },
+   "duration": 67
+  }
+ ],
+ "meta": {
+  "app": "Super Pixel Effects Gigapack (Will Tice / unTied Games)",
+  "version": "1",
+  "image": "symbol-wow-text-001-small-yellow.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 512,
+   "h": 512
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "symbol-wow-text-001-small-yellow",
+    "from": 0,
+    "to": 32,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "gigapack/symbol_wow_text_001_small_yellow",
+   "name": "symbol_wow_text_001_small_yellow",
+   "fps": 15,
+   "loop": false,
+   "frames": 33,
+   "frameSize": [
+    80,
+    64
+   ],
+   "pivot": [
+    40,
+    56
+   ],
+   "columns": 6
+  }
+ }
+}
