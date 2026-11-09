@@ -34,7 +34,14 @@ yarn-error.log*
 .env*
 
 # vercel
-.vercel
+# vc291 — `.vercel` 을 통째로 무시하면 project.json 의 projectId/orgId 바인딩이
+#  저장소로 전달되지 않아, tests/vercel-deploy.test.mjs 가 요구하는
+#  "바인딩이 커밋돼 있다" 를 영원히 만족할 수 없다(모순).
+#  Vercel 공식 권장대로 project.json 만 예외로 두고 나머지는 계속 무시한다.
+#  projectId/orgId 는 비밀값이 아니다(토큰이 아니다). 토큰은 .env.local 에 있고
+#  위 `.env*` 규칙이 막는다.
+.vercel/*
+!.vercel/project.json
 
 
 # typescript
