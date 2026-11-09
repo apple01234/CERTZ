@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "tool": "image_gen",
+  "frameWidth": 256,
+  "frameHeight": 256,
+  "bosses": [
+    {
+      "id": "starplanet",
+      "texture": "story_starplanet",
+      "frames": 16,
+      "sourceSHA256": "b3cafedd0e9ea35dd43d27b17f7b8047e949ab27cc7c1059c8a808323b4b9c61",
+      "logicalHeightBudget": 112,
+      "prompt": "Production game sprite sheet: the boss Little Star merged with his STAR SHAPED PLANET, as in the game's written story. ONE compact floating FIVE-POINTED STAR shaped island, green grass surface with several small red rose plants, layered grey stone underside and a warm gold rim, faint violet crystal at the center. No humanoid, no buildings, no Earth globe, no unrelated ship. Beautiful clean 2D JRPG pixel art, crisp dark outline, restrained 3-tone cel shading, readable at 180 logical pixels wide. Transparent background. EXACTLY 4 columns and 4 rows, 16 evenly spaced poses, no labels or grid. Row1 four DIFFERENT gentle floating idle poses. Row2 four sequential turning/rocking poses. Row3 four sequential EARTHQUAKE ATTACK poses: rise, tilt left, slam downward, recover. Row4 four sequential ROSE POWER poses: roses open, central gem pulses, small star sparks, recover. Same shape, roses placement, scale and center across all frames. Whole star tips and stone underside must be INSIDE each cell, large transparent gutters, no ground/shadows/scenery.\nEDIT:Edit this sprite atlas: remove the grey checkerboard backdrop completely to true transparent alpha. Preserve all SIXTEEN star-island sprites and all their details exactly. Maintain FOUR columns and FOUR rows and generous empty margins in every cell. Do not paint a checkerboard, shadows, or any backdrop. Every pixel outside the island and its small spell sparkles must be truly transparent.",
+      "combat": false
+    },
+    {
+      "id": "aicore",
+      "texture": "story_aicore",
+      "frames": 16,
+      "sourceSHA256": "8021a22168b1bbf2b3b93c656f4f4f90c6c8e38669ebeeef44ee7ae6a16c8702",
+      "logicalHeightBudget": 112,
+      "prompt": "Production game sprite sheet of a CONTROL TOWER AI CORE, an industrial mechanical antagonist. A squat hovering steel-and-brass hexagonal reactor with a central teal-glass monitor containing a simple red camera lens, two side ventilation ducts and small antenna. Functional factory hardware, NOT a rock golem, NOT a humanoid, not a magical dragon. Clean 2D JRPG pixel art, crisp dark outline, cel-shaded blue steel, brass, teal glass, understated red warning lights. Transparent PNG. EXACTLY 4 columns and 4 rows, 16 sprites, no labels/grid. Row1 four distinct idling poses: small hovering bob and rotating lens. Row2 four sequential deployment/vents opening poses. Row3 four sequential LASER ATTACK poses: lens focuses, shutters open, short red light at lens, shutters close. Row4 four sequential GAS VENT poses: side ducts rotate, vents open, small pale green puff beside vents, close. Same central body size and centered anchor, all ducts fit in each cell with generous padding, no opaque background or scenery.",
+      "combat": false
+    },
+    {
+      "id": "kraken",
+      "texture": "story_kraken",
+      "frames": 16,
+      "sourceSHA256": "f327ea383f0731226e7360e5a306a3ef5bffe72eb53ba59ea181606f5351e09a",
+      "logicalHeightBudget": 112,
+      "prompt": "Game production sprite sheet of ONE enormous deep-ocean KRAKEN, the transformed sea commander Harold from this game's story. Eight thick curling teal-black tentacles, broad octopus mantle with muted maroon markings and a menacing pair of amber eyes, pale suction cups. No humanoid legs, no dragon wings, no ship background. Beautiful detailed 2D JRPG PIXEL ART with dark clean outlines, 3-tone cel shading, clear readable silhouette, about 160 logical pixels tall per creature. Transparent PNG, EXACTLY 4 columns by 4 rows equal grid, NO text, NO grid lines, full creature fits each cell with 12 percent empty margins. Row1: four DIFFERENT idle breathing poses with slight tentacle flex. Row2: four sequential moving/swimming poses with curling tentacles. Row3: four sequential tentacle SLAM ATTACK poses: wind up, raise tentacle, slam outward, recover. Row4: four sequential INK CAST poses: tense mantle, aim, small dark ink jet at mouth, recover. Keep body scale and center point identical in every cell, underside on same baseline, avoid effects or splashes that obscure silhouette, all tentacles entirely within their own cell. NO ground or water surface, transparent background.",
+      "combat": false
+    },
+    {
+      "id": "desknis",
+      "texture": "story_desknis",
+      "frames": 16,
+      "sourceSHA256": "509a80c4fb918ef900229d58f0e6c9ba48d52de4cd64a8e2b42f31f69c6906ec",
+      "logicalHeightBudget": 72,
+      "prompt": "Game production sprite sheet of DESKNIS, the ancient fear and darkness entity from this game's story (approved2.txt247-301). Appearance is an art interpretation: an adult human-shaped shadow swordsman clad in a long ragged charcoal coat and layered ruined black armor, long silver-white hair, face partly swallowed in shadow with a single dim violet eye, plain ancient dark steel sword. NOT a dragon, NOT a skeleton, NOT a crowned queen. Menacing but readable silhouette. Beautiful 2D top-down JRPG PIXEL ART, muted charcoal/violet/steel palette, dark clean outlines, 3-tone cel shading, about 96 logical pixels tall per humanoid. Transparent PNG, EXACTLY 4 columns by 4 rows equal grid, NO labels, NO grid. Row1 four DIFFERENT idle breathing poses. Row2 four sequential walking/sliding forward poses. Row3 four sequential sword ATTACK poses: wind up, raise sword, diagonal slash, recover. Row4 four sequential shadow ABSORPTION cast poses: close hand, extend hand, spread cloak, recover. Same character body proportions/costume in all cells; center and feet baseline consistent. All hair, cloak and sword fully inside each cell with generous clear padding. No scenery, no dark aura blobs, no opaque background.",
+      "combat": false
+    },
+    {
+      "id": "dio",
+      "texture": "story_dio",
+      "frames": 16,
+      "sourceSHA256": "8ef35fcd6a00e840e113fd74c4e632f1bee13473108c0bc4ea6ad722c18272e0",
+      "logicalHeightBudget": 72,
+      "prompt": "Production sprite animation atlas, preserve the EXACT character, face, hair, costume and weapon in reference. REPLACE the directional walk atlas layout with this combat layout: EXACTLY FOUR COLUMNS and FOUR ROWS, sixteen equally spaced full-body sprites on TRUE transparent alpha. Row1 four subtle front-facing IDLE breathing poses. Row2 four distinct side-facing WALK stride phases alternating legs. Row3 four consecutive ATTACK poses: windup, strike, followthrough, recovery. Row4 four consecutive SPECIAL SKILL poses: prepare, channel, release, recovery. Character action: short steel sword thrust and retreat; skill raises his crystal-bearing hand commanding shadow minions. Match our restrained JRPG PIXEL ART style: crisp hard square pixel clusters, native 48x64 logical pixel detail, clear dark outline, three tones per material, NO painting, NO gradients, NO antialiasing. Mature three-head-tall proportions. Occupy at most 65 percent of EACH cell, SAME character height, consistent foot baseline within each row, generous blank margins. Full head, feet, weapons stay strictly inside each cell. NO text, labels, grid, background, ground plane or shadows, no other figures. This is a 4x4 GAME ATLAS, not one illustration.",
+      "combat": true
+    },
+    {
+      "id": "harold",
+      "texture": "story_harold",
+      "frames": 16,
+      "sourceSHA256": "a07f3914ae71697d9e2487de06f7703a37f6cd6a9673c76cd776a84b6b6fc97f",
+      "logicalHeightBudget": 72,
+      "prompt": "Production sprite animation atlas, preserve the EXACT character, face, hair, costume and weapon in reference. REPLACE the directional walk atlas layout with this combat layout: EXACTLY FOUR COLUMNS and FOUR ROWS, sixteen equally spaced full-body sprites on TRUE transparent alpha. Row1 four subtle front-facing IDLE breathing poses. Row2 four distinct side-facing WALK stride phases alternating legs. Row3 four consecutive ATTACK poses: windup, strike, followthrough, recovery. Row4 four consecutive SPECIAL SKILL poses: prepare, channel, release, recovery. Character action: unarmed palm strike and forward lunge; skill spreads both arms commanding the dark sea before his kraken transformation. No weapon. Match our restrained JRPG PIXEL ART style: crisp hard square pixel clusters, native 48x64 logical pixel detail, clear dark outline, three tones per material, NO painting, NO gradients, NO antialiasing. Mature three-head-tall proportions. Occupy at most 65 percent of EACH cell, SAME character height, consistent foot baseline within each row, generous blank margins. Full head, feet, weapons stay strictly inside each cell. NO text, labels, grid, background, ground plane or shadows, no other figures. This is a 4x4 GAME ATLAS, not one illustration.",
+      "combat": true
+    },
+    {
+      "id": "veronica",
+      "texture": "story_veronica",
+      "frames": 16,
+      "sourceSHA256": "e24b186140bb47bb0e877164c6ad7545ad4d97e325a049c132d545fe4b686189",
+      "logicalHeightBudget": 72,
+      "prompt": "Production sprite animation atlas, preserve the EXACT character, face, hair, costume and weapon in reference. REPLACE the directional walk atlas layout with this combat layout: EXACTLY FOUR COLUMNS and FOUR ROWS, sixteen equally spaced full-body sprites on TRUE transparent alpha. Row1 four subtle front-facing IDLE breathing poses. Row2 four distinct side-facing WALK stride phases alternating legs. Row3 four consecutive ATTACK poses: windup, strike, followthrough, recovery. Row4 four consecutive SPECIAL SKILL poses: prepare, channel, release, recovery. Character action: cursed staff downward jab and recoil; skill two-handed curse staff incantation, violet tip. No sword. Match our restrained JRPG PIXEL ART style: crisp hard square pixel clusters, native 48x64 logical pixel detail, clear dark outline, three tones per material, NO painting, NO gradients, NO antialiasing. Mature three-head-tall proportions. Occupy at most 65 percent of EACH cell, SAME character height, consistent foot baseline within each row, generous blank margins. Full head, feet, weapons stay strictly inside each cell. NO text, labels, grid, background, ground plane or shadows, no other figures. This is a 4x4 GAME ATLAS, not one illustration.",
+      "combat": true
+    },
+    {
+      "id": "rasion",
+      "texture": "story_rasion",
+      "frames": 16,
+      "sourceSHA256": "2955494a006063a402b18148c5c7852581c82284188c32780da54a0f14a529f2",
+      "logicalHeightBudget": 72,
+      "prompt": "Production sprite animation atlas, preserve the EXACT character, face, hair, costume and weapon in reference. REPLACE the directional walk atlas layout with this combat layout: EXACTLY FOUR COLUMNS and FOUR ROWS, sixteen equally spaced full-body sprites on TRUE transparent alpha. Row1 four subtle front-facing IDLE breathing poses. Row2 four distinct side-facing WALK stride phases alternating legs. Row3 four consecutive ATTACK poses: windup, strike, followthrough, recovery. Row4 four consecutive SPECIAL SKILL poses: prepare, channel, release, recovery. Character action: disciplined ancient swordsman wide sword slash and recovery; skill braced sword parry then explosive sword lunge, no invented elemental power. Match our restrained JRPG PIXEL ART style: crisp hard square pixel clusters, native 48x64 logical pixel detail, clear dark outline, three tones per material, NO painting, NO gradients, NO antialiasing. Mature three-head-tall proportions. Occupy at most 65 percent of EACH cell, SAME character height, consistent foot baseline within each row, generous blank margins. Full head, feet, weapons stay strictly inside each cell. NO text, labels, grid, background, ground plane or shadows, no other figures. This is a 4x4 GAME ATLAS, not one illustration.",
+      "combat": true
+    },
+    {
+      "id": "feron",
+      "texture": "story_feron",
+      "frames": 16,
+      "sourceSHA256": "c891c5f6a8d07107c2696c5a780af824fb04387398f0010d3101bc31b66baeca",
+      "logicalHeightBudget": 72,
+      "prompt": "Production sprite animation atlas, preserve the EXACT character, face, hair, costume and weapon in reference. REPLACE the directional walk atlas layout with this combat layout: EXACTLY FOUR COLUMNS and FOUR ROWS, sixteen equally spaced full-body sprites on TRUE transparent alpha. Row1 four subtle front-facing IDLE breathing poses. Row2 four distinct side-facing WALK stride phases alternating legs. Row3 four consecutive ATTACK poses: windup, strike, followthrough, recovery. Row4 four consecutive SPECIAL SKILL poses: prepare, channel, release, recovery. Character action: Dark Excalibur heavy dark sword sweeping attack; skill sword held vertically while free hand commands a shadow duplicate. Remain HUMAN, no physical dragon transformation. Match our restrained JRPG PIXEL ART style: crisp hard square pixel clusters, native 48x64 logical pixel detail, clear dark outline, three tones per material, NO painting, NO gradients, NO antialiasing. Mature three-head-tall proportions. Occupy at most 65 percent of EACH cell, SAME character height, consistent foot baseline within each row, generous blank margins. Full head, feet, weapons stay strictly inside each cell. NO text, labels, grid, background, ground plane or shadows, no other figures. This is a 4x4 GAME ATLAS, not one illustration.",
+      "combat": true
+    },
+    {
+      "id": "scarlet",
+      "texture": "story_scarlet",
+      "frames": 16,
+      "sourceSHA256": "fe3df5cd3d54f0a2b600e8dca457f548ffa3f2c4d7cd8ee1a81f3adcb4090984",
+      "logicalHeightBudget": 72,
+      "prompt": "Production sprite animation atlas, preserve the EXACT character, face, hair, costume and weapon in reference. REPLACE the directional walk atlas layout with this combat layout: EXACTLY FOUR COLUMNS and FOUR ROWS, sixteen equally spaced full-body sprites on TRUE transparent alpha. Row1 four subtle front-facing IDLE breathing poses. Row2 four distinct side-facing WALK stride phases alternating legs. Row3 four consecutive ATTACK poses: windup, strike, followthrough, recovery. Row4 four consecutive SPECIAL SKILL poses: prepare, channel, release, recovery. Character action: slender katana quick draw, crimson cutting strike and sheathe; skill raises katana over head then sweeps a blood-red arc, dark tendrils close around her hand. No fire or ice. Match our restrained JRPG PIXEL ART style: crisp hard square pixel clusters, native 48x64 logical pixel detail, clear dark outline, three tones per material, NO painting, NO gradients, NO antialiasing. Mature three-head-tall proportions. Occupy at most 65 percent of EACH cell, SAME character height, consistent foot baseline within each row, generous blank margins. Full head, feet, weapons stay strictly inside each cell. NO text, labels, grid, background, ground plane or shadows, no other figures. This is a 4x4 GAME ATLAS, not one illustration.",
+      "combat": true
+    },
+    {
+      "id": "littlestar",
+      "texture": "story_littlestar",
+      "frames": 16,
+      "sourceSHA256": "ce92ff2853a0543b3c39bd5eb7e3d4082e3883c92377833e941a55f80ef302f8",
+      "logicalHeightBudget": 72,
+      "prompt": "Remove the entire grey textured backdrop to TRUE transparent alpha, preserve the exact sixteen pixel art sprites and rose petal effects, FOUR columns FOUR rows unchanged. No checkerboard, no shadows, no scenery. Clear alpha outside each individual sprite.",
+      "combat": true
+    },
+    {
+      "id": "jade",
+      "texture": "story_jade",
+      "frames": 16,
+      "sourceSHA256": "782e1494402394533bda8530c7c35945582e41ee1635afdaa1a7149f1b7f8430",
+      "logicalHeightBudget": 72,
+      "prompt": "Production combat animation SPRITE ATLAS of the exact brown-haired apron-clad man in reference. FOUR columns FOUR rows, sixteen cells on true transparent alpha with wide blank gutters. Row1 FOUR front idle breathing poses, row2 FOUR side walk strides, row3 FOUR distinct empty-hand energy strike phases windup/palm thrust/followthrough/recover, row4 FOUR magic absorption poses prepare/channel/release/recover with small cyan-violet energy ball. NO sword. Pixel art game style: hard square pixel clusters, limited cel-shaded palette, dark outlines, NO painting, NO gradient, NO antialiasing. Full head and feet inside each cell, same scale and baseline, character occupies 60 percent of cell, no text/labels/background/shadows. Do not reuse the directional row3 back view: create the ATTACK sequence.",
+      "combat": true
+    },
+    {
+      "id": "fabian",
+      "texture": "story_fabian",
+      "frames": 16,
+      "sourceSHA256": "b4f0765a7c5bc3ff722fa4e13b7fa0e4073d826c23a2574192c9d1a265387092",
+      "logicalHeightBudget": 72,
+      "prompt": "Production sprite animation atlas, preserve the EXACT character, face, hair, costume and weapon in reference. REPLACE the directional walk atlas layout with this combat layout: EXACTLY FOUR COLUMNS and FOUR ROWS, sixteen equally spaced full-body sprites on TRUE transparent alpha. Row1 four subtle front-facing IDLE breathing poses. Row2 four distinct side-facing WALK stride phases alternating legs. Row3 four consecutive ATTACK poses: windup, strike, followthrough, recovery. Row4 four consecutive SPECIAL SKILL poses: prepare, channel, release, recovery. Character action: unarmed martial arts jab, straight punch and recovery; skill lunging two-handed grapple and powerful outward palm shove for ring-out sparring. No weapons or magic. Match our restrained JRPG PIXEL ART style: crisp hard square pixel clusters, native 48x64 logical pixel detail, clear dark outline, three tones per material, NO painting, NO gradients, NO antialiasing. Mature three-head-tall proportions. Occupy at most 65 percent of EACH cell, SAME character height, consistent foot baseline within each row, generous blank margins. Full head, feet, weapons stay strictly inside each cell. NO text, labels, grid, background, ground plane or shadows, no other figures. This is a 4x4 GAME ATLAS, not one illustration.",
+      "combat": true
+    }
+  ]
+}

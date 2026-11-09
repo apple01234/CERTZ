@@ -54,6 +54,7 @@ export const COUNTER_WINDOW_CHAOS_MS = 1050;
  */
 export const TELEGRAPH_MS: Record<string, number> = {
   _default: 780,
+  tentacleslam: 1000, inkflood: 1100, shadowcopies: 950, cursefield: 1000, bloodseal: 950, corruption: 1100, rosecore: 1000, jadeclones: 1000, ringpush: 900,
 
   /* 기본 6종 */
   slam: 900,
@@ -95,6 +96,7 @@ export const TELEGRAPH_MS: Record<string, number> = {
  * 모든 값이 RECOVERY_RANGE_MS(1~2초) 안에 있어야 한다 — 테스트가 강제한다.
  */
 export const RECOVERY_MS: Record<string, number> = {
+  tentacleslam: 1600, inkflood: 1700, shadowcopies: 1500, cursefield: 1600, bloodseal: 1500, corruption: 1800, rosecore: 1800, jadeclones: 1700, ringpush: 1800,
   _default: 1200,
 
   slam: 1600,

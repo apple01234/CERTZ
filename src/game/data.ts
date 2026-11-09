@@ -12,6 +12,8 @@
 import { CHAPTERS, ENEMIES, type ChapterKey } from "./stages";
 import { HOWLRSTONE_CHAPTERS } from "./howlrstone";
 import { LILAC_DIALOGUES } from "./lilacStory";
+import { GRAND_PLANET_DIALOGUES } from "./grandPlanetCanon";
+import { CHAPTER_STORY_PLAN } from "./chapterStoryPlan";
 import { stageDialogueLines } from "./stageDialogue"; /* vc237 — 구역별 걷는 대사 */
 import type { FamilyKey } from "./classes";
 
@@ -3236,4 +3238,27 @@ for (const [key, v] of Object.entries(HOWL_BEATS)) {
  *  key 충돌은 없음(lilac* 접두사). 기존 챕터 대사는 건드리지 않는다. */
 for (const [key, v] of Object.entries(LILAC_DIALOGUES)) {
   DIALOGUES[key] = { speaker: v.speaker, lines: v.lines };
+}
+
+// Encounter dialogue follows approved documents 1/2/4/8, not obsolete episode bosses.
+Object.assign(DIALOGUES, {
+  bossIntroDio: { speaker: "디오", lines: ["그 검을 넘겨라. 사념체들이 네 앞을 막을 것이다."] },
+  bossIntroHarold: { speaker: "해롤드", lines: ["남부의 바다는 우리 군단의 영역이다.", "저주받은 바다의 힘을 보여주마."] },
+  bossIntroVerodin: { speaker: "베로니카", lines: ["딘, 저들이 진지를 지나가지 못하게 해.", "저주와 흑마법으로 길을 막아주지."] },
+  bossIntroRasion: { speaker: "라시온", lines: ["그 검… 너는 누구냐.", "검을 들어라. 네 힘을 확인하겠다."] },
+  bossIntroFeron: { speaker: "페르온", lines: ["다크엑스칼리버… 그림자 속에서 네 길을 막겠다."] },
+  bossIntroShadow: { speaker: "페르온", lines: ["군단장들의 사념체가 길을 막고 있다.", "우리는 최상층으로 가는 길을 열어야 해."] },
+  bossIntroScarletBlood: { speaker: "스칼렛", lines: ["너희의 원소가 내 피에 스며드는군.", "피의 영역을 돌파할 수 있겠느냐."] },
+  bossIntroScarletDark: { speaker: "스칼렛", lines: ["흡수할 수 없다면… 잠식하면 그만이지."] },
+  bossIntroScarletSeal: { speaker: "스칼렛", lines: ["이 영역에 나를 가두겠다고?", "검을 들어라. 아직 끝나지 않았다."] },
+  bossIntroScarlet: { speaker: "스칼렛", lines: ["피와 어둠… 이 전투의 국면을 견뎌보아라."] },
+  bossIntroDesknis: { speaker: "데스크니스", lines: ["세계와 영혼을 잠식하고 새로운 세계를 만들겠다."] },
+  bossDean: { speaker: "딘", lines: ["베로니카, 흑마법으로 길을 봉쇄하겠다."] },
+});
+for (const id of ["gpLittleStarFight", "gpJadeFight", "gpCoreFight", "gpFabian"]) DIALOGUES[id] = GRAND_PLANET_DIALOGUES[id];
+for (const [key, plan] of Object.entries(CHAPTER_STORY_PLAN)) {
+  if (!key.startsWith("howlrstone")) continue;
+  const n = key.slice("howlrstone".length);
+  DIALOGUES[`chapterIntroHowlrstone${n}`] = { speaker: "라일락 연합의 기록자", lines: [plan.title, `${plan.places[0].title}에서 이야기가 이어진다.`] };
+  DIALOGUES[`howlrstone${n}Done`] = { speaker: "라일락 연합의 기록자", lines: [`${plan.places.at(-1)!.title}의 이야기를 기록했다.`, "다음 장소로 향하자."] };
 }

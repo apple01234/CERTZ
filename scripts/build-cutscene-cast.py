@@ -27,10 +27,21 @@ def build(source, character, target, spec):
     alpha = raw.getchannel("A").point(lambda a: 255 if a >= 128 else 0)
     raw.putalpha(alpha)
     cells, boxes = [], []
+    # Some generators leave uneven empty gutters. Slice at transparent seams only.
+    def seams(axis):
+        length = raw.width if axis == 0 else raw.height
+        result = [0]
+        for n in range(1, 4):
+            target = round(length * n / 4)
+            blank = [p for p in range(target - length // 20, target + length // 20)
+                     if alpha.crop((p, 0, p + 1, raw.height) if axis == 0 else (0, p, raw.width, p + 1)).getbbox() is None]
+            assert blank, f"{character['id']}: no transparent sprite separator"
+            result.append(min(blank, key=lambda p: abs(p - target)))
+        return result + [length]
+    xs, ys = seams(0), seams(1)
     for row in range(4):
         for col in range(4):
-            rect = (round(col * raw.width / 4), round(row * raw.height / 4),
-                    round((col + 1) * raw.width / 4), round((row + 1) * raw.height / 4))
+            rect = (xs[col], ys[row], xs[col + 1], ys[row + 1])
             cell = raw.crop(rect)
             box = cell.getchannel("A").getbbox()
             assert box, f"{character['id']}: empty generated cell {row},{col}"

@@ -546,3 +546,11 @@ pcface/\ | SPUM 캐릭터 부위 | 위쪽 SPUM 항목 |
 - **수정**: 아리의 성별과 검, 벨리카의 여성 궁수·우편배달 외형, 하루의 강철 카타나, 해롤드의 무기 없음, 베로니카의 저주 지팡이. 라일락 본인과 연합 기록자의 신원을 분리했다.
 - **가공**: `scripts/build-cutscene-cast.py`는 생성 시트를 자르고 알파·발 기준점·규격을 맞춘다. 새 자세를 코드로 그리거나 정지 이미지를 걷기라고 복제하지 않는다.
 - **생성 기록**: `scripts/cutscene-cast-sources.json`의 프롬프트·원본 파일명과 각 atlas JSON의 원본 SHA-256. 구동 시 생성 서비스나 외부 URL에 의존하지 않는다.
+
+
+## Story chapter terrain and boss atlases (2026-11-10)
+
+- `chapter-terrain/`: original Pixel Frog **Tiny Swords old CC0 release** ground, elevation, water and bridge cells, plus existing DCSS CC0 native floor cells. This is the historical CC0 archive, not the separately restricted current release. Verified archive SHA-256: `e4d79bd4514bad153cfa1cc8f4c8d8bf10ed39bf69bd98b83bdc46c03d14bb9c`. Source: https://pixelfrog-assets.itch.io/tiny-swords . Exact source crops, hashes and licenses are in `chapter-terrain/manifest.json`; reproducible preparation: `scripts/prepare-chapter-terrain.py`. No new generated floor artwork.
+- `story-bosses/`: 13 user-authorized ImageGen atlases, 208 frames, including nine human combat sets and Kraken, Desknis, star-shaped planet and industrial AI core. Technical normalization uses a logical pixel budget and integer nearest scaling. Prompts and source hashes: `scripts/story-boss-generation-sources.json` and `story-bosses/manifest.json`. Appearance not specified by the approved text is an art interpretation.
+- `cutscene-cast/` now contains **31 atlases / 496 frames / 31 matching portraits**, including Dio, Little Star, Jade, Fabian and Dean. Their dialogue and combat identities share the same costume references. Full provenance: `scripts/cutscene-cast-sources.json`.
+- Skill effects reuse the existing user-supplied Drive effects already credited above; no new provider credentials or paid third-party provider calls were configured through Game Development Studio.

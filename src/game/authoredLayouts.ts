@@ -1,9 +1,11 @@
 import { HOWLRSTONE_CHAPTERS } from "./howlrstone";
 import type { RoomLayout } from "./mapgen";
 import { overrideToLayout } from "./mapOverrides";
+import { chapterPlace } from "./chapterStoryPlan";
 
 export type AuthoredTheme = "library" | "cliff" | "coast" | "grove" | "citadel" | "town" | "ruins" | "conduit" | "arena";
 export type AuthoredPresentation = {
+  stageKey?: string;
   theme: AuthoredTheme;
   /** Walkable route surface; never a second collision definition. */
   paths: boolean[];
@@ -80,10 +82,15 @@ export function authoredRoomLayout(seed: string, mapW: number, mapH: number): Ro
     if (!spec || sub < 1 || sub > spec.stages) return null;
     // 1.txt:5-18: Lilac rescues the young Haru at a cliff, before the later castle scenes.
     theme = chapter === 1 && sub === 1 ? "cliff" : spec.boss && sub === spec.stages ? "arena" : CHAPTER_THEMES[chapter - 1];
+    const p = chapterPlace(`howlrstone${chapter}`, sub);
+    if (p) {
+      const roleTheme: Record<string, AuthoredTheme> = { cliff: "cliff", village: "town", inn: "library", road: "grove", camp: "town", court: "arena", observatory: "conduit", harbor: "coast", deck: "coast", shore: "coast", sanctuary: "grove", garden: "grove", tunnel: "citadel", throne: "citadel", domain: "arena", rift: "ruins", dungeon: "citadel", ruin: "ruins" };
+      theme = p.boss ? "arena" : roleTheme[p.role] === "arena" ? "citadel" : roleTheme[p.role] ?? theme;
+    }
     variant = sub;
   } else if (planet && PLANET_THEMES[planet[1]]) {
     variant = Number(planet[2]);
-    theme = variant === 10 ? "arena" : PLANET_THEMES[planet[1]];
+    theme = chapterPlace(`dlc${planet[1]}`, variant)?.boss ? "arena" : PLANET_THEMES[planet[1]];
   } else {
     return null;
   }
@@ -195,6 +202,6 @@ export function authoredRoomLayout(seed: string, mapW: number, mapH: number): Ro
   rect(cols - 3, mid, cols - 2, mid + 1, true);
   return {
     cols, rows, cellW: mapW / cols, cellH: mapH / rows, open, entry, exit,
-    authored: { theme, paths, landmarks, ...THEMES[theme] },
+    authored: { stageKey: seed, theme, paths, landmarks, ...THEMES[theme] },
   };
 }

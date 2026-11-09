@@ -4,6 +4,7 @@ import { isSolidDecor } from "../decorObjects";
 /* vc259 (지시 #1) — 바닥 변형 아틀라스 폐기: 256px 무이음새 타일로 교체해 불필요. */
 /* vc257 — 에디터와 **동일한** 순수 로직을 공유한다(단일 출처). */
 import * as core from "../tilemapEditorCore";
+import { renderChapterTerrain } from "./ChapterTerrain";
 
 /** Verified seamless floor textures in assets/ground/manifest.json. Native tiles
  * are sliced/reassembled in the Tilemap, without a raster copy or a prop fallback.
@@ -22,7 +23,7 @@ export const AUTHORED_GROUND_SOURCES: Record<string, { size: number; unit: numbe
 
 export type AuthoredMapRender = {
   maps: Phaser.Tilemaps.Tilemap[];
-  layers: Phaser.Tilemaps.TilemapLayer[];
+  layers: (Phaser.Tilemaps.TilemapLayer | Phaser.Tilemaps.TilemapGPULayer)[];
   images: Phaser.GameObjects.Image[];
 };
 
@@ -62,6 +63,8 @@ export function renderAuthoredMapLayers(
   lay: RoomLayout,
   onDecor?: (image: Phaser.GameObjects.Image) => void,
 ): AuthoredMapRender | null {
+  const native = renderChapterTerrain(scene, lay, onDecor);
+  if (native) return native;
   const art = lay.authored;
   if (!art) return null;
   const roles = [

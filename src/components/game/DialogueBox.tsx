@@ -100,6 +100,8 @@ function bossPortraitKey(tex: string): string {
 }
 
 function portraitOf(speaker: string, portraitId?: string): { tex: string; tone: string } | null {
+  if (speaker === "데스크니스") return { tex: "story_desknis", tone: "#ae85ce" };
+  if (speaker === "컨트롤타워 AI") return { tex: "story_aicore", tone: "#72cda0" };
   const cast = cutsceneCharacter(portraitId ?? speaker);
   if (cast) return { tex: `cast_${cast.id}`, tone: "#c9b3ff" };
   /* v1.0.2 (#초상화) — portraitId 명시 > 화자명 직접 매핑 > 보스 토큰 자동 매칭 순 */
@@ -132,6 +134,7 @@ function portraitOf(speaker: string, portraitId?: string): { tex: string; tone: 
  *  주면서 `_map.json` 키와 일치하지 않는 경우가 있어(예: "아리" vs "npc_ari") 매칭이 깨졌다.
  *  여기서 `npc_<key>` 형태를 직접 조회해 경로를 확정한다. */
 function faceFor(tex: string): string | null {
+  if (tex.startsWith("story_")) return `/assets/story-bosses/${tex.slice(6)}-portrait.png`;
   const cast = cutsceneCharacter(tex);
   if (cast) return castPortrait(cast.id);
   const crops: Record<string, { src: string }> = portraitCrops;

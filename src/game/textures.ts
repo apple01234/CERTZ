@@ -401,7 +401,9 @@ export const BOSS_ATLAS_ROWS: Record<string, number[]> = {
 };
 
 /** 보스 초기 텍스처/프레임 — 아틀라스 보스는 시트 frame 0, 구형은 개별 idle0 이미지 */
-export function bossSourceFrame(tex: string): { key: string; frame?: number } {
+export function bossSourceFrame(tex: string): { key: string; frame?: number | string } {
+  if (tex.startsWith("cast_")) return { key: tex, frame: "idle-down-0" };
+  if (tex.startsWith("story_")) return { key: tex, frame: "idle-0" };
   const at = BOSS_ATLAS[tex];
   if (at) return { key: at.key, frame: 0 };
   return { key: `${tex}_idle0` };
@@ -409,6 +411,8 @@ export function bossSourceFrame(tex: string): { key: string; frame?: number } {
 
 /** 대화창·도감 초상화 URL — 아틀라스 보스는 슬라이서가 뽑은 전용 초상화 파일 */
 export function bossPortraitUrl(tex: string): string {
+  if (tex.startsWith("cast_")) return `/assets/cutscene-cast/portraits/${tex.slice(5)}.png`;
+  if (tex.startsWith("story_")) return `/assets/story-bosses/${tex.slice(6)}-portrait.png`;
   return BOSS_ATLAS[tex] ? `/assets/bossport_${tex}.webp` : `/assets/${tex}_idle0.webp`;
 }
 

@@ -1,175 +1,95 @@
-/**
- * 정본 보스 설계 — 스토리 기획서(evernote-approved 1~8)에서 뽑은 전투 근거.
- *
- * [이 파일이 왜 있나]
- *  vc288 까지 보스 패턴(`BossAttackKind`)은 게임 장르 관습으로만 배치돼 있었다.
- *  즉 "슬램/차지/볼리" 같은 일반 패턴을 보스별로 나눠 끼워 넣은 수준이었다.
- *  유저 요구: "모든 주요 보스는 단순 체력 많은 몬스터가 되어서는 안 된다."
- *  그러려면 **각 보스가 왜 그 패턴을 쓰는지**가 정본에 있어야 한다.
- *
- * [정본 근거 — docs/handoff/evernote-approved]
- *  · 해롤드 5.txt:100  "과거 바다의 저주를 받아 쫓겨난 괴물 해롤드"
- *  · 해롤드 5.txt:169  "거대한 해적선이 나타났다 … 바다의 군단장 해롤드"
- *  · 해롤드 5.txt:173  "카르텔이 … 해롤드를 도발하자 저주받은 바다의 힘 즉 크라켄으로 변하면서"
- *  · 해롤드 5.txt:174  "삼지창이 던져질 때마다 더욱더 날뛰었고 먹물과 고대의 힘으로 모든 것을 파괴"
- *  · 페르온 5.txt:101  "어둠의 다크엑스칼리버와 보석의 힘을 가지고 있는 페르온"
- *  · 페르온 5.txt:306  "무의식적으로 드래곤을 죽였다 … 엑스칼리버를 뽑자 … 다크엑스칼리버로 바뀌면서
- *                      검은 드래곤의 영혼을 그 보석 안에 집어 넣었다"
- *  · 페르온 5.txt:317  "'솔라플레임이그니션소드'는 '다크엑스칼리버'에 점차 밀리기 시작하였다"
- *  · 스칼렛 5.txt:451  "라이트와 다크니스보석이 형체화된 빛의 아이온과 어둠의 알다바오트가 그들을 위협했다"
- *  · 스칼렛 5.txt:461  "스칼렛은 카타나에 피와 어둠의 마법을 걸고는 피와 어둠의 의식을 하고 있었다"
- *  · 스칼렛 5.txt:470  "인피니트보석의 힘을 흡수한 것 뿐만 아니라 피의 힘과 진정한 어둠의 힘"
- *  · 스칼렛 5.txt:476  "자신의 창조물의 힘과 저주표식이 있는 … 힘까지 손에 넣으니"
- *  · 스칼렛 5.txt:488  "몬스터 생성을 아예 멈추고 몬스터를 흡수하고 있는 것이다"
- *  · 스칼렛 5.txt:492  "도사가 스칼렛을 움직이지 못하게 만든 뒤"
- *  · 스칼렛 5.txt:494  "바인드를 끊고 피해서"
- *
- * [이 파일의 계약]
- *  · Phaser / DOM / Math.random 의존 없음. 순수 데이터 + 조회 함수.
- *  · Boss.ts 는 이 표를 참조한다. 표를 고치면 전투가 같이 움직인다.
- *  · 정본에 없는 보스는 `null` — 억지로 만들지 않는다.
- */
-
-/** 정본에서 전투 근거를 확인한 보스. */
-export type CanonBossKey = "harold" | "feron" | "scarlet";
-
+/** Canon battle identities. Earlier approved documents take precedence over older episode notes. */
 export type BossPhaseDesign = {
-  /** HP 비율 상한(이 값 이하로 떨어지면 이 페이즈) */
-  readonly at: number;
-  /** 정본상 이 페이즈의 형태 */
-  readonly form: string;
-  /** 이 페이즈에서 쓰는 패턴 (BossAttackKind 또는 vx 이름) */
-  readonly patterns: readonly string[];
-  /** 정본 근거 위치 `"N.txt:줄"` 또는 `"N.txt:시작-끝"`. 실제 파일·줄과 대조한다. */
-  readonly canon: string;
-  /** 그 대목이 말하는 것 (사람이 읽는 요약) */
-  readonly note: string;
+  readonly at: number; readonly form: string; readonly patterns: readonly string[];
+  readonly canon: string; readonly note: string; readonly visual?: string;
 };
-
 export type BossDesign = {
-  readonly name: string;
-  /** 정본상 이 보스가 싸우는 이유 — 대사/배너에 쓴다 */
-  readonly motive: string;
-  /** 정본상 무기·힘 */
-  readonly power: string;
-  readonly phases: readonly BossPhaseDesign[];
+  readonly name: string; readonly motive: string; readonly power: string; readonly visual: string;
+  readonly phases: readonly BossPhaseDesign[]; readonly finish?: "repel" | "ringout" | "core";
 };
-
-/**
- * 정본 보스 3종.
- *
- * 해롤드 — 1페이즈는 삼지창을 던지는 인간형, 2페이즈에 크라켄으로 변신한다.
- *  정본 5.txt:173 이 변신을 명시한다("저주받은 바다의 힘 즉 크라켄으로 변하면서").
- *  그래서 telegraph 가 긴 대신 판정이 넓은 해양 패턴(조류/먹물)을 2페이즈에 몰아준다.
- *
- * 페르온 — 다크엑스칼리버를 든 검사. 2페이즈에 검은 드래곤의 영혼이 깨어난다.
- *  정본 5.txt:306-308 이 "검은 드래곤의 영혼을 보석 안에 집어 넣었다"고 못박는다.
- *  검 패턴(베기/돌진)은 1페이즈에, 브레스/급강하는 2페이즈에 둔다.
- *
- * 스칼렛 — 정본의 최종전은 3단 구조다.
- *  ① 빛의 아이온과 어둠의 알다바오트(보석이 형체화된 존재)가 먼저 나선다 — 5.txt:451
- *  ② 스칼렛 본체: 카타나 + 피와 어둠의 의식 — 5.txt:461
- *  ③ 창조물·저주표식 흡수 후 최종 형태 — 5.txt:476
- *  그래서 스칼렛만 페이즈가 3개다.
- */
-export const CANON_BOSS_DESIGN: Record<CanonBossKey, BossDesign> = {
-  harold: {
-    name: "해롤드",
-    motive: "과거 바다의 저주를 받아 쫓겨난 괴물. 저주가 곧 그의 힘이자 형벌이다.",
-    power: "삼지창 · 저주받은 바다(크라켄)",
-    phases: [
-      {
-        at: 1.0,
-        form: "인간형",
-        patterns: ["charge", "volley", "summon"],
-        canon: "5.txt:169-172",
-        note: "거대한 해적선, 삼지창으로 전장을 휘젓는다",
-      },
-      {
-        at: 0.5,
-        form: "크라켄",
-        patterns: ["ring", "beam", "zones", "slam"],
-        canon: "5.txt:173-174",
-        note: "크라켄으로 변하면서 삼지창이 던져질 때마다 더 날뛴다",
-      },
-    ],
-  },
-  feron: {
-    name: "페르온",
-    motive: "다크니스 보석의 힘에 취해 스칼렛의 군단장이 된 자. 검은 드래곤의 영혼을 품었다.",
-    power: "다크엑스칼리버 · 검은 드래곤의 영혼",
-    phases: [
-      {
-        at: 1.0,
-        form: "검사",
-        patterns: ["charge", "blink", "volley"],
-        canon: "5.txt:317",
-        note: "솔라플레임이그니션소드를 압도하는 다크엑스칼리버",
-      },
-      {
-        at: 0.5,
-        form: "검은 드래곤",
-        patterns: ["beam", "slam", "zones", "summon"],
-        canon: "5.txt:306-308",
-        note: "검은 드래곤의 영혼이 보석 안에서 깨어난다",
-      },
-    ],
-  },
-  scarlet: {
-    name: "스칼렛",
-    motive: "인피니트보석의 반쪽(다크니스)을 삼킨 어둠의 군주. 처음엔 힘이 아니라 '길을 바꾸는 것'을 원했다.",
-    power: "카타나 · 피와 어둠의 의식 · 창조물 흡수",
-    phases: [
-      {
-        at: 1.0,
-        form: "어둠의 군주",
-        patterns: ["blink", "volley", "zones"],
-        canon: "5.txt:461",
-        note: "카타나에 피와 어둠의 마법을 걸고 의식을 치른다",
-      },
-      {
-        at: 0.66,
-        form: "아이온 · 알다바오트",
-        patterns: ["ring", "spiral", "thunderfall", "summon"],
-        canon: "5.txt:451",
-        note: "라이트와 다크니스 보석이 형체화된 빛의 아이온과 어둠의 알다바오트",
-      },
-      {
-        at: 0.33,
-        form: "흡수된 자",
-        patterns: ["beam", "magicburst", "frostnova", "firepillars", "portalteleport"],
-        canon: "5.txt:476",
-        note: "창조물의 힘과 저주표식이 있는 자들의 힘까지 손에 넣는다",
-      },
-    ],
-  },
+const phase = (at: number, form: string, patterns: string[], canon: string, note: string, visual?: string): BossPhaseDesign =>
+  ({ at, form, patterns, canon, note, ...(visual ? { visual } : {}) });
+export const CANON_BOSS_DESIGN = {
+  dio: { name: "디오", motive: "검을 찾기 위해 마을을 습격한다.", power: "다크니스 크리스탈의 힘 · 사념체", visual: "cast_dio", finish: "repel", phases: [
+    phase(1, "보석의 힘", ["charge", "summon"], "1.txt:110-137", "사념체로 주민과 기사단을 압박한다."),
+    phase(.55, "사념체의 벽", ["shadowcopies", "zones"], "1.txt:137-159", "사념체를 모아 벽을 만들고 하루를 가로막는다."),
+  ] },
+  harold: { name: "해롤드", motive: "남부 해전의 군단장.", power: "저주받은 바다 · 크라켄 · 먹물", visual: "cast_harold", finish: "repel", phases: [
+    phase(1, "바다의 군단장", ["charge", "volley"], "4.txt:103-104", "무기는 없다. 삼지창은 카르텔의 무기다."),
+    phase(.55, "크라켄", ["tentacleslam", "inkflood", "ring"], "5.txt:169-175", "저주받은 바다의 힘으로 크라켄이 되어 먹물과 고대의 힘을 쓴다.", "story_kraken"),
+  ] },
+  verodin: { name: "베로니카와 딘", motive: "칼리야 전선의 저주와 흑마법 군단장.", power: "저주받은 지팡이 · 흑마법의 지팡이", visual: "cast_veronica", finish: "repel", phases: [
+    phase(1, "저주받은 지팡이", ["zones", "volley"], "4.txt:103-104", "베로니카의 저주를 바닥 예고와 탄막으로 드러낸다."),
+    phase(.55, "저주와 흑마법", ["cursefield", "summon"], "2.txt:63-89", "두 군단장의 장판과 사념체 압박. 무관한 얼음·화염 마법을 추가하지 않는다."),
+  ] },
+  rasion: { name: "라시온", motive: "하루의 검을 알아보고 살의를 품는다.", power: "검술 · 강인한 육체 · 고대의 재앙", visual: "cast_rasion", finish: "repel", phases: [
+    phase(1, "고대의 검사", ["charge", "counter"], "2.txt:121-125", "검을 휘두르는 강한 검사이며 드래곤이 아니다."),
+    phase(.5, "지치지 않는 재앙", ["blinkslash", "counter", "charge"], "2.txt:121-125", "강한 검술과 연속 압박. 새로운 원소를 임의로 부여하지 않는다."),
+  ] },
+  feron: { name: "페르온", motive: "라일락의 죽음 뒤 힘을 좇다가 세뇌당했다.", power: "다크엑스칼리버 · 그림자", visual: "cast_feron", finish: "repel", phases: [
+    phase(1, "다크엑스칼리버", ["charge", "blinkslash"], "4.txt:100-102", "암흑의 검을 쓰는 인간 기사다."),
+    phase(.5, "그림자의 분신", ["shadowcopies", "counter"], "4.txt:100-102", "그림자로 시야를 가리고 분신으로 공격한다. 검은 드래곤의 영혼을 품었다는 설정을 육체 변신으로 바꾸지 않는다."),
+  ] },
+  shadow: { name: "군단장의 사념체", motive: "성채의 비밀 통로를 막는다.", power: "사념체 · 군단장의 잔재", visual: "cast_feron", finish: "repel", phases: [
+    phase(1, "군단장의 사념", ["blinkslash", "volley"], "2.txt:158-162", "최상층으로 가는 길을 지키는 군단장들의 사념체."),
+    phase(.5, "사념체의 함정", ["shadowcopies", "zones"], "2.txt:158-162", "반란군이 길을 열기 위해 대신 막아선다."),
+  ] },
+  scarlet_blood: { name: "스칼렛", motive: "원혈로 원소를 흡수하며 연합과 대적한다.", power: "카타나 · 피의 원소", visual: "cast_scarlet", finish: "repel", phases: [
+    phase(1, "원혈", ["blinkslash", "bloodseal"], "2.txt:162-166", "원혈의 흡수와 근접 돌파를 구분한다."),
+    phase(.55, "피의 영역", ["bloodseal", "ring", "volley"], "2.txt:162-166", "피의 영역과 폭혈일섬. 얼음·불 기둥을 섞지 않는다."),
+  ] },
+  scarlet_dark: { name: "스칼렛", motive: "흡수 대신 잠식으로 판도를 뒤집는다.", power: "어둠의 잠식 · 카타나", visual: "cast_scarlet", finish: "repel", phases: [
+    phase(1, "어둠의 잠식", ["corruption", "blinkslash"], "2.txt:165-205", "닿은 곳이 어둠으로 물드는 잠식."),
+    phase(.5, "피와 어둠", ["corruption", "bloodseal", "beam"], "2.txt:200-205", "피와 어둠의 힘으로 압박한다."),
+  ] },
+  scarlet_seal: { name: "스칼렛", motive: "페르온의 영역을 벗어나 루시를 제압하려 한다.", power: "카타나 · 피와 어둠", visual: "cast_scarlet", finish: "repel", phases: [
+    phase(1, "봉쇄된 영역", ["counter", "blinkslash"], "2.txt:208-221", "페르온이 가둔 일 분 동안 동료가 힘을 준비한다."),
+    phase(.5, "마지막 저항", ["bloodseal", "corruption"], "2.txt:221-241", "전투 종료는 이 국면의 격퇴이며 스칼렛의 사망이 아니다."),
+  ] },
+  scarlet: { name: "스칼렛", motive: "원혈에서 어둠의 잠식으로 이어지는 연합전의 전투 기록.", power: "카타나 · 피와 어둠", visual: "cast_scarlet", finish: "repel", phases: [
+    phase(1, "원혈", ["bloodseal", "blinkslash"], "2.txt:162-166", "카타나와 피의 원소."),
+    phase(.66, "어둠의 잠식", ["corruption", "beam"], "2.txt:165-205", "흡수와 잠식은 같은 능력이 아니다."),
+    phase(.33, "빛을 향한 틈", ["counter", "ring"], "2.txt:208-241", "전쟁의 국면을 재현하며 임의의 원소 변신을 추가하지 않는다."),
+  ] },
+  desknis: { name: "데스크니스", motive: "세계와 영혼을 잠식해 새로운 세계를 만들려 한다.", power: "잠식 · 영혼 · 고대의 공포", visual: "story_desknis", finish: "repel", phases: [
+    phase(1, "고대의 공포", ["corruption", "blinkslash"], "2.txt:247-277", "어둠과 영혼에 대한 공격."),
+    phase(.6, "잠식된 세계", ["corruption", "shadowcopies"], "2.txt:280-294", "하루가 자신의 본질과 무의 원소를 깨닫는 국면."),
+    phase(.3, "무한한 시간선", ["corruption", "portalteleport"], "2.txt:298-307", "끝은 리엘의 시간선 개입이며 세계 복원이 사망자의 부활을 뜻하지 않는다."),
+  ] },
+  littlestar: { name: "리틀스타", motive: "스타게이트의 문지기가 방문자의 힘을 이용한다.", power: "행성 · 장미의 동력", visual: "cast_littlestar", finish: "core", phases: [
+    phase(1, "장미의 동력", ["rosecore", "zones"], "8.txt:37-53", "장미가 행성을 움직이는 동력원이다."),
+    phase(.5, "뒤틀리는 행성", ["rosecore", "quake"], "8.txt:53-65", "지면을 뒤틀며 이동을 방해한다.", "story_starplanet"),
+  ] },
+  jade: { name: "제이드", motive: "마법수정의 힘과 동료들을 흡수한다.", power: "흡수 · 에너지 분신 · 방어막", visual: "cast_jade", finish: "repel", phases: [
+    phase(1, "마법수정의 힘", ["beam", "shieldcast"], "8.txt:118-140", "중앙 코어와 마법수정의 힘."),
+    phase(.55, "에너지 분신", ["jadeclones", "crystalburst"], "8.txt:118-140", "분신과 방어막을 이용한 에너지 압박."),
+  ] },
+  reversecore: { name: "컨트롤타워 AI", motive: "도시에 독가스를 공급하는 장치를 멈춘다.", power: "독가스 · 기계 장치", visual: "story_aicore", finish: "core", phases: [
+    phase(1, "독가스 공급", ["cursefield", "zones"], "8.txt:245-304", "환기 통로를 읽고 독가스 예고를 피한다."),
+    phase(.5, "중앙 제어", ["beam", "corruption"], "8.txt:245-304", "기계의 직선 방어망 사이 안전 구간."),
+  ] },
+  fabian: { name: "힘의 부호 파비앙", motive: "컴퍼니가 만든 카르텔의 데이터와 링에서 대련한다.", power: "체술 · 밀어내기", visual: "cast_fabian", finish: "ringout", phases: [
+    phase(1, "링 위의 대련", ["charge", "slam"], "8.txt:402-433", "무기를 새로 쥐여 주지 않는다."),
+    phase(.5, "링 아웃", ["ringpush", "counter"], "8.txt:522-530", "상대를 잡아 링 밖으로 밀려는 움직임과 역이용."),
+  ] },
+} as const satisfies Record<string, BossDesign>;
+export type CanonBossKey = keyof typeof CANON_BOSS_DESIGN;
+/** Existing optional maps replay documented encounters; these aliases do not create new canon people. */
+export const BOSS_RECORD_ALIASES: Record<string, CanonBossKey> = {
+  guardian: "reversecore", behemoth: "jade", abysslord: "littlestar", nidhog: "desknis", surt: "scarlet_dark",
+  fenrir: "rasion", skoll: "littlestar", gram: "verodin", abudditos: "scarlet", vord: "reversecore", jorm: "harold", nagr: "desknis",
 };
-
-/** 이 보스가 정본 설계를 갖고 있는가. */
 export function canonBossOf(key: string): BossDesign | null {
-  return (CANON_BOSS_DESIGN as Record<string, BossDesign>)[key] ?? null;
+  const id = BOSS_RECORD_ALIASES[key] ?? key;
+  return (CANON_BOSS_DESIGN as Record<string, BossDesign>)[id] ?? null;
 }
-
-/** 해당 HP 비율(0~1)에서의 페이즈 인덱스(0부터). 정본 설계가 없으면 -1. */
 export function canonPhaseIndex(key: string, hp01: number): number {
-  const d = canonBossOf(key);
-  if (!d) return -1;
-  const r = Number.isFinite(hp01) ? hp01 : 0;
-  /* phases 는 at 이 내림차순(1.0 → 0.5 → 0.33)이다. HP 가 그 값 이하로 떨어질 때마다
-   * 한 단계씩 내려가므로, "r <= at" 인 것 중 **가장 뒤**가 현재 페이즈다. */
-  let idx = 0;
-  for (let i = 0; i < d.phases.length; i++) {
-    if (r <= d.phases[i].at) idx = i;
-  }
+  const d = canonBossOf(key); if (!d) return -1;
+  const r = Number.isFinite(hp01) ? hp01 : 0; let idx = 0;
+  for (let i = 0; i < d.phases.length; i++) if (r <= d.phases[i].at) idx = i;
   return idx;
 }
-
-/** 해당 HP 비율에서 실제로 뽑히는 패턴 목록 (이전 페이즈 것을 **유지**한다). */
 export function canonPatternsAt(key: string, hp01: number): string[] {
-  const d = canonBossOf(key);
-  if (!d) return [];
-  const idx = canonPhaseIndex(key, hp01);
-  const out: string[] = [];
-  for (let i = 0; i <= idx; i++) for (const p of d.phases[i].patterns) if (!out.includes(p)) out.push(p);
-  return out;
+  const d = canonBossOf(key); if (!d) return [];
+  return [...new Set(d.phases.slice(0, canonPhaseIndex(key, hp01) + 1).flatMap((p) => [...p.patterns]))];
 }

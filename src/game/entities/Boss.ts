@@ -13,7 +13,9 @@ import { rng, actorStream } from "../sim/deterministic"; // vc183 — 시드 기
  *  종전엔 이 값들이 Boss.ts 안에 흩어져 있어 "예고가 몇 ms 인가"를 기계적으로 확인할 수 없었다. */
 import { phaseAt, telegraphMs, recoveryMs, counterWindowMs, attacksAfter, attackPool } from "./bossPhases";
 /* vc288 — 정본(스토리 기획서)에 근거한 페이즈 형태 이름. 없으면 종전 문구로 폴백한다. */
-import { canonBossOf } from "./bossDesign";
+import { canonBossOf, canonPhaseIndex } from "./bossDesign";
+import { STORY_ATTACKS, storyPattern, type StoryAttack } from "./storyBossPatterns";
+import { StoryBossMechanics } from "./StoryBossMechanics";
 /**
  * 보스 (3종 — 스테이지별 정의 주입):
  *  guardian: 심연의 수호자 (알프헤임) / behemoth: 침몰의 선장 (쿠소디아 선박의 왕국) / abysslord: 심연의 군주 (심연의 왕좌)
@@ -47,6 +49,7 @@ type BossMode =  | "idle"
   | "staggered" // 카운터 성공 → 기절/취약
   | "quakeCast" // 연속 낙뢰 시전
   // vc142 (#6) — 보스 고유 VX 패턴 (유저 에셋팩 FX — 보스마다 전부 다른 공격)
+  | "storyCast"
   | "vxTele" // VX 패턴 공용 예고
   | "vxCast" // VX 패턴 연출/연타 중 (피해 판정은 delayedCall 체인)
   // vc153 — 스바르트알프헤임 보스 개편 (애니 사양표 상태머신)
@@ -71,6 +74,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   hitH = 108;
 
   private mode: BossMode = "idle";
+  private visualKey = "";
+  private story: StoryBossMechanics | null = null;
   private modeTimer = 1200;
   private nextAttackCd = 1600;
   private knockVec = new Phaser.Math.Vector2();
@@ -193,14 +198,20 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     /* v5.0 보스 전면 리메이크 — 12FPS 풀애니(idle/walk/atk/die/sp1~3):
      *  캐시된 프레임 즉시 애니 등록 + 나머지 프레임 지연 로드 후 애니 승격(무결성 폴백)
      *  v1.4.31 (#4) — 애니 등록을 play보다 먼저 (아틀라스 보스는 부팅 폴백 애니가 없다) */
-    registerBossAnims(scene, def.tex);
-    if (!BOSS_ATLAS[def.tex]) void loadBossFrames(scene, def.tex); // 아틀라스 보스는 전 프레임 시트 포함 — 지연 로드 불필요
-    this.play(`${def.tex}-idle`);
+    if (!def.tex.startsWith("cast_") && !def.tex.startsWith("story_")) {
+      registerBossAnims(scene, def.tex);
+      if (!BOSS_ATLAS[def.tex]) void loadBossFrames(scene, def.tex);
+      this.play(`${def.tex}-idle`);
+    }
+
+    this.visualKey = def.tex;
+    if (def.tex.startsWith("cast_") || def.tex.startsWith("story_")) this.applyStoryVisual(def.tex);
+    this.story = new StoryBossMechanics(this);
 
     /* v1.0.12 — 하티 스폰: 스콜 옆에 나란히 달린다.
      *  vc142 — 아틀라스 시대: 본체=얼음 늑대(스콜), 트윈=화염 늑대(하티 전용 아트·무틴트).
      *  구형 아트는 기존대로 동일 텍스처+은빛 틴트. 히트박스/판정은 보스 본체 그대로(밸런스 불변). */
-    if (def.key === "skoll") {
+    if (def.key === "skoll" && !canonBossOf(def.key)) {
       if (BOSS_ATLAS[def.tex]) {
         this.twinPrefix = "boss_hati";
         this.twin = scene.add.sprite(this.x, this.y, "atl_boss_hati", 0)
@@ -355,6 +366,21 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
+  private applyStoryVisual(texture: string) {
+    const combat = texture.startsWith("cast_") ? texture.replace("cast_", "story_") : texture;
+    const key = this.scene.textures.exists(combat) ? combat : texture;
+    this.visualKey = key;
+    this.setTexture(key, key.startsWith("story_") ? "idle-0" : "idle-down-0").setOrigin(.5, .65);
+    const large = ["story_kraken", "story_starplanet", "story_aicore"].includes(key);
+    this.setScale(large ? .9 : key.startsWith("story_") ? .58 : 1.05);
+    const bw = key.startsWith("story_") ? (large ? 175 : 86) : 38;
+    const bh = key.startsWith("story_") ? (large ? 110 : 114) : 60;
+    this.body!.setSize(bw, bh); this.body!.setOffset((this.width - bw) / 2, this.height - bh - (key.startsWith("story_") ? 18 : 6));
+    this.hitW = large ? 155 : 58; this.hitH = large ? 120 : 82;
+    this.baseSX = this.scaleX; this.baseSY = this.scaleY;
+    const idle = `${key}-idle`; if (this.scene.anims.exists(idle)) this.play(idle);
+  }
+
   /** v1.4.9 — 예동(스쿼시&스트레치): 양수=누르기, 음수=쭉 펴기. preUpdate에서 지수 감쇠로 자연 복원 */
   private squash(x: number, y: number) {
     this.squashX = x;
@@ -365,7 +391,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
    *  idle=대기/호흡 · walk=이동/돌진 · atk=근접 강타 · sp1=지면기 · sp2=탄막/소환 · sp3=브레스/빔 · die=사망
    *  프레임 미로드/미보유 애니는 자동 폴백(기존 idle 동작 유지) */
   private animFor(): string {
-    const t = this.def.tex;
+    const t = this.visualKey || this.def.tex;
     switch (this.mode) {
       case "dead":
         return `${t}-die`;
@@ -381,6 +407,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       case "summonTele":
       case "spiralTele": // P7b — 나선 예고는 탄막 계열 자세(sp2)
         return `${t}-sp2`;
+      case "storyCast":
       case "zonesTele":
       case "quakeCast":
         return `${t}-sp1`;
@@ -402,7 +429,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /** 애니 전환 (미보유 애니 → idle 폴백). 현재 애니와 같으면 무시 — 루프 유지 */
   private setBossAnim(key: string) {
     const a = this.scene.anims;
-    const want = a.exists(key) ? key : `${this.def.tex}-idle`;
+    const want = a.exists(key) ? key : `${this.visualKey || this.def.tex}-idle`;
     if (!a.exists(want) || this.anims.currentAnim?.key === want) return;
     this.play(want);
     /* v1.4.31 (#4) — 트윈이 다른 텍스처(하티)면 대응 애니키로 치환해 동기화 */
@@ -459,6 +486,11 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     const dist = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
 
     this.updatePhase();
+    if (this.story?.tick()) {
+      this.scene.showBanner("링 아웃 — 파비앙의 항복!");
+      this.hp = 1; this.takeDamage(this.maxHp * 100, new Phaser.Math.Vector2(), 0);
+      return;
+    }
 
     // 투사체-플레이어 충돌 (풀 순회, 44개 고정 — 저렴함)
     // v3.0.6 — 보스 공격은 방어력 50% 관통 (pierce 0.5)
@@ -492,6 +524,11 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         if (this.nextAttackCd <= 0 && dist < 560 && player.hp > 0) {
           this.pickAttack(player, dist);
         }
+        break;
+      }
+      case "storyCast": {
+        this.setVelocity(this.knockVec.x, this.knockVec.y);
+        if (this.modeTimer <= 0) this.endAttack(1500);
         break;
       }
       case "slamTele": {
@@ -640,7 +677,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
    *  P7b — 66%/33% → 60%/30%. 임계값은 `bossPhases.ts` 단일 출처.
    *  종전 66/33 은 10%p 눈금과 어긋나 "지금 바뀌었나"를 체감하기 어려웠다. */
   private updatePhase() {
-    const next = phaseAt(this.hp / this.maxHp);
+    const canon = canonPhaseIndex(this.def.key, this.hp / this.maxHp);
+    const next = canon >= 0 ? canon + 1 : phaseAt(this.hp / this.maxHp);
     if (next > this.phase) {
       this.phase = next;
       this.onPhaseChange();
@@ -649,6 +687,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   private onPhaseChange() {
     if (!this.alive) return;
+    this.story?.phaseChanged();
+    const visual = canonBossOf(this.def.key)?.phases[this.phase - 1]?.visual;
+    if (visual) this.applyStoryVisual(visual);
     /* vc181 (지시 #1·#2) — 페이즈 전환은 보스전의 최대 고비다. 3D 파편/링이
      *  사방으로 터지며 카메라가 풀백하는 연출을 얹어 "지금 뭔가 변했다"를 각인시킨다. */
     void cine3d().play({ preset: "bossPattern", x: this.x, y: this.y, tint: this.phase === 3 ? 0xff4a3a : 0xffa24a, duration: 1300 });
@@ -749,6 +790,12 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       kind = Phaser.Utils.Array.GetRandom(candidates);
     }
     this.lastAttack = kind;
+    if ((STORY_ATTACKS as readonly string[]).includes(kind)) {
+      const k = kind as StoryAttack;
+      const duration = storyPattern(k, { x: this.x, y: this.y, phase: this.phase, key: this.def.key }, player).duration;
+      this.setMode("storyCast", telegraphMs(k) + duration + 100);
+      this.story?.start(k, player); return;
+    }
     switch (kind) {
       case "slam":
         this.startSlam(player);
@@ -2077,8 +2124,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     const hpAuthority = !(this.sharedMode && !this.sharedIsHost);
     if (this.sharedMode) this.onSharedDamage?.(dealt);
 
+    if (hpAuthority && this.story?.interceptDamage(dealt)) return;
     if (hpAuthority) this.hp -= dealt;
-    this.knockVec.set(dir.x * knock * 0.12, dir.y * knock * 0.12); // 보스는 넉백 거의 안 됨
+    this.knockVec.set(dir.x * knock * (canonBossOf(this.def.key)?.finish === "ringout" ? 3.5 : .12), dir.y * knock * (canonBossOf(this.def.key)?.finish === "ringout" ? 3.5 : .12)); // 보스는 넉백 거의 안 됨
     this.squash(0.035, -0.035); // v1.4.9 — 피격 미세 진동
     // 타격감: 화이트 플래시 — 카운터/기절 상태의 틴트는 유지
     this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
@@ -2103,7 +2151,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.hp = 0;
       this.alive = false;
       this.mode = "dead";
-      this.setBossAnim(`${this.def.tex}-die`); // v5.0 — 사망 애니 (미보유 시 idle 폴백)
+      this.story?.destroy();
+      if (canonBossOf(this.def.key)?.finish === "repel") this.scene.showBanner(`${this.def.name} — 국면 돌파`);
+      this.setBossAnim(`${this.visualKey || this.def.tex}-die`); // v5.0 — 사망 애니 (미보유 시 idle 폴백)
       this.volleyTimer?.remove();
       this.spiralTimer?.remove();
       this.beamTimer?.remove();
@@ -2184,6 +2234,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   }
 
   destroyPool() {
+    this.story?.destroy(); this.story = null;
     this.volleyTimer?.remove();
     this.spiralTimer?.remove();
     this.beamTimer?.remove();

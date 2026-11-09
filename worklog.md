@@ -5087,3 +5087,12 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
 - 현재 컷씬 배역 26종, 인물별 16프레임(총416)과 같은 시트의 초상화26장을 제작·연결. 정본의 성별·무기·관계·에테르 화자 오류를 수정. 포털과 배우 겹침, 부상 자세 덮어쓰기, 기능 안내창의 컷씬 가림을 해결.
 - 전체537개 테스트, 후속 관련33개 검사, tsc/ESLint 통과. 실제 브라우저4장면·모바일·26개 초상화 로드 검사, pageerror/에셋 실패0. 자세한 범위는 docs/CUTSCENE_CAST_IMPLEMENTATION.md.
 - 후속 요청인 타일맵 전면교체와 챕터별 보스 개편은 이어서 진행한다.
+
+## Task — 2026-11-10: chapter terrain and canonical boss checkpoint
+
+- User requested story-appropriate terrain replacement, chapter boss redesign/patterns, pixel art and unique attack/skill motions, then immediate commit/push and a continuation prompt.
+- Expanded matched cast to 31 identities/496 frames/31 portraits; added 13 combat/monster atlases/208 frames with source prompts/hashes.
+- Added source-verified CC0 chapter terrain, 25 chapter place/encounter profiles, native tile layers, canonical boss phase/visual bindings and dedicated telegraphed mechanics.
+- Installed checksum-verified Game Development Studio CLI 1.5.1 outside the repository; capabilities and required doctor checks pass.
+- This is a WIP checkpoint. Initial full run after terrain/boss changes: 524/537 pass, 13 fail (several old placement/quest/terrain assumptions); subsequent fixes are not yet fully retested. Previous cast-only checkpoint a69384c passed all 537 and four browser scenes. No APK/deployment or complete new boss combat validation claimed.
+- Continuation scope and exact verification limits: docs/handoff/NEXT_AI_PROMPT.md.

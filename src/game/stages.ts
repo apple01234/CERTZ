@@ -13,6 +13,9 @@ import {
 } from "./howlrstone";
 /* vc237 — 구역별 걷는 대사 세트(3개 순환 폐지). 순수 데이터라 순환 import 없음. */
 import { hasStageDialogue } from "./stageDialogue";
+import { CHAPTER_STORY_PLAN, chapterEncounter } from "./chapterStoryPlan";
+import { canonBossOf, BOSS_RECORD_ALIASES } from "./entities/bossDesign";
+import { GRAND_PLANET_BOSSES, type GrandPlanetBossKey } from "./grandPlanetCanon";
 
 /* ================= 타입 ================= */
 
@@ -135,7 +138,7 @@ export type BossKey =
   | "nidhog" | "surt" | "fenrir" | "skoll" | "gram" | "abudditos"
   | "vord" | "jorm" | "nagr"
   /* vc231 — 영프 편 보스 5종. 정의는 `howlrstone.ts` 의 HOWLRSTONE_BOSSES. */
-  | "harold" | "verodin" | "feron" | "shadow" | "scarlet";
+  | HowlrstoneBossKey | GrandPlanetBossKey;
 
 /* ================= v3.0.28 (#보스난이도) — 메이플식 보스 난이도 =================
  *  이지 / 노말 / 하드 / 카오스 4단계. 스토리 보스·재림 보스 공통 적용.
@@ -183,6 +186,7 @@ export function bossEmeraldOf(bossKey: BossKey, diff: BossDiffKey): number {
  *  방관하면 대폭발) */
 export type BossAttackKind =
   | "slam" | "charge" | "volley" | "ring" | "zones" | "summon"
+  | "tentacleslam" | "inkflood" | "shadowcopies" | "cursefield" | "bloodseal" | "corruption" | "rosecore" | "jadeclones" | "ringpush"
   | "spiral" | "beam" | "blink" | "quake" | "counter"
   /* vc142 (#6) — 보스 고유 VX 패턴 (유저 에셋 FX — 보스마다 전부 다른 공격) */
   | "firepillars" // 수르트 — 추적 화염기둥 3연속
@@ -809,6 +813,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
    *
    * 신규 아트는 만들지 않고 기존 아틀라스를 재사용한다(텍스처 키는 원본 데이터에 지정).
    * ══════════════════════════════════════════════════════════════════════════ */
+  ...GRAND_PLANET_BOSSES,
   ...Object.fromEntries(
     Object.values(HOWLRSTONE_BOSSES).map((b) => [
       b.key,
@@ -832,6 +837,17 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
 };
 
 /* ================= 스테이지 생성기 ================= */
+
+// These values, rather than unused design annotations, are what the live Boss chooses from.
+for (const [key, boss] of Object.entries(BOSS_DEFS)) {
+  const design = canonBossOf(key);
+  if (!design) continue;
+  boss.tex = design.visual;
+  boss.sig = design.phases[0].patterns[0] as BossAttackKind;
+  const pool = (n: number) => [...new Set(design.phases.slice(0, n).flatMap((p) => [...p.patterns]))] as BossAttackKind[];
+  boss.patterns = { p1: pool(1), p2: pool(2), p3: pool(3) };
+  if (BOSS_RECORD_ALIASES[key]) boss.name = `전투기록 · ${design.name}`;
+}
 
 /** 챕터별 난이도 배율 (인덱스 = 장번호-2 → forest(2장)부터) */
 /* v3.0.22 (#50) — "챕터를 지날수록 쎄져야 하는데 약함" — 챕터 스케일링 전면 강화.
@@ -2268,5 +2284,46 @@ for (const spec of REBIRTH_STAGES) {
 for (const spec of HOWLRSTONE_CHAPTERS) {
   for (let sub = 1; sub <= 10; sub++) {
     STAGE_THEME[`${spec.key}${sub}`] = { ground: spec.groundTex, path: spec.pathTex, bg: spec.bg };
+  }
+}
+
+
+/** Bind existing stage IDs to the approved story places; keep rewards, level curves and save keys. */
+for (const [chapter, plan] of Object.entries(CHAPTER_STORY_PLAN)) {
+  for (const [i, place] of plan.places.entries()) {
+    const key = chapter.startsWith("howlrstone") ? `${chapter}x${i + 1}` : `${chapter}${i + 1}`;
+    const stage = STAGES[key];
+    if (!stage) continue;
+    const previousBoss = stage.boss;
+    const encounter = chapterEncounter(chapter, i + 1) as BossKey | null;
+    stage.name = `${plan.training ? "[수련] " : ""}${place.title}`;
+    stage.subtitle = plan.training ? "기존 선택 원정 · 기획서 전투기록 재현" : plan.title;
+    STAGE_SHORT[key] = place.title;
+    STAGE_THEME[key] = { ground: `terrain_${place.floor}`, path: `terrain_${place.path}`, bg: place.border === "water" ? "#245365" : "#292638" };
+    stage.boss = !!encounter; stage.bossKey = encounter ?? undefined;
+    const spec = chapter.startsWith("howlrstone") ? HOWLRSTONE_CHAPTERS.find(c => c.key === chapter) : CHAPTERS.find(c => c.key === chapter);
+    if (spec) Object.assign(stage, stageSize(spec.width, spec.height, i + 1, encounter ? i + 1 : -1, !!encounter));
+    if (encounter) {
+      stage.enemies = [];
+      stage.quests = [
+        { id: stage.quests.find(q => q.type === "boss")?.id ?? `${key}-boss`, type: "boss", title: BOSS_DEFS[encounter].name,
+          desc: `${place.title}의 전투 국면을 돌파하자.`, targetLabel: BOSS_DEFS[encounter].name,
+          reward: Math.round(320 * (stage.scaleMul?.gold ?? 1) * G), expReward: Math.round(420 * (stage.scaleMul?.exp ?? 1)) },
+        { id: `${key}-next`, type: "reach", title: "다음 장소로", desc: "열린 차원문으로 다음 장소에 가자.", targetLabel: "차원문" },
+      ];
+    } else {
+      stage.quests = stage.quests.filter(q => q.type !== "boss");
+      if (previousBoss || !stage.quests.length) stage.quests = [{ id: `${key}-route`, type: "reach", title: `${place.title} 통과`, desc: "이 장소의 길을 따라 다음 장소로 향하자.", targetLabel: "차원문" }];
+      // Rebuilding and tending the wounded are not turned into obligatory monster massacres.
+      if (chapter === "howlrstone15" || chapter === "howlrstone6") {
+        stage.enemies = [];
+        stage.quests = [{ id: stage.quests[0]?.id ?? `${key}-route`, type: "reach", title: place.title, desc: "동료의 이야기를 듣고 다음 장소로 가자.", targetLabel: "차원문" }];
+      } else {
+        for (const q of stage.quests) {
+          if (q.type === "hunt") { q.title = `${place.title}의 길 확보`; q.desc = `${q.targetLabel ?? "적"}을 상대해 통행로를 확보하자.`; }
+          if (q.type === "collect") { q.title = `${place.title} 조사`; q.desc = "주변의 흔적을 확인해 길을 확보하자."; }
+        }
+      }
+    }
   }
 }

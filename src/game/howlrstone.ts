@@ -1,3 +1,4 @@
+import { CHAPTER_STORY_PLAN } from "./chapterStoryPlan";
 /**
  * 영준 프린세스 편(하울르스톤) — 1기 15화 원문 기반 스테이지 데이터
  *
@@ -54,7 +55,7 @@ export type HowlrstoneChapterKey =
   | "howlrstone11" | "howlrstone12" | "howlrstone13" | "howlrstone14" | "howlrstone15";
 
 /** 영프 편 보스 키 — 원문 등장 순서. */
-export type HowlrstoneBossKey = "harold" | "verodin" | "feron" | "shadow" | "scarlet";
+export type HowlrstoneBossKey = "harold" | "verodin" | "feron" | "shadow" | "scarlet" | "dio" | "rasion" | "desknis" | "scarlet_blood" | "scarlet_dark" | "scarlet_seal";
 
 /**
  * 영프 편 보스 정의.
@@ -82,6 +83,12 @@ export type HowlrstoneBossSpec = {
 };
 
 export const HOWLRSTONE_BOSSES: Record<HowlrstoneBossKey, HowlrstoneBossSpec> = {
+  dio: { key: "dio", name: "디오 · 다크니스 크리스탈의 힘", episode: "1.txt 마을 습격", hp: 24000, atk: 48, speed: 92, exp: 1800, gold: 900, tex: "cast_dio", orbTint: 0x8e62b4, introDialogue: "bossIntroDio", sig: "summon", patterns: { p1: ["charge", "summon"], p2: ["summon", "zones", "charge"], p3: ["summon", "zones", "charge", "ring"] }, summonKey: "wraith" },
+  rasion: { key: "rasion", name: "고대의 재앙 라시온", episode: "2.txt:121-125", hp: 65000, atk: 74, speed: 132, exp: 3700, gold: 1900, tex: "cast_rasion", orbTint: 0x9a93be, introDialogue: "bossIntroRasion", sig: "counter", chargeChain: 2, patterns: { p1: ["charge", "counter"], p2: ["charge", "counter", "blinkslash"], p3: ["charge", "counter", "blinkslash", "slam"] } },
+  desknis: { key: "desknis", name: "고대의 공포 데스크니스", episode: "2.txt:247-301", hp: 145000, atk: 106, speed: 102, exp: 8500, gold: 4100, tex: "story_desknis", orbTint: 0x685188, introDialogue: "bossIntroDesknis", sig: "zones", patterns: { p1: ["zones", "blinkslash"], p2: ["zones", "blinkslash", "beam"], p3: ["zones", "blinkslash", "beam", "portalteleport"] } },
+  scarlet_blood: { key: "scarlet_blood", name: "스칼렛 · 원혈과 피의 영역", episode: "2.txt:162-166", hp: 105000, atk: 88, speed: 112, exp: 5700, gold: 3000, tex: "cast_scarlet", orbTint: 0xd34c66, introDialogue: "bossIntroScarletBlood", sig: "ring", patterns: { p1: ["blinkslash", "ring"], p2: ["blinkslash", "ring", "volley"], p3: ["blinkslash", "ring", "volley", "zones"] } },
+  scarlet_dark: { key: "scarlet_dark", name: "스칼렛 · 어둠의 잠식", episode: "2.txt:165-205", hp: 117000, atk: 94, speed: 114, exp: 6300, gold: 3300, tex: "cast_scarlet", orbTint: 0x78529d, introDialogue: "bossIntroScarletDark", sig: "zones", patterns: { p1: ["zones", "blinkslash"], p2: ["zones", "blinkslash", "beam"], p3: ["zones", "blinkslash", "beam", "ring"] } },
+  scarlet_seal: { key: "scarlet_seal", name: "스칼렛 · 봉쇄된 영역", episode: "2.txt:208-241", hp: 120000, atk: 98, speed: 110, exp: 6800, gold: 3500, tex: "cast_scarlet", orbTint: 0xb15593, introDialogue: "bossIntroScarletSeal", sig: "counter", patterns: { p1: ["counter", "blinkslash"], p2: ["counter", "blinkslash", "zones"], p3: ["counter", "blinkslash", "zones", "ring"] } },
   /* 3화 "거대한 해적선이 나타났다 … 바다의 군단장 해롤드" → 크라켄.
    *  원문의 "수상전 최강 병기" 설정에 맞춰 원거리 탄막 위주. */
   harold: {
@@ -89,7 +96,7 @@ export const HOWLRSTONE_BOSSES: Record<HowlrstoneBossKey, HowlrstoneBossSpec> = 
     name: "바다의 군단장 해롤드",
     episode: "3화 시작된 전쟁",
     hp: 46000, atk: 64, speed: 92, exp: 2800, gold: 1600,
-    tex: "boss_jorm",
+    tex: "cast_harold",
     orbTint: 0x5ad0ff,
     introDialogue: "bossIntroHarold",
     sig: "beam",
@@ -108,7 +115,7 @@ export const HOWLRSTONE_BOSSES: Record<HowlrstoneBossKey, HowlrstoneBossSpec> = 
     name: "주술사 베로니카와 흑마법사 딘",
     episode: "7화 군단장들과의 전투",
     hp: 58000, atk: 69, speed: 96, exp: 3300, gold: 1800,
-    tex: "boss_vord",
+    tex: "cast_veronica",
     orbTint: 0xc06aff,
     introDialogue: "bossIntroVerodin",
     sig: "summon",
@@ -127,7 +134,7 @@ export const HOWLRSTONE_BOSSES: Record<HowlrstoneBossKey, HowlrstoneBossSpec> = 
     name: "페르슈타인 카르리온 — 다크엑스칼리버",
     episode: "8화 두 전사의 격전",
     hp: 74000, atk: 78, speed: 112, exp: 4100, gold: 2200,
-    tex: "boss_gram",
+    tex: "cast_feron",
     orbTint: 0x8a5aff,
     introDialogue: "bossIntroFeron",
     sig: "charge",
@@ -147,7 +154,7 @@ export const HOWLRSTONE_BOSSES: Record<HowlrstoneBossKey, HowlrstoneBossSpec> = 
     name: "어둠의 성채 — 스칼렛의 환영",
     episode: "10화 어둠의 성채",
     hp: 92000, atk: 87, speed: 104, exp: 5100, gold: 2700,
-    tex: "boss_skoll",
+    tex: "cast_feron",
     orbTint: 0x66e0ff,
     introDialogue: "bossIntroShadow",
     sig: "ring",
@@ -167,7 +174,7 @@ export const HOWLRSTONE_BOSSES: Record<HowlrstoneBossKey, HowlrstoneBossSpec> = 
     name: "어둠의 군주 스칼렛",
     episode: "11~14화 어둠의 왕좌",
     hp: 130000, atk: 102, speed: 108, exp: 7200, gold: 3800,
-    tex: "boss_abudditos",
+    tex: "cast_scarlet",
     orbTint: 0xff3a6a,
     introDialogue: "bossIntroScarlet",
     sig: "holymantle",
@@ -640,4 +647,10 @@ export const HOWLRSTONE_ENTRY = "howlrstone1x1" as const;
 export const HOWLRSTONE_FINAL = "howlrstone15x4" as const;
 
 /** 영프 편 챕터 키 목록 (다른 모듈의 순회용). */
+// Preserve IDs, stage counts and reward curves; the approved early manuscripts define encounters.
+for (const chapter of HOWLRSTONE_CHAPTERS) {
+  const plan = CHAPTER_STORY_PLAN[chapter.key];
+  chapter.title = plan.title; chapter.subtitle = plan.places.map(p => p.title).join(" · ");
+  chapter.boss = [...plan.places].reverse().find(p => p.boss)?.boss as HowlrstoneBossKey ?? null;
+}
 export const HOWLRSTONE_KEYS = HOWLRSTONE_CHAPTERS.map((c) => c.key);

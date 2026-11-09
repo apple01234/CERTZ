@@ -5317,6 +5317,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private updatePortalGuides() {
+    if (sceneCinematicPlaying(this)) { this.retGuide?.setVisible(false); return; }
     /* v1.4.3 (작업3 최적화) — 150ms 스로틀: 화살표 이동은 프레임당 갱신 없이도 부드럽다.
     *  매 프레임 배열 할당+삼각함수 2회를 1/9 빈도로 절감 — 시각 동일. */
     if (this.time.now - this.portalGuideMs < 150) return;
@@ -9531,8 +9532,8 @@ export class WorldScene extends Phaser.Scene {
       if (!DIALOGUES[introId] || this.seenSet.has(introId)) return;
       this.clearBossIntroActor();
       const who = cutsceneCharacter(DIALOGUES[introId].speaker);
-      if (who) {
-        const isBoss = ["harold", "veronica", "feron", "scarlet"].includes(who.id);
+      if (who && !(this.boss?.texture.key.startsWith("story_") && ["dio", "harold", "veronica", "rasion", "feron", "scarlet", "littlestar", "jade", "fabian"].includes(who.id))) {
+        const isBoss = ["dio", "harold", "veronica", "rasion", "feron", "scarlet", "littlestar", "jade", "fabian"].includes(who.id);
         const p = this.cutsceneActorPosition({ x: bx + (isBoss ? 0 : -64), y: by });
         this.bossIntroActor = createCastSprite(this, who.id, p.x, p.y)?.setDepth(this.yDepthFor(p.y) + 1) ?? null;
         if (this.bossIntroActor) {
