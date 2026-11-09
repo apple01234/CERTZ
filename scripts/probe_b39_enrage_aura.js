@@ -69,20 +69,48 @@ async function redRatio(buf, crop) {
  *  vc290 에서 page.screenshot() 이 계속 로딩/타이틀 화면을 찍었다.
  *  원인은 React 오버레이(#root 위 DOM)가 <canvas> 를 덮고 있어서다.
  *  보스 객체는 정상 생성되고 Graphics 명령도 28개 있는데 스크린샷엔 안 잡혔다.
- *  renderer.snapshot() 은 **캔버스 백킹스토어만** 읽으므로 DOM 오버레이와 무관하다.
+ *
+ * [왜 renderer.snapshot 이 아니라 canvas.toDataURL 인가]
+ *  이 빌드의 렌더러는 Phaser.CANVAS(type 1)다. snapshot() 은 캡처를 다음 렌더에
+ *  예약하고 리드백 타이밍에 의존해서, 같은 조건에서도 단색 1색짜리 이미지를
+ *  돌려주는 일이 잦았다(실측: 12회 연속 flat-frame). 2D 캔버스는 toDataURL 로
+ *  현재 백킹스토어를 즉시 동기 복사할 수 있어 이 문제가 없다.
+ *  → toDataURL 을 1순위로, 실패하면 snapshot 으로 폴백한다.
  */
 async function canvasPng(page) {
-  const dataUrl = await page.evaluate(async () => {
+  const res = await page.evaluate(async () => {
     const g = window.__SERTZ__?.game;
-    if (!g?.renderer?.snapshot) return null;
-    return await new Promise((res) => {
+    /* 1순위: 2D 캔버스 직접 복사 (동기·즉시) */
+    try {
+      const cv = g?.canvas;
+      if (cv && typeof cv.toDataURL === "function") {
+        const d = cv.toDataURL("image/png");
+        if (typeof d === "string" && d.startsWith("data:image") && d.length > 2000) {
+          return { via: "toDataURL", data: d };
+        }
+      }
+    } catch (e) { /* 폴백으로 */ }
+
+    /* 2순위: renderer.snapshot (타임아웃 필수 — 콜백이 안 오면 매달린다) */
+    if (!g?.renderer?.snapshot) return { via: "none", err: "NO_SNAPSHOT" };
+    const d = await new Promise((r) => {
+      let settled = false;
+      const done = (v) => { if (!settled) { settled = true; r(v); } };
+      setTimeout(() => done("TIMEOUT"), 2000);
       try {
-        g.renderer.snapshot((img) => res(img && img.src ? img.src : null));
-      } catch (e) { res(null); }
+        g.renderer.snapshot((img) => done(img && img.src ? img.src : "CALLBACK_NULL"));
+      } catch (e) { done("THROW:" + e.message); }
     });
+    return { via: "snapshot", data: d };
   });
-  if (!dataUrl || !dataUrl.startsWith("data:image")) return null;
-  return Buffer.from(dataUrl.split(",")[1], "base64");
+
+  if (res.via === "none") { canvasPng.lastError = res.err; return null; }
+  if (typeof res.data !== "string" || !res.data.startsWith("data:image")) {
+    canvasPng.lastError = `${res.via}:${String(res.data).slice(0, 40)}`;
+    return null;
+  }
+  canvasPng.lastError = null;
+  return Buffer.from(res.data.split(",")[1], "base64");
 }
 
 /** 캔버스 좌표(월드→캔버스 픽셀)로 보스 발밑 크롭을 계산한다. */
@@ -120,7 +148,7 @@ async function setAuraVisible(page, vis) {
 }
 
 /** 부팅 완료(=타이틀의 "게임 시작" 버튼이 보임)까지 조건 대기. */
-async function waitForStart(page, timeoutMs = 150000) {
+async function waitForStart(page, timeoutMs = 240000) {
   const t0 = Date.now();
   while (Date.now() - t0 < timeoutMs) {
     const hasBtn = await page.evaluate(() => {
@@ -184,8 +212,19 @@ async function ensureCharacter(page) {
 }
 
 (async () => {
+  /* [저메모리 실행]
+   *  이 컨테이너는 10.6GB 중 여유가 수백 MB까지 떨어진다. 전체 실행에서
+   *  Chromium 이 1GB 이상 쓰면 부팅 단계에서 렌더러가 죽어
+   *  "게임 시작 버튼이 안 나옴" 으로 실패했다(실측: 부팅 150초 타임아웃).
+   *  --disable-dev-shm-usage 로 /dev/shm 고갈을 막고, GPU 캐시를 줄인다. */
   const browser = await chromium.launch({
-    args: ["--use-gl=swiftshader", "--no-sandbox", "--disable-web-security"],
+    args: [
+      "--use-gl=swiftshader",
+      "--no-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-gpu-shader-disk-cache",
+      "--js-flags=--max-old-space-size=512",
+    ],
   });
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   const page = await ctx.newPage();
@@ -461,91 +500,137 @@ async function ensureCharacter(page) {
     const w = window.__B39_W__;
     const b = w?.boss;
     if (!b?.enrageAura) return false;
+    /* [body.moves=false 를 쓰지 않는 이유]
+     *  보스를 완전히 고정하려고 Arcade 바디를 멈췄더니 renderer.snapshot() 이
+     *  단색 1색짜리 이미지만 돌려줬다(실측 flat-frame(1색) 12회 연속).
+     *  물리 바디를 끄면 씬 렌더 경로가 멈추는 것으로 보인다.
+     *  → 속도만 0 으로 두고, 두 캡처 사이의 이동은 "회차별 크롭 갱신" 으로 흡수한다. */
     b.setVelocity?.(0, 0);
-    /* 보스가 도망가지 않게 모드도 고정 */
     b.mode = "idle";
     b.nextAttackCd = 999999;
-    return true;
+    /* [플레이어를 살리고 페이드를 걷어내는 이유]
+     *  보스를 격노시키면 플레이어가 죽는다(실측: 캡처 시점 playerHp:0).
+     *  사망 경로는 cameras.main.fadeOut(600, 20, 0, 0) 으로 화면을 어두운
+     *  붉은색으로 덮는다. 그래서 캔버스가 단색 rgb(20,0,0) 이 되어
+     *  오라 비교가 불가능했다(flat-frame(1색) 12회 연속의 정체).
+     *  → HP 를 채워 되살리고, 이미 걸린 페이드는 resetFX 로 즉시 해제한다. */
+    const p = w.player;
+    if (p) {
+      p.hp = p.maxHp ?? p.hp;
+      p.alive = true;
+    }
+    const cam = w.cameras?.main;
+    try { cam?.resetFX?.(); } catch { /* 미지원 무시 */ }
+    return {
+      bossX: Math.round(b.x), bossY: Math.round(b.y),
+      playerHp: p?.hp ?? null,
+      fadeCleared: !!cam?.fadeEffect === false,
+    };
   });
+  note("보스 고정", canProbe);
 
   /**
-   * 빈 프레임(단색)을 버리고 "실제로 그려진" 프레임을 얻는다.
+   * 실제로 그려진 프레임을 얻는다.
    *
-   * [왜 재시도가 필요한가]
-   *  renderer.snapshot() 은 캡처를 다음 렌더에 예약한다. 토글 직후에 부르면
-   *  아직 반영 전이거나, WebGL 리드백 타이밍이 어긋나 단색 rgb(20,0,0) 한 장이
-   *  나오는 경우가 있었다(실측: off 3장 중 내용 있는 것 1, on 3장 전부 빈 프레임).
-   *  → 최대 12회까지 떠서 빈 프레임은 버리고, 처음 나온 정상 프레임을 쓴다.
-   *  토글 후 2프레임을 먼저 기다려 이전 상태가 찍히는 지연도 함께 막는다.
+   * [왜 고유색 개수로 판정하나]
+   *  배경색이 넓게 깔린 화면에서 "첫 픽셀과 다름" 으로 세면 정상 프레임을
+   *  버리기도 하고(4,114색 프레임을 varied=0 으로 오판), 반대로 배경만 있는
+   *  프레임을 통과시키기도 한다. 고유색 개수는 빈 프레임=1색, 정상=수백~수천색이라
+   *  기준이 명확하다.
+   *
+   * [snapshot 이 단색을 돌려주는 경우]
+   *  WebGL/Canvas 리드백 타이밍에 따라 캡처가 한 프레임 비는 일이 있다
+   *  (실측: off 3장 중 1장만 정상). 12회까지 재시도하고, 끝내 못 얻으면
+   *  그 사유를 남겨 조용한 SKIP 이 아니라 명시적 판정불가로 만든다.
    */
   async function grabLive(tag) {
     await page.evaluate(
       () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
     );
+    let lastColors = 0, reason = "no-frame";
     for (let i = 0; i < 12; i++) {
       await page.waitForTimeout(120);
       const buf = await canvasPng(page);
-      if (!buf) continue;
+      if (!buf) { reason = canvasPng.lastError || "null-buf"; continue; }
       const { data, info } = await sharp(buf).raw().toBuffer({ resolveWithObject: true });
-      /* 단색 여부: 첫 픽셀과 다른 픽셀이 하나라도 있으면 그려진 프레임 */
-      const [r0, g0, b0] = [data[0], data[1], data[2]];
-      let varied = 0;
-      for (let k = info.channels; k < data.length; k += info.channels * 53) {
-        if (data[k] !== r0 || data[k + 1] !== g0 || data[k + 2] !== b0) varied++;
+      const seen = new Set();
+      for (let k = 0; k < data.length; k += info.channels * 17) {
+        seen.add((data[k] << 16) | (data[k + 1] << 8) | data[k + 2]);
+        if (seen.size > 40) break;
       }
-      if (varied > 5) {
+      lastColors = seen.size;
+      if (seen.size > 40) {
         fs.writeFileSync(path.join(OUT, `canvas_aura_${tag}.png`), buf);
-        return { buf, varied, tries: i + 1 };
+        return { buf, colors: seen.size, tries: i + 1 };
       }
+      reason = `flat-frame(${seen.size}색)`;
     }
-    return { buf: null, varied: 0, tries: 12 };
+    return { buf: null, colors: lastColors, tries: 12, err: reason };
   }
 
   if (canProbe) {
-    const cropInfo = await bossCrop(page, 80);
-    note("발밑 크롭", cropInfo);
-    if (cropInfo) {
-      const { crop } = cropInfo;
+    /* [크롭을 회차마다 새로 뜨는 이유]
+     *  보스는 setVelocity(0,0) 뒤에도 다음 tick() 에서 다시 추격 속도를 받는다.
+     *  OFF 캡처와 ON 캡처 사이에 수십~수백 px 이동하므로, 처음 잰 크롭을
+     *  재사용하면 엉뚱한 곳을 잘라 붉은 픽셀이 역전된다(실측 -3170).
+     *  → 캡처 직후의 보스 좌표로 크롭을 다시 계산해 두 장을 같은 방식으로 잰다. */
+    const okOff = await setAuraVisible(page, false);
+    const off = await grabLive("off");
+    const cropOff = off.buf ? await bossCrop(page, 80) : null;
 
-      /* OFF 3장 */
-      const okOff = await setAuraVisible(page, false);
-      const off = await grabLive("off");
-      /* ON 3장 */
-      const okOn = await setAuraVisible(page, true);
-      const on = await grabLive("on");
+    const okOn = await setAuraVisible(page, true);
+    const on = await grabLive("on");
+    const cropOn = on.buf ? await bossCrop(page, 80) : null;
 
-      if (off.buf && on.buf) {
-        const rOff = await redRatio(off.buf, crop);
-        const rOn = await redRatio(on.buf, crop);
-        const gOff = await redRatio(off.buf, null);
-        const gOn = await redRatio(on.buf, null);
-        note("프레임 내용량", { off: off.varied, on: on.varied, offTries: off.tries, onTries: on.tries });
-        note("발밑 붉은픽셀 (오라 OFF)", rOff);
-        note("발밑 붉은픽셀 (오라 ON)", rOn);
-        note("캔버스 전체 붉은픽셀", { off: gOff.ratio, on: gOn.ratio });
-        const footDelta = rOn.ratio - rOff.ratio;
-        const globalDelta = gOn.ratio - gOff.ratio;
-        note("오라 기여분", {
-          foot: Number(footDelta.toFixed(5)),
-          global: Number(globalDelta.toFixed(5)),
-          redPixels: rOn.red - rOff.red,
-        });
-        pixel = {
-          verifiable: true,
-          rose: footDelta > 0.002 || globalDelta > 0.002,
-          footDelta: Number(footDelta.toFixed(5)),
-          globalDelta: Number(globalDelta.toFixed(5)),
-          toggleOk: okOff && okOn,
-        };
-      } else {
-        /* 12회 재시도에도 그려진 프레임을 못 얻음 — 렌더 자체가 없는 상태 */
-        pixel = {
-          verifiable: false,
-          why: `정상 프레임 확보 실패 (off varied=${off.varied}, on varied=${on.varied}) — snapshot 이 빈 프레임만 반환`,
-        };
-      }
+    note("발밑 크롭", { off: cropOff?.crop ?? null, on: cropOn?.crop ?? null });
+
+    if (off.buf && on.buf && cropOff && cropOn) {
+      const rOff = await redRatio(off.buf, cropOff.crop);
+      const rOn = await redRatio(on.buf, cropOn.crop);
+      const gOff = await redRatio(off.buf, null);
+      const gOn = await redRatio(on.buf, null);
+      note("프레임 내용량", { off: off.colors, on: on.colors, offTries: off.tries, onTries: on.tries });
+      note("발밑 붉은픽셀 (오라 OFF)", rOff);
+      note("발밑 붉은픽셀 (오라 ON)", rOn);
+      note("캔버스 전체 붉은픽셀", { off: gOff.ratio, on: gOn.ratio });
+      const footDelta = rOn.ratio - rOff.ratio;
+      const globalDelta = gOn.ratio - gOff.ratio;
+      note("오라 기여분", {
+        foot: Number(footDelta.toFixed(5)),
+        global: Number(globalDelta.toFixed(5)),
+        redPixels: rOn.red - rOff.red,
+      });
+      pixel = {
+        verifiable: true,
+        rose: footDelta > 0.002 || globalDelta > 0.002,
+        footDelta: Number(footDelta.toFixed(5)),
+        globalDelta: Number(globalDelta.toFixed(5)),
+        toggleOk: okOff && okOn,
+      };
     } else {
-      pixel = { verifiable: false, why: "크롭 계산 실패(카메라/보스 없음)" };
+      /* 12회 재시도에도 그려진 프레임을 못 얻음 — 왜 비었는지 진단을 남긴다 */
+      const diag = await page.evaluate(() => {
+        const w = window.__B39_W__;
+        const g = window.__SERTZ__?.game;
+        return {
+          sceneActive: !!w?.scene?.isActive?.(),
+          scenePaused: !!w?.scene?.isPaused?.(),
+          playerHp: w?.player?.hp ?? null,
+          playerAlive: w?.player?.alive ?? null,
+          bossAlive: w?.boss?.alive ?? null,
+          bossXY: w?.boss ? [Math.round(w.boss.x), Math.round(w.boss.y)] : null,
+          camCinema: w?.camCinema ?? null,
+          physicsPaused: !!w?.physics?.world?.isPaused,
+          loopRunning: g?.loop?.running ?? null,
+          canvas: g?.canvas ? [g.canvas.width, g.canvas.height] : null,
+          toDataUrlLen: (() => { try { return g.canvas.toDataURL("image/png").length; } catch (e) { return "err:" + e.message; } })(),
+        };
+      });
+      note("렌더 진단", diag);
+      pixel = {
+        verifiable: false,
+        why: `정상 프레임 확보 실패 (off colors=${off.colors}/${off.err}, on colors=${on.colors}/${on.err})`,
+      };
     }
   } else {
     pixel = { verifiable: false, why: "오라 객체 없음" };

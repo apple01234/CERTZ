@@ -6707,8 +6707,22 @@ function RankTab({ ik }: { ik: NonNullable<RpgState["isekai"]> | undefined }) {
   return (
     <div>
       <div className="mb-2 grid grid-cols-3 gap-1">
-        {([["gate", "바르가 수비전"], ["closet", "균열 던전"], ["dojang", "무릉도장"], ["tower", "심연의 탑"]] as [RankMode, string][]).map(([k, label]) => (
-          <button key={k} onClick={() => setMode(k)} className={`rounded-lg border px-1 py-1.5 text-[10px] font-black ${mode === k ? "border-sky-300/60 bg-sky-400/20 text-sky-100" : "border-white/10 bg-white/[0.03] text-white/50"}`}>{label}</button>
+        {([["gate", "바르가 수비전"], ["closet", "균열 던전"], ["dojang", "무릉도장"], ["tower", "심연의 탑"]] as [RankMode, string][]).map(([k, label], idx) => (
+          <button key={k} onClick={() => setMode(k)} className={`rounded-lg border px-1 py-1.5 text-[10px] font-black ${mode === k ? "border-sky-300/60 bg-sky-400/20 text-sky-100" : "border-white/10 bg-white/[0.03] text-white/50"}`}>
+            {/* vc291 — 모드마다 Gigapack rank 심볼(S/A/B/C)을 16px 로 재생.
+             *  활성 탭에서만 루프시켜 동시 애니메이션 수를 1개로 묶는다(모바일 발열).
+             *  단순 장식이므로 aria-hidden — 스크린리더는 버튼 텍스트만 읽는다. */}
+            <span
+              className={`sertz-sym sertz-sym-rank mr-1 align-middle ${mode === k ? "" : "[animation-play-state:paused]"}`}
+              aria-hidden="true"
+              style={{
+                width: 16,
+                height: 16,
+                backgroundImage: `url(/assets/fx/symbol-rank-${["s-001-large-yellow", "a-001-large-green", "b-001-large-orange", "c-001-large-blue"][idx]}.png)`,
+              }}
+            />
+            {label}
+          </button>
         ))}
       </div>
       <p className="mb-1.5 rounded-lg border border-sky-300/20 bg-sky-400/5 px-2 py-1.5 text-[10px] text-white/60">내 최고 기록: <span className="font-black text-sky-200">{localBest.toLocaleString()}</span> {mode === "dojang" ? "(누적 피해)" : mode === "gate" ? "(웨이브)" : "(골드)"} · 기록은 멀티 서버에 자동 등록</p>
@@ -6718,7 +6732,23 @@ function RankTab({ ik }: { ik: NonNullable<RpgState["isekai"]> | undefined }) {
         <div className="flex flex-col gap-1">
           {list.map((e, i) => (
             <div key={`${e.name}-${i}`} className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${i < 3 ? "border-amber-300/40 bg-amber-400/[0.08]" : "border-white/10 bg-white/[0.03]"}`}>
-              <span className={`w-6 text-center text-[11px] font-black ${i < 3 ? "text-amber-300" : "text-white/55"}`}>{i + 1}</span>
+              {/* vc291 — 1~3위는 Gigapack place 심볼을 CSS 로 재생(2.4초 팝인 후 마지막
+               *  프레임에서 정지). 4위 이하는 숫자 유지 — 8위까지만 심볼이 있어서다.
+               *  글자색 폴백을 남긴 이유: 이미지 로드가 실패해도 순위가 사라지면 안 된다. */}
+              {i < 3 ? (
+                <span
+                  className="sertz-sym sertz-sym-place shrink-0"
+                  role="img"
+                  aria-label={`${i + 1}위`}
+                  style={{
+                    width: 20,
+                    height: 20,
+                    backgroundImage: `url(/assets/fx/symbol-place-${["1st-001-large-yellow", "2nd-001-large-green", "3rd-001-large-orange"][i]}.png)`,
+                  }}
+                />
+              ) : (
+                <span className="w-6 shrink-0 text-center text-[11px] font-black text-white/55">{i + 1}</span>
+              )}
               <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-white">{e.name}</span>
               <span className="text-[10px] text-white/55">Lv{e.lv}</span>
               <span className="text-[11px] font-black text-sky-200">{e.score.toLocaleString()}</span>

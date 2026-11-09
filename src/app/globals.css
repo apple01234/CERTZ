@@ -725,3 +725,60 @@ html[data-contrast="high"] .game-btn-ghost { border-color: rgba(255, 255, 255, 0
       color-mix(in srgb, var(--otaku-accent, #69e0ff) 46%, transparent) 0%,
       transparent 74%);
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * vc291 — Gigapack(Will Tice / unTied Games) 심볼 스프라이트를 DOM UI 에서 재생.
+ *  tools/import_gigapack.py 가 public/assets/fx 에 만든 60프레임 단일 행 시트를
+ *  CSS steps() 로 돌린다(이미지 1장, DOM 노드 1개 — React 리렌더 비용 없음).
+ *
+ *  ⚠ --sym-w 는 **원본 시트 폭이 아니라 표시 폭**이다(background-size 값).
+ *    원본은 4800x80(80px 프레임 x 60개)이고, 20px 로 그릴 때 1200px 로 축소된다.
+ *    원본 폭을 넣으면 마지막 프레임 근처에서 시트 밖을 가리켜 빈칸이 된다.
+ *  ⚠ 80x80 을 20px 로 그리면 4배 축소되므로 NEAREST 를 유지해야 또렷하다.
+ *
+ *  마지막 프레임 정지 위치 검산 (place 기준):
+ *    프레임 간격 = 1200/60 = 20px, 마지막(59번) = -59*20 = -1180px
+ *    calc(-1 * (1200 - 20)) = -1180px  ✓  (--sym-w - --sym-h 와 같아진다)
+ * ──────────────────────────────────────────────────────────────────────────── */
+.sertz-sym {
+  display: inline-block;
+  flex: none;
+  background-repeat: no-repeat;
+  background-size: var(--sym-w) var(--sym-h);
+  background-position: 0 0;
+  image-rendering: pixelated;
+}
+/* 순위 1~8위 — 60프레임 1회 재생 후 마지막 프레임 = 완성된 숫자에서 멈춘다.
+ *  steps(59) 로 0..58 프레임을 순차 표시하고, 종료값(=59프레임 위치)에서 fill 로 멈춘다.
+ *  60프레임을 steps(60) 으로 돌리면 종료 시 시트 밖(-시트폭)을 가리켜 빈칸이 된다. */
+.sertz-sym-place {
+  width: 20px;
+  height: 20px;
+  --sym-w: 1200px;
+  --sym-h: 20px;
+  animation: sertz-sym-run 2.4s steps(59) forwards;
+}
+/* 등급 S~F — 랭킹 필터 버튼용. 계속 반짝이도록 루프 */
+.sertz-sym-rank {
+  width: 16px;
+  height: 16px;
+  --sym-w: 960px;
+  --sym-h: 16px;
+  animation: sertz-sym-run 2.4s steps(59) infinite;
+}
+@keyframes sertz-sym-run {
+  from { background-position: 0 0; }
+  to   { background-position: calc(-1 * (var(--sym-w) - var(--sym-h))) 0; }
+}
+/* 이미지 로드 실패 시에도 순위가 사라지지 않도록 배경 자리에 대체 표식을 둔다 */
+.sertz-sym:not([style*="background-image"]) {
+  background: rgba(255, 255, 255, 0.08);
+}
+/* 모션 최소화 설정을 켠 사용자는 애니메이션 대신 최종(번호가 완성된) 프레임을 본다 */
+@media (prefers-reduced-motion: reduce) {
+  .sertz-sym-place,
+  .sertz-sym-rank {
+    animation: none;
+    background-position: calc(-1 * (var(--sym-w) - var(--sym-h))) 0;
+  }
+}
