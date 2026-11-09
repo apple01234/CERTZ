@@ -48,22 +48,30 @@ function resolves(map, table, speaker) {
 
 test('라일락 월드의 수식어 화자가 라일락 초상화로 해석된다', async () => {
   const [map, table] = [await loadMap(), await loadTable()];
-  /* 27회로 가장 많이 등장하는 화자. 초상화가 없으면 얼굴 없는 대사창이 뜬다. */
+  /* 27회로 가장 많이 등장하는 화자. 초상화가 없으면 얼굴 없는 대사창이 뜬다.
+   *
+   * [vc291 수정] 종전에는 `resolves()` 가 돌려주는 **tex(화자 이름)** 에 대해
+   *  /lilac/ 을 기대했다. 그런데 tex 는 화자 이름이라 절대 "lilac" 이 될 수 없고,
+   *  그래서 이 테스트는 항상 실패했다 — 검사 대상이 틀렸던 것이다.
+   *  진짜로 봐야 하는 것은 **어떤 얼굴 파일이 붙었는가**다.
+   *  "라일락 연합의 기록자" 에 임의의 AI 얼굴(dxp_26br)이 붙어 있어도
+   *  종전 테스트는 그것을 잡지 못했다. 이제 파일명으로 검사한다. */
   const cases = [
-    ["라일락 연합의 기록자", "lilac"],
-    ["라일락 월드의 안내인", "lilac"],
-    ["라일락 연합", "lilac"],
-    ["스칼렛의 환영", "scarlet"],
-    ["어둠의 군주 스칼렛", "scarlet"],
-    ["에벤트왕국 근위대장 아리스텔라", "aristella"],
+    ["라일락 연합의 기록자", "npc_lilac.png"],
+    ["라일락 월드의 안내인", "npc_lilac.png"],
+    ["라일락 연합", "npc_lilac.png"],
+    ["스칼렛의 환영", "npc_scarlet.png"],
+    ["어둠의 군주 스칼렛", "npc_scarlet.png"],
+    ["에벤트왕국 근위대장 아리스텔라", "npc_aristella.png"],
   ];
-  for (const [speaker, who] of cases) {
-    const tex = resolves(map, table, speaker);
-    assert.ok(tex, `"${speaker}" 가 어떤 초상화로도 해석되지 않는다 — 대사창에 얼굴이 안 나온다`);
-    assert.match(
-      tex,
-      new RegExp(who),
-      `"${speaker}" 는 ${who} 인데 ${tex} 로 해석됐다`,
+  for (const [speaker, wantFile] of cases) {
+    const entry = map[speaker];
+    assert.ok(entry?.src, `"${speaker}" 가 _map.json 에 없다 — 대사창에 얼굴이 안 나온다`);
+    const got = String(entry.src).split("/").pop();
+    assert.equal(
+      got,
+      wantFile,
+      `"${speaker}" 는 ${wantFile} 인데 ${got} 로 해석됐다`,
     );
   }
 });
