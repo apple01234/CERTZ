@@ -6929,6 +6929,24 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
         </div>
         <div className="mb-2.5 grid grid-cols-3 gap-1.5">
           <button onClick={() => EventBus.emit("ui:panel", { panel: "isekai" })} className="rounded-lg border border-purple-300/50 bg-purple-400/15 px-2 py-2 text-[11px] font-black text-purple-100 hover:bg-purple-400/25 active:scale-95">바르가 원정대 열기</button>
+          {/* vc291b — 보스 러시 진입 버튼.
+           *  vc291 커밋이 패널·세이브·해금·정산을 다 넣었는데 **여는 버튼을 빠뜨려**
+           *  게임에서 도달할 수 없는 상태였다(grep 'panel: "bossrush"' → 0건).
+           *  패널 안에서도 잠금을 안내하지만, 눌러보고 나서야 알게 되므로
+           *  입구에서 미리 상태를 보여준다(잠금이면 흐리게 + 해금 조건 표기). */}
+          {(() => {
+            const sv = loadSave();
+            const unlocked = isBossRushUnlocked(sv ?? {});
+            return (
+              <button
+                onClick={() => EventBus.emit("ui:panel", { panel: "bossrush" })}
+                className={`rounded-lg border px-2 py-2 text-[11px] font-black active:scale-95 ${unlocked ? "border-rose-300/50 bg-rose-400/15 text-rose-100 hover:bg-rose-400/25" : "border-white/15 bg-white/[0.04] text-white/45"}`}
+                title={unlocked ? "보스 러시" : "보스 처치 후 해금"}
+              >
+                보스 러시 {unlocked ? "🔥" : "🔒"}
+              </button>
+            );
+          })()}
           {/* v1.0.5 — GM 콘텐츠 입장은 관리자 계정에만 노출 (비관리자 유출 — 마을 GM NPC와 동일 기준) */}
           {rpg.admin && <button onClick={() => EventBus.emit("ui:panel", { panel: "gm" })} className="rounded-lg border border-amber-300/50 bg-amber-400/10 px-2 py-2 text-[11px] font-black text-amber-100 hover:bg-amber-400/20 active:scale-95">GM 콘텐츠 입장</button>}
           <button onClick={() => EventBus.emit("ui:panel", { panel: "pass" })} className="rounded-lg border border-amber-300/50 bg-amber-400/15 px-2 py-2 text-[11px] font-black text-amber-100 hover:bg-amber-400/25 active:scale-95">시즌 패스 🎫</button>
