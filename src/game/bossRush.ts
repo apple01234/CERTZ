@@ -288,3 +288,34 @@ export function isBossRushUnlocked(save: { visited?: unknown; bossKills?: unknow
   const bossKills = typeof save.bossKills === "number" ? save.bossKills : 0;
   return visited.length >= 3 || bossKills >= 1;
 }
+
+/**
+ * 런 정산 결과를 세이브 기록에 합쳐 쓴다.
+ *
+ * [설계]
+ *  - `writeSave` 는 SaveData 전체를 받으므로, 기존 세이브를 읽어 한 필드만 갱신한다.
+ *  - 저장 실패(localStorage 차단·용량 초과)가 게임 진행을 막으면 안 되므로
+ *    호출부에서 throw 하지 않도록 여기서 삼킨다.
+ *  - 갱신은 `mergeBest` 를 거치므로 **기록이 줄어들지 않는다.**
+ *
+ * ponytail: 세이브를 다른 곳에서 동시에 고치는 경로가 생기면 이 함수가 덮어쓸 수 있다.
+ *  지금은 보스 러시 정산이 세이브를 만지는 유일한 지점이라 문제되지 않는다.
+ */
+export function commitRunResult(
+  deps: {
+    loadSave: () => { bossRushBest?: unknown } | null;
+    writeSave: (d: never) => void;
+  },
+  run: RushRun,
+): RushBest {
+  const cur = deps.loadSave();
+  const merged = mergeBest(normalizeBest(cur?.bossRushBest), run);
+  try {
+    if (cur) {
+      deps.writeSave({ ...(cur as object), bossRushBest: merged } as never);
+    }
+  } catch {
+    /* 저장 실패는 무시 — 다음 정산에서 다시 시도된다 */
+  }
+  return merged;
+}

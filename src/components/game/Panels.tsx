@@ -17,12 +17,14 @@ import {
 } from "@/game/data";
 import { UNLOCKS, unlockLevel, unlockDef, type FeatureKey } from "@/game/unlocks"; // vc178 (지시 #1·#2) — 레벨 개방 표 + 튜토리얼 다시보기
 import { GameIcon } from "./GameIcon"; // vc247 (지시 #11) — 잠금 자물쇠 표시
+import BossRushPanel from "./BossRushPanel"; // vc291 — 보스 러시 패널
+import { normalizeBest, isBossRushUnlocked, commitRunResult } from "@/game/bossRush"; // vc291
 import { LockReason } from "./LockBadge"; // vc247 (지시 #11) — 잠금 사유 문구 공용
 import { GATHER_DEFS, COOK_RECIPES } from "@/game/gathering"; // v1.1.9 (#개편 A47·A48) // v1.1.8 (#개편 A46) 낚시 도감
 import { CLASS_LIST, CLASSES, BRANCH_KEYS, classDef, FREE_JOB_COST, chainOf, familyOf, jobOptions, freeJobOption, nextJobLevel, type ClassDef } from "@/game/classes";
 import { BOSS_ATLAS } from "@/game/textures"; // v1.4.31 — 보스 도감 아틀라스 초상화
 import { loadKeyMap, applyKeyBinding, resetKeyMap, loadMoveScheme, writeMoveScheme, writeKeyMap, keyLabel, ACTION_LABELS, ASSIGNABLE_KEYS, keyMapForPreset, loadSkillPreset, writeSkillPreset, SKILL_PRESET_LABELS, SKILL_PRESET_HINTS, type GameAction, type KeyMap, type MoveScheme, type SkillPreset } from "@/game/keymap";
-import { getPlayerName, loadSave, mutateFriends, loadFx, writeFx } from "@/game/config"; // v2.4 — 이름 변경 표시 / v2.5 — 방문 구역 기록 / v1.0.18 — 셰이더 강도 / v1.0.13 피드백#12 — 친구 추가( FriendsWidget 동일 스토어 API)
+import { getPlayerName, loadSave, writeSave, mutateFriends, loadFx, writeFx } from "@/game/config"; // v2.4 — 이름 변경 표시 / v2.5 — 방문 구역 기록 / v1.0.18 — 셰이더 강도 / v1.0.13 피드백#12 — 친구 추가( FriendsWidget 동일 스토어 API)
 import { toonEnabled } from "@/game/fx/ToonFX";
 import { loadShakeScale, setShakeScale } from "@/game/fx/shakeScale";
 import { getBgmVolume, getSfxVolume, setBgmVolume, setSfxVolume } from "@/game/audio"; // v3.1.0 — 볼륨 UI
@@ -3926,6 +3928,30 @@ export function GamePanels({
   if (panel === "inv") return <InventoryPanel rpg={rpg} onClose={onClose} />;
   if (panel === "warp") return <WarpPanel rpg={rpg} onClose={onClose} />;
   if (panel === "job") return <JobPanel rpg={rpg} onClose={onClose} />;
+  /* vc291 — 보스 러시. 세이브에서 최고 기록·해금 여부를 읽어 넘긴다.
+   * 정산은 패널이 계산해 onFinish 로 돌려주고, 여기서 세이브에 반영한다. */
+  if (panel === "bossrush") {
+    const sv = loadSave();
+    return (
+      <BossRushPanel
+        best={normalizeBest(sv?.bossRushBest)}
+        unlocked={isBossRushUnlocked(sv ?? {})}
+        onClose={onClose}
+        onFinish={(r) => {
+          /* 최고 기록 갱신 — mergeBest 를 거치므로 단조 증가가 보장된다. */
+          const merged = commitRunResult(
+            { loadSave: () => loadSave(), writeSave: (d) => writeSave(d as never) },
+            { wave: r.wave, emerald: r.emerald, dead: !r.cleared, seed: 0 },
+          );
+          EventBus.emit("toast", {
+            text: r.cleared
+              ? `보스 러시 완주! (최고 ${merged.bestWave}웨이브)`
+              : `웨이브 ${r.wave} 도달 (최고 ${merged.bestWave})`,
+          });
+        }}
+      />
+    );
+  }
   if (panel === "gm") return <GmPanel onClose={onClose} />; // v3.0.3 — GM NPC
   if (panel === "stat") return <StatPanel rpg={rpg} hud={hud} onClose={onClose} />;
   if (panel === "collection") return <CollectionPanel rpg={rpg} onClose={onClose} />; // v3.0.16 — 몬스터 컬렉션

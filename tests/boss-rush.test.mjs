@@ -32,6 +32,7 @@ import {
   EMPTY_BEST,
   normalizeBest,
   isBossRushUnlocked,
+  commitRunResult,
 } from "../src/game/bossRush.ts";
 import { BOSS_DEFS } from "../src/game/stages.ts";
 
@@ -249,4 +250,51 @@ test("해금 판정이 깨진 세이브 값에 throw 하지 않는다", () => {
   for (const bad of [null, undefined, "x", 42, { visited: "not-array" }, { bossKills: "3" }]) {
     assert.doesNotThrow(() => isBossRushUnlocked(bad ?? {}), `깨진 값 ${JSON.stringify(bad)} 에서 throw 했다`);
   }
+});
+
+/* ─────────────── 세이브 쓰기 ─────────────── */
+
+test("commitRunResult 가 기존 세이브를 보존하며 기록만 갱신한다", () => {
+  const before = { gold: 1234, lv: 42, bossRushBest: { bestWave: 3, clears: 0, totalEmerald: 10 } };
+  let written = null;
+  const merged = commitRunResult(
+    { loadSave: () => before, writeSave: (d) => { written = d; } },
+    { wave: 6, emerald: 20, dead: false, seed: 1 },
+  );
+
+  assert.equal(merged.bestWave, 6, "최고 웨이브가 갱신되지 않았다");
+  assert.equal(merged.totalEmerald, 30, "에메랄드가 누적되지 않았다");
+  assert.equal(written.gold, 1234, "다른 세이브 필드가 사라졌다");
+  assert.equal(written.lv, 42, "다른 세이브 필드가 사라졌다");
+  assert.deepEqual(written.bossRushBest, merged, "기록이 세이브에 반영되지 않았다");
+});
+
+test("commitRunResult 는 더 나쁜 성적에 기록을 줄이지 않는다", () => {
+  const before = { bossRushBest: { bestWave: 8, clears: 2, totalEmerald: 100 } };
+  let written = null;
+  const merged = commitRunResult(
+    { loadSave: () => before, writeSave: (d) => { written = d; } },
+    { wave: 2, emerald: 5, dead: true, seed: 1 },
+  );
+  assert.equal(merged.bestWave, 8, "최고 기록이 줄었다");
+  assert.equal(merged.clears, 2, "완주 횟수가 줄었다");
+});
+
+test("commitRunResult 는 저장 실패를 삼킨다 (게임 진행을 막지 않는다)", () => {
+  const before = { bossRushBest: { bestWave: 1, clears: 0, totalEmerald: 0 } };
+  const boom = () => { throw new Error("localStorage quota exceeded"); };
+  assert.doesNotThrow(
+    () => commitRunResult({ loadSave: () => before, writeSave: boom }, { wave: 3, emerald: 5, dead: false, seed: 1 }),
+    "저장 실패가 게임을 멈춘다",
+  );
+});
+
+test("commitRunResult 는 세이브가 없으면 아무것도 쓰지 않는다", () => {
+  let called = false;
+  const merged = commitRunResult(
+    { loadSave: () => null, writeSave: () => { called = true; } },
+    { wave: 4, emerald: 9, dead: false, seed: 1 },
+  );
+  assert.equal(called, false, "세이브가 없는데 writeSave 를 호출했다");
+  assert.equal(merged.bestWave, 4, "계산 결과는 돌려줘야 한다");
 });
