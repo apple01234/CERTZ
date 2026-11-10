@@ -95,3 +95,10 @@ npm run build
 - Drive 남녀 템플릿, 전 보스 방향, 10검식 및34장 선물, 원소별 FX/오디오/서버 전투 전체 교체는 미완료다. 상태는 `IMPROVEMENT_AUDIT_80.md`에 분리했다.
 - 이번 튜토리얼에는 추가 그래픽 에셋이 필요하지 않았다. 기존 픽셀 맵/캐릭터/초상/적/물약/FX/UI를 재사용했다.
 - Craft Anything0.6.0 공식 CLI의 SHA256 검증, Codex MCP 등록, doctor, stdio 도구 목록, 실제 TypeScript9개 정적 분석은 `CRAFT_ANYTHING_SETUP.md`에 별도로 기록했다. 참고 게임들의 런타임 분석을 새 도구로 모두 다시 끝냈다는 뜻은 아니다.
+
+
+## 2026-11-10 KST — vc264 통합·전수 숙련·서버 복구
+
+f760542를 통합하고 실제 원래 Player의 준비 취소/경고 진행, 전수 기술 10종의 상한 있는 숙련 및 저장·전직 창을 연결했다. 정식 테스트577개, 타입 검사·strict lint·운영과 같은 build:next 통과. PC/터치 실제 입력, 취소 후 피해/FX 제거, 정상 적중, 19→20회 숙련 및 재접속 복원을 검증했다.
+
+운영 DB401은 유효한 fine-grained PAT로 복구했다. 온라인 공통 읽기 API200, 파티 생성/탈퇴/제거, APK 출처 OPTIONS204를 확인했으며 계정·암호화키는 유지했다. 상세 근거와 한계: [REFERENCE_AND_MASTERY.md](REFERENCE_AND_MASTERY.md). 스냅샷·JSON은 docs/qa/2026-11-10/reference-mastery/에 보존했다.

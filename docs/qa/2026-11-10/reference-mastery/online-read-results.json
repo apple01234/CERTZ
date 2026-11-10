@@ -1,0 +1,38 @@
+[
+  {
+    "path": "/api/auth/me",
+    "status": 200,
+    "error": null,
+    "cors": "https://localhost"
+  },
+  {
+    "path": "/api/rank",
+    "status": 200,
+    "error": null,
+    "cors": "https://localhost"
+  },
+  {
+    "path": "/api/market",
+    "status": 200,
+    "error": null,
+    "cors": "https://localhost"
+  },
+  {
+    "path": "/api/chat",
+    "status": 200,
+    "error": null,
+    "cors": "https://localhost"
+  },
+  {
+    "path": "/api/party?code=QAZZ",
+    "status": 200,
+    "error": null,
+    "cors": "https://localhost"
+  },
+  {
+    "path": "/api/auth/nametaken?name=QAprobe",
+    "status": 200,
+    "error": null,
+    "cors": "https://localhost"
+  }
+]

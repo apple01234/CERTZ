@@ -83,6 +83,9 @@ export class WeaponMasterCombat {
     const graphics = this.track(this.scene.add.graphics(), "startup").setDepth(7);
     for (const zone of signatureZones(this.profile.style, this.origin, this.aim, this.tier)) this.drawZone(graphics, zone, 0.07);
     this.preview = graphics;
+    // The actual damage footprint brightens until release; no extra particles.
+    graphics.setAlpha(0.3);
+    this.scene.tweens.add({ targets: graphics, alpha: 1, duration: this.profile.startup });
     const focus = this.image(this.profile.style === "book" || this.profile.style === "art" ? "vfx_magic2" : "vfx_ring", this.origin.x, this.origin.y, 48);
     if (focus) {
       focus.setData("rea:phase", "startup");
@@ -108,6 +111,7 @@ export class WeaponMasterCombat {
   }
 
   release(pulse: number) {
+    if (this.preview) this.scene.tweens.killTweensOf(this.preview);
     this.preview?.destroy();
     this.preview = null;
     const { x, y } = this.origin;

@@ -5125,3 +5125,13 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
 - 기존 그래픽/오디오만 재사용. 새 게임 에셋 생성 없음. Craft Anything0.6.0 CLI/MCP 설치·검증과 실제 정적 파서 실행을 기록. 기존 분석 자료는 보존.
 - 정식 자동화570개/TypeScript/strict lint/프로덕션 build 통과. 정상 새 캐릭터 전체 실습과 실제 새로고침, 구/완료 저장, 단계 복구·skip, 가로/세로 실제 터치 조이스틱+돌진을 검증. 상세·증거: docs/rebirth/INTERACTIVE_TUTORIAL.md, QA_EVIDENCE.md 및 docs/qa/2026-11-10/tutorial/.
 - 전체 REBIRTH/80항목, Drive 캐릭터 교체, 원격 멀티플레이/APK/실기기 합격으로 표시하지 않음. 항목 원장 및 설치 문서 추가.
+
+
+## Task — 2026-11-10 KST: vc264 통합, 전수 숙련, 참고 전투 적용, 운영 복구
+
+- 작업 중 추가된 origin/main f760542를 fast-forward하고 작업 변경을 충돌 없이 통합. vc264의 전직·월드·스프라이트·1초 대시 보존.
+- Craft0.6 조사 원장/출처를 재사용해 기본 Shift·터치 대시의 준비 취소와 기존 판정 경고의 진행 표시 연결. 쿨타임 중에는 취소 불가. 원본 게임 실행/에셋 생성/코드 복제 없음.
+- 기존 전수 프로필10종 S1: 실제 첫 발동당1회, 20회/단계, 10단계·피해/치유+20% 상한. 취소/차단 입력 제외. 기술별 저장 정규화·복원·buildSave·전직창 표시 연결.
+- npm test577/577, tsc, strict lint, build:next 통과. PC/터치 Playwright에서 실제 취소/정상 타격, 숙련19→20, UI 및 재접속 복원 통과. 증거/한계: docs/rebirth/REFERENCE_AND_MASTERY.md.
+- 운영 DB GET401 원인 확인. 호스트 GH_TOKEN은 프록시용이라 운영에 사용하지 않음. 기존 사용자 fine-grained PAT를 임시 원격 검사로 검증해 운영 복구, 비영속 Sandbox 삭제 확인. 계정 DB·암호화키 초기화 없음. 읽기 API200·파티 쓰기/정리·APK CORS204 검증.
+- sertz 프로젝트의 기존 배포4개 삭제 후 최신1개 목록 확인. 최종 코드 배포 후 중간 복구 배포도 정리한다. 별도 프로젝트/Drive/DB 삭제 없음.

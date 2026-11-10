@@ -7,6 +7,8 @@ import {
   startSignatureCast, STARTER_SIGNATURE, copiedReactionElement,
 } from "../src/game/weaponMasterProfiles.ts";
 import { CLASSES, SKILL_LABELS, chainOf, familyOf, resolveSkill1Of, resolveSkill2Of } from "../src/game/classes.ts";
+import { FREE_DASH, freeDashDirection } from "../src/game/combat/freeDash.ts";
+import { skillMasteryProgress, normalizeSkillMastery } from "../src/game/skillMastery.ts";
 
 function clock() {
   let now = 0;
@@ -98,7 +100,7 @@ test("preview and hit geometry retain direction, range, size and distinct signat
 const playerSource = readFileSync(new URL("../src/game/entities/Player.ts", import.meta.url), "utf8");
 const playerAst = ts.createSourceFile("Player.ts", playerSource, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
 const playerClass = playerAst.statements.find(node => ts.isClassDeclaration(node) && node.name.text === "Player");
-const methods = new Set(["actionAllowed", "useSkill1", "useSignatureSkill", "cancelSkillCast", "useSkill2", "skillCastPhase", "skill1Name", "attackElem"]);
+const methods = new Set(["actionAllowed", "useSkill1", "useSignatureSkill", "cancelSkillCast", "useSkill2", "useFreeDash", "skillCastPhase", "skill1Name", "skill1Mastery", "attackElem"]);
 const subjectSource = `class Subject { ${playerClass.members.filter(member => methods.has(member.name?.getText(playerAst))).map(member => member.getText(playerAst)).join("\n")} } return Subject;`;
 class Vector {
   constructor(x = 0, y = 0) { this.x = x; this.y = y; }
@@ -116,10 +118,10 @@ class EffectStub {
   release(pulse) { (this.releases ??= []).push(pulse); }
   clear() { this.cleared = true; }
 }
-const Subject = new Function("Phaser", "weaponMasterProfileOf", "STARTER_SIGNATURE", "copiedReactionElement", "ELEMENT_META", "WeaponMasterCombat", "startSignatureCast", "signatureZones", "signatureZoneContains", "audio", "resolveSkill1Of", "resolveSkill2Of", "familyOf", "FAMILY_ELEM", "sweptHitsTarget", ts.transpile(subjectSource))(
+const Subject = new Function("Phaser", "weaponMasterProfileOf", "STARTER_SIGNATURE", "copiedReactionElement", "ELEMENT_META", "WeaponMasterCombat", "startSignatureCast", "signatureZones", "signatureZoneContains", "audio", "resolveSkill1Of", "resolveSkill2Of", "familyOf", "FAMILY_ELEM", "sweptHitsTarget", "FREE_DASH", "freeDashDirection", "skillMasteryProgress", ts.transpile(subjectSource))(
   PhaserStub, weaponMasterProfileOf, STARTER_SIGNATURE, copiedReactionElement,
   Object.fromEntries(["none", "fire", "nature", "water", "electric", "light", "dark", "wind", "earth", "ice"].map(elem => [elem, { hex: 123 }])),
-  EffectStub, startSignatureCast, signatureZones, signatureZoneContains, { sfx: { elemCast() {} } }, resolveSkill1Of, resolveSkill2Of, familyOf, { warrior: "fire", thief: "dark" }, () => false,
+  EffectStub, startSignatureCast, signatureZones, signatureZoneContains, { sfx: { elemCast() {} } }, resolveSkill1Of, resolveSkill2Of, familyOf, { warrior: "fire", thief: "dark" }, () => false, FREE_DASH, freeDashDirection, skillMasteryProgress,
 );
 function player(cls = null) {
   const timer = clock(), hits = [], scene = {
@@ -131,7 +133,7 @@ function player(cls = null) {
       delayedCall(delay, callback) { const remove = timer.schedule(delay, callback); return { remove }; },
       addEvent() { return { remove() {} }; },
     },
-    emitHud() {}, sfxSkill() {}, sfxCrit() {}, onMeleeConnect() {},
+    emitHud() {}, sfxSkill() {}, sfxCrit() {}, onMeleeConnect() {}, saveSoon() { scene.saveRequests = (scene.saveRequests ?? 0) + 1; },
     spawnBurstAt() {}, spawnDashDust() {}, spawnSlash() {}, spawnPickupText() {},
   };
   const p = Object.assign(new Subject(), {
@@ -140,7 +142,7 @@ function player(cls = null) {
     skill1Cd: 0, skill1MaxEff: 3600, skill2Cd: 0, skill2MaxEff: 5400,
     scene, texture: { key: "hero_idle0" }, frame: { name: "__BASE" }, scaleX: 1, scaleY: 1, flipX: true,
     facing: new Vector(1, 0), dashDir: new Vector(), hitSet: new Set(), copiedElement: "none",
-    signatureCast: null, signatureElement: null,
+    signatureCast: null, signatureElement: null, skillMastery: {},
     aimDirFree() { return this.facing.clone().normalize(); }, aimDir() { return this.facing.clone(); },
     faceAtk(aim) { this.facing.copy(aim); }, setFlipX() {}, setVelocity() {}, setData() {},
     netEmitAction(action) { (this.actions ??= []).push(action); }, tutNotify() {}, tierFlair() {}, clsHex: () => 0xffffff,
@@ -212,6 +214,20 @@ test("real C dodge cancels an unreleased cast, preserves S1 cooldown and cannot 
   }
 });
 
+test("real free dash cancels startup timers and FX for every signature without refunding S1", () => {
+  for (const cls of [null, ...Object.keys(WEAPON_MASTER_PROFILES)]) {
+    const { p, timer, scene, target, hits } = player(cls);
+    target(100, 0); p.useSkill1();
+    const mp = p.mp;
+    assert.equal(p.useFreeDash(), true);
+    assert.equal(p.state, "dash"); assert.equal(p.skillCastPhase, "cooldown");
+    assert.equal(p.mp, mp); assert.equal(p.skill1Cd, 3600);
+    assert.equal(scene.effects[0].cleared, true); assert.equal(timer.pending, 0);
+    timer.advance(3000); assert.equal(hits.length, 0);
+    p.useSkill1(); assert.equal(scene.effects.length, 1);
+  }
+});
+
 test("death, shutdown, or explicit transition cancellation cannot release later in the actual Player", () => {
   for (const reason of ["dead", "shutdown", "transition"]) {
     const { p, timer, scene, target, hits } = player("assassin");
@@ -226,6 +242,47 @@ test("death, shutdown, or explicit transition cancellation cannot release later 
   }
 });
 
+test("taught skills count one completed release per cast; cancellation and cooldown inputs earn nothing", () => {
+  for (const cls of Object.keys(WEAPON_MASTER_PROFILES)) {
+    const { p, timer, scene } = player(cls), profile = weaponMasterProfileOf(cls);
+    p.useSkill1(); p.useSkill1();
+    assert.deepEqual(p.skillMastery, {});
+    timer.advance(3000);
+    assert.deepEqual(p.skillMastery, { [profile.style]: 1 });
+    assert.equal(scene.saveRequests, 1);
+    p.useSkill1(); assert.equal(p.skillMastery[profile.style], 1);
+    p.skill1Cd = 0; p.useSkill1(); p.cancelSkillCast(); timer.advance(6000);
+    assert.equal(p.skillMastery[profile.style], 1);
+  }
+});
+
+test("mastery damage/healing actually scale, cap at +20%, and persist independently across branch/tier changes", () => {
+  for (const cls of ['berserker', 'guardian', 'sage']) {
+    const damage = [], healing = [];
+    for (const uses of [0, 200, 999999]) {
+      const { p, timer, target, hits } = player(cls), key = weaponMasterProfileOf(cls).style;
+      p.skillMastery = normalizeSkillMastery({ [key]: uses });
+      target(70, 0); p.useSkill1(); timer.advance(3000);
+      damage.push(hits[0].dmg); healing.push(p.hp - 100);
+      assert.equal(p.skillMastery[key], uses === 0 ? 1 : 200);
+    }
+    assert.ok(Math.abs(damage[1] / damage[0] - 1.2) < 1e-10); assert.equal(damage[2], damage[1]);
+    if (cls !== 'berserker') assert.ok(healing[1] > healing[0]);
+  }
+  const { p } = player('berserker'); p.skillMastery = { solar: 20, life: 40 };
+  p.cls = 'warlord'; assert.equal(p.skill1Mastery.level, 1);
+  p.cls = 'guardian'; assert.equal(p.skill1Mastery.level, 2);
+  p.cls = 'berserker'; assert.equal(p.skill1Mastery.level, 1);
+});
+
+test("legacy/corrupt mastery data is bounded and level thresholds are exact", () => {
+  for (const v of [undefined, null, [], 'invalid']) assert.deepEqual(normalizeSkillMastery(v), {});
+  assert.deepEqual(normalizeSkillMastery({ solar: -2, life: NaN, lightning: Infinity, art: '20', shadow: 99999, unknown: 20 }), { shadow: 200 });
+  assert.equal(skillMasteryProgress(19).level, 0); assert.equal(skillMasteryProgress(20).level, 1);
+  assert.equal(skillMasteryProgress(199).usesToNext, 1); assert.equal(skillMasteryProgress(200).usesToNext, 0);
+  assert.equal(skillMasteryProgress(999999).powerBonusPct, 20);
+});
+
 test("actual native renderer uses shipped sheets, tags every object and removes cast-owned effects/tweens", () => {
   const source = readFileSync(new URL("../src/game/fx/WeaponMasterCombat.ts", import.meta.url), "utf8");
   const boot = readFileSync(new URL("../src/game/scenes/BootScene.ts", import.meta.url), "utf8");
@@ -235,7 +292,7 @@ test("actual native renderer uses shipped sheets, tags every object and removes 
     assert.ok(existsSync(new URL(`../public/assets/fx/${key}.json`, import.meta.url)), `${key}: existing animation metadata`);
   }
   for (const profile of [STARTER_SIGNATURE, ...Object.values(WEAPON_MASTER_PROFILES)]) {
-    const live = new Set(), all = [], killed = [], natives = [];
+    const live = new Set(), all = [], killed = [], natives = [], tweens = [];
     function object() {
       const events = new Map(), data = new Map();
       const target = { active: true, data,
@@ -249,7 +306,7 @@ test("actual native renderer uses shipped sheets, tags every object and removes 
     const scene = {
       fxLevel: 1, textures: { exists: () => true }, anims: { exists: () => true },
       add: { graphics: object, image: object, sprite: object },
-      tweens: { add() {}, killTweensOf: object => killed.push(object) },
+      tweens: { add(tween) { tweens.push(tween); }, killTweensOf: object => killed.push(object) },
     };
     const Renderer = new Function("Phaser", "playFx", "signatureZones", ts.transpile(
       source.replace(/^import[^\n]*\n/gm, "").replace("export class WeaponMasterCombat", "class WeaponMasterCombat") + "\nreturn WeaponMasterCombat;",
@@ -260,12 +317,16 @@ test("actual native renderer uses shipped sheets, tags every object and removes 
       { texture: "hero_idle0", frame: "__BASE", flip: true, scaleX: 1, scaleY: 1 });
     renderer.startup();
     assert.ok(all.some(object => object.data.get("rea:phase") === "startup"));
+    const preview = all[0];
+    assert.ok(tweens.some(tween => tween.targets === preview && tween.alpha === 1 && tween.duration === profile.startup));
     profile.pulses.forEach((_, pulse) => renderer.release(pulse));
+    assert.equal(killed.filter(object => object === preview).length, 1, "release cancels the warning tween before destroying it");
     assert.ok(all.length < 30, `${profile.style}: bounded effect count`);
     for (const object of all) assert.equal(object.data.get("rea:skill"), profile.style);
     const beforeClear = live.size;
     renderer.clear(); renderer.clear();
-    assert.equal(live.size, 0); assert.equal(killed.length, beforeClear, "all still-live tweens cancelled exactly once");
+    assert.equal(live.size, 0); assert.equal(killed.length, beforeClear + 1, "released preview and all still-live tweens cancelled exactly once");
+    assert.equal(new Set(killed).size, killed.length);
     if (profile.style === "book") assert.deepEqual(natives, ["arcane-orb", "arcane-orb", "arcane-orb"]);
   }
 });

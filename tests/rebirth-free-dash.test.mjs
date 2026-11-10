@@ -49,6 +49,31 @@ test('dead/attack and legacy dash are not interrupted; cancellation stops motion
   p.scene.time.now = 1180; // 쿨타임(대시 종료 180 + 1000) 경과
   assert.equal(p.useFreeDash(), true);
 });
+test('signature startup can cancel into dash without refund; other cast phases stay locked', () => {
+  for (const phase of ['startup', 'release', 'recovery']) {
+    const p = subject(); p.state = 'attack'; p.signatureCast = { phase };
+    p.mp = 35; p.skill1Cd = 4500;
+    let cancellations = 0;
+    p.cancelSkillCast = () => { cancellations++; p.signatureCast = null; p.state = 'idle'; };
+    assert.equal(p.useFreeDash(), phase === 'startup');
+    assert.equal(cancellations, phase === 'startup' ? 1 : 0);
+    assert.equal(p.mp, 35); assert.equal(p.skill1Cd, 4500);
+    assert.equal(p.state, phase === 'startup' ? 'dash' : 'attack');
+  }
+});
+test('scene dash gate and death cannot cancel a pending startup', () => {
+  for (const state of ['attack', 'dead']) {
+    const p = subject(); p.state = state; p.signatureCast = { phase: 'startup' };
+    p.scene.canPlayerAction = () => false;
+    p.cancelSkillCast = () => { throw Error('blocked action cancelled a cast'); };
+    assert.equal(p.useFreeDash(), undefined); assert.equal(p.state, state);
+  }
+});
+test('a cooling-down dash cannot discard a paid signature startup', () => {
+  const p = subject(); p.state = 'attack'; p.signatureCast = { phase: 'startup' }; p.freeDashReadyAt = 100;
+  p.cancelSkillCast = () => { throw Error('unavailable dash cancelled a cast'); };
+  assert.equal(p.useFreeDash(), false); assert.equal(p.state, 'attack');
+});
 test('input direction is normalized, neutral uses facing, nonfinite input is safe', () => {
   const d = freeDashDirection({ x: 1, y: 1 }, { x: -1, y: 0 });
   assert.ok(Math.abs(Math.hypot(d.x, d.y) - 1) < 1e-12);

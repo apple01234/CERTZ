@@ -1,0 +1,96 @@
+[
+  {
+    "mode": "keyboard",
+    "early": {
+      "alpha": 0.33888888888888885,
+      "mp": 93,
+      "cooldown": 3596.67
+    },
+    "lateAlpha": 0.5068888888888889,
+    "cancelled": {
+      "phase": "cooldown",
+      "state": "dash",
+      "mp": 93,
+      "cooldown": 3113.3700000000003,
+      "liveCastFx": 0,
+      "warningTween": false,
+      "hits": 0
+    },
+    "normal": {
+      "enemy": "x2_frog_idle0"
+    },
+    "final": {
+      "hits": 1,
+      "liveCastFx": 0
+    },
+    "mastery": {
+      "uses": 20,
+      "level": 1,
+      "maxLevel": 10,
+      "maxUses": 200,
+      "usesToNext": 20,
+      "powerBonusPct": 2,
+      "mentor": "아리",
+      "name": "태양검 · 일광참",
+      "savedUses": 20
+    },
+    "restored": {
+      "uses": 20,
+      "level": 1,
+      "maxLevel": 10,
+      "maxUses": 200,
+      "usesToNext": 20,
+      "powerBonusPct": 2,
+      "mentor": "아리",
+      "name": "태양검 · 일광참"
+    },
+    "pageErrors": []
+  },
+  {
+    "mode": "touch",
+    "early": {
+      "alpha": 0.33888888888888885,
+      "mp": 93,
+      "cooldown": 3596.6899999999996
+    },
+    "lateAlpha": 0.49366666666666664,
+    "cancelled": {
+      "phase": "cooldown",
+      "state": "dash",
+      "mp": 93,
+      "cooldown": 3213.3299999999995,
+      "liveCastFx": 0,
+      "warningTween": false,
+      "hits": 0
+    },
+    "normal": {
+      "enemy": "x2_frog_idle0"
+    },
+    "final": {
+      "hits": 1,
+      "liveCastFx": 0
+    },
+    "mastery": {
+      "uses": 20,
+      "level": 1,
+      "maxLevel": 10,
+      "maxUses": 200,
+      "usesToNext": 20,
+      "powerBonusPct": 2,
+      "mentor": "아리",
+      "name": "태양검 · 일광참",
+      "savedUses": 20
+    },
+    "restored": {
+      "uses": 20,
+      "level": 1,
+      "maxLevel": 10,
+      "maxUses": 200,
+      "usesToNext": 20,
+      "powerBonusPct": 2,
+      "mentor": "아리",
+      "name": "태양검 · 일광참"
+    },
+    "pageErrors": []
+  }
+]

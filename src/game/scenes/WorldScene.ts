@@ -1,4 +1,5 @@
 import { FREE_DASH, freeDashFraction, type DashRect } from "../combat/freeDash";
+import { normalizeSkillMastery } from "../skillMastery";
 import Phaser from "phaser";
 import { DECOR_BUDGET, decorSetFor, pickByTag, isSolidDecor, decorCollisionBounds, type DecorObj } from "../decorObjects";
 import { createGameState, type GameState } from "../state/gameState";
@@ -1305,6 +1306,7 @@ export class WorldScene extends Phaser.Scene {
      *  buildSave는 exp를 저장하면서 복원 경로엔 없어 포탈 이동(씬 재시작)마다
      *  경험치가 0으로 초기화되는 버그. lv 복원 직후 함께 복원한다. */
     this.player.exp = savedPlayer.exp ?? 0;
+    this.player.skillMastery = normalizeSkillMastery(savedPlayer.skillMastery);
     /* v1.0.2 (#무결성) — atk/maxHp 무가드 대입은 손상/불완전 세이브에서
      *  undefined → HP "NaN/NaN"·공격 NaN으로 HUD가 깨졌다. 숫자 검증 후에만 복원한다. */
     if (typeof savedPlayer.atk === "number" && savedPlayer.atk > 0) this.player.atk = savedPlayer.atk;
@@ -17215,6 +17217,7 @@ export class WorldScene extends Phaser.Scene {
       /* v1.3.1 (#7 능력치 소수 정리) — 소수 둘째 자리에서 반올림해 표시 (크리티컬 %/이동속도) */
       critRate: Math.round(this.player.critRate * 10) / 10,
       cls: this.player.cls,
+      skill1Mastery: this.player.skill1Mastery,
       /* vc246 (지시 #2) — 5차 각성 여부. 직업명은 4차 이름으로 고정하고 차수만 5로 올린다.
        *  5차는 별도 ClassDef 가 아니라 레벨 200 플래그라 HUD 가 알 방법이 없었다. */
       fifth: this.player.isFifth,
@@ -17580,7 +17583,7 @@ export class WorldScene extends Phaser.Scene {
    *  → saveSoon() 은 250ms 디바운스, save() 는 즉시 기록(포탈 이동·씬 종료 등 확정 지점용).
    *  호출부는 saveSoon() 을 쓰고, 반드시 즉시여야 하는 곳만 save() 를 유지한다. */
   private saveTimer: number | null = null;
-  private saveSoon() {
+  saveSoon() {
     if (this.saveTimer !== null) return;
     this.saveTimer = window.setTimeout(() => {
       this.saveTimer = null;
@@ -17621,6 +17624,7 @@ export class WorldScene extends Phaser.Scene {
       huntProg: { ...this.huntProgress },
       lv: this.player.lv,
       exp: this.player.exp,
+      skillMastery: { ...this.player.skillMastery },
       maxHp: this.player.maxHp,
       maxMp: this.player.maxMp,
       atk: this.player.atk,

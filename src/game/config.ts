@@ -69,6 +69,8 @@ export type SaveData = {
   stage: string;
   lv: number;
   exp: number;
+  /** Completed releases of each taught skill; optional for existing saves. */
+  skillMastery?: import("./skillMastery").SkillMastery;
   maxHp: number;
   atk: number;
   cleared: boolean;

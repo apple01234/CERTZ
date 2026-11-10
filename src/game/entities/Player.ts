@@ -41,6 +41,7 @@ import { memoCooldowns, restoreCooldowns } from "../cooldownMemo"; // v1.0.15 (�
 import { damageMultiplier } from "../combat/damageModel";
 import { copiedReactionElement, signatureZones, signatureZoneContains, startSignatureCast, STARTER_SIGNATURE, weaponMasterProfileOf, type SignatureCast, type WeaponMasterProfile } from "../weaponMasterProfiles";
 import { WeaponMasterCombat } from "../fx/WeaponMasterCombat";
+import { skillMasteryProgress, type SkillMastery } from "../skillMastery";
 
 /**
  * 주인공 세르츠.
@@ -245,12 +246,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private lastMove = new Phaser.Math.Vector2(); // v2.2 — 최근 입력 이동 (러지 여부 판단)
   private hitSet: Set<unknown> = new Set();
   private signatureCast: SignatureCast | null = null;
+  skillMastery: SkillMastery = {};
   private signatureElement: ElemKey | null = null;
   private copiedElement: ElemKey = "none";
 
   /** Runtime-only cast inspection; cooldown remains the original skill1Cd/save memo. */
   get skillCastPhase(): string {
     return this.signatureCast?.phase ?? (this.skill1Cd > 0 ? "cooldown" : "idle");
+  }
+
+  get skill1Mastery() {
+    const profile = weaponMasterProfileOf(this.cls);
+    if (!profile || profile.style === "starter") return null;
+    return { ...skillMasteryProgress(this.skillMastery[profile.style]), mentor: profile.mentor, name: profile.name };
   }
 
   cancelSkillCast() {
@@ -1690,6 +1698,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       profile = { ...profile, element: reaction, color: ELEMENT_META[reaction].hex };
     }
     const tier = this.sTier;
+    const taughtSkill = profile.style === "starter" ? null : profile.style;
+    const mastery = skillMasteryProgress(taughtSkill ? this.skillMastery[taughtSkill] : 0);
+    const masteryPower = 1 + mastery.powerBonusPct / 100;
     this.mp -= 15;
     this.skill1Cd = this.skill1MaxEff;
     this.state = "attack";
@@ -1722,9 +1733,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.playAnim(direction);
         effects.release(pulse);
         if (pulse === 0) {
+          if (taughtSkill && mastery.uses < mastery.maxUses) {
+            this.skillMastery[taughtSkill] = mastery.uses + 1;
+            this.scene.saveSoon();
+            const next = skillMasteryProgress(mastery.uses + 1);
+            if (next.level > mastery.level) this.scene.spawnPickupText(this.x, this.y - 50,
+              `${profile.name} 숙련 ${next.level}/${next.maxLevel}`, "#ffe29c");
+          }
           this.scene.sfxSkill(profile.style === "hammer" ? "superhit" : profile.style === "lightning" ? "thunder" : "wind2", 0.9);
           if (profile.style === "life" || profile.style === "art") {
-            this.heal(Math.round(this.maxHp * ((profile.style === "life" ? 0.08 : 0.06) + tier * 0.01)));
+            this.heal(Math.round(this.maxHp * ((profile.style === "life" ? 0.08 : 0.06) + tier * 0.01) * masteryPower));
             if (profile.style === "art") {
               const add = Math.max(this.selfDefBuff?.add ?? 0, 6 + 3 * tier);
               this.selfDefBuff = { add, until: Math.max(this.selfDefBuff?.until ?? 0, this.scene.time.now + 2800) };
@@ -1742,7 +1760,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (!zones.some(zone => signatureZoneContains(zone, target, radius)) || !claimTarget(target)) continue;
             const multiplier = profile.style === "starter" ? 1.6 + 0.42 * tier + (tier === 1 ? 0.25 : 0)
               : (profile.style === "life" || profile.style === "art" ? 1.8 : 2.25) + 0.34 * tier;
-            const { dmg, crit } = this.rollDamage(multiplier, true);
+            const { dmg, crit } = this.rollDamage(multiplier * masteryPower, true);
             const away = new Phaser.Math.Vector2(target.x - origin.x, target.y - origin.y);
             if (away.lengthSq() < 0.001) away.copy(aim);
             away.normalize();
@@ -2680,10 +2698,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   useFreeDash() {
     if (!this.actionAllowed("dash")) return;
     if (this.freeDashing && this.scene.time.now >= this.freeDashUntil) this.tickFreeDash();
+    if (this.scene.time.now < this.freeDashReadyAt) return false;
+    // JENNY-style startup cancellation on the current PC/touch dash path.
+    // Cancelling owns timer/FX cleanup; the paid MP and cooldown remain spent.
+    if (this.state === "attack" && this.signatureCast?.phase === "startup") this.cancelSkillCast();
     if (this.state !== "idle") return false;
     /* 쿨타임은 대시 **종료 이후**부터 센다. 시작 기준이면 180ms 이동 중에 이미
      *  220ms가 흘러 다음 입력이 붙어버려 체감 쿨타임이 짧아진다. */
-    if (this.scene.time.now < this.freeDashReadyAt) return false;
     const dir = freeDashDirection(this.scene.currentMoveVec(), this.facing);
     this.facing.set(dir.x, dir.y);
     this.dashDir.set(dir.x, dir.y);

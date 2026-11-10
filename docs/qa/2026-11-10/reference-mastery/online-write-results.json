@@ -1,0 +1,29 @@
+[
+  {
+    "action": "private-party-create",
+    "status": 200
+  },
+  {
+    "action": "private-party-read",
+    "status": 200,
+    "members": 1
+  },
+  {
+    "action": "private-party-cleanup",
+    "status": 200
+  },
+  {
+    "action": "removed-party-read",
+    "status": 200,
+    "removed": true
+  },
+  {
+    "action": "invalid-login",
+    "status": 401
+  },
+  {
+    "action": "apk-preflight",
+    "status": 204,
+    "cors": "https://localhost"
+  }
+]

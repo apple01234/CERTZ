@@ -354,7 +354,7 @@ export function TouchControls({
         )}
         {allows("dash") && <button
           type="button"
-          aria-label="돌진 — 쿨타임 0초, 자원 소모 없음"
+          aria-label="돌진 — 쿨타임 1초, 자원 소모 없음"
           className="pointer-events-auto shrink-0 touch-none rounded-lg border border-white/40 bg-black/70 px-2 py-3 text-xs font-bold text-white"
           onPointerDown={(e) => {
             e.preventDefault();
