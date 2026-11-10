@@ -1,0 +1,22 @@
+{
+  "source": "https://www.cross-code.com/en/start",
+  "observedVersion": "v0.7.1 BETA DEMO",
+  "runtimeChangesToCERTZ": false,
+  "gameplayVerified": false,
+  "approved": [
+    "isolated browser execution",
+    "Deep mode"
+  ],
+  "evidenceExport": {
+    "file": "craft-evidence.json.gz",
+    "sha256": "09a18ed57a6a10fda7ecf35a91aaa1042d2b070178203554cfbf3d16ce2c8d8f",
+    "records": 9,
+    "uncompressedBytes": 10284763
+  },
+  "evidenceIds": {
+    "title": "ev_295a08585bc8f2dfadc899823a3ed3dbdb2fc677ba3b088f5fd0cd54c2743e24",
+    "menu": "ev_10c8893b204ce1685a5ed0e6a5b7335c937c187506a5d1c5f696a930d4b6fb0c",
+    "staticScripts": "ev_4f5f6bae87b8b9aa99d872ad2fe8a200d23fd13afca756f2d583c803d80268fa",
+    "failedFocus": "ev_2fc31ff9f2b77f53c526ffaa5cb022590b0f79803c710d75ce5b14e6da9ffddb"
+  }
+}

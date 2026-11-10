@@ -5151,3 +5151,9 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
 - 기존 check_deploy_status.js를 자격 증명 추출 없는 main/운영 SHA 비교로 대체. main 도중 변경·SHA 누락·지연·HTTP 실패 회귀5개, push/수동 CI 대기 검사 추가. 전체606개 통과.
 - 튜토리얼 스크립트의 운영 URL/증거 폴더/결과 JSON/브라우저 정리 지원, 실제 진행 재현 스크립트와 실패 증거 보관. 런타임·에셋·스토리·APK 버전 변경 없음.
 - 사용자가 CrossCode 공식 페이지를 Craft Anything 참고작으로 추가. 설치/등록 정상, brief/plan/hypothesis 기록. web_site_open의 consent_required로 사용자 실행 동의 대기 중이며 아직 CrossCode 관찰/적용 결과로 주장하지 않는다.
+
+## Task — 2026-11-11 KST: CrossCode Deep 조사 체크포인트 인계
+
+- 사용자 승인 후 Craft Anything MCP Deep 세션으로 공식 v0.7.1 BETA DEMO 타이틀/메뉴를 캡처하고 로드된14스크립트의 정적 그래프(12모듈/50엔드포인트)를 조사했다.
+- 실제 전투/맵/스킬 플레이와 게임 적용은 미완료. body 키 입력 도구는 DOM.focus 실패, 대체 실제 입력도 New Game 이후 진입 미확인. 이를 완료로 보고하지 않는다.
+- 사용자 요청에 따라 조사 중단 후 근거9건 압축 export, 조사 메모, 캡처와 실행·Deep 승인 및 다음 작업 지시서를 보존했다. docs/handoff/CROSSCODE_NEXT_AI.md 참조. 런타임·에셋·버전 변경 없음.
