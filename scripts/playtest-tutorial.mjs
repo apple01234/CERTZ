@@ -1,7 +1,14 @@
 import { chromium } from 'playwright';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+const base = process.env.TUTORIAL_QA_URL ?? 'http://127.0.0.1:3100';
+const out = process.env.TUTORIAL_QA_OUT ?? '/dev/shm';
+await mkdir(out, {recursive:true});
+const started = Date.now();
 const browser = await chromium.launch({args:['--no-sandbox','--enable-unsafe-swiftshader']});
+try {
 const page = await browser.newPage({viewport:{width:1280,height:800}}); const errors=[]; page.on('pageerror',e=>errors.push(e.message));
-await page.goto('http://127.0.0.1:3100',{waitUntil:'domcontentloaded',timeout:120000});
+await page.goto(base,{waitUntil:'domcontentloaded',timeout:120000});
 await page.getByRole('button',{name:/게임 시작/}).first().click({timeout:120000});
 await page.getByRole('button',{name:'캐릭터 생성',exact:true}).first().click();
 await page.locator('input').first().fill('수련검증'+String(Date.now()).slice(-4));
@@ -16,7 +23,7 @@ async function settle() {
   for (let i=0;i<170;i++) {
     const s=await state();
     if (!s.cinema && !s.dialogue) { await page.waitForTimeout(220); if (!(await state()).cinema) return; }
-    if (!shotLilac && await page.locator('img[src$="/lilac.png"]').isVisible()) { await page.screenshot({path:'/dev/shm/tutorial-real-lilac.png'}); shotLilac=true; }
+    if (!shotLilac && await page.locator('img[src$="/lilac.png"]').isVisible()) { await page.screenshot({path:join(out, 'tutorial-real-lilac.png')}); shotLilac=true; }
     const choice = page.getByRole('button',{name:'두려움에 도망치는 사람',exact:true});
     if (await choice.isVisible()) await choice.click(); else await press('Space');
     await page.waitForTimeout(230);
@@ -45,7 +52,7 @@ await page.evaluate(()=>{for(const e of ['input:attack','input:skill1','input:da
 await page.waitForTimeout(350); await page.keyboard.up('ArrowRight');
 const during=await state();
 if(during.player.mp!==before.player.mp||Math.hypot(during.player.x-before.player.x,during.player.y-before.player.y)>1)throw Error('cinematic input leaked');
-await page.screenshot({path:'/dev/shm/tutorial-real-opening.png'});
+await page.screenshot({path:join(out, 'tutorial-real-opening.png')});
 await settle(); await waitStep('move');
 await walk((await state()).target); await waitStep('talk');
 await walk((await state()).target,55); await press('Space');
@@ -53,7 +60,7 @@ await page.waitForTimeout(250);  if((await state()).step==='talk'){await press('
 await page.waitForFunction(()=>window.__SERTZ_SCENE__?.stageDef.key==='howlrstone1x2',null,{timeout:20000});
 await settle(); await waitStep('attack'); await settle();
 // Re-open the same saved character to check practice recovery without granting anything.
-await page.context().storageState({path:"/dev/shm/tutorial-practice-storage.json"});
+await page.context().storageState({path:join(out, 'tutorial-practice-storage.json')});
 await page.reload({waitUntil:'domcontentloaded'});
 await page.getByRole('button',{name:/게임 시작/}).first().click({timeout:120000});
 await page.getByRole('button',{name:'이 캐릭터로 시작'}).click();
@@ -73,14 +80,14 @@ await waitStep('skill');await settle();await walk((await state()).enemy,42);awai
 await waitStep('pickup');await settle();await walk((await state()).target,10);
 await waitStep('inventory');await settle();
 await page.getByRole('button',{name:'가방 확인',exact:true}).click();await page.waitForTimeout(500);
-await page.screenshot({path:'/dev/shm/tutorial-real-inventory.png'});
+await page.screenshot({path:join(out, 'tutorial-real-inventory.png')});
 await press('i');await waitStep('accept');await settle();await walk((await state()).target,55);await press('Space');await page.waitForTimeout(400);
 for(let i=0;i<15;i++){const b=page.getByRole('button',{name:'[의뢰 받기]',exact:true});if(await b.isVisible()){await b.click();break;}await press('Space');await page.waitForTimeout(250);}
 await waitStep('mission');await settle();
 await page.getByRole('button',{name:'퀘스트 확인',exact:true}).click();
 await page.getByText('레지스터의 수련 의뢰',{exact:true}).waitFor();
 await press('Escape');
-await page.screenshot({path:'/dev/shm/tutorial-real-mission.png'});
+await page.screenshot({path:join(out, 'tutorial-real-mission.png')});
 await walk((await state()).enemy,42);
 for(let i=0;i<16&&(await state()).step==='mission';i++){await press('x');await page.waitForTimeout(380);}
 await waitStep('reward');await walk((await state()).target,55);await press('Space');await waitStep('ending');await settle();
@@ -88,7 +95,8 @@ await page.waitForFunction(()=>window.__SERTZ_SCENE__?.tutorialDone&&!window.__S
 console.log('DONE',await state());
 if(await page.evaluate(()=>window.__SERTZ_SCENE__.featureTutOpen))throw Error('duplicate feature tutorial after completion');
 await page.keyboard.down('ArrowRight');await page.waitForTimeout(200);await page.keyboard.up('ArrowRight');await press('Shift');await page.waitForTimeout(250);await press('Shift');await page.waitForTimeout(250);
-await page.screenshot({path:'/dev/shm/tutorial-real-finished.png'});
+await page.screenshot({path:join(out, 'tutorial-real-finished.png')});
 console.log('ERRORS',errors);if(errors.length)throw Error(errors.join('\n'));
-await page.context().storageState({path:'/dev/shm/tutorial-complete-storage.json'});
-await browser.close();
+await page.context().storageState({path:join(out, 'tutorial-complete-storage.json')});
+await writeFile(join(out, 'tutorial-results.json'), JSON.stringify({base,elapsedMs:Date.now()-started,version:await page.evaluate(async()=>{const r=await fetch('/api/version');return r.json();}),final:await state(),pageErrors:errors},null,2));
+} finally { await browser.close(); }

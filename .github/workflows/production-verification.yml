@@ -1,0 +1,26 @@
+name: Verify production matches main
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: certz-production-verification
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Wait for current main to reach production
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/check_deploy_status.js --attempts 30 --interval-ms 20000

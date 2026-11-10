@@ -66,12 +66,10 @@ test("macOS 러너는 메이저 버전으로 핀돼 있다", () => {
   assert.match(m[1], /^macos-\d+$/, `macOS 러너가 ${m[1]} — macos-NN 형식이어야 한다`);
 });
 
-test("러너 이미지를 올릴 때 고칠 곳이 한 군데뿐이다", () => {
-  /* 같은 OS 러너를 쓰는 워크플로가 여럿이면 하나만 올려서 어긋난다.
-   * 현재 ubuntu 1개(android) · windows 1개(exe) · macos 1개(ios) 다. */
-  const byOs = (re) => workflows().filter((w) => re.test(w.src)).map((w) => w.name);
-  for (const [os, re] of [["ubuntu", /runs-on:\s*ubuntu-/], ["windows", /runs-on:\s*windows-/], ["macos", /runs-on:\s*macos-/]]) {
-    const list = byOs(re);
-    assert.ok(list.length <= 1, `${os} 러너를 쓰는 워크플로가 ${list.length}개다: ${list.join(", ")}`);
+test("같은 OS의 워크플로는 동일한 러너 버전을 쓴다", () => {
+  // 배포 검증도 Ubuntu를 사용한다. 워크플로 수보다 실제 버전 불일치를 검사한다.
+  for (const os of ["ubuntu", "windows", "macos"]) {
+    const versions = workflows().flatMap(w => [...w.src.matchAll(new RegExp(`^\\s*runs-on:\\s*(${os}-\\S+)`, "gm"))].map(m => m[1]));
+    assert.ok(new Set(versions).size <= 1, `${os} 러너 버전이 다르다: ${versions.join(", ")}`);
   }
 });

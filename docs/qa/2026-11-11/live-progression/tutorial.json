@@ -1,0 +1,39 @@
+{
+  "base": "https://sertz.vercel.app",
+  "elapsedMs": 64000,
+  "version": {
+    "latest": "2.2.9",
+    "code": 265,
+    "note": "v2.2.9 (vc265) — 초기 로딩 분리, 구 세이브 보존, 전수 기술 숙련 성장·상승 알림 개선.",
+    "apk": "https://github.com/apple01234/CERTZ/releases/download/v2.2.9/SERTZ-vc265.apk",
+    "exe": "https://github.com/apple01234/CERTZ/releases/download/v2.2.9/SERTZ-vc265-setup.exe",
+    "guide": "/apk-guide.html",
+    "commitSha": "828c205be8726522bdab518f038c7edb8fdd7c4a"
+  },
+  "final": {
+    "stage": "howlrstone1x2",
+    "step": null,
+    "cinema": false,
+    "dialogue": false,
+    "paused": false,
+    "player": {
+      "x": 470.19809587056335,
+      "y": 546.757955396311,
+      "mp": 90,
+      "gold": 5723,
+      "potions": {
+        "hp": 6,
+        "mp": 4
+      }
+    },
+    "target": null,
+    "enemy": null,
+    "windup": false,
+    "done": true,
+    "near": null,
+    "allow": true,
+    "nav": false,
+    "kb": true
+  },
+  "pageErrors": []
+}

@@ -1,0 +1,671 @@
+{
+  "history": [
+    {
+      "stage": "howlrstone1x2",
+      "dialogue": false,
+      "cinema": false,
+      "feature": false,
+      "panel": false,
+      "auto": false,
+      "p": {
+        "x": 296,
+        "y": 590,
+        "hp": 190,
+        "maxHp": 190,
+        "mp": 90,
+        "maxMp": 90,
+        "lv": 6,
+        "state": "idle",
+        "potions": {
+          "hp": 6,
+          "mp": 4
+        },
+        "atk": 25
+      },
+      "quest": {
+        "id": "12-hw1",
+        "type": "collect",
+        "title": "마을의 수련터 조사",
+        "desc": "주변의 흔적을 확인해 길을 확보하자.",
+        "targetLabel": "정리서의 페이지",
+        "reward": 2080,
+        "expReward": 209
+      },
+      "hunt": 0,
+      "fragment": {
+        "x": 1546.330842930856,
+        "y": 472.171939356066
+      },
+      "portal": null,
+      "boss": null,
+      "questIdx": 0,
+      "kills": 0
+    },
+    {
+      "stage": "howlrstone1x3",
+      "dialogue": true,
+      "cinema": true,
+      "feature": false,
+      "panel": false,
+      "auto": false,
+      "p": {
+        "x": 294.0625,
+        "y": 605,
+        "hp": 226,
+        "maxHp": 226,
+        "mp": 102,
+        "maxMp": 102,
+        "lv": 8,
+        "state": "idle",
+        "potions": {
+          "hp": 6,
+          "mp": 4
+        },
+        "atk": 36
+      },
+      "quest": {
+        "id": "13-hw2",
+        "type": "hunt",
+        "title": "에델리오나 성의 뒷문의 길 확보",
+        "desc": "해변의 잔당을 상대해 통행로를 확보하자.",
+        "need": 20,
+        "targetKey": "x2_reeffish",
+        "targetLabel": "해변의 잔당",
+        "reward": 2320,
+        "expReward": 209
+      },
+      "hunt": 0,
+      "fragment": null,
+      "portal": null,
+      "boss": null,
+      "questIdx": 0,
+      "kills": 0
+    },
+    {
+      "stage": "howlrstone1x3",
+      "dialogue": false,
+      "cinema": false,
+      "feature": false,
+      "panel": false,
+      "auto": false,
+      "p": {
+        "x": 1739.9621171199794,
+        "y": 1011.500196096417,
+        "hp": 205,
+        "maxHp": 244,
+        "mp": 93,
+        "maxMp": 108,
+        "lv": 9,
+        "state": "attack",
+        "potions": {
+          "hp": 5,
+          "mp": 5
+        },
+        "atk": 39
+      },
+      "quest": {
+        "id": "13-hw2",
+        "type": "hunt",
+        "title": "에델리오나 성의 뒷문의 길 확보",
+        "desc": "해변의 잔당을 상대해 통행로를 확보하자.",
+        "need": 20,
+        "targetKey": "x2_reeffish",
+        "targetLabel": "해변의 잔당",
+        "reward": 2320,
+        "expReward": 209
+      },
+      "hunt": 2,
+      "fragment": null,
+      "portal": null,
+      "boss": null,
+      "questIdx": 0,
+      "kills": 3
+    },
+    {
+      "stage": "howlrstone1x3",
+      "dialogue": false,
+      "cinema": false,
+      "feature": false,
+      "panel": false,
+      "auto": false,
+      "p": {
+        "x": 1785.956347750648,
+        "y": 737.615503099008,
+        "hp": 206,
+        "maxHp": 244,
+        "mp": 103,
+        "maxMp": 108,
+        "lv": 9,
+        "state": "idle",
+        "potions": {
+          "hp": 7,
+          "mp": 6
+        },
+        "atk": 39
+      },
+      "quest": {
+        "id": "13-hw2",
+        "type": "hunt",
+        "title": "에델리오나 성의 뒷문의 길 확보",
+        "desc": "해변의 잔당을 상대해 통행로를 확보하자.",
+        "need": 20,
+        "targetKey": "x2_reeffish",
+        "targetLabel": "해변의 잔당",
+        "reward": 2320,
+        "expReward": 209
+      },
+      "hunt": 8,
+      "fragment": null,
+      "portal": null,
+      "boss": null,
+      "questIdx": 0,
+      "kills": 14
+    },
+    {
+      "stage": "howlrstone1x3",
+      "dialogue": false,
+      "cinema": false,
+      "feature": false,
+      "panel": false,
+      "auto": false,
+      "p": {
+        "x": 1862.0086703111042,
+        "y": 512.2246001836992,
+        "hp": 280,
+        "maxHp": 280,
+        "mp": 120,
+        "maxMp": 120,
+        "lv": 11,
+        "state": "idle",
+        "potions": {
+          "hp": 5,
+          "mp": 7
+        },
+        "atk": 45
+      },
+      "quest": {
+        "id": "13-hw2",
+        "type": "hunt",
+        "title": "에델리오나 성의 뒷문의 길 확보",
+        "desc": "해변의 잔당을 상대해 통행로를 확보하자.",
+        "need": 20,
+        "targetKey": "x2_reeffish",
+        "targetLabel": "해변의 잔당",
+        "reward": 2320,
+        "expReward": 209
+      },
+      "hunt": 15,
+      "fragment": null,
+      "portal": null,
+      "boss": null,
+      "questIdx": 0,
+      "kills": 22
+    },
+    {
+      "stage": "howlrstone1x3",
+      "dialogue": false,
+      "cinema": false,
+      "feature": false,
+      "panel": false,
+      "auto": false,
+      "p": {
+        "x": 2001.524961220782,
+        "y": 868.8265161958151,
+        "hp": 228,
+        "maxHp": 316,
+        "mp": 132,
+        "maxMp": 132,
+        "lv": 13,
+        "state": "idle",
+        "potions": {
+          "hp": 3,
+          "mp": 8
+        },
+        "atk": 51
+      },
+      "quest": null,
+      "hunt": 0,
+      "fragment": null,
+      "portal": {
+        "x": 2165.9375,
+        "y": 605
+      },
+      "boss": null,
+      "questIdx": 1,
+      "kills": 28
+    },
+    {
+      "stage": "howlrstone1x4",
+      "dialogue": true,
+      "cinema": true,
+      "feature": false,
+      "panel": false,
+      "auto": false,
+      "p": {
+        "x": 292.3529411764706,
+        "y": 620,
+        "hp": 334,
+        "maxHp": 334,
+        "mp": 138,
+        "maxMp": 138,
+        "lv": 14,
+        "state": "idle",
+        "potions": {
+          "hp": 3,
+          "mp": 8
+        },
+        "atk": 54
+      },
+      "quest": null,
+      "hunt": 0,
+      "fragment": null,
+      "portal": {
+        "x": 2297.6470588235297,
+        "y": 620
+      },
+      "boss": null,
+      "questIdx": 1,
+      "kills": 28
+    },
+    {
+      "stage": "howlrstone2x1",
+      "dialogue": true,
+      "cinema": true,
+      "feature": false,
+      "panel": false,
+      "auto": false,
+      "p": {
+        "x": 298.2142857142857,
+        "y": 503.125,
+        "hp": 370,
+        "maxHp": 370,
+        "mp": 150,
+        "maxMp": 150,
+        "lv": 16,
+        "state": "idle",
+        "potions": {
+          "hp": 3,
+          "mp": 8
+        },
+        "atk": 60
+      },
+      "quest": null,
+      "hunt": 0,
+      "fragment": null,
+      "portal": {
+        "x": 1901.7857142857142,
+        "y": 503.125
+      },
+      "boss": null,
+      "questIdx": 1,
+      "kills": 28
+    },
+    {
+      "stage": "howlrstone2x1",
+      "dialogue": false,
+      "cinema": false,
+      "feature": false,
+      "panel": false,
+      "auto": false,
+      "p": {
+        "x": 1591.208663132646,
+        "y": 502.36006452671813,
+        "hp": 361,
+        "maxHp": 370,
+        "mp": 150,
+        "maxMp": 150,
+        "lv": 16,
+        "state": "idle",
+        "potions": {
+          "hp": 3,
+          "mp": 8
+        },
+        "atk": 60
+      },
+      "quest": null,
+      "hunt": 0,
+      "fragment": null,
+      "portal": {
+        "x": 1901.7857142857142,
+        "y": 503.125
+      },
+      "boss": null,
+      "questIdx": 1,
+      "kills": 28
+    },
+    {
+      "stage": "howlrstone2x2",
+      "dialogue": true,
+      "cinema": true,
+      "feature": false,
+      "panel": false,
+      "auto": false,
+      "p": {
+        "x": 296,
+        "y": 590,
+        "hp": 370,
+        "maxHp": 370,
+        "mp": 150,
+        "maxMp": 150,
+        "lv": 16,
+        "state": "idle",
+        "potions": {
+          "hp": 3,
+          "mp": 8
+        },
+        "atk": 60
+      },
+      "quest": {
+        "id": "22-hw3",
+        "type": "hunt",
+        "title": "피난 골목의 길 확보",
+        "desc": "해롤드의 부하을 상대해 통행로를 확보하자.",
+        "need": 20,
+        "targetKey": "swampbeast",
+        "targetLabel": "해롤드의 부하",
+        "reward": 2480,
+        "expReward": 1073
+      },
+      "hunt": 0,
+      "fragment": null,
+      "portal": null,
+      "boss": null,
+      "questIdx": 0,
+      "kills": 28
+    },
+    {
+      "stage": "howlrstone2x2",
+      "dialogue": false,
+      "cinema": false,
+      "feature": false,
+      "panel": false,
+      "auto": false,
+      "p": {
+        "x": 1217.4509493660182,
+        "y": 711.3533526794248,
+        "hp": 247,
+        "maxHp": 370,
+        "mp": 150,
+        "maxMp": 150,
+        "lv": 16,
+        "state": "idle",
+        "potions": {
+          "hp": 3,
+          "mp": 10
+        },
+        "atk": 60
+      },
+      "quest": {
+        "id": "22-hw3",
+        "type": "hunt",
+        "title": "피난 골목의 길 확보",
+        "desc": "해롤드의 부하을 상대해 통행로를 확보하자.",
+        "need": 20,
+        "targetKey": "swampbeast",
+        "targetLabel": "해롤드의 부하",
+        "reward": 2480,
+        "expReward": 1073
+      },
+      "hunt": 5,
+      "fragment": null,
+      "portal": null,
+      "boss": null,
+      "questIdx": 0,
+      "kills": 33
+    },
+    {
+      "stage": "howlrstone2x2",
+      "dialogue": false,
+      "cinema": false,
+      "feature": false,
+      "panel": false,
+      "auto": false,
+      "p": {
+        "x": 1191.5647515488056,
+        "y": 850.9440802095581,
+        "hp": 179,
+        "maxHp": 370,
+        "mp": 140,
+        "maxMp": 150,
+        "lv": 16,
+        "state": "attack",
+        "potions": {
+          "hp": 0,
+          "mp": 14
+        },
+        "atk": 60
+      },
+      "quest": {
+        "id": "22-hw3",
+        "type": "hunt",
+        "title": "피난 골목의 길 확보",
+        "desc": "해롤드의 부하을 상대해 통행로를 확보하자.",
+        "need": 20,
+        "targetKey": "swampbeast",
+        "targetLabel": "해롤드의 부하",
+        "reward": 2480,
+        "expReward": 1073
+      },
+      "hunt": 12,
+      "fragment": null,
+      "portal": null,
+      "boss": null,
+      "questIdx": 0,
+      "kills": 43
+    },
+    {
+      "stage": "howlrstone2x2",
+      "dialogue": false,
+      "cinema": false,
+      "feature": false,
+      "panel": false,
+      "auto": false,
+      "p": {
+        "x": 1289.79262851428,
+        "y": 790.5608265325569,
+        "hp": 261,
+        "maxHp": 388,
+        "mp": 156,
+        "maxMp": 156,
+        "lv": 17,
+        "state": "attack",
+        "potions": {
+          "hp": 1,
+          "mp": 15
+        },
+        "atk": 63
+      },
+      "quest": {
+        "id": "22-hw3",
+        "type": "hunt",
+        "title": "피난 골목의 길 확보",
+        "desc": "해롤드의 부하을 상대해 통행로를 확보하자.",
+        "need": 20,
+        "targetKey": "swampbeast",
+        "targetLabel": "해롤드의 부하",
+        "reward": 2480,
+        "expReward": 1073
+      },
+      "hunt": 16,
+      "fragment": null,
+      "portal": null,
+      "boss": null,
+      "questIdx": 0,
+      "kills": 47
+    },
+    {
+      "stage": "howlrstone2x3",
+      "dialogue": true,
+      "cinema": true,
+      "feature": false,
+      "panel": false,
+      "auto": false,
+      "p": {
+        "x": 304,
+        "y": 382.375,
+        "hp": 442,
+        "maxHp": 442,
+        "mp": 174,
+        "maxMp": 174,
+        "lv": 20,
+        "state": "idle",
+        "potions": {
+          "hp": 0,
+          "mp": 16
+        },
+        "atk": 72
+      },
+      "quest": {
+        "id": "howlrstone2x3-boss",
+        "type": "boss",
+        "title": "디오 · 다크니스 크리스탈의 힘",
+        "desc": "디오와 사념체의 전투 국면을 돌파하자.",
+        "targetLabel": "디오 · 다크니스 크리스탈의 힘",
+        "reward": 333,
+        "expReward": 504
+      },
+      "hunt": 0,
+      "fragment": null,
+      "portal": null,
+      "boss": null,
+      "questIdx": 0,
+      "kills": 51
+    },
+    {
+      "stage": "howlrstone2x3",
+      "dialogue": false,
+      "cinema": false,
+      "feature": false,
+      "panel": false,
+      "auto": false,
+      "p": {
+        "x": 1136.4241568627515,
+        "y": 382.375,
+        "hp": 411,
+        "maxHp": 442,
+        "mp": 174,
+        "maxMp": 174,
+        "lv": 20,
+        "state": "idle",
+        "potions": {
+          "hp": 1,
+          "mp": 16
+        },
+        "atk": 72
+      },
+      "quest": {
+        "id": "howlrstone2x3-boss",
+        "type": "boss",
+        "title": "디오 · 다크니스 크리스탈의 힘",
+        "desc": "디오와 사념체의 전투 국면을 돌파하자.",
+        "targetLabel": "디오 · 다크니스 크리스탈의 힘",
+        "reward": 333,
+        "expReward": 504
+      },
+      "hunt": 0,
+      "fragment": null,
+      "portal": null,
+      "boss": {
+        "x": 865.062008333366,
+        "y": 382.37501251043307,
+        "hp": 177318,
+        "maxHp": 178200,
+        "mode": "charging"
+      },
+      "questIdx": 0,
+      "kills": 52
+    },
+    {
+      "stage": "howlrstone2x3",
+      "dialogue": false,
+      "cinema": false,
+      "feature": false,
+      "panel": false,
+      "auto": false,
+      "p": {
+        "x": 1394,
+        "y": 380.6120677238323,
+        "hp": 80,
+        "maxHp": 442,
+        "mp": 164,
+        "maxMp": 174,
+        "lv": 20,
+        "state": "idle",
+        "potions": {
+          "hp": 0,
+          "mp": 17
+        },
+        "atk": 72
+      },
+      "quest": {
+        "id": "howlrstone2x3-boss",
+        "type": "boss",
+        "title": "디오 · 다크니스 크리스탈의 힘",
+        "desc": "디오와 사념체의 전투 국면을 돌파하자.",
+        "targetLabel": "디오 · 다크니스 크리스탈의 힘",
+        "reward": 333,
+        "expReward": 504
+      },
+      "hunt": 0,
+      "fragment": null,
+      "portal": null,
+      "boss": {
+        "x": 1377.7104876756107,
+        "y": 380.6120123902572,
+        "hp": 175727,
+        "maxHp": 178200,
+        "mode": "chargeTele"
+      },
+      "questIdx": 0,
+      "kills": 54
+    }
+  ],
+  "final": {
+    "stage": "howlrstone2x3",
+    "dialogue": false,
+    "cinema": false,
+    "feature": false,
+    "panel": false,
+    "auto": false,
+    "p": {
+      "x": 1393.9992549019605,
+      "y": 380.61207961076536,
+      "hp": 0,
+      "maxHp": 442,
+      "mp": 169,
+      "maxMp": 174,
+      "lv": 20,
+      "state": "dead",
+      "potions": {
+        "hp": 0,
+        "mp": 17
+      },
+      "atk": 72
+    },
+    "quest": {
+      "id": "howlrstone2x3-boss",
+      "type": "boss",
+      "title": "디오 · 다크니스 크리스탈의 힘",
+      "desc": "디오와 사념체의 전투 국면을 돌파하자.",
+      "targetLabel": "디오 · 다크니스 크리스탈의 힘",
+      "reward": 333,
+      "expReward": 504
+    },
+    "hunt": 0,
+    "fragment": null,
+    "portal": null,
+    "boss": {
+      "x": 1379.065799755388,
+      "y": 380.6129981344068,
+      "hp": 175622,
+      "maxHp": 178200,
+      "mode": "recover"
+    },
+    "questIdx": 0,
+    "kills": 54
+  },
+  "pageErrors": [],
+  "actions": "normal keyboard/UI only; no progress, stats, enemy HP or timers changed",
+  "succeeded": false,
+  "limitation": "First boss reached by normal controls, but the base-equipment/unallocated-AP keyboard bot died. This is not a boss-clear validation and does not prove every player is blocked."
+}
