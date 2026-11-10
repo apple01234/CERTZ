@@ -1,3 +1,4 @@
+import { FREE_DASH, freeDashDirection } from "../combat/freeDash";
 import Phaser from "phaser";
 import type { WorldScene } from "../scenes/WorldScene";
 import {
@@ -540,6 +541,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  값이 0 보다 크면 모든 스킬 사용이 막히고, HUD 가 남은 시간을 보여 준다.
    *  지속시간은 보스 패턴이 정한다(지금은 심연의 결정 방어막 종료 반격). */
   private silenceMs = 0;
+  private freeDashUntil = 0;
+  private freeDashAt = 0;
+  private freeDashing = false;
   private dashTime = 0;
   private dashGhostAcc = 0; // v4.9.0 — 돌진 잔상 스폰 간격 누적
   private dashDir = new Phaser.Math.Vector2();
@@ -664,7 +668,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   update(dt: number, move: Phaser.Math.Vector2, attackPressed: boolean) {
-    if (this.state === "dead") { this.cancelSkillCast(); return; }
+    if (this.state === "dead") { this.stopFreeDash(); this.cancelSkillCast(); return; }
     const ms = dt;
 
     this.atkCooldown = Math.max(0, this.atkCooldown - ms);
@@ -709,6 +713,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
     this.tickAutoUse(); // v3.0.6 — 자동 물약/자동 버프 (지시 #5)
 
+    if (this.tickFreeDash()) return;
     if (this.state === "dash") {
       this.dashTime -= ms;
       this.setVelocity(this.dashDir.x * this.dashSpeed, this.dashDir.y * this.dashSpeed);
@@ -2661,6 +2666,54 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (this.state === "attack") this.state = "idle";
     });
     this.scene.emitHud();
+  }
+
+  /** REBIRTH: independent locomotion, available from creation in every class. */
+  useFreeDash() {
+    if (this.freeDashing && this.scene.time.now >= this.freeDashUntil) this.tickFreeDash();
+    if (this.state !== "idle") return false;
+    const dir = freeDashDirection(this.scene.currentMoveVec(), this.facing);
+    this.facing.set(dir.x, dir.y);
+    this.dashDir.set(dir.x, dir.y);
+    this.freeDashAt = this.scene.time.now;
+    this.freeDashUntil = this.freeDashAt + FREE_DASH.durationMs;
+    this.freeDashing = true;
+    this.state = "dash";
+    this.setVelocity(0, 0);
+    return true;
+  }
+
+  /** Swept kinematic travel, capped by scene time; never feeds the legacy dash. */
+  private tickFreeDash() {
+    if (!this.freeDashing) return false;
+    if (this.state !== "dash" || !this.body) { this.stopFreeDash(); return false; }
+    const now = this.scene.time.now;
+    const at = Math.min(now, this.freeDashUntil);
+    const distance = FREE_DASH.speed * Math.max(0, at - this.freeDashAt) / 1000;
+    this.freeDashAt = at;
+    if (distance > 0) {
+      const fraction = this.scene.freeDashTravelFraction(this.dashDir, distance);
+      // Body.reset keeps sprite/body/previous coordinates in sync and velocity zero.
+      // Sweeping before the reset prevents tunnelling, including on a delayed frame.
+      (this.body as Phaser.Physics.Arcade.Body).reset(
+        this.x + this.dashDir.x * distance * fraction,
+        this.y + this.dashDir.y * distance * fraction,
+      );
+      if (fraction < 1) { this.stopFreeDash(); return false; }
+    }
+    const horiz = Math.abs(this.dashDir.x) >= Math.abs(this.dashDir.y);
+    this.ensureMoveAnim(this.animKey(horiz ? "hero-walk-side" : this.dashDir.y > 0 ? "hero-walk" : "hero-walk-up"));
+    if (horiz) this.setFlipX(this.dashDir.x > 0);
+    if (now >= this.freeDashUntil) { this.stopFreeDash(); return false; }
+    return true;
+  }
+
+  stopFreeDash() {
+    if (!this.freeDashing) return;
+    this.freeDashing = false;
+    this.freeDashUntil = 0;
+    this.setVelocity(0, 0);
+    if (this.state === "dash") this.state = "idle";
   }
 
   useSkill2() {

@@ -21,7 +21,7 @@
 
 /** 배정 가능한 모든 키 코드. 이동(W/A/S/D·화살표)은 고정이고 나머지는 keymap 에서 조회한다. */
 export const ALL_KEYS =
-  "W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,ESC,TAB,Q,E,R,T,Y,U,I,O,P,F,G,H,J,K,L,V,B,N,M,Z,X,C," +
+  "SHIFT,W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,ESC,TAB,Q,E,R,T,Y,U,I,O,P,F,G,H,J,K,L,V,B,N,M,Z,X,C," +
   "ONE,TWO,THREE,FOUR,FIVE,SIX,SEVEN,EIGHT,NINE,ZERO";
 
 /**

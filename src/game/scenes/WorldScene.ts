@@ -1,3 +1,4 @@
+import { freeDashFraction, type DashRect } from "../combat/freeDash";
 import Phaser from "phaser";
 import { DECOR_BUDGET, decorSetFor, pickByTag, isSolidDecor, decorCollisionBounds, type DecorObj } from "../decorObjects";
 import { createGameState, type GameState } from "../state/gameState";
@@ -10182,6 +10183,7 @@ export class WorldScene extends Phaser.Scene {
       this.skillBuf.queue(id, this.time.now);
       this.flushBufferedSkill();
     };
+    const onDash = () => this.tryFreeDash();
     const onS1 = () => queueSkill("s1");
     const onS2 = () => queueSkill("s2");
     /* v3.0.4 (지시 #7) — 모바일 3/4차기 버튼이 발행하는 input:skill3/4 미수신으로 안 쓰이던 버그 수정 */
@@ -11211,6 +11213,7 @@ export class WorldScene extends Phaser.Scene {
 
     EventBus.on("input:move", onMove);
     EventBus.on("input:attack", onAtk);
+    EventBus.on("input:dash", onDash);
     EventBus.on("input:skill1", onS1);
     EventBus.on("input:skill2", onS2);
     EventBus.on("input:skill3", onS3);
@@ -11900,6 +11903,7 @@ export class WorldScene extends Phaser.Scene {
       EventBus.off("auth:changed", onAuthChanged);
       EventBus.off("input:move", onMove);
       EventBus.off("input:attack", onAtk);
+      EventBus.off("input:dash", onDash);
       EventBus.off("input:skill1", onS1);
       EventBus.off("input:skill2", onS2);
       EventBus.off("input:skill3", onS3);
@@ -12365,6 +12369,7 @@ export class WorldScene extends Phaser.Scene {
 
       // 키보드 공격/스킬 — 이동은 화살표 고정, 액션 키는 키 매핑 따름 (v1.0.4)
       /* 하루 v1 — Space 는 "NPC/채집 키"(interact)로 이관. 공격은 키맵 attack(X) 만 받는다. */
+      if (Phaser.Input.Keyboard.JustDown(this.keys.SHIFT)) this.tryFreeDash();
       if (Phaser.Input.Keyboard.JustDown(this.keyFor("attack")))
         this.attackQueued = true;
       if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill1"))) this.player.useSkill1();
@@ -12387,6 +12392,8 @@ export class WorldScene extends Phaser.Scene {
         else if (Phaser.Input.Keyboard.JustDown(this.keys.H)) this.emote("excl", ex, ey);
         else if (Phaser.Input.Keyboard.JustDown(this.keys.N)) this.emote("anger", ex, ey);
       }
+
+      if (!this.freeDashInputAllowed()) this.player.stopFreeDash();
 
       // 수면 연출 중 — 입력 봉인 (v2.2)
       if (this.sleeping) {
@@ -12676,6 +12683,7 @@ export class WorldScene extends Phaser.Scene {
 
   private resetInputState() {
     this.touchMove.set(0, 0);
+    this.player?.stopFreeDash();
     this.attackQueued = false;
     this.dirOrder.x.length = 0;
     this.dirOrder.y.length = 0;
@@ -13298,6 +13306,30 @@ export class WorldScene extends Phaser.Scene {
     } else if (cfg.mpOn && this.player.mp <= this.player.maxMp * 0.35 && mpHave) {
       this.player.usePotion("mp"); // v1.4.24 ③ — 25→35%
     }
+  }
+
+  private freeDashInputAllowed() {
+    const ae = document.activeElement as HTMLElement | null;
+    const typing = !!ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable);
+    return !!this.player && !typing && !this.chatFocused && !this.panelNavOpen && !this.dialoguing &&
+      !this.sleeping && !this.transitioning && !this.camCinema && !sceneCinematicPlaying(this) &&
+      !this.physics.world.isPaused;
+  }
+
+  private tryFreeDash() {
+    if (this.freeDashInputAllowed()) this.player.useFreeDash();
+  }
+
+  freeDashTravelFraction(direction: { x: number; y: number }, distance: number): number {
+    const body = this.player?.body as Phaser.Physics.Arcade.Body | undefined;
+    if (!body) return 0;
+    const solids: DashRect[] = [];
+    for (const child of this.solidGroup.getChildren()) {
+      const b = (child as Phaser.Physics.Arcade.Sprite).body;
+      if (b?.enable) solids.push({ x: b.x, y: b.y, width: b.width, height: b.height });
+    }
+    return freeDashFraction(body.center, { x: direction.x * distance, y: direction.y * distance },
+      { x: body.halfWidth, y: body.halfHeight }, this.physics.world.bounds, solids);
   }
 
   currentMoveVec() {

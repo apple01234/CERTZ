@@ -346,6 +346,18 @@ export function TouchControls({
             {mpBtn}
           </div>
         )}
+        <button
+          type="button"
+          aria-label="돌진 — 쿨타임 0초, 자원 소모 없음"
+          className="pointer-events-auto shrink-0 touch-none rounded-lg border border-white/40 bg-black/70 px-2 py-3 text-xs font-bold text-white"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            EventBus.emit("input:dash");
+          }}
+        >
+          돌진<span className="block text-[10px]">Shift · 0초</span>
+        </button>
         {/* [스킬그리드] — 해금된 스킬 2열 랩 그리드(아래→위로 쌓임), 궁극기는 마지막 칸의
          *  살짝 큰 황금 버튼(현행 스타일). 미해금 스킬은 그리드에서 제외 */}
         <div

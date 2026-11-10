@@ -5108,3 +5108,10 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
 - Game Development Studio CLI completed and verified sealed software-render capture run run_1794268521187_3b6a8e9e6d5642d28c5475bfcbb36bb5. Capture verification and visual raster analysis pass; no hardware/performance claim.
 - User-requested plugin inventory reviewed via Plugin Management and current skills/tools. Relevant game skills, Context7/TinyFish/Drive/GitHub/Lovable/Figma remain available; no unrelated service migration or paid external-provider setup.
 - Evidence and limitations: docs/CHAPTER_TERRAIN_AND_BOSSES.md and docs/qa/2026-11-10/. APK, production deployment, normal-equipment campaign balance, and live multi-client networking are separate checks.
+
+## Task — REBIRTH 독립 무쿨타임 돌진 1차 (2026-11-10)
+
+- 기반 `3908f63d1b5fce7514a1cc8a40b1e8ecc2613c71`에서 기존 저장/스킬/서버 구조를 보존하며 독립 돌진을 추가했다.
+- PC Shift와 모바일 돌진 이벤트를 공유하고, MP·쿨·무적 없이 약 126px 이동한다. swept 벽/월드 경계 판정, 중복 방지, 상태 중단을 구현했다. 신규 이미지/오디오/FX는 만들지 않았다.
+- 검증: `npx tsc --noEmit`, `npm run lint:strict`, 호환 로더 전체 554 tests 통과. 상세 제한 및 화면 검증 미수행 사항은 `docs/rebirth/QA_EVIDENCE.md`에 기록.
+- `npm run build`는 Next 빌드 뒤 standalone postbuild에서 server.js 탐색 실패. 성공으로 표기하지 않는다. 실제 플레이/모바일/멀티플레이 미검증.
