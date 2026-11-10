@@ -101,7 +101,10 @@ assert.deepEqual(hwScale, HOWLRSTONE_CHAPTERS[0].scaleMul, '영프는 전용 sca
 const firstKey = `${HOWLRSTONE_CHAPTERS[0].key}x1`;
 assert.equal(HOWLRSTONE_ENTRY, firstKey);
 assert.equal(NEXT_STAGE[YOUNG_PRINCESS_VILLAGE], firstKey, '영프 마을 → 영프 1-1 (vc230 막다른 길 해소)');
-assert.equal(PREV_STAGE[firstKey], YOUNG_PRINCESS_VILLAGE, '영프 1-1 복귀는 마을');
+/* 유저 지시 — 애델리오나 마을 다음은 별도 시작 마을이 아니라 1-1 스테이지다.
+ *  youngprincessv 는 경유지에서 빠졌지만 스테이지 정의는 남아 있다. */
+assert.equal(NEXT_STAGE['village'], firstKey, '애델리오나 마을 → 영프 1-1 직행');
+assert.equal(PREV_STAGE[firstKey], 'village', '영프 1-1 복귀는 애델리오나 마을');
 // 챕터 내부 순차
 for (const ch of HOWLRSTONE_CHAPTERS) {
   for (let sub = 1; sub < ch.stages; sub++) {
@@ -125,7 +128,8 @@ assert.equal(storyEntryAllowed('dlcstargate1', base), false, '영프 엔딩 전�
 assert.equal(storyEntryAllowed('dlcstargate1', { cleared: true, youngPrincessCleared: true }), true);
 assert.equal(storyPortalDestination(YOUNG_PRINCESS_VILLAGE, base), null, '엔딩 전 영프 마을 → 그랜드 플래닛 잠김');
 assert.equal(storyPortalDestination(YOUNG_PRINCESS_VILLAGE, { cleared: true, youngPrincessCleared: true }), 'dlcstargate1');
-assert.equal(storyPortalDestination('village', { cleared: false, youngPrincessCleared: true }), 'youngprincessv', 'removed campaign is never a prerequisite');
+assert.equal(storyPortalDestination('village', { cleared: false, youngPrincessCleared: true }), HOWLRSTONE_ENTRY, 'village 는 영프 1-1 로 직행한다');
+assert.equal(storyPortalDestination('village', { cleared: false, youngPrincessCleared: false }), HOWLRSTONE_ENTRY, '엔딩 여부와 무관하게 1-1 직행');
 // 영프 편 내부 진입은 cleared 만 있으면 된다(엔딩 플래그 불필요)
 assert.equal(storyEntryAllowed(HOWLRSTONE_ENTRY, { cleared: true }), true);
 

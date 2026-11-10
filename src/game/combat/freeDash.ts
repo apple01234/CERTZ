@@ -1,7 +1,7 @@
 import { segmentHitsRect } from "../collision/sweep";
 
-/** Independent locomotion; no resource, cooldown, damage or invulnerability. */
-export const FREE_DASH = { durationMs: 180, speed: 700, cooldownMs: 0 } as const;
+/** Independent locomotion; no resource, damage or invulnerability. Short cooldown keeps spam honest. */
+export const FREE_DASH = { durationMs: 180, speed: 700, cooldownMs: 1000 } as const;
 export type DashVector = { x: number; y: number };
 export type DashRect = { x: number; y: number; width: number; height: number };
 

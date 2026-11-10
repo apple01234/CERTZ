@@ -5,6 +5,7 @@ import { isSolidDecor } from "../decorObjects";
 /* vc257 — 에디터와 **동일한** 순수 로직을 공유한다(단일 출처). */
 import * as core from "../tilemapEditorCore";
 import { renderChapterTerrain } from "./ChapterTerrain";
+import { STAGES, type StageKey } from "../stages";
 
 /** Verified seamless floor textures in assets/ground/manifest.json. Native tiles
  * are sliced/reassembled in the Tilemap, without a raster copy or a prop fallback.
@@ -267,9 +268,19 @@ export function renderAuthoredMapLayers(
    *
    * [주의] house_a/b 는 WorldScene 마을 건물(4532행)이 이미 쓰는 **같은 에셋**이다.
    *  새 바이너리를 만들지 않았고 라이선스도 기존 그대로다(신규 에셋 0). */
+  /* 유저 지시 — "사냥터 한가운데 초록 지붕 집이 있다. 사냥터에서 부적절한 건물 제거".
+   *  [원인] 아래 배치가 theme==="town" 이면 **마을 여부를 보지 않고** house_a/b 를
+   *  깔았다. 영프 편 howlrstone1x2/2x1 같은 사냥터 구역도 테마가 town 이고
+   *  isVillage=false 인데, 이 분기를 그대로 타서 마을 건물이 필드에 생성됐다.
+   *  [수정] 집은 실제 마을(isVillage)에서만 구조물로 쓴다. 사냥터 town 테마는
+   *  집 대신 자연 구조물(바위)을 쓴다 — 빈 구역이 되지 않으면서 마을 전용
+   *  건물이 다시 생성될 여지를 배치 규칙 수준에서 차단한다. */
+  const townIsVillage = !!STAGES[art.stageKey as StageKey]?.isVillage;
   const structuralProp = theme === "library" ? "obj_dungeon_bookshelf"
     : theme === "grove" ? "obj_forest_tree_pink"
-    : theme === "town" ? (edgeHash(lay.entry, 31) > 0.5 ? "house_a" : "house_b")
+    : theme === "town" ? (townIsVillage
+        ? (edgeHash(lay.entry, 31) > 0.5 ? "house_a" : "house_b")
+        : "obj_forest_rock_monument")
     : theme === "citadel" ? "obj_dungeon_torch"
     : theme === "ruins" ? "obj_forest_rock_monument"
     : theme === "conduit" ? "obj_dungeon_anvil" : null;

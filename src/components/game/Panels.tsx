@@ -5035,7 +5035,7 @@ function statLines(d: ClassDef): string[] {
   return out;
 }
 
-const TIER_LABEL: Record<number, string> = { 1: "1차 전직", 2: "2차 전직", 3: "3차 전직" };
+const TIER_LABEL: Record<number, string> = { 1: "1차 전직", 2: "2차 전직", 3: "3차 전직", 4: "4차 전직" };
 
 function JobCard({
   d,
@@ -5099,7 +5099,7 @@ function JobPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
   const alt = freeJobOption(rpg.cls);
   const need = nextJobLevel(rpg.cls);
   const locked = !rpg.canJob;
-  const fin = chain.length >= 3; // 3차 완료
+  const fin = chain.length >= 4; // 4차 완료 — 3차는 4차 승격 대상이므로 "최종"이 아니다
 
   /* v1.0.6 (신1) — NPC 선택지 키보드 조작: 전직 카드 목록을 ↑/↓로 훑고 E로 확정.
    *  자유 전직(alt) 카드는 목록 맨 끝에 포함 — 같은 방식으로 전환 가능. */

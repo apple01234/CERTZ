@@ -113,11 +113,18 @@ export function authoredRoomLayout(seed: string, mapW: number, mapH: number): Ro
       }
     }
   };
-  // Two-cell corridors leave room for the existing player/monster bodies and entry +70px.
+  /* 유저 지시 — 주요 이동 통로를 4칸 폭으로 넓힌다.
+   *  종전 주 통로는 2칸(+1 확장)이라 돌진·몬스터 몸체가 벽에 걸리고 이동이 답답했다.
+   *  이제 경로 중심선에서 ±1칸을 더 열어 4칸을 확보한다. 퍼즐용으로 의도적으로 좁힌
+   *  통로(문/게이트)는 route 를 쓰지 않으므로 그대로 좁게 유지된다. */
   const route = (points: number[][]) => {
     for (let i = 1; i < points.length; i++) {
       const [ax, ay] = points[i - 1], [bx, by] = points[i];
-      rect(Math.min(ax, bx), Math.min(ay, by), Math.max(ax, bx) + 1, Math.max(ay, by) + 1, true);
+      rect(
+        Math.min(ax, bx) - 1, Math.min(ay, by) - 1,
+        Math.max(ax, bx) + 2, Math.max(ay, by) + 2,
+        true,
+      );
     }
   };
   const mark = (kind: string, x: number, y: number) => landmarks.push({ kind, cell: y * cols + x });

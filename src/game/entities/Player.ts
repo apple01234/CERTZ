@@ -543,6 +543,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private silenceMs = 0;
   private freeDashUntil = 0;
   private freeDashAt = 0;
+  private freeDashReadyAt = 0;
   private freeDashing = false;
   private dashTime = 0;
   private dashGhostAcc = 0; // v4.9.0 — 돌진 잔상 스폰 간격 누적
@@ -2680,11 +2681,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (!this.actionAllowed("dash")) return;
     if (this.freeDashing && this.scene.time.now >= this.freeDashUntil) this.tickFreeDash();
     if (this.state !== "idle") return false;
+    /* 쿨타임은 대시 **종료 이후**부터 센다. 시작 기준이면 180ms 이동 중에 이미
+     *  220ms가 흘러 다음 입력이 붙어버려 체감 쿨타임이 짧아진다. */
+    if (this.scene.time.now < this.freeDashReadyAt) return false;
     const dir = freeDashDirection(this.scene.currentMoveVec(), this.facing);
     this.facing.set(dir.x, dir.y);
     this.dashDir.set(dir.x, dir.y);
     this.freeDashAt = this.scene.time.now;
     this.freeDashUntil = this.freeDashAt + FREE_DASH.durationMs;
+    this.freeDashReadyAt = this.freeDashUntil + FREE_DASH.cooldownMs;
     this.freeDashing = true;
     this.state = "dash";
     this.setVelocity(0, 0);

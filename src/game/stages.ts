@@ -1791,6 +1791,13 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
   }
   /* 영프 마을 → 영프 편 1-1. (예전엔 null 이라 막다른 길이었다 — vc230 미해결분) */
   NEXT_STAGE.youngprincessv = `${HOWLRSTONE_CHAPTERS[0].key}x1`;
+  /* 유저 지시 — "애델리오나 마을 → 1-1 스테이지" 직행.
+   *  종전 체인은 village → youngprincessv(별도 시작 마을) → howlrstone1x1 이었다.
+   *  기획상 애델리오나 마을 다음은 1-1 이므로 경유 마을을 건너뛴다.
+   *  youngprincessv 스테이지 정의는 남긴다 — grandPlanetCanon 이 복귀 지점으로
+   *  참조하고, 구 세이브가 이 키를 들고 있을 수 있다(아래 마이그레이션 참조). */
+  NEXT_STAGE.village = `${HOWLRSTONE_CHAPTERS[0].key}x1`;
+  PREV_STAGE[`${HOWLRSTONE_CHAPTERS[0].key}x1`] = "village";
   void hwKeys;
 }
 

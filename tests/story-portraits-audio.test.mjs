@@ -53,7 +53,9 @@ const beforePrev = Object.fromEntries(
 );
 /* vc274 — 위와 같은 이유로 완전 일치 대신 복귀 체인의 본질(전진의 정확한 역순)을 본다. */
 assert.equal(PREV_STAGE.youngprincessv, 'village', '영프 마을 복귀 → 시작 마을');
-assert.equal(PREV_STAGE[HW_KEYS[0]], 'youngprincessv', '영프 1장 1구역 복귀 → 영프 마을');
+/* 유저 지시 — 애델리오나 마을 → 1-1 직행. youngprincessv 는 경유지에서 제외됐다. */
+assert.equal(PREV_STAGE[HW_KEYS[0]], 'village', '영프 1장 1구역 복귀 → 애델리오나 마을');
+assert.equal(NEXT_STAGE.village, HW_KEYS[0], '애델리오나 마을 → 영프 1-1 직행');
 for (let i = 1; i < HW_KEYS.length; i++) {
   assert.equal(PREV_STAGE[HW_KEYS[i]], HW_KEYS[i - 1], `${HW_KEYS[i]} 복귀`);
 }

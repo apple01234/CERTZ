@@ -1,4 +1,4 @@
-import { freeDashFraction, type DashRect } from "../combat/freeDash";
+import { FREE_DASH, freeDashFraction, type DashRect } from "../combat/freeDash";
 import Phaser from "phaser";
 import { DECOR_BUDGET, decorSetFor, pickByTag, isSolidDecor, decorCollisionBounds, type DecorObj } from "../decorObjects";
 import { createGameState, type GameState } from "../state/gameState";
@@ -874,6 +874,11 @@ export class WorldScene extends Phaser.Scene {
     this.bossDiffPendingSince = 0;
     this.enemies = [];
     this.boss = null;
+    /* 보스 퇴장 후 HP바 잔류 수정 — init 은 씬 재시작/맵 전환/보스 재도전에서 매번 불린다.
+     *  종전엔 this.boss 만 버리고 React 쪽 boss 상태는 그대로여서, 전투가 끝난 뒤에도
+     *  HP바가 화면에 남았다(맵 전환·게임오버·재도전 경로에 boss:hide 발신이 없었음).
+     *  보스를 버리는 바로 이 지점에서 UI 도 함께 내린다. */
+    EventBus.emit("boss:hide");
     this.fragment = null;
     this.portal = null;
     this.tutorialNpcSprite = null;
@@ -4063,17 +4068,19 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  /** 본편 마을→영프 / 영프 엔딩 후 영프 시작 마을→그랜드 플레닛. */
+  /** 본편 마을→영프 1-1 / 영프 엔딩 후 영프 마을→그랜드 플레닛. */
   enterDlcGate() {
     if (!this.player || this.transitioning) return;
     const destination = storyPortalDestination(this.stageDef.key, this);
     if (!destination || !this.isDlcPortalOpen()) {
-      this.showBanner("영프 엔딩 후 영준 프린세스 시작 마을에서 그랜드 플레닛으로 갈 수 있다");
+      this.showBanner("영프 엔딩 후 그랜드 플레닛으로 갈 수 있다");
       return;
     }
     audio.sfx.portal();
-    this.showBanner(destination === YOUNG_PRINCESS_VILLAGE
-      ? "하울르스톤: 영준 프린세스 — 시작 마을로 향한다"
+    /* 유저 지시 — 애델리오나 마을에서 곧바로 1-1 스테이지로 진입한다.
+     *  youngprincessv 는 경유지에서 빠졌으므로 목적지로 나올 일이 없다. */
+    this.showBanner(destination.startsWith("howlrstone")
+      ? "하울르스톤: 영준 프린세스 — 첫 구역으로 향한다"
       : "그랜드 플레닛 — 제1행성 스타게이트로 향한다");
     this.startTransition(destination, { delay: 520 });
   }
@@ -5538,7 +5545,11 @@ export class WorldScene extends Phaser.Scene {
       ["npc_mage_rin", "마법사 린", "실험 중이야.", -0.35, 200],
       ["npc_merchant_nyan", "상인 냥", "싸게 줄게~", 0.45, 195],
       ["npc_witch_nyx", "마녀 닉스", "…거래할래?", 1.25, 185],
-      ["npc_fairy_aria", "요정 아리아", "반짝반짝!", 2.15, 165],
+      /* 유저 지시 — "요정 시리즈 NPC 전면 제거". npc_fairy_aria 를 마을 배치에서 뺀다.
+       *  이 NPC는 선택형 미니퀘스트(빛나는 조각 수집)만 담당하고 전직·튜토리얼·
+       *  메인 진행에 관여하지 않으므로 기능 이전이 필요 없다. 대사/에셋 정의는
+       *  chibiQuests.ts 에 남겨 두되(텍스처는 다른 NPC와 공유 여부 확인 필요)
+       *  스폰 목록에서 빠지므로 게임 내에 등장하지 않는다. */
     ];
     /* vc178 — 마을당 1명: 스테이지 키 해시로 담당 NPC 1명만 선정 (시드 11 — 10마을에 6종 고르게 분배) */
     const stageHash = Array.from(this.stageDef.key).reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 11);
@@ -13394,7 +13405,68 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private tryFreeDash() {
-    if (this.freeDashInputAllowed()) this.player.useFreeDash();
+    if (this.freeDashInputAllowed() && this.player.useFreeDash()) this.freeDashFx();
+  }
+
+  /* ================= 독립 대시 연출 (전직 계열별 차별화) =================
+   *  유저 지시 — "전직해도 돌진 연출이 실질적으로 바뀌지 않는다", "직업마다
+   *  돌진의 시각적 개성이 명확하게 달라야 한다".
+   *  원인: 독립 대시(freeDash)는 180ms 이동만 하고 연출을 전혀 호출하지 않았다.
+   *  기존 계열별 이펙트 헬퍼(먼지/바람꼬리/그림자잔상/룬링)를 그대로 재사용하고
+   *  새 이미지 에셋은 만들지 않는다. 미전직은 중립 잔상만 — 전직의 보상이 보이게. */
+  freeDashFx() {
+    const p = this.player;
+    if (!p) return;
+    /* useFreeDash 가 dashDir 을 세팅하기 직전에 facing 을 대시 방향으로 맞춘다.
+     *  dashDir 은 private 이므로 공개된 facing 을 방향원으로 쓴다 (동일 값). */
+    const dir = p.facing;
+    if (!dir || (dir.x === 0 && dir.y === 0)) return;
+    const fam = familyOf(p.cls);
+    const hex = classDef(p.cls)?.hex ?? 0x9fd8ff;
+    const dist = FREE_DASH.speed * FREE_DASH.durationMs / 1000;
+    const frame = p.frame?.name;
+    const tintOf: Record<string, number> = {
+      warrior: 0xff8a6a, ranger: 0x9dffc4, mage: 0x8fa6ff, thief: 0x7a4aff, pirate: 0xffc46a,
+    };
+    const tint = fam ? tintOf[fam] ?? 0x9fd8ff : 0x9fd8ff;
+
+    /* 출발 — 계열 시그니처 (한 번만, 짧게) */
+    if (fam === "mage") this.spawnRuneRing(p.x, p.y, hex);
+    else if (fam === "thief") this.spawnShadowAfterimage(p, 0x2a1040);
+    else if (fam === "warrior") this.spawnDashDust(p.x, p.y, tint);
+    else if (fam === "ranger") this.spawnWindStreak(p.x, p.y, dir, 0x9dffc4);
+    else if (fam === "pirate") this.spawnBurstAt(p.x, p.y, 4, tint);
+
+    /* 이동 궤적 — 6스텝으로 쪼개 계열별 파티클 + 공용 잔상 */
+    const steps = 6;
+    for (let i = 1; i <= steps; i++) {
+      this.time.delayedCall(i * 26, () => {
+        if (!p.scene) return;
+        const gx = p.x + dir.x * (dist / steps) * i * 0.5;
+        const gy = p.y + dir.y * (dist / steps) * i * 0.5;
+        switch (fam) {
+          case "warrior": this.spawnDashDust(gx, gy, tint); break;
+          case "ranger": this.spawnWindStreak(gx, gy, dir, 0x9dffc4); break;
+          case "mage": this.spawnBurstAt(gx, gy, 2, hex); break;
+          case "thief": this.spawnBurstAt(gx, gy, 2, 0x7a4aff); break;
+          case "pirate": this.spawnBurstAt(gx, gy, 3, tint); break;
+          default: break;
+        }
+        this.spawnDashGhost(gx, gy, "hero_idle0", undefined, dir.x < 0, tint, 1);
+        void frame;
+      });
+    }
+
+    /* 종착 — 계열별 마무리 (착지 반응). 카메라 흔들림은 최소로만 사용한다. */
+    this.time.delayedCall(FREE_DASH.durationMs, () => {
+      const ex = p.x + dir.x * 10;
+      const ey = p.y + dir.y * 10;
+      if (fam === "warrior") { this.spawnDashDust(ex, ey, tint); this.doShake(90, 0.0022); }
+      else if (fam === "mage") this.spawnRuneRing(ex, ey, hex);
+      else if (fam === "thief") this.spawnShadowAfterimage(p, 0x4a2080);
+      else if (fam === "ranger") this.spawnWindStreak(ex, ey, dir, 0xc6ffd9);
+      else if (fam === "pirate") { this.spawnBurstAt(ex, ey, 6, tint); this.doShake(70, 0.0018); }
+    });
   }
 
   freeDashTravelFraction(direction: { x: number; y: number }, distance: number): number {
@@ -14279,7 +14351,7 @@ export class WorldScene extends Phaser.Scene {
         const wasGm = r.gm;
         r.gm = p.gm === true;
         const d = classDef(p.cls);
-        r.tag.setText(r.gm ? `[GM] ${p.name} Lv.${p.lv}${d ? ` · ${d.name}` : ""}` : `${p.name} Lv.${p.lv}${d ? ` · ${d.name}` : ""}`);
+        r.tag.setText(r.gm ? `[GM] ${p.name} Lv.${p.lv}` : `${p.name} Lv.${p.lv}`);
         r.tag.setColor(r.gm ? "#ffd76a" : d ? d.color : "#ffe9b0");
         if (r.gm !== wasGm) {
           /* GM 승격/강등 실시간 반영 — 외형/오라/틴트 동기화 */
@@ -14326,10 +14398,11 @@ export class WorldScene extends Phaser.Scene {
     /* v1.2.0 (#개편 A24) — 칭호를 닉네임 앞에 붙인다. 길이 제한을 두는 이유:
      *  칭호는 최대 7자("카오스 정복자")라 이름표가 화면을 넘길 수 있다. 앞 8자로 자른다. */
     const tt = this.playerTitle ? `「${this.playerTitle.slice(0, 8)}」 ` : "";
+    /* 유저 지시 — "직업 전직시 마다 이름 바꾸지마 1차~5차까지 고정해".
+     *  종전엔 이름표가 `이름 · 직업명` 이라 전직할 때마다 표시 이름이 바뀌었다.
+     *  이제 이름표는 닉네임(+칭호)만 — 직업은 클래스 배지/정보 UI 가 담당한다. */
     this.playerNameTag.setText(
-      gm
-        ? `[GM] ${tt}${getPlayerName()}${d ? ` · ${d.name}` : ""}`
-        : `${tt}${getPlayerName()}${d ? ` · ${d.name}` : ""}`
+      gm ? `[GM] ${tt}${getPlayerName()}` : `${tt}${getPlayerName()}`
     );
     this.playerNameTag.setColor(gm ? "#ffd76a" : "#baf3ff");
     this.playerNameTag.setStroke(gm ? "#3a2400" : "#0a2030", 4);

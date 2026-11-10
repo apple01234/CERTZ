@@ -83,7 +83,21 @@ export type HowlrstoneBossSpec = {
 };
 
 export const HOWLRSTONE_BOSSES: Record<HowlrstoneBossKey, HowlrstoneBossSpec> = {
-  dio: { key: "dio", name: "디오 · 다크니스 크리스탈의 힘", episode: "1.txt 마을 습격", hp: 24000, atk: 48, speed: 92, exp: 1800, gold: 900, tex: "cast_dio", orbTint: 0x8e62b4, introDialogue: "bossIntroDio", sig: "summon", patterns: { p1: ["charge", "summon"], p2: ["summon", "zones", "charge"], p3: ["summon", "zones", "charge", "ring"] }, summonKey: "wraith" },
+  /* 유저 지시 — "초반 보스 디오 난이도가 지나치게 높다. 학습과 회피가 가능한 수준으로".
+   *
+   *  [실측 진단] 변경 전 실효 HP = 24000 × scaleMul.hp 1.65 = **39,600**.
+   *  Lv20(초반 예상 레벨, 강철 검 atk6) 기준 기본공격 1타 ≈ 94 → **422타 / 약 211초**.
+   *  초반 보스가 3분半 넘게 걸리는 것은 "학습 구간"이 아니라 체력 노가다이며,
+   *  패턴을 배우기 전에 지치는 구조다. (다른 초반 보스 해롤드 46,000 은
+   *   이미 Lv40+ 구간이라 같은 기준으로 비교되지 않는다.)
+   *
+   *  [조정] hp 24000 → 12000. 실효 HP 19,800 → Lv20 기준 약 210타 / **105초**.
+   *  - 체력만 낮추고 ATK·speed·패턴은 그대로 둔다: 보스의 정체성(사념체 소환 +
+   *    돌진 + 장판)과 위협감은 유지하고, "몇 번 시도하면 패턴이 읽히는" 길이만 만든다.
+   *  - 회피 수단은 이미 있다(독립 대시 1초 쿨 + 벽 충돌 스윕). 체력을 줄여
+   *    대시로 흘리며 딜하는 학습 루프가 성립하게 한다.
+   *  - 보상(exp/gold)은 유지 — 난이도만 손보고 파밍 효율은 건드리지 않는다. */
+  dio: { key: "dio", name: "디오 · 다크니스 크리스탈의 힘", episode: "1.txt 마을 습격", hp: 12000, atk: 48, speed: 92, exp: 1800, gold: 900, tex: "cast_dio", orbTint: 0x8e62b4, introDialogue: "bossIntroDio", sig: "summon", patterns: { p1: ["charge", "summon"], p2: ["summon", "zones", "charge"], p3: ["summon", "zones", "charge", "ring"] }, summonKey: "wraith" },
   rasion: { key: "rasion", name: "고대의 재앙 라시온", episode: "2.txt:121-125", hp: 65000, atk: 74, speed: 132, exp: 3700, gold: 1900, tex: "cast_rasion", orbTint: 0x9a93be, introDialogue: "bossIntroRasion", sig: "counter", chargeChain: 2, patterns: { p1: ["charge", "counter"], p2: ["charge", "counter", "blinkslash"], p3: ["charge", "counter", "blinkslash", "slam"] } },
   desknis: { key: "desknis", name: "고대의 공포 데스크니스", episode: "2.txt:247-301", hp: 145000, atk: 106, speed: 102, exp: 8500, gold: 4100, tex: "story_desknis", orbTint: 0x685188, introDialogue: "bossIntroDesknis", sig: "zones", patterns: { p1: ["zones", "blinkslash"], p2: ["zones", "blinkslash", "beam"], p3: ["zones", "blinkslash", "beam", "portalteleport"] } },
   scarlet_blood: { key: "scarlet_blood", name: "스칼렛 · 원혈과 피의 영역", episode: "2.txt:162-166", hp: 105000, atk: 88, speed: 112, exp: 5700, gold: 3000, tex: "cast_scarlet", orbTint: 0xd34c66, introDialogue: "bossIntroScarletBlood", sig: "ring", patterns: { p1: ["blinkslash", "ring"], p2: ["blinkslash", "ring", "volley"], p3: ["blinkslash", "ring", "volley", "zones"] } },

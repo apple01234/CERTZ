@@ -38,9 +38,10 @@ test('구 세이브의 삭제 지역 키는 village 로 폴백한다',()=>{
   assert.equal(resolveStage('dlcstargate1'),'dlcstargate1');
 });
 
-test('진행 경로는 village → youngprincessv → dlcstargate1 로 이어진다',()=>{
+test('진행 경로는 village → howlrstone1x1 → … → dlcstargate1 로 이어진다',()=>{
   const progress={cleared:false,youngPrincessCleared:false};
-  assert.equal(storyPortalDestination('village',progress),'youngprincessv');
+  /* 유저 지시 — 애델리오나 마을 다음은 별도 시작 마을이 아니라 1-1 스테이지다. */
+  assert.equal(storyPortalDestination('village',progress),'howlrstone1x1');
   assert.equal(storyEntryAllowed('youngprincessv',progress),true);
   assert.equal(storyEntryAllowed('dlcstargate1',{cleared:true}),false);
   assert.equal(storyEntryAllowed('dlcstargate1',{youngPrincessCleared:true}),true);

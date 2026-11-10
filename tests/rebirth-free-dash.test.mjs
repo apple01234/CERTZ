@@ -24,17 +24,21 @@ function subject() {
 
 test('creation: no class, zero MP, silence, existing S2 cooldown do not gate dash', () => {
   const p = subject();
-  assert.equal(FREE_DASH.cooldownMs, 0);
+  assert.equal(FREE_DASH.cooldownMs, 1000);
   assert.equal(p.useFreeDash(), true);
   assert.deepEqual({ x: p.dashDir.x, y: p.dashDir.y }, { x: 0, y: -1 });
   assert.equal(p.mp, 0); assert.equal(p.iframes, 0); assert.equal(p.skill2Cd, 9999);
 });
-test('active dash cannot stack or extend; reuses at exact end without cooldown', () => {
+test('active dash cannot stack or extend; cooldown starts at dash end, not dash start', () => {
   const p = subject(); p.useFreeDash();
   p.scene.time.now = 80;
   assert.equal(p.useFreeDash(), false); assert.equal(p.freeDashUntil, 180);
   p.scene.time.now = 180;
-  assert.equal(p.useFreeDash(), true); assert.equal(p.freeDashUntil, 360);
+  assert.equal(p.useFreeDash(), false); // 이동이 끝나도 1000ms 쿨타임이 남아 있다
+  p.scene.time.now = 1179;
+  assert.equal(p.useFreeDash(), false);
+  p.scene.time.now = 1180;
+  assert.equal(p.useFreeDash(), true); assert.equal(p.freeDashUntil, 1360);
 });
 test('dead/attack and legacy dash are not interrupted; cancellation stops motion', () => {
   for (const state of ['dead', 'attack', 'dash']) {
@@ -42,6 +46,7 @@ test('dead/attack and legacy dash are not interrupted; cancellation stops motion
   }
   const p = subject(); p.useFreeDash(); p.stopFreeDash();
   assert.equal(p.state, 'idle'); assert.deepEqual(p.velocity, { x: 0, y: 0 });
+  p.scene.time.now = 1180; // 쿨타임(대시 종료 180 + 1000) 경과
   assert.equal(p.useFreeDash(), true);
 });
 test('input direction is normalized, neutral uses facing, nonfinite input is safe', () => {
@@ -96,7 +101,9 @@ test('actual Player step travels exactly 126px for fine, coarse and delayed fram
     for (const now of times) { p.scene.time.now = now; p.tickFreeDash(); }
     assert.ok(Math.abs(p.x - 226) < 1e-9); assert.equal(p.y, 100);
     assert.equal(p.state, 'idle'); assert.deepEqual(p.velocity, { x: 0, y: 0 });
-    assert.equal(p.freeDashing, false); assert.equal(p.useFreeDash(), true);
+    assert.equal(p.freeDashing, false);
+    p.scene.time.now = 1180; // 쿨타임 경과
+    assert.equal(p.useFreeDash(), true);
   }
 });
 test('step clips movement once at wall, stops, and never runs legacy dash end FX', () => {
@@ -107,12 +114,15 @@ test('step clips movement once at wall, stops, and never runs legacy dash end FX
   p.useFreeDash(); p.scene.time.now = 100; p.tickFreeDash();
   assert.ok(p.x < 140 && p.x > 139.99); assert.equal(p.state, 'idle');
   const x = p.x; p.scene.time.now = 500; p.tickFreeDash(); assert.equal(p.x, x);
+  p.scene.time.now = 1180; // 쿨타임 경과
   assert.equal(p.useFreeDash(), true);
 });
 test('expired re-press flushes only the old remaining distance before starting next dash', () => {
   const p = subject(); p.scene.currentMoveVec = () => vector(1, 0); p.useFreeDash();
-  p.scene.time.now = 180; assert.equal(p.useFreeDash(), true); assert.equal(p.x, 226);
-  p.scene.time.now = 360; p.tickFreeDash(); assert.equal(p.x, 352);
+  p.scene.time.now = 180; assert.equal(p.useFreeDash(), false); // 쿨타임 대기
+  assert.equal(p.x, 226); // 대시 종료 시점이라 잔여 이동만 먼저 반영된다
+  p.scene.time.now = 1180; assert.equal(p.useFreeDash(), true); assert.equal(p.x, 226);
+  p.scene.time.now = 1360; p.tickFreeDash(); assert.equal(p.x, 352);
 });
 test('death or external action cancels active movement without resurrection', () => {
   for (const state of ['dead', 'attack']) {
