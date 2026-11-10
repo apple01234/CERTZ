@@ -118,7 +118,8 @@ app.prepare().then(() => {
     }
     if (!LATEST_CODE) { LATEST_CODE = 240; _apkTag = LATEST_VERSION; }
     const VERSION_NOTE =
-      "v2.0.7 (vc243) — 정본 명칭 정리: 무기명 손상 표기(안내인션) 수정, 기본 이름을 하루로(플레이어 닉네임 변경 가능), CANON_NAMES 정본 문서.";
+      `v${LATEST_VERSION} (vc${LATEST_CODE}) — 초기 로딩 분리, 구 세이브 보존, 전수 기술 숙련 성장·상승 알림 개선.`;
+    const COMMIT_SHA = process.env.VERCEL_GIT_COMMIT_SHA?.trim() || process.env.CERTZ_BUILD_SHA?.trim() || null;
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(JSON.stringify({
@@ -128,6 +129,7 @@ app.prepare().then(() => {
       apk: APK_MIRROR,
       exe: EXE_MIRROR,
       guide: "/apk-guide.html",
+      commitSha: COMMIT_SHA,
     }));
     return;
   }
