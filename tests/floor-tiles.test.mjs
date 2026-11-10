@@ -286,7 +286,7 @@ test('노이즈 바닥을 쓰던 테마가 새 석재를 가리킨다', () => {
   /* tile_dark/tile_stone 등이 ground_slate/ground_ash 를 그대로 쓰되,
    * 이제 두 파일 자체가 256px 무이음새 타일이다. 매핑이 사라지면 다른 텍스처로 새는 것을 막는다. */
   for (const key of ['tile_dark', 'tile_stone', 'tile_basalt', 'tile_ash']) {
-    assert.match(themes, new RegExp(`${key}:\\s*"ground_(slate|ash)"`), `${key} 매핑이 바뀌었다`);
+    assert.match(themes, new RegExp(`${key}:\\s*"terrain_castle"`), `${key} 매핑이 바뀌었다`);
   }
 });
 

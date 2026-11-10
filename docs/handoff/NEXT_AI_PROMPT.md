@@ -1,16 +1,14 @@
-# 다음 AI에게 그대로 전달할 프롬프트
+# 다음 AI에게 전달할 프롬프트
 
-`apple01234/CERTZ`의 **main 최신 커밋**에서 이어서 작업해. 다른 저장소에 커밋하거나 과거 커밋으로 초기화하지 마. 현재 변경은 사용자 요청에 따른 **작업 중 체크포인트**이며 출시 완료가 아니다.
+`https://github.com/apple01234/CERTZ`의 **main 최신 커밋**에서 이어서 작업해. 다른 저장소에 커밋하지 말고 과거 체크포인트로 초기화하지 마. 사용자와는 항상 한국어로 대화해.
 
-1. AGENTS.md를 읽고, 정본은 `docs/handoff/evernote-approved/1.txt`~`8.txt`만 지정 순서로 꼼꼼히 읽어. 충돌하면 앞 문서 우선. 게임 제목은 “하루는 웨폰마스터가 되었다.” 기존 GameRoot/WorldScene/Player와 장비·전직·하우징·온라인 기능을 유지해. 이그드라실/아뜰란티스/9개의 바다 서사를 복원하지 마.
-2. 현재 목표는 **장소에 어울리는 타일맵 전면 교체**, **스토리별 보스 외형·고유 공격/스킬 모션·이펙트·패턴**, **초상화와 일치하는 컷씬 배우 배치**다. 픽셀아트를 유지하고 원본/다운로드 에셋을 우선해. 필요한 생성은 사용자가 허용했다. 대사는 NPC/채집 입력으로 진행하며 그동안 해당 컷씬이 보여야 한다.
-3. 완료 체크포인트: `a69384c`에는 26명 컷씬 배우/416프레임/초상화, 4장면 브라우저 검증과 당시 전체 537개 테스트 통과가 있다. 그 뒤 현재 작업은 **31명/496프레임**으로 확장했고 `story-bosses/`에 **13전투 아틀라스/208프레임**을 추가했다. 인간 보스 9종 + 크라켄/데스크니스/별 모양 행성/AI 코어다. 실제 코드 연결은 했으나 전 보스 실전 검증은 아직이다.
-4. 지형은 `chapterStoryPlan.ts`의 25챕터/165장소, `ChapterTerrain.ts`의 원본 네이티브 타일 렌더러, `chapter-terrain/manifest.json`의 출처/셀/해시를 확인해. Tiny Swords **구 CC0 배포본**과 기존 DCSS CC0 지면이다. 최신 Tiny Swords의 다른 라이선스와 혼동하지 마. 카메라 화면에서 절벽/길/갑판/성채/공장 구성이 실제로 자연스러운지 다시 검토해. 원본 씬의 추가 프롭·경계 렌더링이 새 지형을 가리거나 어울리지 않으면 필요한 경로만 수정해. 충돌/입구/출구 접근을 검증해.
-5. `bossDesign.ts`, `Boss.ts`, `StoryBossMechanics.ts`, `storyBossPatterns.ts`, `storyBossAssets.ts`를 읽고 **기획서 → 실제 전투** 연결을 검증해. 해롤드는 삼지창 없이 인간→크라켄(촉수·먹물), 페르온은 인간 검술·그림자 분신(물리적인 드래곤 변신 금지), 베로니카+딘은 저주/흑마법, 스칼렛은 피→잠식, 데스크니스는 잠식/영혼, 리틀스타는 장미 동력핵/행성, 제이드는 에너지 분신, 파비앙은 카르텔 데이터 복제·무기 없는 링 대련이다. 현재 원혈은 장판 적중 회복으로 각색했으며 원소별 흡수 판정 전체를 구현했다고 주장하지 마. 장미 핵은 본체에 붙은 피해 차단 장치이며 독립 타깃 AI는 아니다. 파비앙 링아웃/넉백·분신 예고·지속 장판·단계 전환 후 정리를 실제 플레이로 확인해. 온라인 공유 HP 권한과 핵/흡혈의 동기화도 미검증이다.
-6. `stages.ts`는 기존 세이브 키/65+100필드 수를 유지하면서 실제 만남을 재배치했다. 보스가 없는 회복/재건 챕터에 억지 보스를 추가하지 마. 2-3 디오, 5-4 해롤드, 7-3 베로니카/딘, 7-5 라시온, 8-4 페르온, 10-2 사념체, 11~13장 스칼렛 국면, 14-5 데스크니스. DLC는 리버스8/네오시티4가 보스이고 일부 종전 10구역은 보스가 아니다. 기존 테스트의 ‘항상 마지막 구역 보스’/‘일반 구역 전부 몬스터’ 가정은 수정해야 한다.
-7. 검증 상태를 정직하게 구분해. 현재 작업 중 첫 전체 검사 `/dev/shm/chapters-tests1.log`는 **524/537 통과, 13실패**였다. 그 이후 시그니처·대사·아레나 크기 등 일부 원인을 수정했지만 아직 전체 재검증 전이다. 주요 남은 테스트는 `authored-layouts`, `boss-arena-scope`, `howlrstone`, `boss-canon-design`의 guardian=미정본 가정, `cutscene-cast`의 새 딘/기계 보스 연결 범위, `floor-tiles`의 옛 바닥 매핑, `quest-spawnable`/`quest-balance`의 변경 전 토벌 개수 하한이다. **실패를 지우거나 무조건 하한만 낮추지 말고** 현재 정본·장소 정책과 실제 진행 가능성을 검증하도록 수정해. 최종 타입/린트 로그는 `/dev/shm/handoff-types.log`, `/dev/shm/handoff-lint.log`를 확인해.
-8. `npm test`, `npx tsc --noEmit --incremental false`, `npx eslint src --max-warnings 0`, `npm run assets:editor`를 실행해. 브라우저는 `scripts/playtest-cutscene-cast.mjs`를 실행하고, 새 보스의 모션/변신/예고/실제 타격/안전 구간/정리를 검증하는 플레이테스트를 추가해. 해당 스크립트는 원래 게임 시작 후 내부 QA용 장면 점프를 사용한다. 전체 캠페인 클리어나 APK 검증으로 포장하지 마. 최신 캐스트 QA는 `/dev/shm/chapters-cast-browser1.log`에 진행 중 기록이 있다.
-9. Game Development Studio 로컬 CLI를 설치했다: `/workspace/tools/game-dev-cli/bin/game-dev` **1.5.1**. 공식 릴리스 SHA256 검증 기록은 `/workspace/tools/game-dev-release-1.5.1/verification.json`, 기본 capabilities/doctor는 `/dev/shm/game-dev-{capabilities,doctor}.json`. Node/SQLite 진단 통과. 3D 유료 제공자 키는 설정하지 않았다. CLI를 사용할 때 실제 지원 명령을 조회하고 픽셀 QA/증빙에 적절히 활용해. 단순 정적 검사나 소프트웨어 렌더링을 하드웨어 GPU 검증이라 주장하지 마.
-10. 원본 이미지 `/workspace/generated_images`와 사용자 자료 `/workspace/incoming`을 지우지 마. 생성 프롬프트/원본 SHA는 `scripts/*sources.json`, 각 atlas JSON에 있다. 제작기는 `build-cutscene-cast.py`, `build-story-bosses.py`, `prepare-chapter-terrain.py`. 오래된 stash/backup ref는 적용하지 마. 디스크가 약 300MB 남았고 `/dev/shm`에 여유가 있다. `.next`를 통째로 symlink하면 Turbopack이 깨지므로 금지. dev와 production build를 같은 `.next`에서 동시에 실행하지 마.
-
-사용자는 최종 완성 전에도 커밋/푸시를 요청했다. 검증되지 않은 체크포인트를 완료라고 말하지 말고, 남은 작업을 이어서 완성해. 인증 토큰을 코드/문서/로그/명령 인자에 기록하지 마. 커밋·푸시는 오직 CERTZ/main.
+1. AGENTS.md를 읽고, 정본은 `docs/handoff/evernote-approved/1.txt`~`8.txt`만 지정 순서로 꼼꼼히 읽어. 충돌하면 앞 문서 우선. 제목은 “하루는 웨폰마스터가 되었다.” 기존 게임 기능과 틀을 유지해. 이그드라실/아뜰란티스/9개의 바다 서사를 복원하지 마.
+2. 최신 구현과 검증 기록은 `docs/CHAPTER_TERRAIN_AND_BOSSES.md`를 먼저 확인해. `a69384c`는 초기 캐스트, `e31fec7`은 테스트 미완료였던 중간 체크포인트다. **그 뒤 후속 커밋이 테스트와 실전 검증을 완료했으므로 초기 13개 실패 기록을 현재 상태로 오해하지 마.**
+3. 현재 포함: 25챕터/165장소 네이티브 지형, 31명/496프레임 대화·컷씬 배우와 초상화, 13개/208프레임 보스 전투 아틀라스. 픽셀아트 유지. 원본/다운로드 에셋을 우선하며 필요한 생성은 사용자가 허용했다. 프롬프트·원본 해시·라이선스 기록을 보존해.
+4. 해롤드의 삼지창과 페르온의 육체 드래곤 변신은 잘못된 설정이므로 되살리지 마. 베로니카와 딘은 별개의 인물. 스칼렛은 피와 잠식, 데스크니스는 잠식/영혼. 리틀스타는 장미와 별 모양 행성, 제이드는 에너지 분신, 파비앙은 카르텔 데이터 복제·무기 없는 링 대련이다. 회복·재건 챕터에 억지 보스/토벌을 만들지 마.
+5. 기존 저장 키, 장비·직업·하우징·온라인 기능을 유지하고 씬 전환은 `startTransition()`을 사용해. 보스 만남은 꼭 마지막 구역이라는 가정을 하지 마. 실제 바인딩은 `chapterStoryPlan.ts`가 기준이다. 사용자 맵 편집 결과도 덮어쓰지 마.
+6. 테스트는 `npm test`, 타입 `npx tsc --noEmit --incremental false`, 린트 `npx eslint src --max-warnings 0`. 아트 변경 후 `npm run assets:editor`. 시각 QA 스크립트/CLI 어댑터와 증빙 파일은 구현 기록에 있다. 컷씬 대사는 NPC/채집 입력으로 진행되고 재생 중 상황에 맞는 배우와 카메라가 보여야 한다.
+7. Game Development Studio CLI 1.5.1은 `/workspace/tools/game-dev-cli/bin/game-dev`. 공식 릴리스 체크섬으로 설치했고 Node/SQLite 진단을 통과했다. 로컬 캡처·해시·래스터 분석에 사용할 수 있다. 유료 3D 제공자 키는 설정하지 않았다. 설치 정보는 `/workspace/tools/game-dev-release-1.5.1/verification.json`.
+8. 추가 확인이 필요하다면 실제 네트워크 다중 접속의 핵 상태 표시/호스트 승계, 모바일 저사양 성능, 정상 레벨/장비로의 보스 밸런스와 전체 캠페인 진행, APK를 구분해서 검증해. 내부 장면 점프/고정 공격 QA를 전체 클리어·하드웨어 성능으로 포장하지 마. 운영 DB나 다른 서비스로 임의로 마이그레이션하지 마.
+9. `/workspace/generated_images`, `/workspace/incoming`을 삭제하지 마. 오래된 stash/backup ref를 적용하지 마. 디스크가 빠듯하므로 `.next` 캐시는 필요하면 `/dev/shm`에 보존 이동하되, `.next` 자체를 symlink하면 Turbopack이 깨진다. dev와 production build를 같은 `.next`에서 동시에 실행하지 마.
+10. 사용자 토큰을 코드·문서·로그·명령 인자에 넣지 마. 커밋과 푸시는 **CERTZ/main만**. 사용자는 크레딧을 충전하고 여기서 계속 작업하라고 했으므로 인계만 하고 중단하라는 뜻으로 해석하지 마.

@@ -7,6 +7,7 @@ export function storyPattern(kind: StoryAttack, boss: { x: number; y: number; ph
   const circle = (x: number, y: number, radius: number): Hazard => ({ x, y, w: radius * 2, h: radius * 2, radius });
   const rect = (x: number, y: number, w: number, h: number): Hazard => ({ x, y, w, h });
   const count = boss.phase > 1 ? 3 : 2;
+  const machine = ["reversecore", "vord", "guardian"].includes(boss.key);
   switch (kind) {
     case "tentacleslam": return { title: "촉수 강타 · 틈으로 이동", color: 0x49aabb, duration: 380,
       hazards: [-160, 0, 160].map((dx) => rect(target.x + dx, target.y, 72, 360)) };
@@ -15,11 +16,11 @@ export function storyPattern(kind: StoryAttack, boss: { x: number; y: number; ph
     case "shadowcopies": return { title: "그림자 분신 · 검격 예고", color: 0x86629f, duration: 400,
       clones: boss.key === "dio" ? "dio" : boss.key === "desknis" || boss.key === "nagr" || boss.key === "nidhog" ? "desknis" : "feron",
       hazards: Array.from({ length: count }, (_, i) => rect(target.x + (i - (count - 1) / 2) * 150, target.y, 66, 260)) };
-    case "cursefield": return { title: boss.key === "reversecore" || boss.key === "vord" || boss.key === "guardian" ? "독가스 배출 · 환기 구간으로" : "저주와 흑마법 · 표식 밖으로", color: 0x9e6dbe, duration: 3000,
+    case "cursefield": return { title: machine ? "독가스 배출 · 환기 구간으로" : "저주와 흑마법 · 표식 밖으로", color: machine ? 0x79b697 : 0x9e6dbe, duration: 3000,
       hazards: [circle(target.x, target.y, 100), circle(target.x + 220, target.y - 90, 75)] };
     case "bloodseal": return { title: "피의 영역 · 흡혈 표식 회피", color: 0xd93f65, duration: 2800,
       hazards: [circle(target.x, target.y, 88), circle(boss.x - 155, boss.y, 70), circle(boss.x + 155, boss.y, 70)] };
-    case "corruption": return { title: "잠식 · 밝은 틈으로 이동", color: 0x71479c, duration: 3300,
+    case "corruption": return { title: machine ? "독가스 격리 · 환기 통로로" : "잠식 · 밝은 틈으로 이동", color: machine ? 0x79b697 : 0x71479c, duration: 3300,
       hazards: [-1, 1].map((n) => rect(target.x + n * 155, target.y, 210, 400)), safe: rect(target.x, target.y, 80, 400) };
     case "rosecore": return { title: "장미의 동력 · 노출된 핵 공격", color: 0xe36eaa, duration: 700,
       hazards: [0, 1, 2, 3].map((n) => circle(boss.x + Math.cos(n * Math.PI / 2) * 165, boss.y + Math.sin(n * Math.PI / 2) * 165, 62)), safe: circle(boss.x, boss.y, 80) };

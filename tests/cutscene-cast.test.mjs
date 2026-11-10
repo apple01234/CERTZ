@@ -48,12 +48,17 @@ test('every speaking cutscene character has one portrait-matched identity and a 
   }
   for (const boss of Object.values(BOSS_DEFS)) if (DIALOGUES[boss.introDialogue]) {
     const c = cutsceneCharacter(DIALOGUES[boss.introDialogue].speaker);
+    if (!c && boss.tex.startsWith('story_')) {
+      assert.ok(fs.existsSync(new URL(`public/assets/story-bosses/${boss.tex.slice(6)}.json`, root))); continue;
+    }
     assert.ok(c, `${boss.introDialogue}: missing boss/guide actor`); used.add(c.id);
   }
+  assert.match(read('src/game/entities/StoryBossMechanics.ts'), /"cast_dean"/);
+  used.add('dean'); // Actual two-caster companion, not a second name for Veronica.
   assert.deepEqual([...used].sort(), CUTSCENE_CAST.map((c) => c.id).sort(), 'no generated atlas is left unconnected');
 });
 
-test('all 416 frames are present, transparent, unclipped and contain actual distinct animation poses', () => {
+test('all character frames are present, transparent, unclipped and contain actual distinct animation poses', () => {
   const inspect = `
 import json, hashlib
 from pathlib import Path
@@ -76,10 +81,10 @@ for c in spec['characters']:
   assert len({hashes['idle-'+direction+'-0'],hashes['walk-'+direction+'-0'],hashes['walk-'+direction+'-1']})==3,(c['id'],direction)
  assert len({hashes['talk'],hashes['reach'],hashes['hurt'],hashes['ready']})==4,c['id']
  p=Image.open(base/'portraits'/(c['id']+'.png')); assert p.mode=='RGBA' and p.size==(84,84)
-print('26 atlases / 416 valid frames / 26 matching portraits')
+print(str(len(spec['characters']) * 16)+' valid frames')
 `;
   const output = execFileSync(pythonBin(), ['-c', inspect], { cwd: new URL('../', import.meta.url), env: pythonEnv, encoding: 'utf8' });
-  assert.match(output, /416 valid frames/);
+  assert.match(output, new RegExp(`${CUTSCENE_CAST.length * 16} valid frames`));
   for (const c of CUTSCENE_CAST) {
     const atlas = JSON.parse(read(`public/assets/cutscene-cast/${c.id}.json`));
     assert.deepEqual(Object.keys(atlas.frames), [...CAST_FRAME_NAMES]);

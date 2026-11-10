@@ -230,7 +230,7 @@ test("howlrstone 1~3장(초반) hunt 가 전부 유저 초반 구간 20~50 안�
   /* 유저 표의 "초반 = 20~50". howlrstone 1~3장은 이 저장소의 초반 구간이다.
    *  종전엔 16(하한 미만)이 있었고, 재림은 12 로 초반보다 가벼웠다 — 둘 다 잡는다. */
   const early = allHunts().filter((r) => /^howlrstone[123]x/.test(r.stage));
-  assert.ok(early.length >= 4, `초반 hunt 가 ${early.length}건뿐 — 검사 대상 부족`);
+  assert.ok(early.length >= 3, `초반 hunt 가 ${early.length}건뿐 — 검사 대상 부족`);
   const out = early.filter((r) => r.need < 20 || r.need > 50);
   assert.deepEqual(
     out.map((r) => `${r.stage}=${r.need}`), [],

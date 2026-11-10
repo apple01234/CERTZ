@@ -100,9 +100,9 @@ test("canonPhaseIndex 가 HP 경계에서 정확하다", () => {
 });
 
 test("정본이 없는 보스는 -1 / 빈 배열을 돌려준다 (억지 생성 금지)", () => {
-  assert.equal(canonPhaseIndex("guardian", 0.5), -1);
-  assert.equal(canonBossOf("guardian"), null);
-  assert.deepEqual(canonPatternsAt("guardian", 0.5), []);
+  assert.equal(canonPhaseIndex("unwritten-boss", 0.5), -1);
+  assert.equal(canonBossOf("unwritten-boss"), null);
+  assert.deepEqual(canonPatternsAt("unwritten-boss", 0.5), []);
 });
 
 test("canonPatternsAt 은 이전 페이즈 패턴을 유지한다", () => {

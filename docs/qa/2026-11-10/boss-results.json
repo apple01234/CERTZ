@@ -1,0 +1,171 @@
+{
+  "results": [
+    {
+      "stage": "howlrstone2x3",
+      "id": "dio",
+      "texture": "story_dio",
+      "phase": 2,
+      "attackFrames": [
+        "attack-0",
+        "attack-1",
+        "attack-2",
+        "attack-3"
+      ],
+      "telegraphAndHit": "shadowcopies"
+    },
+    {
+      "stage": "howlrstone5x4",
+      "id": "harold",
+      "texture": "story_kraken",
+      "phase": 2,
+      "attackFrames": [
+        "attack-0",
+        "attack-2",
+        "attack-3",
+        "attack-1"
+      ],
+      "telegraphAndHit": "tentacleslam"
+    },
+    {
+      "stage": "howlrstone7x3",
+      "id": "verodin",
+      "texture": "story_veronica",
+      "phase": 2,
+      "attackFrames": [
+        "attack-0",
+        "attack-1",
+        "attack-2"
+      ],
+      "telegraphAndHit": "cursefield"
+    },
+    {
+      "stage": "howlrstone7x5",
+      "id": "rasion",
+      "texture": "story_rasion",
+      "phase": 2,
+      "attackFrames": [
+        "attack-0",
+        "attack-1",
+        "attack-2",
+        "attack-3"
+      ],
+      "telegraphAndHit": "counter"
+    },
+    {
+      "stage": "howlrstone8x4",
+      "id": "feron",
+      "texture": "story_feron",
+      "phase": 2,
+      "attackFrames": [
+        "attack-0",
+        "attack-2",
+        "attack-3",
+        "attack-1"
+      ],
+      "telegraphAndHit": "shadowcopies"
+    },
+    {
+      "stage": "howlrstone11x4",
+      "id": "scarlet_blood",
+      "texture": "story_scarlet",
+      "phase": 2,
+      "attackFrames": [
+        "attack-1",
+        "attack-2",
+        "attack-3"
+      ],
+      "telegraphAndHit": "bloodseal"
+    },
+    {
+      "stage": "howlrstone12x4",
+      "id": "scarlet_dark",
+      "texture": "story_scarlet",
+      "phase": 2,
+      "attackFrames": [
+        "attack-0",
+        "attack-1",
+        "attack-2",
+        "attack-3"
+      ],
+      "telegraphAndHit": "corruption"
+    },
+    {
+      "stage": "howlrstone13x4",
+      "id": "scarlet_seal",
+      "texture": "story_scarlet",
+      "phase": 2,
+      "attackFrames": [
+        "attack-0",
+        "attack-1",
+        "attack-2"
+      ],
+      "telegraphAndHit": "counter"
+    },
+    {
+      "stage": "howlrstone14x5",
+      "id": "desknis",
+      "texture": "story_desknis",
+      "phase": 3,
+      "attackFrames": [
+        "attack-0",
+        "attack-1",
+        "attack-2"
+      ],
+      "telegraphAndHit": "corruption"
+    },
+    {
+      "stage": "dlcstargate10",
+      "id": "littlestar",
+      "texture": "story_starplanet",
+      "phase": 2,
+      "attackFrames": [
+        "attack-1",
+        "attack-2",
+        "attack-3",
+        "attack-0"
+      ],
+      "telegraphAndHit": "rosecore"
+    },
+    {
+      "stage": "dlcprisma10",
+      "id": "jade",
+      "texture": "story_jade",
+      "phase": 2,
+      "attackFrames": [
+        "attack-0",
+        "attack-1",
+        "attack-2"
+      ],
+      "telegraphAndHit": "jadeclones"
+    },
+    {
+      "stage": "dlcreverse8",
+      "id": "reversecore",
+      "texture": "story_aicore",
+      "phase": 2,
+      "attackFrames": [
+        "attack-1",
+        "attack-2",
+        "attack-3",
+        "attack-0"
+      ],
+      "telegraphAndHit": "cursefield"
+    },
+    {
+      "stage": "dlcneocity4",
+      "id": "fabian",
+      "texture": "story_fabian",
+      "phase": 2,
+      "attackFrames": [
+        "attack-0",
+        "attack-2",
+        "attack-3",
+        "attack-1"
+      ],
+      "telegraphAndHit": "ringpush"
+    }
+  ],
+  "errors": [],
+  "badAssets": [],
+  "evidence": "Browser SwiftShader software renderer; fixed attack QA, not hardware or campaign/balance certification"
+}

@@ -1,0 +1,14 @@
+{
+  "schema": "game_dev.adapter.v1",
+  "id": "certz-browser",
+  "name": "Weaponmaster browser QA",
+  "version": "1.0.0",
+  "scenarios": [{
+    "id": "chapter-bosses",
+    "title": "Canonical terrain and thirteen fixed boss encounters",
+    "command": { "executable": "scripts/capture-chapter-bosses.sh", "arguments": [], "workingDirectory": "." },
+    "timeoutSeconds": 600,
+    "capabilities": ["cpu", "software-raster"],
+    "outputs": { "format": "game-dev-capture-v1", "path": "staging/capture.json" }
+  }]
+}

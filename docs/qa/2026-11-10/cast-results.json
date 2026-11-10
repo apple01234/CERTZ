@@ -1,0 +1,1040 @@
+{
+  "loaded": [
+    {
+      "key": "cast_haru",
+      "frames": 16
+    },
+    {
+      "key": "cast_lilac",
+      "frames": 16
+    },
+    {
+      "key": "cast_riel",
+      "frames": 16
+    },
+    {
+      "key": "cast_cartel",
+      "frames": 16
+    },
+    {
+      "key": "cast_lucy",
+      "frames": 16
+    },
+    {
+      "key": "cast_ari",
+      "frames": 16
+    },
+    {
+      "key": "cast_feron",
+      "frames": 16
+    },
+    {
+      "key": "cast_scarlet",
+      "frames": 16
+    },
+    {
+      "key": "cast_vellica",
+      "frames": 16
+    },
+    {
+      "key": "cast_register",
+      "frames": 16
+    },
+    {
+      "key": "cast_rasion",
+      "frames": 16
+    },
+    {
+      "key": "cast_storyteller",
+      "frames": 16
+    },
+    {
+      "key": "cast_recorder",
+      "frames": 16
+    },
+    {
+      "key": "cast_union_guide",
+      "frames": 16
+    },
+    {
+      "key": "cast_navigator",
+      "frames": 16
+    },
+    {
+      "key": "cast_fiona",
+      "frames": 16
+    },
+    {
+      "key": "cast_sailor",
+      "frames": 16
+    },
+    {
+      "key": "cast_rail_guide",
+      "frames": 16
+    },
+    {
+      "key": "cast_investigator",
+      "frames": 16
+    },
+    {
+      "key": "cast_scrapkeeper",
+      "frames": 16
+    },
+    {
+      "key": "cast_sky_ferryman",
+      "frames": 16
+    },
+    {
+      "key": "cast_scribe",
+      "frames": 16
+    },
+    {
+      "key": "cast_archivist",
+      "frames": 16
+    },
+    {
+      "key": "cast_star_keeper",
+      "frames": 16
+    },
+    {
+      "key": "cast_harold",
+      "frames": 16
+    },
+    {
+      "key": "cast_veronica",
+      "frames": 16
+    },
+    {
+      "key": "cast_dio",
+      "frames": 16
+    },
+    {
+      "key": "cast_littlestar",
+      "frames": 16
+    },
+    {
+      "key": "cast_jade",
+      "frames": 16
+    },
+    {
+      "key": "cast_fabian",
+      "frames": 16
+    },
+    {
+      "key": "cast_dean",
+      "frames": 16
+    }
+  ],
+  "shots": [
+    "pendant",
+    "vellica",
+    "injury",
+    "relationship"
+  ],
+  "portraits": [
+    "haru",
+    "lilac",
+    "riel",
+    "cartel",
+    "lucy",
+    "ari",
+    "feron",
+    "scarlet",
+    "vellica",
+    "register",
+    "rasion",
+    "storyteller",
+    "recorder",
+    "union_guide",
+    "navigator",
+    "fiona",
+    "sailor",
+    "rail_guide",
+    "investigator",
+    "scrapkeeper",
+    "sky_ferryman",
+    "scribe",
+    "archivist",
+    "star_keeper",
+    "harold",
+    "veronica",
+    "dio",
+    "littlestar",
+    "jade",
+    "fabian",
+    "dean"
+  ],
+  "dialogues": [
+    {
+      "speaker": "하루 · 회상",
+      "lines": [
+        "그날 절벽에서 나를 구해 준 사람의 이름은 라일락이었다."
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "라일락",
+      "lines": [
+        "세상에는 세 가지 사람이 있어.",
+        "누군가를 죽이는 사람과 두려움에 도망치는 사람, 그리고 그 죽음에서 누군가를 살리는 사람."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-idle",
+          "x": 1403.357142857143,
+          "y": 668.875,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:lilac",
+          "texture": "cast_lilac",
+          "frame": "idle-down-0",
+          "anim": "cast_lilac-talk",
+          "x": 1450.357142857143,
+          "y": 654.875,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "하루",
+      "lines": [
+        "두려움에 도망치는 사람이 되고 싶어요. 제일 쉽고 편하잖아요."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-talk",
+          "x": 1403.357142857143,
+          "y": 668.875,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:lilac",
+          "texture": "cast_lilac",
+          "frame": "idle-side-0",
+          "anim": "cast_lilac-idle-side",
+          "x": 1450.357142857143,
+          "y": 654.875,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "너는 어떤 사람이 되고 싶니?",
+      "lines": [],
+      "actors": [
+        {
+          "name": "rea:actor:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-idle",
+          "x": 1403.357142857143,
+          "y": 668.875,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:lilac",
+          "texture": "cast_lilac",
+          "frame": "idle-side-0",
+          "anim": "cast_lilac-idle-side",
+          "x": 1450.357142857143,
+          "y": 654.875,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "라일락",
+      "lines": [
+        "나는 네가 누군가를 살리는 사람이 되었으면 좋겠어.",
+        "이 펜던트가 너를 지켜 줄 거야. 기사단에 정식으로 들어와서 돌려줘."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-idle",
+          "x": 1403.357142857143,
+          "y": 668.875,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:lilac",
+          "texture": "cast_lilac",
+          "frame": "reach",
+          "anim": "cast_lilac-reach",
+          "x": 1450.357142857143,
+          "y": 654.875,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "하루",
+      "lines": [
+        "에벤트로 가는 길을 잃고 헤매고 있었다.",
+        "대공립천문대에서 일을 마치고 돌아오던 사람이 먼저 말을 걸어왔다."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:lead",
+          "texture": "cast_vellica",
+          "frame": "idle-side-0",
+          "anim": "cast_vellica-idle-side",
+          "x": 1866.9999999999998,
+          "y": 643,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-talk",
+          "x": 1816.9999999999998,
+          "y": 663,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "벨리카",
+      "lines": [
+        "에벤트로 가는 길을 찾고 있어? 마침 나도 천문대에서 돌아가는 길이야."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:lead",
+          "texture": "cast_vellica",
+          "frame": "idle-down-0",
+          "anim": "cast_vellica-talk",
+          "x": 1866.9999999999998,
+          "y": 643,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-idle",
+          "x": 1816.9999999999998,
+          "y": 663,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "벨리카",
+      "lines": [
+        "번개의 원소를 다룬다더라. 천문대에서 그런 힘을 쓰는 사람은 처음 봤어."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:lead",
+          "texture": "cast_vellica",
+          "frame": "idle-down-0",
+          "anim": "cast_vellica-talk",
+          "x": 1866.9999999999998,
+          "y": 643,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-idle",
+          "x": 1816.9999999999998,
+          "y": 663,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "하루",
+      "lines": [
+        "저는 아직 아무것도 못합니다. 배우는 중입니다."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:lead",
+          "texture": "cast_vellica",
+          "frame": "idle-side-0",
+          "anim": "cast_vellica-idle-side",
+          "x": 1866.9999999999998,
+          "y": 643,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-talk",
+          "x": 1816.9999999999998,
+          "y": 663,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "벨리카",
+      "lines": [
+        "같이 가자. 리안 왕자와 아리가 네 수련을 도와줄 수 있을 거야."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:lead",
+          "texture": "cast_vellica",
+          "frame": "idle-down-0",
+          "anim": "cast_vellica-talk",
+          "x": 1866.9999999999998,
+          "y": 643,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-idle",
+          "x": 1816.9999999999998,
+          "y": 663,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "하루",
+      "lines": [
+        "루시가 스칼렛에게 당했다. 생명의 초월자라는 사람이 죽음의 문턱까지 갔다.",
+        "도사가 상처를 보더니 일반적인 힘으로는 치료할 수 없다고 했다."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:lead",
+          "texture": "cast_lucy",
+          "frame": "hurt",
+          "anim": "cast_lucy-hurt",
+          "x": 1832.9999999999998,
+          "y": 643,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-talk",
+          "x": 1858.9999999999998,
+          "y": 681,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "루시",
+      "lines": [
+        "다크니스 크리스탈을 완전히 흡수했어. 그건 이제…… 나도 막을 수 없어."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:lead",
+          "texture": "cast_lucy",
+          "frame": "hurt",
+          "anim": "cast_lucy-hurt",
+          "x": 1832.9999999999998,
+          "y": 643,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:haru",
+          "texture": "cast_haru",
+          "frame": "idle-side-0",
+          "anim": "cast_haru-idle-side",
+          "x": 1858.9999999999998,
+          "y": 681,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "도사",
+      "lines": [
+        "보석의 힘의 흔적이야. 내 힘으로는 닿지 못한다. 하루, 자네가 해야겠어."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:lead",
+          "texture": "cast_lucy",
+          "frame": "hurt",
+          "anim": "cast_lucy-hurt",
+          "x": 1832.9999999999998,
+          "y": 643,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:haru",
+          "texture": "cast_haru",
+          "frame": "idle-side-0",
+          "anim": "cast_haru-idle-side",
+          "x": 1858.9999999999998,
+          "y": 681,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:riel",
+          "texture": "cast_riel",
+          "frame": "idle-down-0",
+          "anim": "cast_riel-talk",
+          "x": 1934.9999999999998,
+          "y": 659,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "하루",
+      "lines": [
+        "루시의 상처에 보석의 힘이 남아 있어요. 제가 흡수해 보겠습니다."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:lead",
+          "texture": "cast_lucy",
+          "frame": "hurt",
+          "anim": "cast_lucy-hurt",
+          "x": 1832.9999999999998,
+          "y": 643,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:haru",
+          "texture": "cast_haru",
+          "frame": "reach",
+          "anim": "cast_haru-reach",
+          "x": 1858.9999999999998,
+          "y": 681,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:riel",
+          "texture": "cast_riel",
+          "frame": "idle-down-0",
+          "anim": "cast_riel-idle",
+          "x": 1934.9999999999998,
+          "y": 659,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "리엘",
+      "lines": [
+        "무리야! 그 힘은 몸을 어둠에 잠식시킨다!"
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:lead",
+          "texture": "cast_lucy",
+          "frame": "hurt",
+          "anim": "cast_lucy-hurt",
+          "x": 1832.9999999999998,
+          "y": 643,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-idle",
+          "x": 1858.9999999999998,
+          "y": 681,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:riel",
+          "texture": "cast_riel",
+          "frame": "idle-down-0",
+          "anim": "cast_riel-talk",
+          "x": 1934.9999999999998,
+          "y": 659,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "하루",
+      "lines": [
+        "모두를 도울 수 있다면 해 볼 거예요. 이번에는 도망치지 않겠어요."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:lead",
+          "texture": "cast_lucy",
+          "frame": "hurt",
+          "anim": "cast_lucy-hurt",
+          "x": 1832.9999999999998,
+          "y": 643,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-talk",
+          "x": 1858.9999999999998,
+          "y": 681,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:riel",
+          "texture": "cast_riel",
+          "frame": "idle-down-0",
+          "anim": "cast_riel-idle",
+          "x": 1934.9999999999998,
+          "y": 659,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "하루",
+      "lines": [
+        "에벤트에는 두 용사의 싸움이 계속되고 있었다. 근위대장 아리와 암흑의 그림자 페르온.",
+        "둘은 과거 같은 왕국의 기사 단장과 근위 대장이었다."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:lead",
+          "texture": "cast_ari",
+          "frame": "idle-side-0",
+          "anim": "cast_ari-idle-side",
+          "x": 1971.5625,
+          "y": 663,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-talk",
+          "x": 1921.5625,
+          "y": 683,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "아리",
+      "lines": [
+        "이 펜던트, 기억하지? 라일락이 남긴 것이야."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:lead",
+          "texture": "cast_ari",
+          "frame": "idle-down-0",
+          "anim": "cast_ari-talk",
+          "x": 1971.5625,
+          "y": 663,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-idle",
+          "x": 1921.5625,
+          "y": 683,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "아리",
+      "lines": [
+        "라일락은 내 여동생이자 기사단의 유능한 기사였어. 그리고 페르온의 연인이었지."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:lead",
+          "texture": "cast_ari",
+          "frame": "idle-down-0",
+          "anim": "cast_ari-talk",
+          "x": 1971.5625,
+          "y": 663,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-idle",
+          "x": 1921.5625,
+          "y": 683,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "페르온",
+      "lines": [
+        "라일락……."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:lead",
+          "texture": "cast_ari",
+          "frame": "idle-side-0",
+          "anim": "cast_ari-idle-side",
+          "x": 1971.5625,
+          "y": 663,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-idle",
+          "x": 1921.5625,
+          "y": 683,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:feron",
+          "texture": "cast_feron",
+          "frame": "idle-down-0",
+          "anim": "cast_feron-talk",
+          "x": 2021.5625,
+          "y": 663,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "아리",
+      "lines": [
+        "그 유적에서 동생이 먼저 나섰어. 우리를 도망치게 하려고."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:lead",
+          "texture": "cast_ari",
+          "frame": "idle-down-0",
+          "anim": "cast_ari-talk",
+          "x": 1971.5625,
+          "y": 663,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-idle",
+          "x": 1921.5625,
+          "y": 683,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:feron",
+          "texture": "cast_feron",
+          "frame": "idle-down-0",
+          "anim": "cast_feron-idle",
+          "x": 2021.5625,
+          "y": 663,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "아리",
+      "lines": [
+        "네가 잃어버린 추억을 떠올려. 지금 널 붙잡고 있는 세뇌에서 돌아와."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:lead",
+          "texture": "cast_ari",
+          "frame": "idle-down-0",
+          "anim": "cast_ari-talk",
+          "x": 1971.5625,
+          "y": 663,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-idle",
+          "x": 1921.5625,
+          "y": 683,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:feron",
+          "texture": "cast_feron",
+          "frame": "idle-down-0",
+          "anim": "cast_feron-idle",
+          "x": 2021.5625,
+          "y": 663,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "하루",
+      "lines": [
+        "추억을 잃은 건…… 저 하나가 아니었어요."
+      ],
+      "actors": [
+        {
+          "name": "rea:actor:lead",
+          "texture": "cast_ari",
+          "frame": "idle-side-0",
+          "anim": "cast_ari-idle-side",
+          "x": 1971.5625,
+          "y": 663,
+          "visible": true
+        },
+        {
+          "name": "rea:actor:cast:haru",
+          "texture": "cast_haru",
+          "frame": "idle-down-0",
+          "anim": "cast_haru-talk",
+          "x": 1921.5625,
+          "y": 683,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "speaker": "하루",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "라일락",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "리엘",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "카르텔",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "루시",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "아리",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "페르온",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "스칼렛",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "벨리카",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "레지스터",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "라시온",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "이야기꾼",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "라일락 연합의 기록자",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "연합 안내인",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "별길 항해사",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "마법공학자 피오나",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "별빛 바다의 뱃사람",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "지하선로 안내원",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "컴퍼니 조사관",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "폐기장 관리인",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "하늘을 나는 섬의 사공",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "성채의 서기",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "기록보관관",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "최후의 별지기",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "해롤드",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "베로니카",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "디오",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "리틀스타",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "제이드",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "힘의 부호 파비앙",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "딘",
+      "lines": [
+        "초상화 일치 검증"
+      ],
+      "actors": []
+    },
+    {
+      "speaker": "벨리카",
+      "lines": [
+        "기획서에 맞춘 번개 궁수의 모습입니다."
+      ],
+      "actors": []
+    }
+  ],
+  "errors": [],
+  "badAssets": []
+}

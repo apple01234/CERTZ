@@ -5096,3 +5096,15 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
 - Installed checksum-verified Game Development Studio CLI 1.5.1 outside the repository; capabilities and required doctor checks pass.
 - This is a WIP checkpoint. Initial full run after terrain/boss changes: 524/537 pass, 13 fail (several old placement/quest/terrain assumptions); subsequent fixes are not yet fully retested. Previous cast-only checkpoint a69384c passed all 537 and four browser scenes. No APK/deployment or complete new boss combat validation claimed.
 - Continuation scope and exact verification limits: docs/handoff/NEXT_AI_PROMPT.md.
+
+## Task — 2026-11-10: finish native roads and validate canonical boss encounters
+
+- Continued implementation here after the user replenished credits. Completed follow-up to e31fec7; this is no longer the earlier 13-failure checkpoint.
+- Reused the existing navigation implementation for one continuous native road, preserved collision masks across all 165 story/planet fields, and removed obsolete repeat quests only from maps with no spawn targets. All remaining combat fields retain repeat quests.
+- Fixed story boss visual/attack animation selection during grace and VX attacks, gas effects for the machine core, blood healing only after actual damage, Dean pose cleanup, and rose-core/shared-damage authority. Added actual ring-out completion for Fabian and verified it in the game.
+- Main story cutscenes temporarily hide unrelated field enemies and restore visibility afterward.
+- Final full suite: 541 passed, 0 failed. TypeScript and ESLint pass. After the last cutscene visibility change, reran the affected 16 checks plus all four real browser cutscenes (31 atlases / 496 frames / 31 portraits / zero page or asset errors).
+- Browser boss QA: thirteen encounters, changing attack frames, warning/hit/counter dispatch and cleanup. Additional checks exercise queued ink cancellation, host handling of remote damage against the rose core, and actual Fabian ring-out. Fixed-attack staging and one-damage survival override are explicit in the report.
+- Game Development Studio CLI completed and verified sealed software-render capture run run_1794268521187_3b6a8e9e6d5642d28c5475bfcbb36bb5. Capture verification and visual raster analysis pass; no hardware/performance claim.
+- User-requested plugin inventory reviewed via Plugin Management and current skills/tools. Relevant game skills, Context7/TinyFish/Drive/GitHub/Lovable/Figma remain available; no unrelated service migration or paid external-provider setup.
+- Evidence and limitations: docs/CHAPTER_TERRAIN_AND_BOSSES.md and docs/qa/2026-11-10/. APK, production deployment, normal-equipment campaign balance, and live multi-client networking are separate checks.

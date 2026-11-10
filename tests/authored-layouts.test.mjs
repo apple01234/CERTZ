@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import { authoredOpenXY, authoredRoomLayout } from '../src/game/authoredLayouts.ts';
 import { AUTHORED_GROUND_SOURCES, renderAuthoredMapLayers } from '../src/game/fx/AuthoredMapLayers.ts';
 import { isSolidDecor } from '../src/game/decorObjects.ts';
+import { chapterEncounter } from '../src/game/chapterStoryPlan.ts';
 import { HOWLRSTONE_CHAPTERS } from '../src/game/howlrstone.ts';
 
 function reachable(lay) {
@@ -23,11 +24,11 @@ function reachable(lay) {
 test('all 65 story rooms and 100 planet fields have one connected, protected route', () => {
   const cases = HOWLRSTONE_CHAPTERS.flatMap(spec => Array.from({ length: spec.stages }, (_, i) => ({
     key: `${spec.key}x${i + 1}`, width: spec.width + (i + 1) * 130, height: spec.height + (i + 1) * 30,
-    boss: !!spec.boss && i + 1 === spec.stages,
+    boss: !!chapterEncounter(spec.key, i + 1),
   })));
   assert.equal(cases.length, 65);
   for (const planet of ['stargate','prisma','ocean','reverse','neocity','mech','swallow','opinicia','novel','sernium']) {
-    for (let sub = 1; sub <= 10; sub++) cases.push({ key: `dlc${planet}${sub}`, width: 2200 + sub * 130, height: 1200 + sub * 30, boss: sub === 10 });
+    for (let sub = 1; sub <= 10; sub++) cases.push({ key: `dlc${planet}${sub}`, width: 2200 + sub * 130, height: 1200 + sub * 30, boss: !!chapterEncounter(`dlc${planet}`, sub) });
   }
   for (const { key, width, height, boss } of cases) {
     const lay = authoredRoomLayout(key, width, height);
@@ -60,7 +61,7 @@ test('all 65 story rooms and 100 planet fields have one connected, protected rou
 });
 
 test('story geography has distinct authored structures and no changes to feature maps', () => {
-  const expected = { howlrstone1x1: 'cliff', howlrstone3x1: 'coast', howlrstone6x1: 'grove', howlrstone10x1: 'citadel' };
+  const expected = { howlrstone1x1: 'cliff', howlrstone5x2: 'coast', howlrstone6x1: 'grove', howlrstone10x1: 'ruins' };
   const masks = [];
   for (const [key, theme] of Object.entries(expected)) {
     const lay = authoredRoomLayout(key, 2400, 1280);
@@ -71,11 +72,11 @@ test('story geography has distinct authored structures and no changes to feature
   const cliff = authoredRoomLayout('howlrstone1x1', 2400, 1280);
   assert.ok(cliff.authored.landmarks.some((p) => p.kind === 'cliff'));
   assert.equal(cliff.authored.ground, 'ground_meadow');
-  assert.equal(authoredRoomLayout('howlrstone1x2', 2400, 1280).authored.theme, 'library', 'later castle/library fields remain intact');
-  const citadel = authoredRoomLayout('howlrstone10x2', 2400, 1280);
+  assert.equal(authoredRoomLayout('howlrstone1x2', 2400, 1280).authored.theme, 'town', 'the village training area precedes the castle');
+  const citadel = authoredRoomLayout('howlrstone10x3', 2400, 1280);
   assert.deepEqual(citadel.authored.landmarks.map(x => x.kind), ['gate-water','gate-wind','gate-lightning','gate-fire']);
   assert.equal(citadel.open[citadel.cols + 6], false, 'gate rooms retain walls between their north entrances');
-  const coast = authoredRoomLayout('howlrstone3x1', 2400, 1280);
+  const coast = authoredRoomLayout('howlrstone5x2', 2400, 1280);
   assert.equal(coast.authored.landmarks.filter(x => x.kind === 'pier').length, 2);
   for (const key of ['village', 'youngprincessv', 'dlcstargatev', 'forest1', 'dojang', 'tower1', 'howlrstone99x1', 'howlrstone1x99', 'dlcunknown1']) {
     assert.equal(authoredRoomLayout(key, 2400, 1280), null, key);

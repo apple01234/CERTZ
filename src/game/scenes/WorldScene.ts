@@ -2673,7 +2673,7 @@ export class WorldScene extends Phaser.Scene {
 
   cinematicObstructions() {
     return [this.portal, this.portalSwirl?.obj ?? null, this.portalMagicA, this.portalMagicB,
-      this.portalBeacon, this.portalLabel, this.edgeArrow, this.edgeLabel, this.questMark].filter((o) => o !== null);
+      this.portalBeacon, this.portalLabel, this.edgeArrow, this.edgeLabel, this.questMark, ...this.enemies].filter((o) => o !== null);
   }
 
   private applyManualCameraFollow(dt: number) {
@@ -7575,7 +7575,8 @@ export class WorldScene extends Phaser.Scene {
   private onBossSharedDamage(dealt: number) {
     if (!this.boss || !this.bossShareActive) return;
     if (this.bossShareHost) {
-      this.bossShareHp = Math.max(0, this.bossShareHp - dealt);
+      if (this.boss.absorbMechanicDamage(dealt)) return true;
+      this.bossShareHp = Phaser.Math.Clamp(this.bossShareHp - dealt, 0, this.boss.maxHp);
       this.boss.sharedHp = this.bossShareHp;
     } else {
       this.bossShareDmgAcc += dealt; // tickBossShare에서 200ms 합산 릴레이
@@ -7587,7 +7588,9 @@ export class WorldScene extends Phaser.Scene {
     if (!this.boss || !this.bossShareActive) return;
     if (m.n != null) {
       if (this.bossShareHost) {
+        if (!Number.isFinite(m.n) || m.n <= 0 || this.boss.absorbMechanicDamage(m.n)) return;
         this.bossShareHp = Math.max(0, this.bossShareHp - m.n);
+        this.boss.hp = Math.max(1, this.bossShareHp);
         this.boss.sharedHp = this.bossShareHp;
       }
       return;

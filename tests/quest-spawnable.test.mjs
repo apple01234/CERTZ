@@ -64,7 +64,8 @@ for (const { stage, q, mixKeys } of huntQuests) {
  *  임계값은 "회귀 방지용 하한"이므로 삭제 후 실제 규모에 맞춘다.
  *  vc288 — 보스맵 hunt 퀘스트를 걷어내 175 → 150건이 됐다(요구사항 8.2).
  *  이 숫자를 낮추는 게 목적이 아니라, 남은 콘텐츠가 통째로 사라지면 잡히게 하는 것이다. */
-ok(`hunt 퀘스트 전수 검사 (${huntQuests.length}건)`, huntQuests.length >= 140);
+// Healing/reconstruction rooms and documented new boss encounters replace some mandatory hunts.
+ok(`hunt 퀘스트 전수 검사 (${huntQuests.length}건)`, huntQuests.length >= 130);
 
 /* [vc288 — 보스맵 격리] 보스맵에는 일반몹도 일반 hunt 퀘스트도 없어야 한다.
  *  요구사항 8.2: "보스맵에는 … 일반 몬스터를 배치하지 않는다. 보스맵에 연결되는 퀘스트는
@@ -102,7 +103,11 @@ for (const { stage, key, mixKeys } of bounties) {
   if (def?.boss) continue;
   ok(`${stage}: 반복 의뢰 대상 ${key} 가 스폰된다`, mixKeys.has(key));
 }
-ok(`반복 의뢰 전수 검사 (${bounties.length}건)`, bounties.length > 400);
+// Boss-only and healing/rebuilding maps have no impossible repeat target; all live combat fields retain theirs.
+for (const [stage, def] of Object.entries(STAGES)) {
+  if (/^(howlrstone\d+x\d+|dlc[a-z]+\d+)$/.test(stage) && !def.boss && def.enemies.length) ok(`${stage}: 전투 구역의 반복 의뢰 보존`, !!def.repeat);
+}
+ok(`반복 의뢰 전수 검사 (${bounties.length}건)`, bounties.length > 350);
 
 /* ── 3. 편입이 총 스폰량을 부풀리지 않는다 (난이도 불변) ──────────────────── */
 /* vc238 (P4 후속) — 상한이 **설정값**이 됐다(`zoneSpawnCap`: 20/24/28/32).

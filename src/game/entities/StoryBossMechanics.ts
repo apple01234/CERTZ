@@ -53,7 +53,7 @@ export class StoryBossMechanics {
     this.later(telegraphMs(kind), () => {
       warning.clear().fillStyle(pattern.color, .38).lineStyle(4, pattern.color, 1);
       for (const h of pattern.hazards) this.draw(warning, h);
-      const effects: Record<StoryAttack, string> = { tentacleslam: "hv2_splat", inkflood: "mg_smoke", shadowcopies: "mg_slash2", cursefield: this.key === "reversecore" ? "hv2_techcircle" : "hv2_magiccircle2", bloodseal: "hv2_splat", corruption: "hv2_smoke26", rosecore: "flower_r", jadeclones: "hv2_crystal", ringpush: "mg_shock0" };
+      const effects: Record<StoryAttack, string> = { tentacleslam: "hv2_splat", inkflood: "mg_smoke", shadowcopies: "mg_slash2", cursefield: this.key === "reversecore" ? "hv2_techcircle" : "hv2_magiccircle2", bloodseal: "hv2_splat", corruption: this.key === "reversecore" ? "hv2_techcircle2" : "hv2_smoke26", rosecore: "flower_r", jadeclones: "hv2_crystal", ringpush: "mg_shock0" };
       for (const h of pattern.hazards) {
         const key = effects[kind];
         if (!scene.textures.exists(key)) continue;
@@ -68,13 +68,14 @@ export class StoryBossMechanics {
         const h = pattern.hazards.find((h) => hazardContains(h, player));
         if (!h) return;
         const dir = new Phaser.Math.Vector2(player.x - b.x, player.y - b.y).normalize();
+        const beforeHp = player.hp;
         player.takeDamage(Math.round(b.def.atk * (kind === "ringpush" ? .8 : 1.15)), dir, .2);
         if (kind === "ringpush") {
           const body = (player as unknown as Phaser.Physics.Arcade.Sprite).body as Phaser.Physics.Arcade.Body | null;
           body?.setVelocity(dir.x * 650, dir.y * 650);
           scene.showBanner("측면 회피 후 반격해 링 밖으로 밀어내세요");
         }
-        if (kind === "bloodseal") b.hp = Math.min(b.maxHp, b.hp + b.maxHp * .015);
+        if (kind === "bloodseal" && player.hp < beforeHp) b.healFromBlood();
       };
       hit();
       if (pattern.duration > 1000) for (let ms = 650; ms < pattern.duration; ms += 650) this.later(ms, hit);
@@ -106,6 +107,7 @@ export class StoryBossMechanics {
   clearAttack(): void {
     for (const t of this.timers) t.remove(); this.timers = [];
     for (const o of this.objects) o.destroy(); this.objects = [];
+    if (this.dean?.active) this.dean.play("cast_dean-ready");
   }
   destroy(): void {
     this.clearAttack(); this.ring?.destroy(); this.dean?.destroy(); this.core?.destroy(); this.coreLabel?.destroy();

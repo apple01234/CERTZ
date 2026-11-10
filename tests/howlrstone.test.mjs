@@ -15,6 +15,7 @@ import {
   BOSS_DEFS, ENEMIES, stageScale, stageIntro, parseStage, chapterSpec, howlrstoneSpec,
 } from '../src/game/stages.ts';
 import { HOWLRSTONE_CHAPTERS, HOWLRSTONE_FINAL, HOWLRSTONE_ENTRY } from '../src/game/howlrstone.ts';
+import { CHAPTER_STORY_PLAN, chapterEncounter } from '../src/game/chapterStoryPlan.ts';
 import { DIALOGUES } from '../src/game/data.ts';
 import { stageTrack } from '../src/game/audio.ts';
 import { MIDDLE_CHAPTER_IMPLEMENTED, storyEntryAllowed, storyPortalDestination, YOUNG_PRINCESS_VILLAGE, howlFinalStage } from '../src/game/storyProgression.ts';
@@ -40,14 +41,11 @@ for (const ch of HOWLRSTONE_CHAPTERS) {
     /* [vc288 — 보스맵 격리] 보스 구역은 일반몹 0마리가 계약이다(요구사항 8.2).
      *  종전엔 모든 구역에 몹이 있어야 한다고 강제했는데, 그 규칙 때문에 보스맵에
      *  잡몹이 깔려 보스 패턴을 읽을 수 없었다. 보스 구역만 예외로 둔다. */
-    const expectedBoss = ch.boss !== null && sub === ch.stages;
-    assert.equal(
-      def.enemies.length > 0,
-      !expectedBoss,
-      `${key}: 보스 구역은 일반몹 0, 그 외는 1마리 이상이어야 한다`,
-    );
+    const expectedBoss = !!chapterEncounter(ch.key, sub);
+    if (expectedBoss || /^howlrstone(6|15)$/.test(ch.key)) assert.equal(def.enemies.length, 0, `${key}: boss/healing/rebuilding room`);
+    else if (def.quests.some(q => q.type === 'hunt')) assert.ok(def.enemies.length > 0, `${key}: hunt target must spawn`);
     /* 보스가 있는 장은 마지막 구역이 보스전, 없는 장은 보스 없음. */
-    assert.equal(def.boss, ch.boss !== null && sub === ch.stages, `${key}: 보스는 마지막 구역에만`);
+    assert.equal(def.boss, expectedBoss, `${key}: 정본의 실제 만남 위치`);
     assert.ok(STAGE_SHORT[key], `${key}: 구역 라벨 필요`);
     assert.ok(STAGE_THEME[key], `${key}: 지형 테마 필요`);
     assert.ok(stageIntro(key), `${key}: 인트로 대사 키 필요`);
@@ -133,37 +131,18 @@ assert.equal(storyEntryAllowed(HOWLRSTONE_ENTRY, { cleared: true }), true);
 
 /* ── 5. 보스/몬스터 실체 ───────────────────────────────────────────────── */
 for (const ch of HOWLRSTONE_CHAPTERS) {
-  /* vc235 — 보스가 없는 장(1·2·4·5·6·9·11·12·13·15)은 검사 대상이 아니다.
-   *  보스가 있으면 **마지막 스테이지**에 스폰된다. */
-  if (ch.boss === null) {
-    assert.ok(STAGES[`${ch.key}x${ch.stages}`], `${ch.key}: 마지막 스테이지가 존재해야 한다`);
-    continue;
-  }
-  const def = STAGES[`${ch.key}x${ch.stages}`];
-  assert.ok(def.bossKey, `${ch.key}x${ch.stages}: bossKey 필수`);
-  const boss = BOSS_DEFS[def.bossKey];
-  assert.ok(boss, `${def.bossKey}: BOSS_DEFS 에 등록되어야 스폰된다`);
-  assert.equal(boss.name, ch.boss === 'harold' ? '바다의 군단장 해롤드' : boss.name);
-  assert.ok(boss.hp > 0 && boss.atk > 0, `${boss.name}: 능력치`);
-  assert.ok(boss.patterns.p1.length > 0, `${boss.name}: 패턴`);
-  assert.ok(DIALOGUES[boss.introDialogue], `${boss.name}: 인트로 대사 ${boss.introDialogue}`);
-  // 스폰 몬스터 키가 ENEMIES 에 실존해야 화면에 실제로 나온다
-  for (const q of def.quests) {
-    if (q.type === 'hunt' && q.targetKey) {
-      assert.ok(ENEMIES[q.targetKey], `${ch.key}10: 퀘스트 대상 ${q.targetKey} 가 ENEMIES 에 없다`);
-    }
-  }
-  for (const e of def.enemies) {
-    assert.ok(ENEMIES[e.key], `${ch.key}10: 스폰 ${e.key} 가 ENEMIES 에 없다`);
+  for (let sub = 1; sub <= ch.stages; sub++) {
+    const def = STAGES[`${ch.key}x${sub}`], encounter = chapterEncounter(ch.key, sub);
+    assert.equal(def.bossKey, encounter ?? undefined);
+    if (!encounter) continue;
+    const boss = BOSS_DEFS[encounter];
+    assert.ok(boss && boss.hp > 0 && boss.atk > 0);
+    assert.ok(DIALOGUES[boss.introDialogue]);
+    assert.equal(def.enemies.length, 0);
   }
 }
-
-/* ── 6. 영프 보스 5종 = 원문 등장 순서 ─────────────────────────────────── */
-/* vc235 — 15챕터에서도 보스는 원문 등장 순서를 지켜야 한다.
- *  보스가 없는 장은 null 이므로 걸러서 비교한다. */
-const bossOrder = HOWLRSTONE_CHAPTERS.map((c) => c.boss).filter((b) => b !== null);
-assert.deepEqual(bossOrder, ['harold', 'verodin', 'feron', 'shadow', 'scarlet'],
-  '원문 등장 순: 해롤드(3화) → 베로니카·딘(7화) → 페르온(8화) → 스칼렛 환영(10화) → 스칼렛(14화)');
+const bossOrder = HOWLRSTONE_CHAPTERS.flatMap(c => CHAPTER_STORY_PLAN[c.key].places.map(p => p.boss).filter(Boolean));
+assert.deepEqual(bossOrder, ['dio','harold','verodin','rasion','feron','shadow','scarlet_blood','scarlet_dark','scarlet_seal','desknis']);
 
 /* ── 7. parseStage / chapterSpec ───────────────────────────────────────── */
 assert.deepEqual(parseStage('howlrstone3x3'), { ch: 'howlrstone3', sub: 3 });

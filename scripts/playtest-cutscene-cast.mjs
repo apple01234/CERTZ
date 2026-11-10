@@ -80,7 +80,7 @@ try {
     assert.ok(captured, `${stage}: no visible portrait + actor screenshot`);
     console.log('Captured', id);
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(150);
+    await page.waitForFunction(() => window.__SERTZ_SCENE__?.physics?.world && !window.__SERTZ_SCENE__.camCinema, { timeout: 15000 });
     const released = await page.evaluate(() => {
       const s = window.__SERTZ_SCENE__;
       return { locked: s.camCinema, actors: s.children.list.filter((a) => a.name?.startsWith('rea:actor:')).length, paused: s.physics.world.isPaused };

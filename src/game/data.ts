@@ -3262,3 +3262,5 @@ for (const [key, plan] of Object.entries(CHAPTER_STORY_PLAN)) {
   DIALOGUES[`chapterIntroHowlrstone${n}`] = { speaker: "라일락 연합의 기록자", lines: [plan.title, `${plan.places[0].title}에서 이야기가 이어진다.`] };
   DIALOGUES[`howlrstone${n}Done`] = { speaker: "라일락 연합의 기록자", lines: [`${plan.places.at(-1)!.title}의 이야기를 기록했다.`, "다음 장소로 향하자."] };
 }
+
+DIALOGUES.gpCoreFight = { speaker: "라일락 연합의 기록자", lines: ["컨트롤타워가 독가스 공급을 제어하고 있다.", "방어망을 피해 제어 장치를 멈추자."] };

@@ -109,8 +109,8 @@ test("보스맵에 일반몹이 한 마리도 없다", () => {
   assert.deepEqual(offenders, [], `보스맵에 잡몹이 남아 있다: ${offenders.join(", ")}`);
 });
 
-test("일반 구역에는 여전히 몬스터가 있다 (보스맵만 비었는지 확인)", () => {
-  const empty = normalStages.filter((s) => s.enemies.reduce((t, g) => t + g.count, 0) === 0);
+test("전투 목표가 있는 일반 구역에는 몬스터가 있다 (치료·재건·이동은 비전투)", () => {
+  const empty = normalStages.filter((s) => s.enemies.reduce((t, g) => t + g.count, 0) === 0 && s.quests.some(q => q.type === "hunt" || q.type === "boss"));
   assert.deepEqual(
     empty.map((s) => s.key),
     [],

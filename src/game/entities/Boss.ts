@@ -407,6 +407,13 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       case "summonTele":
       case "spiralTele": // P7b — 나선 예고는 탄막 계열 자세(sp2)
         return `${t}-sp2`;
+      case "vxTele":
+      case "vxCast":
+        return `${t}-${this.vxKind === "blinkslash" ? "atk" : "sp3"}`;
+      case "shieldHold":
+        return `${t}-sp1`;
+      case "vanished":
+        return `${t}-walk`;
       case "storyCast":
       case "zonesTele":
       case "quakeCast":
@@ -476,7 +483,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     // v2.0 프롤로그 보호 — 인트로/입장 유예 중 보스 행동 정지 (투사체는 유지)
     if (this.scene.isPrologueSafe) {
       this.setVelocity(0, 0);
-      this.setBossAnim(`${this.def.tex}-idle`);
+      this.setBossAnim(`${this.visualKey || this.def.tex}-idle`);
       return;
     }
     // v5.0 — 모드/이동 기반 애니 갱신 (매 틱 평가, 전환 시에만 play)
@@ -1469,7 +1476,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
           this.setAlpha(1);
           this.scene.spawnBurstAt(px, py, 16, 0x8ad4ff);
           this.squash(0.1, -0.1);
-          this.setBossAnim(`${this.def.tex}-idle`);
+          this.setBossAnim(`${this.visualKey || this.def.tex}-idle`);
           this.endAttack(950);
           /* 재등장 즉시 사양표 ③ GreenSlash로 연계 */
           this.startGreenSlash(player);
@@ -1682,7 +1689,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.scene.vfx3dFx("ring", this.x, this.y, this.def.orbTint, 1.3);
     this.scene.sfxDash();
     this.squash(0.1, -0.1);
-    this.setBossAnim(`${this.def.tex}-idle`);
+    this.setBossAnim(`${this.visualKey || this.def.tex}-idle`);
     /* 재등장 직후 즉보 — 사양표 ③로 연결 */
     this.startGreenSlash(player);
   }
@@ -2027,7 +2034,15 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   sharedIsHost = false;
   sharedHp = 0;
   /** 피격 확정분 통보 훅 — 호스트는 합산, 비호스트는 릴레이 (WorldScene 주입) */
-  onSharedDamage?: (dealt: number) => void;
+  onSharedDamage?: (dealt: number) => boolean | void;
+  absorbMechanicDamage(dealt: number): boolean { return dealt > 0 && (this.story?.interceptDamage(dealt) ?? false); }
+  healFromBlood(): void {
+    if (this.sharedMode && !this.sharedIsHost) return;
+    const amount = Math.min(this.maxHp - this.hp, this.maxHp * .015);
+    this.hp += amount;
+    if (this.sharedMode && amount > 0) this.onSharedDamage?.(-amount);
+    EventBus.emit("boss:update", { hp: this.hp, maxHp: this.maxHp });
+  }
 
   /* v1.4.30 (#7 이터널 실성능) — "시간의 잠금": 보스가 받는 유일한 CC.
    *  일반 몹의 applyStun과 달리 보스는 최대 1.4초의 경직(staggered, 피해 ×1.6)으로
@@ -2122,9 +2137,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     /* vc143 (#4 공유 체력) — 비호스트는 HP 권한이 없다: 연출만 수행하고 HP 감소·사망 판정은
      *  생략한다. 권위 HP는 호스트의 bhp 브로드캐스트로 동기된다 */
     const hpAuthority = !(this.sharedMode && !this.sharedIsHost);
-    if (this.sharedMode) this.onSharedDamage?.(dealt);
-
-    if (hpAuthority && this.story?.interceptDamage(dealt)) return;
+    if (this.sharedMode) { if (this.onSharedDamage?.(dealt)) return; }
+    else if (this.absorbMechanicDamage(dealt)) return;
     if (hpAuthority) this.hp -= dealt;
     this.knockVec.set(dir.x * knock * (canonBossOf(this.def.key)?.finish === "ringout" ? 3.5 : .12), dir.y * knock * (canonBossOf(this.def.key)?.finish === "ringout" ? 3.5 : .12)); // 보스는 넉백 거의 안 됨
     this.squash(0.035, -0.035); // v1.4.9 — 피격 미세 진동
@@ -2230,7 +2244,10 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
    *  남은 HP 전량을 takeDamage로 통과시켜 기존 사망 연출·보상 경로(onBossDead)를 그대로 재사용 */
   forceSharedDeath() {
     if (!this.alive) return;
-    this.takeDamage(Math.max(1, this.hp), new Phaser.Math.Vector2(0, 1), 0, false);
+    this.story?.destroy(); this.story = null;
+    this.sharedMode = false; this.shieldInvuln = false;
+    this.hp = 1; this.mode = "idle";
+    this.takeDamage(this.maxHp * 100, new Phaser.Math.Vector2(0, 1), 0, false);
   }
 
   destroyPool() {

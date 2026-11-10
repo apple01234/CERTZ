@@ -2299,7 +2299,7 @@ for (const [chapter, plan] of Object.entries(CHAPTER_STORY_PLAN)) {
     stage.name = `${plan.training ? "[수련] " : ""}${place.title}`;
     stage.subtitle = plan.training ? "기존 선택 원정 · 기획서 전투기록 재현" : plan.title;
     STAGE_SHORT[key] = place.title;
-    STAGE_THEME[key] = { ground: `terrain_${place.floor}`, path: `terrain_${place.path}`, bg: place.border === "water" ? "#245365" : "#292638" };
+    STAGE_THEME[key] = { ground: `terrain_${place.floor}`, path: `terrain_${place.path}`, bg: place.border === "water" ? "#245365" : place.role === "cliff" ? "#426b80" : ["road", "garden", "sanctuary", "village", "camp"].includes(place.role) ? "#344c44" : "#292638" };
     stage.boss = !!encounter; stage.bossKey = encounter ?? undefined;
     const spec = chapter.startsWith("howlrstone") ? HOWLRSTONE_CHAPTERS.find(c => c.key === chapter) : CHAPTERS.find(c => c.key === chapter);
     if (spec) Object.assign(stage, stageSize(spec.width, spec.height, i + 1, encounter ? i + 1 : -1, !!encounter));
@@ -2325,5 +2325,6 @@ for (const [chapter, plan] of Object.entries(CHAPTER_STORY_PLAN)) {
         }
       }
     }
+    if (!stage.enemies.length) stage.repeat = undefined;
   }
 }

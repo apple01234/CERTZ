@@ -2,6 +2,7 @@ import type Phaser from "phaser";
 import terrain from "../../../public/assets/chapter-terrain/manifest.json" with { type: "json" };
 import { chapterPlace, type Place, type TerrainMaterial } from "../chapterStoryPlan";
 import type { RoomLayout } from "../mapgen";
+import { nextStepToward } from "../navigation";
 import type { AuthoredMapRender } from "./AuthoredMapLayers";
 
 export const TERRAIN_KEY = "chapter_terrain";
@@ -26,17 +27,30 @@ export function chapterTerrainData(lay: RoomLayout, place: Place) {
     }
     return mat.tiles[((c * 37 + r * 61) ^ (c * r * 7)) % mat.tiles.length];
   };
+  // Reuse gameplay navigation to draw ONE continuous road, rather than a cross in every cell.
+  const road = new Set<number>();
+  const paint = (x: number, y: number) => { for (const dx of [-1, 0]) for (const dy of [-1, 0]) road.add((y + dy) * cols + x + dx); };
+  let cur = lay.entry;
+  for (let count = 0; count < lay.open.length && cur !== lay.exit; count++) {
+    const next = nextStepToward(lay, cur, lay.exit); if (next === null) break;
+    const x0 = cur % lay.cols * detail + 2, y0 = Math.floor(cur / lay.cols) * detail + 2;
+    const x1 = next % lay.cols * detail + 2, y1 = Math.floor(next / lay.cols) * detail + 2;
+    for (let i = 0; i <= detail; i++) paint(x0 + Math.sign(x1 - x0) * i, y0 + Math.sign(y1 - y0) * i);
+    cur = next;
+  }
   const ground: number[][] = [], border: number[][] = [];
   for (let r = 0; r < rows; r++) {
     const g: number[] = [], b: number[] = [];
     for (let c = 0; c < cols; c++) {
       const isOpen = open(c, r);
-      const mat = lay.authored?.paths[cellOf(c, r)] ? place.path : place.floor;
+      const mat = road.has(r * cols + c) ? place.path : place.floor;
       g.push(isOpen ? tile(mat, c, r) : -1);
       if (isOpen) b.push(-1);
       else if (place.border === "water") b.push(materials.water.center);
       else if (open(c, r - 1)) b.push(materials.rock.tiles[9 + c % 3]); // actual vertical rock face, not another floor texture
-      else b.push(materials.rock.tiles[4]);
+      else if (place.role === "cliff" || place.role === "road" || place.role === "garden" || place.role === "sanctuary" || place.role === "village" || place.role === "camp") {
+        b.push(open(c, r + 1) || open(c - 1, r) || open(c + 1, r) ? materials.rock.tiles[4] : -1);
+      } else b.push(materials.rock.tiles[4]);
     }
     ground.push(g); border.push(b);
   }

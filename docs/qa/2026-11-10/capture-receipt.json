@@ -1,0 +1,29 @@
+{
+  "runId": "run_1794268521187_3b6a8e9e6d5642d28c5475bfcbb36bb5",
+  "status": "completed",
+  "durationMs": 110302,
+  "processExitCode": 0,
+  "evidence": {
+    "adapterReportedGpuCompletionIdentity": false,
+    "adapterReportedGpuExecution": false,
+    "adapterReportedHardwarePerformance": false,
+    "artifactRosterClosedAndHashed": true,
+    "captureContractValidated": true,
+    "commandExecuted": true,
+    "evidenceCeiling": "The harness proves process status, schema validation, decoded raster bytes, and a closed SHA-256 artifact roster. GPU completion and hardware timing remain source-adapter claims unless separately joined to native evidence; no human visual review is inferred. This run was software-rasterized. It proves pipeline logic, shader arithmetic against a reference implementation, and asset correctness. It proves NOTHING about hardware GPU execution, driver behaviour, precision, or any timing property of real hardware, and its timing measurements are inadmissible. Any GPU claim the adapter made for this run has been refused.",
+    "hardwareGpuExecutionProvenByHarnessAlone": false,
+    "hardwarePerformanceEvidenceAdmitted": false,
+    "hardwarePerformanceMeasuredByHarnessAlone": false,
+    "humanVisualReviewPerformed": false,
+    "processExitedSuccessfully": true,
+    "rasterBytesDecoded": true,
+    "refusedAdapterClaims": [],
+    "rendererClass": "software",
+    "softwareRasterizedLane": true
+  },
+  "sourceRunPath": "/workspace/game-dev-workspace/.game-dev/runs/run_1794268521187_3b6a8e9e6d5642d28c5475bfcbb36bb5",
+  "verifiedManifestSHA256": "edb5408259428a33fc84a586e4ed44c0de229515f58ee6fdd6384850c9e9f0cc",
+  "captureVerifyPassed": true,
+  "visualAnalyzePassed": true,
+  "decodedRasters": 13
+}
