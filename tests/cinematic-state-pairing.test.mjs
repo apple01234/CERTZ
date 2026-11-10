@@ -23,45 +23,14 @@ const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm,
  *
  * 이 테스트는 그 계약이 되돌려지지 않게 고정한다.
  */
-test('프롤로그는 씬 shutdown 에서도 cinematic:state 를 해제한다', async () => {
-  const src = await readFile(path.join(ROOT, "src/game/scenes/WorldScene.ts"), "utf8");
-  const code = strip(src);
-
-  const start = code.indexOf("private showPrologue");
-  assert.ok(start > 0, "showPrologue 를 찾지 못했다");
-  const end = code.indexOf("\n  private ", start + 20);
-  const body = code.slice(start, end > 0 ? end : start + 8000);
-
-  /* 씬 종료 훅이 등록돼야 한다 */
-  assert.match(
-    body,
-    /events\.once\(\s*["']shutdown["']/,
-    'showPrologue 가 shutdown 훅을 걸지 않는다 — 프롤로그 중 씬이 내려가면 ' +
-    'cinematic:state 가 active:true 로 남아 HUD 가 영구히 사라진다',
-  );
-
-  /* 훅 본문이 실제로 active:false 를 발신하는지 */
-  const hookIdx = body.search(/events\.once\(\s*["']shutdown["']/);
-  const after = body.slice(Math.max(0, hookIdx - 900), hookIdx + 60);
-  assert.match(
-    after,
-    /cinematic:state["']\s*,\s*\{\s*active:\s*false\s*\}/,
-    "shutdown 훅이 cinematic:state { active: false } 를 발신하지 않는다",
-  );
-
-  /* 정상 종료 경로(cleanup)도 여전히 해제해야 한다 */
-  assert.match(
-    body,
-    /cinematic:state["']\s*,\s*\{\s*active:\s*false\s*\}/,
-    "cleanup 경로의 해제가 사라졌다",
-  );
-
-  /* 훅을 cleanup 에서 해제해야 중복 발신/누수가 없다 */
-  assert.match(
-    body,
-    /events\.off\(\s*["']shutdown["']/,
-    "cleanup 이 shutdown 훅을 해제하지 않는다 — 씬 재시작 시 이전 클로저가 남는다",
-  );
+test('black prologue is removed; opening uses the shared cinematic owner', async () => {
+  const world = strip(await readFile(path.join(ROOT, "src/game/scenes/WorldScene.ts"), "utf8"));
+  assert.equal(world.includes("showPrologue"), false);
+  assert.match(world, /playTutorialCinematic/);
+  const owner = strip(await readFile(path.join(ROOT, "src/game/fx/sceneCinematic.ts"), "utf8"));
+  assert.match(owner, /events.once\("shutdown", shutdown\)/);
+  assert.match(owner, /events.off\("shutdown", shutdown\)/);
+  assert.match(owner, /announce\(false\)/);
 });
 
 test('cinematic:state 는 true/false 쌍으로만 발신된다', async () => {
@@ -78,7 +47,7 @@ test('cinematic:state 는 true/false 쌍으로만 발신된다', async () => {
 });
 
 test('GameRoot 는 cinematic:state 만으로 HUD 를 결정한다 (플래그 계약)', async () => {
-  const src = await readFile(path.join(ROOT, "src/components/game/GameRoot.tsx"), "utf8");
+  const src = await readFile(path.join(ROOT, "src/components/game/useGameUi.ts"), "utf8");
   assert.match(
     strip(src),
     /EventBus\.on\(\s*["']cinematic:state["']/,

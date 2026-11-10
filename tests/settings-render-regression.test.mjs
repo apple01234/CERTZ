@@ -70,8 +70,8 @@ function visit(n) {
 }
 visit(ast);
 test('panel shake event has an on/off listener pair', () => {
-  assert.ok(/EventBus\.on\("fx:shake", onFxShake\)/.test(scene), 'fx:shake listener missing');
-  assert.ok(/EventBus\.off\("fx:shake", onFxShake\)/.test(scene), 'fx:shake cleanup missing');
+  assert.ok(/listen\("fx:shake", onFxShake\)/.test(scene), 'fx:shake listener missing');
+  assert.ok(/unlisten\("fx:shake", onFxShake\)/.test(scene), 'fx:shake cleanup missing');
 });
 test('real scene handler saves the selected value and cancels an active shake', () => {
   assert.ok(shakeHandler, 'onFxShake handler is missing');

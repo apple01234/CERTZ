@@ -89,8 +89,8 @@ const eq = (n, a, b) => { assert.deepEqual(a, b, `✗ ${n}`); checks++; };
 /* ═══ 3. WorldScene 이 ui:panelKeys 를 실제로 소비하는가 (재사용 전제 검증) ═══ */
 {
   const ws = read("src/game/scenes/WorldScene.ts");
-  ok("WorldScene 이 ui:panelKeys 를 구독한다", /EventBus\.on\(\s*["']ui:panelKeys["']/.test(ws));
-  ok("WorldScene 이 해제도 한다", /EventBus\.off\(\s*["']ui:panelKeys["']/.test(ws));
+  ok("WorldScene 이 ui:panelKeys 를 구독한다", /listen\(\s*["']ui:panelKeys["']/.test(ws));
+  ok("WorldScene 이 해제도 한다", /unlisten\(\s*["']ui:panelKeys["']/.test(ws));
 }
 
 /* ═══ 4. 기존 패턴(Panels.useListNav)과 같은 규칙을 쓰는지 ═══ */

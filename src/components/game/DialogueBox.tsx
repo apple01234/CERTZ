@@ -186,6 +186,16 @@ export function DialogueBox({
   const timer = useRef<number | null>(null);
   const holdTimer = useRef<number | null>(null);
   const lastAdvance = useRef(0);
+  const choiceSettled = useRef(false);
+  const choiceKeyHeld = useRef<string | null>(null);
+  useEffect(() => { choiceSettled.current = false; }, [dialogue]);
+  useEffect(() => {
+    const release = (e: KeyboardEvent) => { if (e.code === choiceKeyHeld.current) choiceKeyHeld.current = null; };
+    const blur = () => { choiceKeyHeld.current = null; };
+    window.addEventListener("keyup", release);
+    window.addEventListener("blur", blur);
+    return () => { window.removeEventListener("keyup", release); window.removeEventListener("blur", blur); };
+  }, []);
 
   const name = getPlayerName();
   // {name} 치환 — 플레이어가 지은 이름이 대사에 반영됨
@@ -233,6 +243,7 @@ export function DialogueBox({
   }, [dialogue]);
 
   const advance = () => {
+    if (hasChoices || choiceSettled.current || choiceKeyHeld.current) return;
     if (shown.length < line.length) {
       // 타이핑 스킵
       if (timer.current) window.clearInterval(timer.current);
@@ -355,10 +366,17 @@ export function DialogueBox({
     idx >= (dialogue?.lines.length ?? 0) - 1 && shown.length >= line.length;
 
   const pickChoice = (c: { id: string } | undefined) => {
-    if (!c) return;
+    if (!c || !hasChoices || choiceSettled.current || performance.now() - openedAt.current < OPEN_GUARD_MS) return;
+    choiceSettled.current = true;
+    stopHold();
     audio.sfx.uiClick();
-    EventBus.emit("dialogue:choice", { id: c.id });
-    EventBus.emit("dialogue:done");
+    // A choice handler can synchronously open its next dialogue; never close that new session.
+    let replaced = false;
+    const onShow = () => { replaced = true; };
+    EventBus.on("dialogue:show", onShow);
+    try { EventBus.emit("dialogue:choice", { id: c.id }); }
+    finally { EventBus.off("dialogue:show", onShow); }
+    if (!replaced) EventBus.emit("dialogue:done");
   };
 
   /* 선택지가 새로 열리면 강조를 첫 항목으로 되돌린다 */
@@ -391,8 +409,9 @@ export function DialogueBox({
         setChoiceIdx((i) => (i - 1 + n) % n);
       } else if (e.code === "Enter" || e.code === "NumpadEnter" || e.code === "Space") {
         /* 대사를 연 그 키다운이 선택까지 확정하지 않게 열림 직후는 무시 (advance 와 같은 가드) */
-        if (performance.now() - openedAt.current < OPEN_GUARD_MS) return;
+        if (e.repeat || choiceKeyHeld.current || performance.now() - openedAt.current < OPEN_GUARD_MS) return;
         e.preventDefault();
+        choiceKeyHeld.current = e.code;
         pickChoice(choiceRef.current.list[choiceRef.current.at]);
       }
     };
@@ -461,7 +480,7 @@ export function DialogueBox({
             )}
           </p>
           {/* vc143 (#10) — 선택형 대화: 마지막 줄 완료 시 선택지 버튼 (보스전 퇴장 관리인 등).
-           *  클릭 시 dialogue:choice 발신 + dialogue:done으로 종료 — 컨테이너 홀드 진행과 충돌 없게 stopPropagation */}
+           *  선택 응답을 한 번만 발신 — 다음 대사가 열리면 종료 신호를 넘기지 않고 홀드 전파도 차단 */}
           {hasChoices && (
             <div className="mt-2 flex flex-col gap-1.5" onPointerDown={(e) => e.stopPropagation()}>
               {choiceList.map((c, i) => {

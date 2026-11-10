@@ -25,6 +25,7 @@ import * as audio from "@/game/audio";
 import { useGameUi } from "./useGameUi";
 import { loadMuted, writeMuted } from "@/game/config";
 import { installCrashGuard } from "./crashGuard"; // v1.0.20 — 크래시 가드 (검은 화면 → 복구 오버레이)
+import { tutorialAllows } from "@/game/tutorialFlow";
 
 /**
  * 게임 루트: Phaser 캔버스 + React UI 오버레이의 합체점
@@ -33,9 +34,13 @@ import { installCrashGuard } from "./crashGuard"; // v1.0.20 — 크래시 가�
 export default function GameRoot() {
   const parentRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
-  const { state, hud, quest, questLog, skills, dialogue, boss, banner, end, rpg, panel, setPanel } = useGameUi();
+  const { state, hud, quest, questLog, skills, dialogue, boss, banner, end, rpg, panel, setPanel, canOpenPanel, cinematic, tutorial } = useGameUi();
+  const learning = tutorial.active && tutorial.step !== null;
+  const ordinaryUiHidden = cinematic || learning;
+  const panelHidden = cinematic || (learning && !!panel && !tutorialAllows(tutorial.step, panel));
   /* v4.1.7 — 패널 개폐 UI음 (유니티 에셋스토어 유료 SFX): HUD 버튼 토글 클릭음 + 열림 사운드 */
   const togglePanelSfx = (key: "inv" | "job" | "stat" | "quest" | "boss" | "benefit" | "content" | "opt" | "union" | "trade" | "rank" | "guide") => { // v1.3.0 — +rank · v1.4.12 — +guide
+    if (!canOpenPanel(key)) return;
     audio.sfx.uiClick();
     const opening = panel !== key;
     setPanel(opening ? key : null);
@@ -119,12 +124,12 @@ export default function GameRoot() {
     const onPop = () => {
       // 뒤로가기가 소비됨 — 확인 메뉴를 띄우고 가드를 다시 건다.
       armed = false;
-      setExitMenuOpen(true);
+      if (canOpenPanel("opt")) setExitMenuOpen(true);
       arm();
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
-  }, []);
+  }, [canOpenPanel]);
 
   /* v1.0.20 — 크래시 가드: 미처리 예외가 검은 화면 대신 복구 오버레이를 띄우게 한다 */
   useEffect(() => {
@@ -197,26 +202,27 @@ export default function GameRoot() {
     return () => {
       EventBus.off("ui:playerInfo", onInfo);
     };
-  }, []);
+  }, [setPanel]);
 
-  /* 하루 v2 — 컷씬 중에는 HUD·조작 버튼·보상 팝업을 숨긴다(대사창·연출을 가리던 문제).
-   *  숨겨진 동안 도착한 팝업은 상태가 남아 있다가 연출이 끝나면 이어서 보인다. */
-  const [cinematic, setCinematic] = useState(false);
+  // 실제 가방이 화면에 열린 뒤 플레이어가 닫았을 때만 실습을 완료한다.
+  const inventoryWasVisible = useRef(false);
+  const tutorialInventoryVisible = state === "playing" && !panelHidden && panel === "inv" && learning && tutorial.step === "inventory";
   useEffect(() => {
-    const on = (e?: { active?: boolean }) => setCinematic(!!e?.active);
-    EventBus.on("cinematic:state", on);
-    return () => { EventBus.off("cinematic:state", on); };
-  }, []);
+    const wasVisible = inventoryWasVisible.current;
+    inventoryWasVisible.current = tutorialInventoryVisible;
+    if (tutorialInventoryVisible && !wasVisible) EventBus.emit("tut:notify", { ev: "inventory_open" });
+    if (!tutorialInventoryVisible && wasVisible) EventBus.emit("tut:notify", { ev: "inventory_close" });
+  }, [tutorialInventoryVisible]);
 
   return (
-    <div className="game-root fixed inset-0 select-none overflow-hidden bg-[#05070d]">
+    <div className="game-root fixed inset-0 select-none overflow-hidden bg-[#05070d]" data-tutorial-step={learning ? tutorial.step : undefined}>
       {/* Phaser 캔버스가 들어갈 부모 — FIT 스케일이 이 영역을 채움 */}
       <div ref={parentRef} className="absolute inset-0 touch-none" aria-label="게임 화면" />
 
       {/* 오버레이 UI 레이어 */}
       <div className="pointer-events-none absolute inset-0">
         {state === "playing" && (
-          <div className={cinematic ? "hidden" : "contents"} data-cinematic={cinematic || undefined}>
+          <div className={ordinaryUiHidden ? "hidden" : "contents"} data-cinematic={cinematic || undefined}>
             <div className="pointer-events-auto contents">
               <HUD
                 hud={hud}
@@ -246,9 +252,35 @@ export default function GameRoot() {
                 /* v1.3.0 (#2) — onOpenMenu 제거: HUD ☰ 버튼 삭제, 메뉴 나가기는 설정 패널로 */
               />
             </div>
+            {/* 상호작용 프롬프트 — NPC 대화/상점 (E키·모바일 버튼 공용)
+                v3.0.5 — TouchControls보다 위에 렌더링 (조이스틱 레이어가 칩을 덮는 문제 수정) */}
+            {/* v3.0.16 — 퀘스트 보상 수령 팝업 (메이플식 보상 내역 창) */}
+            <RewardPopup />
+            {/* v4.0.0 — 이세카이 게이트 오버레이 (카드 선택/실버 상점 + 상단 게이트 HUD) */}
+            <GateHud />
+            <GateCardOverlay />
+            <Banner text={banner} />
+            <BossBar boss={boss} />
+            {/* v1.4.27-w1 (#멀티릴레이) — 채팅/파티 UI 복원: 소켓 없는 ②안 배포에서도
+             *  HTTP 릴레이(/api/chat·/api/party 폴링)로 실제 동작한다 (net.ts 위임).
+             *  멀티 아이콘·ServerConnect는 철거 유지 — 파티는 더보기 메뉴/Y키. */}
+            <ChatBox />
+            <PartyWidget />
+            {/* v1.4.30 (#9) — 클래스룸 (교실 모드·더보기/L키) */}
+            <ClassroomPanel />
+            {/* 친구 위젯 (v2.1 — 친구코드·고유번호) */}
+            <FriendsWidget />
+            {/* 계정 위젯 (v4.9.0 — 자체 회원가입/로그인 + SNS 연동 + 클라우드 세이브) */}
+            <AuthPanel />
+          </div>
+        )}
+
+        {state === "playing" && (
+          <div className={cinematic ? "hidden" : "contents"}>
             {!panel && (
               <div className="pointer-events-auto contents">
                 <TouchControls
+                  tutorial={tutorial}
                   skills={skills}
                   hpPot={rpg.hpPot}
                   mpPot={rpg.mpPot}
@@ -266,27 +298,19 @@ export default function GameRoot() {
                 />
               </div>
             )}
-            {/* 상호작용 프롬프트 — NPC 대화/상점 (E키·모바일 버튼 공용)
-                v3.0.5 — TouchControls보다 위에 렌더링 (조이스틱 레이어가 칩을 덮는 문제 수정) */}
-            {/* v3.0.16 — 퀘스트 보상 수령 팝업 (메이플식 보상 내역 창) */}
-            <RewardPopup />
-            {/* v4.0.0 — 이세카이 게이트 오버레이 (카드 선택/실버 상점 + 상단 게이트 HUD) */}
-            <GateHud />
-            <GateCardOverlay />
-            <InteractPrompt />
-            <Banner text={banner} />
-            <BossBar boss={boss} />
-            {/* v1.4.27-w1 (#멀티릴레이) — 채팅/파티 UI 복원: 소켓 없는 ②안 배포에서도
-             *  HTTP 릴레이(/api/chat·/api/party 폴링)로 실제 동작한다 (net.ts 위임).
-             *  멀티 아이콘·ServerConnect는 철거 유지 — 파티는 더보기 메뉴/Y키. */}
-            <ChatBox />
-            <PartyWidget />
-            {/* v1.4.30 (#9) — 클래스룸 (교실 모드·더보기/L키) */}
-            <ClassroomPanel />
-            {/* 친구 위젯 (v2.1 — 친구코드·고유번호) */}
-            <FriendsWidget />
-            {/* 계정 위젯 (v4.9.0 — 자체 회원가입/로그인 + SNS 연동 + 클라우드 세이브) */}
-            <AuthPanel />
+            <div className={!learning || tutorialAllows(tutorial.step, "interact") ? "contents" : "hidden"} data-tutorial-control="interact">
+              <InteractPrompt />
+            </div>
+            {learning && (tutorial.step === "inventory" || tutorialAllows(tutorial.step, "quest")) && (
+              <button
+                data-tutorial-control={tutorial.step === "inventory" ? "inv" : "quest"}
+                className="pointer-events-auto absolute right-3 top-3 z-30 flex items-center gap-2 rounded-lg border-2 border-amber-200/70 bg-slate-950/95 px-3 py-2 text-[13px] font-black text-amber-100 shadow-lg active:scale-95"
+                onClick={() => togglePanelSfx(tutorial.step === "inventory" ? "inv" : "quest")}
+              >
+                <img src={tutorial.step === "inventory" ? "/assets/ui/ui_bag.webp" : "/assets/ui/ui_quest.webp"} alt="" className="h-6 w-6" style={{ imageRendering: "pixelated" }} />
+                {tutorial.step === "inventory" ? "가방 확인" : "퀘스트 확인"}
+              </button>
+            )}
           </div>
         )}
 
@@ -325,40 +349,44 @@ export default function GameRoot() {
         )}
 
         {end && (
-          <div className="pointer-events-auto contents">
+          <div className={ordinaryUiHidden ? "hidden" : "pointer-events-auto contents"}>
             <EndScreen end={end} />
           </div>
         )}
 
         {/* 인트로 이름 짓기 패널 */}
-        <NamePanel />
-        <div className={cinematic ? "hidden" : "contents"}>
+        <div className={ordinaryUiHidden ? "hidden" : "contents"}>
+          <NamePanel />
           <FeatureTutorialOverlay />
         </div>
 
-        <GamePanels panel={panel} rpg={rpg} hud={hud} questLog={questLog} onClose={() => { audio.sfx.uiClose(); setPanel(null); }} />
+        <div className={panelHidden ? "hidden" : "contents"}>
+          <GamePanels tutorialQuest={learning && tutorialAllows(tutorial.step, "quest")} inventoryTab={learning && tutorial.step === "inventory" ? "pot" : undefined} panel={panel} rpg={rpg} hud={hud} questLog={questLog} onClose={() => { audio.sfx.uiClose(); setPanel(null); }} />
+        </div>
 
         {/* v1.0.18 — 유니온 패널 (GamePanels 밖 — 스토어 직접 참조라 rpg 상태 불요) */}
-        {panel === "union" && <UnionPanel onClose={() => { audio.sfx.uiClose(); setPanel(null); }} />}
+        <div className={ordinaryUiHidden ? "hidden" : "contents"}>
+          {panel === "union" && <UnionPanel onClose={() => { audio.sfx.uiClose(); setPanel(null); }} />}
 
-        {/* v1.0.19 (A-2) — 가로 유지 프롬프트: 닫기 가능 (세로 플레이 허용) */}
-        <RotatePrompt active={portraitMobile && !rotateDismissed} onDismiss={() => setRotateDismissed(true)} />
+          {/* v1.0.19 (A-2) — 가로 유지 프롬프트: 닫기 가능 (세로 플레이 허용) */}
+          <RotatePrompt active={portraitMobile && !rotateDismissed} onDismiss={() => setRotateDismissed(true)} />
 
-        {/* v1.1.6 (#개편 C39) — 세이브 저장 실패 경고. 놓치면 진행이 날아가므로
-            화면 하단에 고정하고 12초간 유지한다(탭하면 닫힘). */}
-        {saveWarn && (
-          <div
-            role="alert"
-            className="pointer-events-auto absolute inset-x-2 bottom-2 z-[70] mx-auto max-w-[560px] cursor-pointer rounded-lg border border-rose-400/60 bg-rose-950/95 px-3 py-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.6)]"
-            onClick={() => setSaveWarn(null)}
-          >
-            <p className="text-[12px] font-black text-rose-100">⚠ 저장 경고</p>
-            <p className="mt-0.5 text-[11px] font-bold leading-snug text-rose-100/85">{saveWarn}</p>
-          </div>
-        )}
+          {/* v1.1.6 (#개편 C39) — 세이브 저장 실패 경고. 놓치면 진행이 날아가므로
+              화면 하단에 고정하고 12초간 유지한다(탭하면 닫힘). */}
+          {saveWarn && (
+            <div
+              role="alert"
+              className="pointer-events-auto absolute inset-x-2 bottom-2 z-[70] mx-auto max-w-[560px] cursor-pointer rounded-lg border border-rose-400/60 bg-rose-950/95 px-3 py-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.6)]"
+              onClick={() => setSaveWarn(null)}
+            >
+              <p className="text-[12px] font-black text-rose-100">⚠ 저장 경고</p>
+              <p className="mt-0.5 text-[11px] font-bold leading-snug text-rose-100/85">{saveWarn}</p>
+            </div>
+          )}
 
-        {/* v1.2.1 (#6) — 메뉴 나가기 확인 (캐릭터 선택/게임 시작 화면) */}
-        <ExitMenuOverlay open={exitMenuOpen} onClose={() => setExitMenuOpen(false)} />
+          {/* v1.2.1 (#6) — 메뉴 나가기 확인 (캐릭터 선택/게임 시작 화면) */}
+          <ExitMenuOverlay open={exitMenuOpen} onClose={() => setExitMenuOpen(false)} />
+        </div>
 
       </div>
     </div>

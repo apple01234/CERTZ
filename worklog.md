@@ -5115,3 +5115,13 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
 - PC Shift와 모바일 돌진 이벤트를 공유하고, MP·쿨·무적 없이 약 126px 이동한다. swept 벽/월드 경계 판정, 중복 방지, 상태 중단을 구현했다. 신규 이미지/오디오/FX는 만들지 않았다.
 - 검증: `npx tsc --noEmit`, `npm run lint:strict`, 호환 로더 전체 554 tests 통과. 상세 제한 및 화면 검증 미수행 사항은 `docs/rebirth/QA_EVIDENCE.md`에 기록.
 - `npm run build`는 Next 빌드 뒤 standalone postbuild에서 server.js 탐색 실패. 성공으로 표기하지 않는다. 실제 플레이/모바일/멀티플레이 미검증.
+
+## Task — 2026-11-10 실제 월드 프롤로그/튜토리얼, 최신 main 및 Craft Anything
+
+- 사용자 지정 `2f6f8dd`까지 main을 fast-forward하고 진행 중 변경을 보존해 통합. 독립 무료 돌진/기존 게임 엔진·아이템·메인 퀘스트·기존 저장 형식을 보존.
+- 검은 텍스트 프롤로그 제거. 기존 lilac00/절벽/레지스터 수련터/공용 카메라·대화·필드 의뢰를 실제 조작 학습과 연결. 실제 명중/회피/직접 획득/가방/수락·처치·보고로 진행.
+- tutorialVersion2/introSeen 저장·복원, 기존 세이브 강제 재생 방지, 정상·skip 공통 한 번 보상, 실제 보고 보상과 단계 저장 원자화, 수련 개체/물약/리스너 수명 관리.
+- 공용 선택 경합/키 반복, 컷씬 중 모바일 스킬/패널 및 입력 버퍼, 캔버스 미니맵·퀘스트 표시, live skip 카메라/물리 복원, 세로 HUD 줌 잘림 수정. 실습 가방의 물약 탭 및 실제 퀘스트 패널 사용.
+- 기존 그래픽/오디오만 재사용. 새 게임 에셋 생성 없음. Craft Anything0.6.0 CLI/MCP 설치·검증과 실제 정적 파서 실행을 기록. 기존 분석 자료는 보존.
+- 정식 자동화570개/TypeScript/strict lint/프로덕션 build 통과. 정상 새 캐릭터 전체 실습과 실제 새로고침, 구/완료 저장, 단계 복구·skip, 가로/세로 실제 터치 조이스틱+돌진을 검증. 상세·증거: docs/rebirth/INTERACTIVE_TUTORIAL.md, QA_EVIDENCE.md 및 docs/qa/2026-11-10/tutorial/.
+- 전체 REBIRTH/80항목, Drive 캐릭터 교체, 원격 멀티플레이/APK/실기기 합격으로 표시하지 않음. 항목 원장 및 설치 문서 추가.

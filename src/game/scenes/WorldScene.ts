@@ -31,7 +31,7 @@ import { getTraumaShake, playUltCinematic } from "../fx/UltCinematic"; // v1.4.4
 import { playStoryCutscene } from "../fx/StoryCutscene";
 import { sceneCinematicPlaying } from "../fx/sceneCinematic";
 import { chapterIntroOf, resolveChapterIntroShots, stageIntroOf, stageIntroSeenKey } from "../storyCutscenes";
-import { playAutoCutscene } from "../fx/AutoCutscene"; // v4.9.0 — 메이플식 자동 컷씬
+import { playAutoCutscene, type CutStep } from "../fx/AutoCutscene"; // v4.9.0 — 메이플식 자동 컷씬
 import { CANON_STORY_CHOICES } from "../grandPlanetCanon"; // vc279 — P7c 선택지 정본(id→label)
 import { PixelFxManager } from "../fx/PixelFxManager"; // v4.9.3 — pixelfx 통합 매니저
 import { LILAC_SCENARIOS, lilacScenarioIdAt } from "../lilacScenarios"; // v4.9.0 — 1기 시나리오 데이터
@@ -104,6 +104,7 @@ import { gatherPoolFor, GATHER_BY_KEY, COOK_RECIPES, COOK_BY_KEY, canCook, apply
  *  채집(gatherPoolFor)이 지역별 재료 풀을 고르는 데 계속 쓰므로 타입만 가져온다. */
 import type { FishingZone } from "../fishing";
 import { addAmbientBloom, detachAmbientBloom, spawnPentacle, spawnRingPop, spawnFlarePop, spawnCelebrateBurst } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX · v1.0.13 — 축하 스파클(벚꽃 대체)
+import { TUTORIAL_VERSION, TUTORIAL_STEPS, tutorialAllows, tutorialResume, tutorialStage } from "../tutorialFlow";
 import { Tutorial } from "../Tutorial"; // v1.0.11 — 신규 플레이어 온보딩 튜토리얼 ("튜토리얼 제작" 지시)
 import * as partyContent from "../partyContent"; // v1.4.3 (작업4) — 파티 시너지/파티 퀘스트 보드
 import * as audio from "../audio";
@@ -223,6 +224,10 @@ export class WorldScene extends Phaser.Scene {
   /* v1.0.11 — 튜토리얼 (src/game/Tutorial.ts) — 신규 플레이어 온보딩 컨트롤러 */
   tut: Tutorial | null = null;
   private tutorialDone = false;
+  private tutorialVersion?: number;
+  private introSeen?: boolean;
+  private tutorialNpcSprite: Phaser.GameObjects.Sprite | null = null;
+  private tutorialNpcLabel: Phaser.GameObjects.Text | null = null;
   private tutStep = -1; // -1=미시작/완료, 0..5=진행 중 (세이브 유지 — 마을→사냥터 씬 전환 재개)
   private tutPendingStart = false; // 인트로(이름짓기) 종료 후 시작 예약
   private tutRetryMs = 0; // update 루프 재시도 누적 (타이머 이벤트가 유실되는 레이스 차단용)
@@ -376,6 +381,7 @@ export class WorldScene extends Phaser.Scene {
   /* ----- v2.0: 복귀 차원문 (메이플식 자유 왕복 — 사용자 지시 #8) ----- */
   private returnPortal: Phaser.Physics.Arcade.Sprite | null = null;
   private returnBeacon: Phaser.GameObjects.Image | null = null;
+  private returnLabel: Phaser.GameObjects.Text | null = null;
   private returnActive = false;
   /* ----- v2.0: 정예 몬스터 (구역 5 미드보스급 — 사용자 지시 #5) ----- */
   private eliteEnemy: Enemy | null = null;
@@ -870,6 +876,10 @@ export class WorldScene extends Phaser.Scene {
     this.boss = null;
     this.fragment = null;
     this.portal = null;
+    this.tutorialNpcSprite = null;
+    this.tutorialNpcLabel = null;
+    this.fieldReq = null;
+    this.fieldReqNpcPos = null;
     this.tut = null; // v1.0.11 — 씬 재시작 시 이전 인스턴스 참조 정리 (tutStep은 create에서 세이브로 재개)
     this.tutPendingStart = false;
     this.tutRetryMs = 0;
@@ -986,6 +996,7 @@ export class WorldScene extends Phaser.Scene {
     this.queuedDialogue = null;
     this.returnPortal = null;
     this.returnBeacon = null;
+    this.returnLabel = null;
     this.returnActive = false;
     this.eliteEnemy = null;
     this.jobTrialEnemy = null; // v3.0.22 (#46) — 시험 상대 별도 참조 (처치 판정 정확화)
@@ -1688,8 +1699,13 @@ export class WorldScene extends Phaser.Scene {
       fresh?: boolean;
     };
     const save = data.save;
+    const resumeTutorial = tutorialResume(save);
+    this.tutorialDone = save?.tutorialDone ?? false;
+    this.tutorialVersion = resumeTutorial === null ? save?.tutorialVersion : TUTORIAL_VERSION;
+    this.tutStep = resumeTutorial ?? -1;
+    this.introSeen = save ? save.introSeen : false;
     /* v2.2 — data.stage 명시 시 우선 (실내 진입: save는 village 캐리, stage는 interior) */
-    const rawStage = (data.stage as StageKey | undefined) ?? (save ? (save.stage as StageKey) : "village");
+    const rawStage = resumeTutorial !== null ? tutorialStage(resumeTutorial) : (data.stage as StageKey | undefined) ?? (save ? (save.stage as StageKey) : "village");
     /* 유효하지 않은 스테이지 키(구 세이브/수정 세이브) 방어 — 체인 시작점으로 안전 폴백 (v2.0 구세이브 폴백 내장) */
     const stageKey: StageKey = resolveStage(rawStage);
     this.stageDef = STAGES[stageKey];
@@ -2311,32 +2327,8 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
-    /* v1.0.11 — 튜토리얼 시작/재개 판정 ("튜토리얼 제작" 지시):
-     *  · 신규(이름 없음) — 인트로(이름짓기) 종료 후 시작 예약 (resumeFromDialogue 훅)
-     *  · 이름 있는 유저 + tutorialDone=false + lv≤8 + 마을 — 즉시 시작/재개.
-     *    (tutStep≥0: 진행 중 이어하기 / tutStep=-1: 튜토리얼 도입 전 씬 재시작·구세이브 — v1.0.11 버그 수정:
-     *     인트로 직후 씬이 재시작되면 이름이 있어 pend 경로가 안 타고 tutStep도 -1이라 영영 시작 안 됐다) */
-    const savedTutStep = savedPlayer?.tutStep ?? -1;
-    this.tutorialDone = savedPlayer?.tutorialDone ?? false;
-    if (!this.tutorialDone && stageKey === "village" && !savedPlayer?.playerName) {
-      this.tutPendingStart = true;
-    } else if (!this.tutorialDone && savedTutStep >= 0 && (savedPlayer?.lv ?? 1) <= 8) {
-      /* 진행 중 튜토리얼 — 모든 구역(마을→사냥터 포탈 이동)에서 재개 (v1.0.11 — 마을 한정이라
-       *  사냥터에 도착해도 "첫 전투" 단계가 시작되지 않던 버그 수정).
-       *  시작은 update 루프 재시도(tutRetryMs)로 수행 — 타이머 이벤트가 챕터 컷신/대사 레이스에서
-       *  조용히 유실되는 케이스의 근본 차단 */
-      this.tutStep = savedTutStep;
-      this.tutRetryMs = 1;
-    } else if (!this.tutorialDone && stageKey === "village" && (savedPlayer?.lv ?? 1) <= 8) {
-      /* tutStep=-1인 저레벨 마을 유저(도입 전 씬 재시작·구세이브) — 마을에서 신규 시작 */
-      this.tutStep = 0;
-      this.tutRetryMs = 1;
-    } else if (!this.tutorialDone && (savedPlayer?.lv ?? 1) <= 8 && stageKey !== "dojang" && !this.isInterior) {
-      /* v1.0.11 오염 구제 — 재개 경로 부재 시절(초기 빌드)에 사냥터에서 필드 기본값 -1이
-       *  세이브에 기록된 저레벨 캐릭터: 처치(2) 단계부터 재개 (사냥터 도입부는 전투 학습이 본질) */
-      this.tutStep = 2;
-      this.tutRetryMs = 1;
-    }
+    // 최초 캐릭터와 v2 진행 중 캐릭터만 새 튜토리얼에 진입한다. 구세이브는 보존한다.
+    this.tutStep = resumeTutorial ?? -1;
     /* vc178 (지시 #1·#2) — 이미 레벨이 오른 상태로 접속한 유저(구 세이브)도
      *  안 본 개방 튜토리얼을 순서대로 받는다. 기존 인트로 튜토리얼과 겹치면
      *  tickFeatureTutorial의 busy 게이트가 알아서 미룬다. */
@@ -2351,12 +2343,12 @@ export class WorldScene extends Phaser.Scene {
      *  "컨텐츠마다 NPC UI가 뜨는데 아무 의미 없다"는 지적으로 이어졌다 */
     const isContentStage = stageKey === "tower" || stageKey === "park" || stageKey === "gate" || stageKey === "closet" || stageKey === "dojang";
     // Restore the player first; one director owns physics/input until its final shot.
-    const directedIntro = !this.isInterior && !isContentStage &&
+    const directedIntro = resumeTutorial === null && !this.isInterior && !isContentStage &&
       (this.playLilacOpeningCutscene(stageKey) || this.playChapterIntroCutscene(stageKey));
-    if (!this.isInterior && !isContentStage && !directedIntro) {
+    if (resumeTutorial === null && !this.isInterior && !isContentStage && !directedIntro) {
       if (stageKey === "village" && !savedPlayer?.playerName) {
         // v1.1.0 (#18) — 신규 플레이어: 프롤로그 시네마틱(내레이션 4비트) → 플레이형 인트로(이동 → 우물 → 이름 짓기)
-        this.showPrologue(() => this.startIntroSequence());
+        this.startIntroSequence();
       } else {
         const spec = chapterSpec(stageKey);
         const introId = stageIntro(stageKey);
@@ -2376,19 +2368,20 @@ export class WorldScene extends Phaser.Scene {
         } else {
           /* v1.1.0 (#18) — 로비 생성 신규 캐릭터(introSeen=false): 프롤로그 시네마틱 → 기존 구역 안내 대사 순서 연결.
            *  구세이브(introSeen undefined)는 프롤로그 없이 기존 흐름 그대로 */
-          const freshLobby = (savedPlayer as { introSeen?: boolean } | undefined)?.introSeen === false;
           const runStageIntro = () => {
             this.time.delayedCall(400, () => {
               this.showDialogueOnce(introId);
             });
           };
-          if (freshLobby && stageKey === "village") this.showPrologue(runStageIntro);
-          else runStageIntro();
+          runStageIntro();
         }
       }
     }
 
     EventBus.emit("ui:playing");
+    if (resumeTutorial !== null) this.startTutorial(resumeTutorial);
+    else if (stageKey === "howlrstone1x2") this.addHistoryNpc();
+    else EventBus.emit("tut:state", { active: false, step: null });
     this.emitHud();
     this.emitQuest();
     this.emitRpgState();
@@ -2521,19 +2514,23 @@ export class WorldScene extends Phaser.Scene {
   /* v4.9.0 — 영준프린세스 1기 자동 진행 컷씬 실행기.
    *  메이플식: 레터박스 → 카메라 팬 → 배우 등장 → 자동 대사 → 퇴장.
    *  챕터당 1회만(세이브 기록). 재생 중이면 기존 인트로가 playing 게이트로 밀린다. */
-  private playLilacOpeningCutscene(stageKey: StageKey): boolean {
+  playTutorialCinematic(steps: CutStep[] | null, done: () => void): boolean {
+    return this.playLilacOpeningCutscene(this.stageDef.key, { steps, done });
+  }
+
+  private playLilacOpeningCutscene(stageKey: StageKey, tutorial?: { steps: CutStep[] | null; done: () => void }): boolean {
     const parsed = parseStage(stageKey);
     const scenId = lilacScenarioIdAt(parsed.ch, parsed.sub);
-    const scen = scenId ? LILAC_SCENARIOS[scenId] : undefined;
+    const scen = tutorial ? { id: `tutorial_${this.tutStep}`, steps: tutorial.steps ?? LILAC_SCENARIOS.lilac00.steps } : scenId ? LILAC_SCENARIOS[scenId] : undefined;
     if (!scen) return false;
     const seenKey = `lilacCut_rea1_${scen.id}`;
-    if (this.cutsceneSeen.includes(seenKey)) return false;
+    if (!tutorial && this.cutsceneSeen.includes(seenKey)) return false;
     const cliff = this.layout?.authored?.landmarks.find((p) => p.kind === "cliff");
-    const feature = cliff && this.layout ? {
+    const feature = tutorial?.steps ? this.tutorialPoint(80, -45) : cliff && this.layout ? {
       x: (cliff.cell % this.layout.cols + 0.5) * this.layout.cellW,
       y: (Math.floor(cliff.cell / this.layout.cols) + 0.5) * this.layout.cellH,
     } : this.cutsceneActorPosition({ x: this.portalHome.x - 128, y: this.portalHome.y + 48 });
-    EventBus.emit("cinematic:state", { active: true });
+    this.resetInputState();
     const started = playAutoCutscene(this, {
       id: scen.id,
       stageW: this.stageW,
@@ -2541,13 +2538,14 @@ export class WorldScene extends Phaser.Scene {
       anchors: { entry: this.entryHome, feature },
       steps: scen.steps,
     }, () => {
+      if (tutorial) { this.resetInputState(); tutorial.done(); return; }
       if (!this.cutsceneSeen.includes(seenKey)) {
         this.cutsceneSeen = [...this.cutsceneSeen, seenKey];
         this.saveSoon();
       }
     }, {
       actorPosition: (p, occupied) => this.cutsceneActorPosition(p, occupied),
-      onFinish: () => EventBus.emit("cinematic:state", { active: false }),
+      onFinish: () => this.resetInputState(),
       /* 하루 v2 — 연출 대사도 NPC 대화와 같은 공용 대사창(DialogueBox)으로 보낸다. */
       say: (speaker, lines, done) => {
         const cancel = this.onCutsceneDialogueEnd(done);
@@ -2595,7 +2593,6 @@ export class WorldScene extends Phaser.Scene {
         return opt?.label;
       },
     });
-    if (!started) EventBus.emit("cinematic:state", { active: false });
     return started;
   }
 
@@ -2674,7 +2671,7 @@ export class WorldScene extends Phaser.Scene {
 
   cinematicObstructions() {
     return [this.portal, this.portalSwirl?.obj ?? null, this.portalMagicA, this.portalMagicB,
-      this.portalBeacon, this.portalLabel, this.edgeArrow, this.edgeLabel, this.questMark, ...this.enemies].filter((o) => o !== null);
+      this.portalBeacon, this.portalLabel, this.edgeArrow, this.edgeLabel, this.questMark, this.minimap, this.returnPortal, this.returnBeacon, this.returnLabel, this.locLabel, this.playerNameTag, this.tutorialNpcSprite, this.tutorialNpcLabel, ...this.enemies].filter((o) => o !== null);
   }
 
   private applyManualCameraFollow(dt: number) {
@@ -4194,6 +4191,7 @@ export class WorldScene extends Phaser.Scene {
     opts?: { delay?: number; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; save?: SaveData }
   ) {
     if (this.transitioning) return;
+    if (this.tut && !(this.tut.currentId === "training" && target === "howlrstone1x2")) return;
     /* v1.4.30 (#12 보스전 포탈 차단) — 보스전(스토리·재림·GM 체험·공동토벌전) 도중에는
      *  모든 구역 전환을 차단한다. 전진/복귀 포탈·부적 워프·친구 따라가기·공동토벌전
      *  입장·긴급귀환이 전부 startTransition 단일 통로를 지나므로 여기서 한 번만 막으면
@@ -4404,7 +4402,7 @@ export class WorldScene extends Phaser.Scene {
       yoyo: true,
       repeat: -1,
     });
-    this.add
+    this.returnLabel = this.add
       .text(rx, ry - 46, `← ${STAGE_SHORT[prev] ?? "이전 지역"}`, {
         fontFamily: "Galmuri11, sans-serif",
         fontSize: "11px",
@@ -5768,7 +5766,9 @@ export class WorldScene extends Phaser.Scene {
       this.fieldReq = null;
       this.refreshFieldReqLabel();
       this.emitRpgState();
-      this.saveSoon();
+      if (this.tut?.currentId === "reward") this.saveTutorialProgress(12);
+      this.flushSave();
+      this.tut?.notify("reward");
       return;
     }
     if (this.fieldReq) {
@@ -5781,13 +5781,14 @@ export class WorldScene extends Phaser.Scene {
     }
     /* 수주 — 목표는 이 맵 토착 몬스터 최다종 */
     const pool = this.stageDef?.enemies ?? [];
-    const top = pool.slice().sort((a, b) => b.count - a.count)[0];
+    const training = this.tut?.currentId === "accept";
+    const top = training ? { key: "x2_rat" as EnemyKey, count: 1 } : pool.slice().sort((a, b) => b.count - a.count)[0];
     if (!top) {
       this.showDialogue(DIALOGUES[baseDlg] ? baseDlg : baseDlg, npcName === "" ? null : null);
       return;
     }
-    const mobName = ENEMIES[top.key]?.name ?? top.key;
-    const need = 8 + this.fieldReqBonus + Phaser.Math.Between(0, 4);
+    const mobName = training ? "수련용 쥐" : ENEMIES[top.key]?.name ?? top.key;
+    const need = training ? 1 : 8 + this.fieldReqBonus + Phaser.Math.Between(0, 4);
     const lv = this.player.lv;
     const dlg = DIALOGUES[baseDlg];
     this.showDialogueRaw({
@@ -5804,7 +5805,7 @@ export class WorldScene extends Phaser.Scene {
       ],
     });
     const onChoice = (v: { id?: string }) => {
-      EventBus.off("dialogue:choice", onChoice as never);
+      cleanupChoice();
       if (v?.id !== "fieldreq_accept") return;
       this.fieldReq = {
         mob: top.key,
@@ -5818,8 +5819,18 @@ export class WorldScene extends Phaser.Scene {
       audio.sfx.questAccept();
       this.showBanner(`[의뢰 수주] ${mobName} ${need}마리 토벌 — 완료 후 NPC에게 보고`);
       this.refreshFieldReqLabel();
+      this.emitQuestLog();
+      this.tut?.notify("accept");
+      this.flushSave();
+    };
+    const cleanupChoice = () => {
+      EventBus.off("dialogue:choice", onChoice as never);
+      EventBus.off("dialogue:done", cleanupChoice);
+      this.events.off("shutdown", cleanupChoice);
     };
     EventBus.on("dialogue:choice", onChoice as never);
+    EventBus.on("dialogue:done", cleanupChoice);
+    this.events.once("shutdown", cleanupChoice);
   }
 
   private acquireDrop(): Drop | null {
@@ -5873,7 +5884,6 @@ export class WorldScene extends Phaser.Scene {
     try {
       this.pxFx?.play(kind === "gold" ? "pickup.gold" : "pickup.item", x, y, { scale: 0.5 });
     } catch { /* 무시 */ }
-    this.tut?.notify("pickup"); // v1.0.11 — 튜토리얼 줍기 학습 판정
     if (kind !== "gold") this.dailyFarms++; // v1.0.7 — 오늘의 파밍 (아이템 드롭 수집 카운트)
     if (kind === "gold") {
       // 펫 골드 보너스 (v1.9 BM — 슬라임 +10%, 핑크이 +20%)
@@ -5908,6 +5918,7 @@ export class WorldScene extends Phaser.Scene {
       this.fifth2Progress({ kind: "collect", key: kind });
       this.emitRpgState();
     }
+    this.tut?.notify("pickup", { kind, viaPet });
   }
 
   /** 획득/보상 안내 텍스트 — v1.0.16: 전용 풀 사용 (데미지 숫자와 서로 굶기지 않는다) */
@@ -5938,6 +5949,9 @@ export class WorldScene extends Phaser.Scene {
   private redrawMinimap() {
     const mm = this.minimap;
     if (!mm || !mm.scene || !this.player) return;
+    const show = !this.tut && !this.camCinema && !sceneCinematicPlaying(this);
+    mm.setVisible(show);
+    if (!show) return;
     const cam = this.cameras.main;
     const z = cam.zoom || 1;
     /* v1.0.14 피드백#4 — 유저 정정 "맵 레이어가 맨 위에 있어야 하는 거지, 맵 위치는 맨아래여야 함":
@@ -6358,7 +6372,6 @@ export class WorldScene extends Phaser.Scene {
   onEnemyKilled(key: EnemyKey, exp: number, spawnX: number, spawnY: number, ref?: Enemy | Boss) {
     // alive 플래그 기준으로 정리 (죽은 개체 즉시 제외)
     this.enemies = this.enemies.filter((e) => e.alive);
-    this.tut?.notify("kill"); // v1.0.11 — 튜토리얼 처치 학습 판정
     if (this.eliteEnemy && !this.eliteEnemy.alive) this.eliteEnemy = null;
     /* v4.1.4 — 침공 보스 격퇴 보상: 에메랄드 확정 + 도전과제 카운트
      *  v1.0.16 밸런스 — +2 → +3 (스폰 주기 6~9분 대비 보상 체감 상향) */
@@ -6545,11 +6558,14 @@ export class WorldScene extends Phaser.Scene {
     this.fifth2Progress({ kind: "hunt", key });
     /* vc147 (#30) — 필드 NPC 의뢰 토벌 카운트 */
     this.fieldReqProgress(key);
+    this.tut?.notify("kill", { enemy: ref });
     // 리스폰 예약 — v2.3 단축: 9~13초 → 3.2~4.8초 (지시 #2 — 리젠이 너무 길어 사냥이 끊긴다)
     // v3.1.0 (#전직시련) — 시험 상대는 리스폰하지 않는다. 기존엔 시련 상대(golem 기반)를
     //  잡으면 일반 몬스터 리스폰 큐에 등록돼 "시련 후 약한 몬스터가 계속 소환"되었다.
     if (ref && ref === this.jobTrialEnemy) {
       /* 시련 상대 — 재소환 금지 (재도전은 카이엔에게 말 걸기) */
+    } else if (ref?.getData("tutorialOwned")) {
+      // Instructor-owned practice is not part of the field respawn population.
     } else if (this.gateActive || this.closetActive) {
       /* v4.0.0 — 게이트/던전 몬스터는 웨이브 소환이다 — 필드 리스폰 금지 */
     } else if (this.parkActive) {
@@ -10157,7 +10173,57 @@ export class WorldScene extends Phaser.Scene {
 
   /* ================= 입력 ================= */
 
+  canPlayerAction(action: string): boolean {
+    if (action === "close" || action === "choice" || action === "skip") return true;
+    if (!this.player || this.player.state === "dead" || this.transitioning || this.sleeping
+      || this.dialoguing || this.camCinema || sceneCinematicPlaying(this) || this.chatFocused) return false;
+    if (this.panelNavOpen && ["move", "attack", "interact", "skill1", "skill2", "skill3", "skill4", "skill5", "skill5b"].includes(action)) return false;
+    const step = this.tutorialDone ? null : this.tut?.currentId ?? TUTORIAL_STEPS[this.tutStep]?.id ?? null;
+    return tutorialAllows(step, action);
+  }
+
   private setupInput() {
+    type InputListener = (...args: never[]) => unknown;
+    const subscriptions: { event: string; original: InputListener; wrapped: InputListener }[] = [];
+    const actionOf = (event: string, payload: unknown): string | null => {
+      if (event.startsWith("input:")) return event.slice(6);
+      if (event === "ui:panel") return (payload as { panel?: string } | undefined)?.panel ?? "close";
+      if (event === "rpg:autoUpgradeStop" || event === "featTut:close") return "close";
+      if (["rpg:equip", "rpg:unequip", "rpg:use", "rpg:useItem", "rpg:lockItem", "rpg:sortInv", "rpg:quickpot"].includes(event)) return "inv";
+      if (event === "rpg:questAccept" || event === "rpg:questTrack") return "quest";
+      return /^(rpg:|job:|friend:goto|chat:send|featTut:replayReq)/.test(event) ? "menu" : null;
+    };
+    const listen = (event: string, original: InputListener) => {
+      const wrapped: InputListener = (...args) => {
+        const action = actionOf(event, args[0]);
+        const zeroMove = event === "input:move" && !(args[0] as { x: number; y: number }).x && !(args[0] as { x: number; y: number }).y;
+        if (action && !zeroMove && !this.canPlayerAction(action)) return;
+        original(...args);
+      };
+      subscriptions.push({ event, original, wrapped });
+      EventBus.on(event, wrapped);
+    };
+    const unlisten = (event: string, original: InputListener) => {
+      for (let i = subscriptions.length - 1; i >= 0; i--) {
+        const sub = subscriptions[i];
+        if (sub.event === event && sub.original === original) {
+          EventBus.off(event, sub.wrapped);
+          subscriptions.splice(i, 1);
+        }
+      }
+      EventBus.off(event, original);
+    };
+    this.events.once("shutdown", () => {
+      for (const sub of subscriptions) EventBus.off(sub.event, sub.wrapped);
+      subscriptions.length = 0;
+      EventBus.emit("tut:state", { active: false, step: null });
+    });
+    const onCinematicState = (v: { active: boolean }) => {
+      this.resetInputState();
+      if (v.active && this.player?.active) this.player.setVelocity(0, 0);
+    };
+    listen("cinematic:state", onCinematicState);
+
     const kb = this.input.keyboard!;
     // v1.9 키 매핑 — 모든 배정 가능 키를 미리 등록해 두고 keymap에서 조회
     // (재배치 시 키 재등록 불필요, 이동 W/A/S/D + 화살표는 고정)
@@ -10180,6 +10246,7 @@ export class WorldScene extends Phaser.Scene {
      *  대기 중 다른 스킬을 누르면 최신 입력이 이전 입력을 대체한다(의도한 행동 우선). */
     /* vc225 — 스킬 입력 버퍼를 `scenes/input/skillBuffer.ts` 로 분리. */
     const queueSkill = (id: SkillId) => {
+      if (!this.canPlayerAction(id === "s5b" ? "skill5b" : `skill${id.slice(1)}`)) return;
       this.skillBuf.queue(id, this.time.now);
       this.flushBufferedSkill();
     };
@@ -10193,6 +10260,11 @@ export class WorldScene extends Phaser.Scene {
     const onS5b = () => queueSkill("s5b"); // vc146 (#2) — 제2궁극기 (쿨 2분)
     /** 버퍼에 담긴 스킬을 지금 발동 가능하면 실행하고 비운다 */
     this.flushBufferedSkill = () => {
+      const pending = this.skillBuf.pending;
+      if (pending && !this.canPlayerAction(pending === "s5b" ? "skill5b" : `skill${pending.slice(1)}`)) {
+        this.skillBuf.clear();
+        return;
+      }
       this.skillBuf.flush(this.player as unknown as SkillCaster | null, this.time.now);
     };
     const onRespawn = () => this.respawnPlayer();
@@ -10394,12 +10466,12 @@ export class WorldScene extends Phaser.Scene {
       notice(`자동 강화 시작 — ★${cur} → ★${target}`);
       this.autoUpTimer = this.time.addEvent({ delay: 330, loop: true, callback: autoUpTick });
     };
-    EventBus.on("rpg:autoUpgrade", onAutoUpgrade); // v1.0.2 — 목표 자동 강화
+    listen("rpg:autoUpgrade", onAutoUpgrade); // v1.0.2 — 목표 자동 강화
     /* vc225 — 종전엔 on/off 에 **각각 다른 람다**를 넘겨 off 가 아무것도 해제하지 못했다.
      *  씬 재진입(마을 이동·재접속)마다 리스너가 누적되어 자동강화 취소가 N번 실행됐다.
      *  이름 있는 핸들러로 바꿔 on/off 가 같은 참조를 쓰게 한다. */
     const onAutoUpgradeStop = () => stopAutoUpgrade("자동 강화를 취소했다");
-    EventBus.on("rpg:autoUpgradeStop", onAutoUpgradeStop);
+    listen("rpg:autoUpgradeStop", onAutoUpgradeStop);
     /* v1.4.30 (#9 클래스룸) — 교실 활동 성공 보상 지급 (classroom.ts 완료 판정 → window 이벤트)
      *  협동 보상: 에메랄드 2 + 골드 500 (경쟁전 우승은 5+2000) — 각 클라가 스스로 수령 */
     const onClassReward = (ev: Event) => {
@@ -11174,14 +11246,14 @@ export class WorldScene extends Phaser.Scene {
     const onGateShop = (id: string) => this.buySilverShop(id);
     /* v1.4.3 (#멀티콘텐츠) — 파티 공동 토벌전 입장 (파티 위젯 버튼) */
     const onPartyRaid = () => this.enterPartyRaid();
-    EventBus.on("rpg:isekai", onIsekai);
-    EventBus.on("rpg:partyRaid", onPartyRaid);
-    EventBus.on("rpg:gatePick", onGatePick);
-    EventBus.on("rpg:gateShop", onGateShop);
+    listen("rpg:isekai", onIsekai);
+    listen("rpg:partyRaid", onPartyRaid);
+    listen("rpg:gatePick", onGatePick);
+    listen("rpg:gateShop", onGateShop);
     /* vc185 (#3) — 설정 토글(쉐이더/고대비) 조작을 튜토리얼 완료로 연결.
      *  React 설정 패널에서 발생하며, 실제로 그 토글을 만졌을 때만 온다. */
     const onTutNotify = (v: { ev?: string }) => { if (v?.ev) this.tut?.notify(v.ev); };
-    EventBus.on("tut:notify", onTutNotify);
+    listen("tut:notify", onTutNotify);
 
     /* v1.4.33 (긴급수정 — "컴퓨터에서 wasd 배치로 바꿨을때 마우스로 공격 조준 및
      * 클릭으로 기본 공격 기능 없는 버그")
@@ -11211,30 +11283,31 @@ export class WorldScene extends Phaser.Scene {
     this.input.on("pointermove", onPointerAim);
     this.input.on("pointerdown", onPointerDown);
 
-    EventBus.on("input:move", onMove);
-    EventBus.on("input:attack", onAtk);
-    EventBus.on("input:dash", onDash);
-    EventBus.on("input:skill1", onS1);
-    EventBus.on("input:skill2", onS2);
-    EventBus.on("input:skill3", onS3);
-    EventBus.on("input:skill4", onS4);
-    EventBus.on("input:skill5", onS5);
-    EventBus.on("input:skill5b", onS5b); // vc146 (#2)
-    EventBus.on("input:interact", onInteract);
-    EventBus.on("name:set", onNameSet);
-    EventBus.on("keymap:changed", onKeymapChanged);
-    EventBus.on("movescheme:changed", onMoveSchemeChanged); // v1.0.17 — 이동 스킴 실시간 전환
-    EventBus.on("rpg:buy", onBuy);
+    listen("input:move", onMove);
+    listen("input:attack", onAtk);
+    listen("input:dash", onDash);
+    listen("input:skill1", onS1);
+    listen("input:skill2", onS2);
+    listen("input:skill3", onS3);
+    listen("input:skill4", onS4);
+    listen("input:skill5", onS5);
+    listen("input:skill5b", onS5b); // vc146 (#2)
+    listen("input:interact", onInteract);
+    listen("name:set", onNameSet);
+    listen("keymap:changed", onKeymapChanged);
+    listen("movescheme:changed", onMoveSchemeChanged); // v1.0.17 — 이동 스킴 실시간 전환
+    listen("rpg:buy", onBuy);
+
     /* vc178 — 집 꾸미기: 배치/이동/회수 (HomePanel에서 발행) */
     const onHomePlace = (v: { key: ItemKey; cx: number; cy: number }) => this.homeDecorPlace(v.key, v.cx, v.cy);
     const onHomeRemove = (v: { key: ItemKey; idx: number }) => this.homeDecorRemove(v.idx);
-    EventBus.on("rpg:homePlace", onHomePlace);
-    EventBus.on("rpg:homeRemove", onHomeRemove);
+    listen("rpg:homePlace", onHomePlace);
+    listen("rpg:homeRemove", onHomeRemove);
     /* vc182 (지시 #11) — 마을 필드 가구 설치/회수 */
     const onFieldPlace = (v: { key: ItemKey; x: number; y: number }) => this.fieldDecorPlace(v.key, v.x, v.y);
     const onFieldRemove = (v: { idx: number }) => this.fieldDecorRemove(v.idx);
-    EventBus.on("rpg:fieldPlace", onFieldPlace);
-    EventBus.on("rpg:fieldRemove", onFieldRemove);
+    listen("rpg:fieldPlace", onFieldPlace);
+    listen("rpg:fieldRemove", onFieldRemove);
     /* 패널에서 가구를 고르면 마을 바닥 클릭 대기로 들어간다 */
     const onFieldPick = (e: Event) => {
       const key = (e as CustomEvent<{ key: ItemKey }>).detail?.key;
@@ -11243,14 +11316,14 @@ export class WorldScene extends Phaser.Scene {
     window.addEventListener("sertz:field-pick", onFieldPick);
     /* vc179 (지시 #3) — 가구 돌리기 */
     const onHomeRotate = (v: { idx: number }) => this.homeDecorRotate(v.idx);
-    EventBus.on("rpg:homeRotate", onHomeRotate);
+    listen("rpg:homeRotate", onHomeRotate);
     /* vc178 (지시 #2) — 기능 튜토리얼 오버레이 ↔ 씬 연결 */
     const onFeatNext = () => this.advanceFeatureTutorial();
     const onFeatClose = () => this.closeFeatureTutorial();
     const onFeatReplay = (v: { feature: FeatureKey }) => this.playFeatureTutorial(v.feature, false);
-    EventBus.on("featTut:next", onFeatNext);
-    EventBus.on("featTut:close", onFeatClose);
-    EventBus.on("featTut:replayReq", onFeatReplay);
+    listen("featTut:next", onFeatNext);
+    listen("featTut:close", onFeatClose);
+    listen("featTut:replayReq", onFeatReplay);
     /* vc179 (지시 #2) — 안내된 행동을 실제로 했는지 감지해 자동 진행.
      *  패널 열기는 React가 ui:panel 로 발행하므로 여기서 받아 넘긴다. */
     const onUiPanelForTut = (v: { panel?: string | null }) => {
@@ -11259,41 +11332,41 @@ export class WorldScene extends Phaser.Scene {
     const onSkillForTut = () => this.notifyFeatureTutAction("skill");
     const onAttackForTut = () => this.notifyFeatureTutAction("attack");
     const onMoveForTut = () => this.notifyFeatureTutAction("move");
-    EventBus.on("ui:panel", onUiPanelForTut);
-    EventBus.on("input:skill1", onSkillForTut);
-    EventBus.on("input:attack", onAttackForTut);
-    EventBus.on("input:move", onMoveForTut);
-    EventBus.on("rpg:equip", onEquip);
-    EventBus.on("rpg:unequip", onUnequip);
-    EventBus.on("rpg:use", onUse);
-    EventBus.on("rpg:useBuff", onUseBuff);
-    EventBus.on("rpg:allocate", onAllocate);
-    EventBus.on("rpg:pet", onPetSet);
-    EventBus.on("rpg:cosmetic", onCosmeticSet);
-    EventBus.on("rpg:upgrade", onUpgrade);
-    EventBus.on("respawn", onRespawn);
-    EventBus.on("dialogue:done", onDialogueDone);
-    EventBus.on("dialogue:choice", onDialogueChoice);
-    EventBus.on("chat:focus", onChatFocus);
-    EventBus.on("ui:panelKeys", onPanelKeys); // v1.0.6 — NPC 선택지 키보드 조작 게이트
-    EventBus.on("chat:send", onChatSend);
-    EventBus.on("rpg:escapeHome", onEscapeHome); // v4.1.0 — 설정창 긴급 귀환
-    EventBus.on("rpg:exitMenu", onExitMenu); // v1.2.1 (#6) — 메뉴 화면(타이틀/캐릭터 선택)으로 나가기
-    EventBus.on("rpg:adReward", onAdReward); // v4.1.0 — 광고 보상
-    EventBus.on("rpg:buyGems", onBuyGems); // v4.1.0 — 구글 플레이 충전
-    EventBus.on("rpg:buyStorePack", onBuyStorePack); // v1.0.2 — 현금 패키지
-    EventBus.on("rpg:passBuy", onPassBuy); // v4.5.0 — 프리미엄 패스 해금
-    EventBus.on("rpg:passClaim", onPassClaim); // v4.5.0 — 패스 보상 수령
-    EventBus.on("rpg:passClaimAll", onPassClaimAll); // v1.0.2 — 패스 보상 한번에 받기
-    EventBus.on("rpg:subBuy", onSubBuy); // v4.5.0 — SERTZ 패스 구독
-    EventBus.on("rpg:adChest", onAdChest); // v4.5.0 — 광고 무료 상자
-    EventBus.on("rpg:adDrop", onAdDrop); // v4.5.0 — 광고 버프 물약
-    EventBus.on("job:select", onJobSelect);
-    EventBus.on("job:switch", onJobSwitch);
-    EventBus.on("friend:goto", onFriendGoto);
-    EventBus.on("rpg:useItem", onUseItem);
-    EventBus.on("rpg:warp", onWarp);
-    EventBus.on("rpg:bossReplay", onBossReplay); // v3.0.24 — 보스 재도전
+    listen("ui:panel", onUiPanelForTut);
+    listen("input:skill1", onSkillForTut);
+    listen("input:attack", onAttackForTut);
+    listen("input:move", onMoveForTut);
+    listen("rpg:equip", onEquip);
+    listen("rpg:unequip", onUnequip);
+    listen("rpg:use", onUse);
+    listen("rpg:useBuff", onUseBuff);
+    listen("rpg:allocate", onAllocate);
+    listen("rpg:pet", onPetSet);
+    listen("rpg:cosmetic", onCosmeticSet);
+    listen("rpg:upgrade", onUpgrade);
+    listen("respawn", onRespawn);
+    listen("dialogue:done", onDialogueDone);
+    listen("dialogue:choice", onDialogueChoice);
+    listen("chat:focus", onChatFocus);
+    listen("ui:panelKeys", onPanelKeys); // v1.0.6 — NPC 선택지 키보드 조작 게이트
+    listen("chat:send", onChatSend);
+    listen("rpg:escapeHome", onEscapeHome); // v4.1.0 — 설정창 긴급 귀환
+    listen("rpg:exitMenu", onExitMenu); // v1.2.1 (#6) — 메뉴 화면(타이틀/캐릭터 선택)으로 나가기
+    listen("rpg:adReward", onAdReward); // v4.1.0 — 광고 보상
+    listen("rpg:buyGems", onBuyGems); // v4.1.0 — 구글 플레이 충전
+    listen("rpg:buyStorePack", onBuyStorePack); // v1.0.2 — 현금 패키지
+    listen("rpg:passBuy", onPassBuy); // v4.5.0 — 프리미엄 패스 해금
+    listen("rpg:passClaim", onPassClaim); // v4.5.0 — 패스 보상 수령
+    listen("rpg:passClaimAll", onPassClaimAll); // v1.0.2 — 패스 보상 한번에 받기
+    listen("rpg:subBuy", onSubBuy); // v4.5.0 — SERTZ 패스 구독
+    listen("rpg:adChest", onAdChest); // v4.5.0 — 광고 무료 상자
+    listen("rpg:adDrop", onAdDrop); // v4.5.0 — 광고 버프 물약
+    listen("job:select", onJobSelect);
+    listen("job:switch", onJobSwitch);
+    listen("friend:goto", onFriendGoto);
+    listen("rpg:useItem", onUseItem);
+    listen("rpg:warp", onWarp);
+    listen("rpg:bossReplay", onBossReplay); // v3.0.24 — 보스 재도전
     /* v3.1.0 — 스토리 보스 난이도 선택 이벤트는 제거됐다: 전용 난이도로 즉시 스폰 */
     /* v3.0.6 (지시 #4) — 아이템 판매 · v3.1.0 (#판매포기) — 수량 지정 판매 (MAX = 전량) */
     /* v1.1.7 (#개편 A87) — 장비 판매 잠금 토글 */
@@ -11307,7 +11380,7 @@ export class WorldScene extends Phaser.Scene {
       this.emitRpgState();
       notice(has ? "잠금 해제" : "잠금 — 이제 판매되지 않습니다");
     };
-    EventBus.on("rpg:lockItem", onLockItem);
+    listen("rpg:lockItem", onLockItem);
 
     /* v1.2.0 (#개편 A23·A24) — 칭호 장착/해제.
      *  해금 조건은 "그 업적을 수령했는가"로 검사한다. 달성만 하고 수령하지 않은
@@ -11324,11 +11397,11 @@ export class WorldScene extends Phaser.Scene {
       this.emitRpgState();
       this.saveSoon();
     };
-    EventBus.on("rpg:setTitle", onSetTitle);
+    listen("rpg:setTitle", onSetTitle);
 
     /* v1.1.9 (#개편 A47) — 요리 제작 */
     const onCook = (v: { key: string }) => { this.cookDish(v.key); };
-    EventBus.on("rpg:cook", onCook);
+    listen("rpg:cook", onCook);
 
     const onSell = (v: { key: string; qty?: number }) => {
       if (!this.player || this.dialoguing) return;
@@ -11680,10 +11753,10 @@ export class WorldScene extends Phaser.Scene {
       this.emitRpgState();
     };
 
-    EventBus.on("rpg:tradeBuy", onTradeBuy);
-    EventBus.on("rpg:tradeSell", onTradeSell);
-    EventBus.on("rpg:missionClaim", onMissionClaim);
-    EventBus.on("rpg:ticketRefill", onTicketRefill);
+    listen("rpg:tradeBuy", onTradeBuy);
+    listen("rpg:tradeSell", onTradeSell);
+    listen("rpg:missionClaim", onMissionClaim);
+    listen("rpg:ticketRefill", onTicketRefill);
     /* v1.0.8 — 그래픽 효과 모드 실시간 전환 (설정 패널 → 셰이더 즉시 부착/해제) */
     const onFxMode = (m: "auto" | "high" | "low") => {
       this.fxMode = m === "high" || m === "low" ? m : "auto";
@@ -11699,7 +11772,7 @@ export class WorldScene extends Phaser.Scene {
           : "그래픽 효과: 자동 — 프레임에 따라 조정",
       );
     };
-    EventBus.on("fx:mode", onFxMode);
+    listen("fx:mode", onFxMode);
     const onFxShake = (mode: ShakeScale) => {
       setShakeScale(mode);
       if (mode === "off") {
@@ -11707,7 +11780,7 @@ export class WorldScene extends Phaser.Scene {
         this.ultShake?.reset();
       }
     };
-    EventBus.on("fx:shake", onFxShake);
+    listen("fx:shake", onFxShake);
     /* v1.0.8 — 무한 콘텐츠 허브 리스너 (탑/시련/티어균열/제작/심연상점/환생) */
     const onInfTower = () => this.enterTower();
     const onInfTrial = () => this.enterTrial();
@@ -11737,7 +11810,7 @@ export class WorldScene extends Phaser.Scene {
       this.emitHud();
       audio.sfx.shop();
     };
-    EventBus.on("rpg:unionReward", onUnionReward);
+    listen("rpg:unionReward", onUnionReward);
     /* v1.4.3 (작업4) — 파티 퀘스트 보드 수령 (PartyWidget → 씬 보상 지급):
      *  파티 중이면 풀 보상, 솔로면 50% — 수령 판정/소비는 partyContent가 담당 */
     const onPartyClaim = (v: { id: string }) => {
@@ -11754,7 +11827,7 @@ export class WorldScene extends Phaser.Scene {
       this.saveSoon();
       this.emitHud();
     };
-    EventBus.on("rpg:partyClaim", onPartyClaim);
+    listen("rpg:partyClaim", onPartyClaim);
     /* v1.0.18 — 몬스터 파크 상점 구매 (파크 코인 차감 → 아이템 지급) */
     const onParkBuy = (v: { id: string }) => {
       if (!this.player) return;
@@ -11780,31 +11853,31 @@ export class WorldScene extends Phaser.Scene {
       this.emitRpgState();
       this.emitHud();
     };
-    EventBus.on("rpg:parkBuy", onParkBuy);
+    listen("rpg:parkBuy", onParkBuy);
     /* v1.0.18 — 몬스터 파크 입장 (콘텐츠 패널) */
     const onParkEnter = (v: { diff: number }) => this.enterPark(v?.diff ?? 0);
-    EventBus.on("rpg:parkEnter", onParkEnter);
+    listen("rpg:parkEnter", onParkEnter);
     /* v1.1.1 (#2 무릉도장) — 일반 유저 진입 경로: GM 패널 전용이었어서 일반 유저는
      *  훈련장 자체가 존재하지 않았다. 콘텐츠 허브 「훈련장」 탭 → 누구나 입장 가능 */
     const onDojangEnter = () => this.enterDojang();
-    EventBus.on("rpg:dojangEnter", onDojangEnter);
-    EventBus.on("rpg:infTower", onInfTower);
-    EventBus.on("rpg:infTrial", onInfTrial);
-    EventBus.on("rpg:infClosetTier", onInfClosetTier);
-    EventBus.on("rpg:infClosetBasic", onInfClosetBasic);
-    EventBus.on("rpg:infCraft", onInfCraft);
-    EventBus.on("rpg:infAbyss", onInfAbyss);
-    EventBus.on("rpg:infRebirth", onInfRebirth);
-    EventBus.on("rpg:marketList", onMarketList);
-    EventBus.on("rpg:marketBuy", onMarketBuy);
-    EventBus.on("rpg:marketCancel", onMarketCancel);
-    EventBus.on("rpg:marketCollect", onMarketCollect);
-    EventBus.on("rpg:starScroll", onStarScroll);
-    EventBus.on("rpg:upgradeAcc", onUpgradeAcc);
-    EventBus.on("rpg:sell", onSell);
-    EventBus.on("rpg:sellPotion", onSellPotion);
-    EventBus.on("rpg:bmBuy", onBmBuy);
-    EventBus.on("rpg:openChest", onOpenChest); // v4.6.0 — 인벤토리 상자 개봉
+    listen("rpg:dojangEnter", onDojangEnter);
+    listen("rpg:infTower", onInfTower);
+    listen("rpg:infTrial", onInfTrial);
+    listen("rpg:infClosetTier", onInfClosetTier);
+    listen("rpg:infClosetBasic", onInfClosetBasic);
+    listen("rpg:infCraft", onInfCraft);
+    listen("rpg:infAbyss", onInfAbyss);
+    listen("rpg:infRebirth", onInfRebirth);
+    listen("rpg:marketList", onMarketList);
+    listen("rpg:marketBuy", onMarketBuy);
+    listen("rpg:marketCancel", onMarketCancel);
+    listen("rpg:marketCollect", onMarketCollect);
+    listen("rpg:starScroll", onStarScroll);
+    listen("rpg:upgradeAcc", onUpgradeAcc);
+    listen("rpg:sell", onSell);
+    listen("rpg:sellPotion", onSellPotion);
+    listen("rpg:bmBuy", onBmBuy);
+    listen("rpg:openChest", onOpenChest); // v4.6.0 — 인벤토리 상자 개봉
     /* v1.3.0 (지시 #7) — 랭커 전용 상점 구매: 서버 /api/rank에서 내 순위를 "서버 기준" 재확인 후 지급.
      *  Top10에 진입한 랭커만 챔피언 오라/황금 왕관을 에메랄드(BM)로 구입 — 랭킹 BM 유도 코너 */
     const onRankBuy = async (v: { key: string }) => {
@@ -11838,17 +11911,17 @@ export class WorldScene extends Phaser.Scene {
         notice("에메랄드가 부족해요");
       }
     };
-    EventBus.on("rpg:rankBuy", onRankBuy);
+    listen("rpg:rankBuy", onRankBuy);
     /* v3.0.15 — 신규 패널 리스너 */
-    EventBus.on("rpg:autoAlloc", onAutoAlloc);
-    EventBus.on("rpg:quickpot", onQuickPot);
-    EventBus.on("rpg:eert", onEert);
-    EventBus.on("rpg:sortInv", onSortInv); // v4.4.0 — 메이플식 [정리]
-    EventBus.on("rpg:questAccept", onQuestAccept);
-    EventBus.on("rpg:questTrack", onQuestTrack);
-    EventBus.on("rpg:autoset", onAutoSet);
-    EventBus.on("rpg:autohunt", onAutoHunt);
-    EventBus.on("rpg:gm", onGm);
+    listen("rpg:autoAlloc", onAutoAlloc);
+    listen("rpg:quickpot", onQuickPot);
+    listen("rpg:eert", onEert);
+    listen("rpg:sortInv", onSortInv); // v4.4.0 — 메이플식 [정리]
+    listen("rpg:questAccept", onQuestAccept);
+    listen("rpg:questTrack", onQuestTrack);
+    listen("rpg:autoset", onAutoSet);
+    listen("rpg:autohunt", onAutoHunt);
+    listen("rpg:gm", onGm);
     /* vc142 (#11) — 툰 셰이딩 토글 (설정 패널 버튼) */
     const onToonToggle = (value?: { on?: boolean }) => {
       const next = typeof value?.on === "boolean" ? value.on : !toonEnabled();
@@ -11860,7 +11933,7 @@ export class WorldScene extends Phaser.Scene {
       }
       this.showBanner(next ? "툰 셰이딩 ON — 셀룰룩 화면" : "툰 셰이딩 OFF — 기본 화면");
     };
-    EventBus.on("rpg:toon", onToonToggle);
+    listen("rpg:toon", onToonToggle);
     /* vc145 (#11 조절바 버그) — 설정 "효과 강도" 슬라이더 변경 시 툰/앰비언트 후처리를 즉시 재적용.
      *  기존엔 writeFx만 하고 재부착이 없어 슬라이더를 움직여도 화면이 변하지 않았다. */
     const onFxChanged = () => {
@@ -11874,7 +11947,7 @@ export class WorldScene extends Phaser.Scene {
       /* vc146 (#5) — 2.5D 카메라 토글도 동일 이벤트로 즉시 반영 */
       this.applyPerspSetting();
     };
-    EventBus.on("fx:changed", onFxChanged as never);
+    listen("fx:changed", onFxChanged as never);
     this.wireTradeInput();
     /* v1.0.6 — 세션 중 로그인/로그아웃 시 GM NPC·관리자 플래그 즉시 갱신
      *  (기존엔 마을 빌드 시 1회만 조회라, 마을 로드 뒤 admin으로 가입/로그인하면
@@ -11896,133 +11969,134 @@ export class WorldScene extends Phaser.Scene {
         })
         .catch(() => { /* 오프라인 — 기존 롤 유지 */ });
     };
-    EventBus.on("auth:changed", onAuthChanged);
+    listen("auth:changed", onAuthChanged);
     this.events.once("shutdown", () => {
       /* v1.1.1 (#1 가림) — 씬 종료(로비 복귀 등)에 튜토리얼이 살아있으면 상단 UI 복귀 신호를 못 보낸다 → 여기서 대신 발사 */
       if (this.tut) EventBus.emit("tut:active", { active: false });
-      EventBus.off("auth:changed", onAuthChanged);
-      EventBus.off("input:move", onMove);
-      EventBus.off("input:attack", onAtk);
-      EventBus.off("input:dash", onDash);
-      EventBus.off("input:skill1", onS1);
-      EventBus.off("input:skill2", onS2);
-      EventBus.off("input:skill3", onS3);
-      EventBus.off("input:skill4", onS4);
-      EventBus.off("input:skill5", onS5);
-      EventBus.off("input:skill5b", onS5b); // vc146 (#2)
-      EventBus.off("input:interact", onInteract);
-      EventBus.off("name:set", onNameSet);
-      EventBus.off("keymap:changed", onKeymapChanged);
-      EventBus.off("movescheme:changed", onMoveSchemeChanged); // v1.0.17
-      EventBus.off("rpg:buy", onBuy);
-      EventBus.off("rpg:homePlace", onHomePlace);
-      EventBus.off("rpg:fieldPlace", onFieldPlace);
-      EventBus.off("rpg:fieldRemove", onFieldRemove);
+      unlisten("auth:changed", onAuthChanged);
+      unlisten("input:move", onMove);
+      unlisten("input:attack", onAtk);
+      unlisten("input:dash", onDash);
+      unlisten("input:skill1", onS1);
+      unlisten("input:skill2", onS2);
+      unlisten("input:skill3", onS3);
+      unlisten("input:skill4", onS4);
+      unlisten("input:skill5", onS5);
+      unlisten("input:skill5b", onS5b); // vc146 (#2)
+      unlisten("input:interact", onInteract);
+      unlisten("name:set", onNameSet);
+      unlisten("keymap:changed", onKeymapChanged);
+      unlisten("movescheme:changed", onMoveSchemeChanged); // v1.0.17
+      unlisten("rpg:buy", onBuy);
+      unlisten("rpg:homePlace", onHomePlace);
+      unlisten("rpg:fieldPlace", onFieldPlace);
+      unlisten("rpg:fieldRemove", onFieldRemove);
+
       window.removeEventListener("sertz:field-pick", onFieldPick);
-      EventBus.off("featTut:next", onFeatNext);
-      EventBus.off("featTut:close", onFeatClose);
-      EventBus.off("featTut:replayReq", onFeatReplay);
-      EventBus.off("ui:panel", onUiPanelForTut);
-      EventBus.off("input:skill1", onSkillForTut);
-      EventBus.off("input:attack", onAttackForTut);
-      EventBus.off("input:move", onMoveForTut);
-      EventBus.off("rpg:homeRemove", onHomeRemove);
-      EventBus.off("rpg:homeRotate", onHomeRotate);
-      EventBus.off("rpg:equip", onEquip);
-      EventBus.off("rpg:unequip", onUnequip);
-      EventBus.off("rpg:use", onUse);
-      EventBus.off("rpg:useBuff", onUseBuff);
-      EventBus.off("rpg:allocate", onAllocate);
-      EventBus.off("rpg:pet", onPetSet);
-      EventBus.off("rpg:cosmetic", onCosmeticSet);
-      EventBus.off("rpg:upgrade", onUpgrade);
-      EventBus.off("respawn", onRespawn);
-      EventBus.off("dialogue:done", onDialogueDone);
-      EventBus.off("dialogue:choice", onDialogueChoice);
-      EventBus.off("chat:focus", onChatFocus);
-      EventBus.off("ui:panelKeys", onPanelKeys); // v1.0.6 — 패널 키보드 게이트 정리
-      EventBus.off("chat:send", onChatSend);
-      EventBus.off("rpg:escapeHome", onEscapeHome); // v4.1.0
-      EventBus.off("rpg:exitMenu", onExitMenu); // v1.2.1 (#6)
-      EventBus.off("rpg:adReward", onAdReward); // v4.1.0
-      EventBus.off("rpg:buyGems", onBuyGems); // v4.1.0
-      EventBus.off("rpg:passBuy", onPassBuy); // v4.5.0
-      EventBus.off("rpg:passClaim", onPassClaim); // v4.5.0
-      EventBus.off("rpg:passClaimAll", onPassClaimAll); // v1.0.2 — 한번에 받기
-      EventBus.off("rpg:autoUpgrade", onAutoUpgrade); // v1.0.2 — vc225 중복 등록문 1줄로 정리
-      EventBus.off("rpg:autoUpgradeStop", onAutoUpgradeStop); // vc225 — 이름 있는 핸들러로 해제
-      EventBus.off("rpg:subBuy", onSubBuy); // v4.5.0
-      EventBus.off("rpg:adChest", onAdChest); // v4.5.0
-      EventBus.off("rpg:adDrop", onAdDrop); // v4.5.0
-      EventBus.off("job:select", onJobSelect);
-      EventBus.off("job:switch", onJobSwitch);
-      EventBus.off("friend:goto", onFriendGoto);
-      EventBus.off("rpg:useItem", onUseItem);
-      EventBus.off("rpg:warp", onWarp);
-      EventBus.off("rpg:bossReplay", onBossReplay);
-      EventBus.off("rpg:sell", onSell);
-      EventBus.off("rpg:cook", onCook);
-      EventBus.off("rpg:setTitle", onSetTitle);
-      EventBus.off("rpg:lockItem", onLockItem);
-      EventBus.off("rpg:sellPotion", onSellPotion);
-      EventBus.off("rpg:bmBuy", onBmBuy);
-      EventBus.off("rpg:rankBuy", onRankBuy); // v1.3.0 — 랭커 상점
-      EventBus.off("rpg:openChest", onOpenChest); // v4.6.0
-      EventBus.off("rpg:sortInv", onSortInv); // v4.4.0
-      EventBus.off("rpg:autoset", onAutoSet);
-      EventBus.off("rpg:autohunt", onAutoHunt);
-      EventBus.off("rpg:gm", onGm);
-      EventBus.off("rpg:toon", onToonToggle); // vc142 — 툰 셰이딩 토글
-      EventBus.off("fx:changed", onFxChanged as never); // vc145 — 셰이더 강도 슬라이더 실시간 재적용
-      EventBus.off("trade:nearby", this.onTradeNearby as never); // vc142 — 1:1 거래
-      EventBus.off("rpg:tradeInvite", this.onTradeInvite as never);
-      EventBus.off("rpg:tradeAct", this.onTradeAct as never);
+      unlisten("featTut:next", onFeatNext);
+      unlisten("featTut:close", onFeatClose);
+      unlisten("featTut:replayReq", onFeatReplay);
+      unlisten("ui:panel", onUiPanelForTut);
+      unlisten("input:skill1", onSkillForTut);
+      unlisten("input:attack", onAttackForTut);
+      unlisten("input:move", onMoveForTut);
+      unlisten("rpg:homeRemove", onHomeRemove);
+      unlisten("rpg:homeRotate", onHomeRotate);
+      unlisten("rpg:equip", onEquip);
+      unlisten("rpg:unequip", onUnequip);
+      unlisten("rpg:use", onUse);
+      unlisten("rpg:useBuff", onUseBuff);
+      unlisten("rpg:allocate", onAllocate);
+      unlisten("rpg:pet", onPetSet);
+      unlisten("rpg:cosmetic", onCosmeticSet);
+      unlisten("rpg:upgrade", onUpgrade);
+      unlisten("respawn", onRespawn);
+      unlisten("dialogue:done", onDialogueDone);
+      unlisten("dialogue:choice", onDialogueChoice);
+      unlisten("chat:focus", onChatFocus);
+      unlisten("ui:panelKeys", onPanelKeys); // v1.0.6 — 패널 키보드 게이트 정리
+      unlisten("chat:send", onChatSend);
+      unlisten("rpg:escapeHome", onEscapeHome); // v4.1.0
+      unlisten("rpg:exitMenu", onExitMenu); // v1.2.1 (#6)
+      unlisten("rpg:adReward", onAdReward); // v4.1.0
+      unlisten("rpg:buyGems", onBuyGems); // v4.1.0
+      unlisten("rpg:passBuy", onPassBuy); // v4.5.0
+      unlisten("rpg:passClaim", onPassClaim); // v4.5.0
+      unlisten("rpg:passClaimAll", onPassClaimAll); // v1.0.2 — 한번에 받기
+      unlisten("rpg:autoUpgrade", onAutoUpgrade); // v1.0.2 — vc225 중복 등록문 1줄로 정리
+      unlisten("rpg:autoUpgradeStop", onAutoUpgradeStop); // vc225 — 이름 있는 핸들러로 해제
+      unlisten("rpg:subBuy", onSubBuy); // v4.5.0
+      unlisten("rpg:adChest", onAdChest); // v4.5.0
+      unlisten("rpg:adDrop", onAdDrop); // v4.5.0
+      unlisten("job:select", onJobSelect);
+      unlisten("job:switch", onJobSwitch);
+      unlisten("friend:goto", onFriendGoto);
+      unlisten("rpg:useItem", onUseItem);
+      unlisten("rpg:warp", onWarp);
+      unlisten("rpg:bossReplay", onBossReplay);
+      unlisten("rpg:sell", onSell);
+      unlisten("rpg:cook", onCook);
+      unlisten("rpg:setTitle", onSetTitle);
+      unlisten("rpg:lockItem", onLockItem);
+      unlisten("rpg:sellPotion", onSellPotion);
+      unlisten("rpg:bmBuy", onBmBuy);
+      unlisten("rpg:rankBuy", onRankBuy); // v1.3.0 — 랭커 상점
+      unlisten("rpg:openChest", onOpenChest); // v4.6.0
+      unlisten("rpg:sortInv", onSortInv); // v4.4.0
+      unlisten("rpg:autoset", onAutoSet);
+      unlisten("rpg:autohunt", onAutoHunt);
+      unlisten("rpg:gm", onGm);
+      unlisten("rpg:toon", onToonToggle); // vc142 — 툰 셰이딩 토글
+      unlisten("fx:changed", onFxChanged as never); // vc145 — 셰이더 강도 슬라이더 실시간 재적용
+      unlisten("trade:nearby", this.onTradeNearby as never); // vc142 — 1:1 거래
+      unlisten("rpg:tradeInvite", this.onTradeInvite as never);
+      unlisten("rpg:tradeAct", this.onTradeAct as never);
       tradeCancel(true);
-      EventBus.off("rpg:tradeBuy", onTradeBuy);
-      EventBus.off("rpg:tradeSell", onTradeSell);
-      EventBus.off("rpg:missionClaim", onMissionClaim);
-      EventBus.off("rpg:ticketRefill", onTicketRefill);
-      EventBus.off("fx:mode", onFxMode); // v1.0.8
-      EventBus.off("fx:shake", onFxShake);
-      EventBus.off("rpg:infTower", onInfTower); // v1.0.8
-      EventBus.off("rpg:dojangEnter", onDojangEnter); // v1.1.1 — 무릉도장 일반 진입
-      EventBus.off("rpg:unionReward", onUnionReward); // v1.0.18 — 유니온 상점
-      EventBus.off("rpg:partyClaim", onPartyClaim); // v1.4.3 — 파티 퀘스트 보드 수령
-      EventBus.off("rpg:parkBuy", onParkBuy); // v1.0.18 — 파크 상점
-      EventBus.off("rpg:parkEnter", onParkEnter); // v1.0.18 — 파크 입장
-      EventBus.off("rpg:infTrial", onInfTrial);
-      EventBus.off("rpg:infClosetTier", onInfClosetTier);
-      EventBus.off("rpg:infClosetBasic", onInfClosetBasic);
-      EventBus.off("rpg:infCraft", onInfCraft);
-      EventBus.off("rpg:infAbyss", onInfAbyss);
-      EventBus.off("rpg:infRebirth", onInfRebirth);
-      EventBus.off("rpg:marketList", onMarketList);
-      EventBus.off("rpg:marketBuy", onMarketBuy);
+      unlisten("rpg:tradeBuy", onTradeBuy);
+      unlisten("rpg:tradeSell", onTradeSell);
+      unlisten("rpg:missionClaim", onMissionClaim);
+      unlisten("rpg:ticketRefill", onTicketRefill);
+      unlisten("fx:mode", onFxMode); // v1.0.8
+      unlisten("fx:shake", onFxShake);
+      unlisten("rpg:infTower", onInfTower); // v1.0.8
+      unlisten("rpg:dojangEnter", onDojangEnter); // v1.1.1 — 무릉도장 일반 진입
+      unlisten("rpg:unionReward", onUnionReward); // v1.0.18 — 유니온 상점
+      unlisten("rpg:partyClaim", onPartyClaim); // v1.4.3 — 파티 퀘스트 보드 수령
+      unlisten("rpg:parkBuy", onParkBuy); // v1.0.18 — 파크 상점
+      unlisten("rpg:parkEnter", onParkEnter); // v1.0.18 — 파크 입장
+      unlisten("rpg:infTrial", onInfTrial);
+      unlisten("rpg:infClosetTier", onInfClosetTier);
+      unlisten("rpg:infClosetBasic", onInfClosetBasic);
+      unlisten("rpg:infCraft", onInfCraft);
+      unlisten("rpg:infAbyss", onInfAbyss);
+      unlisten("rpg:infRebirth", onInfRebirth);
+      unlisten("rpg:marketList", onMarketList);
+      unlisten("rpg:marketBuy", onMarketBuy);
       /* v1.4.41 (#9) — 5차 발광 이미지 정리. 씬 재진입(마을 이동 등)마다 누적되면
        *  맵을 오갈수록 캐릭터가 점점 하얗게 타오른다. */
       this.fifthAura?.destroy();
       this.fifthAura = null;
       this.ultShake?.reset();
       this.ultShake = null;
-      EventBus.off("rpg:marketCancel", onMarketCancel);
-      EventBus.off("rpg:marketCollect", onMarketCollect);
-      EventBus.off("rpg:starScroll", onStarScroll);
-      EventBus.off("rpg:upgradeAcc", onUpgradeAcc);
-      EventBus.off("rpg:isekai", onIsekai);
-      EventBus.off("rpg:partyRaid", onPartyRaid);
-      EventBus.off("rpg:gatePick", onGatePick);
-      EventBus.off("rpg:gateShop", onGateShop);
-    EventBus.off("tut:notify", onTutNotify);
+      unlisten("rpg:marketCancel", onMarketCancel);
+      unlisten("rpg:marketCollect", onMarketCollect);
+      unlisten("rpg:starScroll", onStarScroll);
+      unlisten("rpg:upgradeAcc", onUpgradeAcc);
+      unlisten("rpg:isekai", onIsekai);
+      unlisten("rpg:partyRaid", onPartyRaid);
+      unlisten("rpg:gatePick", onGatePick);
+      unlisten("rpg:gateShop", onGateShop);
+    unlisten("tut:notify", onTutNotify);
       /* v1.2.0 (C42 이벤트 리스너 해제 누락) — 위 6개 핸들러는 on만 있고 off가 없어
        *  씬 재진입(마을 이동·재접속)마다 누적됐다. 누적되면 같은 구매/퀘스트 이벤트가
        *  N번 실행되어 골드가 여러 번 빠지거나 퀘스트가 중복 수락된다.
        *  on/off 개수를 세어 확인했다(on 97 / off 90 → 87). */
-      EventBus.off("rpg:buyStorePack", onBuyStorePack);
-      EventBus.off("rpg:autoAlloc", onAutoAlloc);
-      EventBus.off("rpg:quickpot", onQuickPot);
-      EventBus.off("rpg:eert", onEert);
-      EventBus.off("rpg:questAccept", onQuestAccept);
-      EventBus.off("rpg:questTrack", onQuestTrack);
+      unlisten("rpg:buyStorePack", onBuyStorePack);
+      unlisten("rpg:autoAlloc", onAutoAlloc);
+      unlisten("rpg:quickpot", onQuickPot);
+      unlisten("rpg:eert", onEert);
+      unlisten("rpg:questAccept", onQuestAccept);
+      unlisten("rpg:questTrack", onQuestTrack);
     });
 
     /* ================= v3.1.0 (#흑화) — fadeIn/워치독은 create() 래퍼로 이동 (v3.2.0)
@@ -12210,7 +12284,7 @@ export class WorldScene extends Phaser.Scene {
       }
       this.tickFxQuality(dt);
       /* vc178 (지시 #2) — 기능 개방 튜토리얼 큐 처리 (전투/대사 중엔 자동 연기) */
-      this.tickFeatureTutorial();
+      if (!this.tut && this.tutStep < 0) this.tickFeatureTutorial();
       this.tickBossShare(this.time.now); // vc143 (#4) — 공유 보스 릴레이·브로드캐스트·호스트 재선출
       this.updatePortalGuides();
       this.escapeCd = Math.max(0, this.escapeCd - dt);
@@ -12348,43 +12422,44 @@ export class WorldScene extends Phaser.Scene {
       }
 
       // 키보드 이동 (v2.0 — 지시 #16: 같은 축 방향키 동시 입력 시 마지막으로 누른 키 우선)
-      const mv = this.resolveDirVec();
+      const mv = this.canPlayerAction("move") ? this.resolveDirVec() : this.dirVecScratch.set(0, 0);
       if (mv.lengthSq() > 0) mv.normalize();
 
       // 터치 우선
       const useTouch = this.touchMove.lengthSq() > 0.01;
       // v2.5 — 자동사냥 (펫 보유 시): 가장 가까운 적 추적·공격 — 조이스틱/키보드 입력 시 수동 우선
-      this.tickAutoHunt();
+      if (this.canPlayerAction("autohunt")) this.tickAutoHunt();
       /* v1.1.9 (#개편 A48) — 채집 노드 리스폰/근접 판정 */
       this.tickGatherNodes(this.time.now);
       /* v1.4.12 (#15 유저 지시 "자동전투시 식인초를 피해서 가게 해줘") — 식인초 회피 후처리 */
       this.autoPlantAvoid();
       // v3.0.14 — 끼임 탈출: 이동 명령 중 제자리면 측면 탈출로 autoHuntMove 덮어씀
       this.tickAutoUnstuck(dt);
-      let move = useTouch ? this.touchMove : mv;
+      let move = this.canPlayerAction("move") && useTouch ? this.touchMove : mv;
       /* vc143 (#8 PC 자동전투 이동) — 자동전투 중에도 화살표 키를 누르면 수동 이동 우선.
        *  기존엔 자동전투가 키보드 입력을 완전히 덮어써 PC에서 자동 켜놓으면 꼼짝 못 했다.
        *  키를 떼면 자동 이동이 자연 복귀된다 — 토글 재시작 불필요 */
-      if (this.autoHunt && !useTouch && mv.lengthSq() === 0) move = this.autoHuntMove; // v3.0.15 (#5): 펫 조건 제거
+      if (this.canPlayerAction("move") && this.autoHunt && !useTouch && mv.lengthSq() === 0) move = this.autoHuntMove; // v3.0.15 (#5): 펫 조건 제거
 
       // 키보드 공격/스킬 — 이동은 화살표 고정, 액션 키는 키 매핑 따름 (v1.0.4)
       /* 하루 v1 — Space 는 "NPC/채집 키"(interact)로 이관. 공격은 키맵 attack(X) 만 받는다. */
       if (Phaser.Input.Keyboard.JustDown(this.keys.SHIFT)) this.tryFreeDash();
-      if (Phaser.Input.Keyboard.JustDown(this.keyFor("attack")))
+      if (this.canPlayerAction("attack") && Phaser.Input.Keyboard.JustDown(this.keyFor("attack")))
+
         this.attackQueued = true;
-      if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill1"))) this.player.useSkill1();
-      if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill2"))) this.player.useSkill2();
+      if (this.canPlayerAction("skill1") && Phaser.Input.Keyboard.JustDown(this.keyFor("skill1"))) this.player.useSkill1();
+      if (this.canPlayerAction("skill2") && Phaser.Input.Keyboard.JustDown(this.keyFor("skill2"))) this.player.useSkill2();
       /* v3.0.3 — 3차기(V) / 4차기(A): 해금 티어 미달/쿨/MP 무시하고 호출하면 내부에서 무시된다 (v1.0.4 키맵 B→A) */
-      if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill3"))) this.player.useSkill3();
-      if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill4"))) this.player.useSkill4();
+      if (this.canPlayerAction("skill3") && Phaser.Input.Keyboard.JustDown(this.keyFor("skill3"))) this.player.useSkill3();
+      if (this.canPlayerAction("skill4") && Phaser.Input.Keyboard.JustDown(this.keyFor("skill4"))) this.player.useSkill4();
       /* v3.2.0 — 5차 궁극기(S): Lv.200 해금, 쿨타임 60초 (v1.0.4 키맵 N→S) */
-      if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill5"))) this.player.useSkill5();
+      if (this.canPlayerAction("skill5") && Phaser.Input.Keyboard.JustDown(this.keyFor("skill5"))) this.player.useSkill5();
       /* vc146 (#2) — 제2궁극기(Q 기본·재배치 가능): 쿨타임 120초 */
-      if (Phaser.Input.Keyboard.JustDown(this.keyFor("skill5b"))) this.player.useSkill5b();
+      if (this.canPlayerAction("skill5b") && Phaser.Input.Keyboard.JustDown(this.keyFor("skill5b"))) this.player.useSkill5b();
 
       /* v1.0.15 (피드백 #6 씽덕요소) — 감정표현 단축키: Y=♥ 하트 · U=♪ 노래 · H=！ 인사 · N=💢 분노.
        *  메이플식 감정표현 — 캐릭터 머리 위 귀여운 말풍선. 대화/수면 중엔 무시한다. */
-      if (!this.dialoguing && !this.sleeping && !this.transitioning) {
+      if (this.canPlayerAction("emote")) {
         const ex = this.player.x;
         const ey = this.player.y - 42;
         if (Phaser.Input.Keyboard.JustDown(this.keys.Y)) this.emote("heart", ex, ey);
@@ -12399,7 +12474,7 @@ export class WorldScene extends Phaser.Scene {
       if (this.sleeping) {
         this.player.update(dt, Phaser.Math.Vector2.ZERO, false);
       } else {
-        this.player.update(dt, move, this.attackQueued);
+        this.player.update(dt, move, this.canPlayerAction("attack") && this.attackQueued);
       }
       /* vc193 (버그 #1 "이동할때 기본 스프라이트로 고정되는 버그") —
        *  Player.tickBodyPending() 은 동적 외형 시트(코스튬·직업·GM) 로드 완료를
@@ -12412,19 +12487,19 @@ export class WorldScene extends Phaser.Scene {
       this.attackQueued = false;
 
       // 물약 퀵슬롯 + 상점/패널 열기 + E키 상호작용 (v1.9 — 모두 키 매핑 대응)
-      if (Phaser.Input.Keyboard.JustDown(this.keyFor("potHp"))) this.player.usePotion("hp");
-      if (Phaser.Input.Keyboard.JustDown(this.keyFor("potMp"))) this.player.usePotion("mp");
-      if (Phaser.Input.Keyboard.JustDown(this.keyFor("interact"))) this.tryInteract();
+      if (this.canPlayerAction("potion") && Phaser.Input.Keyboard.JustDown(this.keyFor("potHp"))) this.player.usePotion("hp");
+      if (this.canPlayerAction("potion") && Phaser.Input.Keyboard.JustDown(this.keyFor("potMp"))) this.player.usePotion("mp");
+      if (this.canPlayerAction("interact") && Phaser.Input.Keyboard.JustDown(this.keyFor("interact"))) this.tryInteract();
       if (Phaser.Input.Keyboard.JustDown(this.keyFor("shop")) && this.nearShop) EventBus.emit("ui:panel", { panel: "shop" });
-      if (Phaser.Input.Keyboard.JustDown(this.keyFor("bag"))) EventBus.emit("ui:panel", { panel: "inv" });
-      if (Phaser.Input.Keyboard.JustDown(this.keyFor("job"))) EventBus.emit("ui:panel", { panel: "job" });
-      if (Phaser.Input.Keyboard.JustDown(this.keyFor("stat"))) EventBus.emit("ui:panel", { panel: "stat" });
-      if (Phaser.Input.Keyboard.JustDown(this.keyFor("quest"))) EventBus.emit("ui:panel", { panel: "quest" });
-      if (Phaser.Input.Keyboard.JustDown(this.keyFor("opt"))) EventBus.emit("ui:panel", { panel: "opt" });
+      if (this.canPlayerAction("inv") && Phaser.Input.Keyboard.JustDown(this.keyFor("bag"))) EventBus.emit("ui:panel", { panel: "inv" });
+      if (this.canPlayerAction("job") && Phaser.Input.Keyboard.JustDown(this.keyFor("job"))) EventBus.emit("ui:panel", { panel: "job" });
+      if (this.canPlayerAction("stat") && Phaser.Input.Keyboard.JustDown(this.keyFor("stat"))) EventBus.emit("ui:panel", { panel: "stat" });
+      if (this.canPlayerAction("quest") && Phaser.Input.Keyboard.JustDown(this.keyFor("quest"))) EventBus.emit("ui:panel", { panel: "quest" });
+      if (this.canPlayerAction("opt") && Phaser.Input.Keyboard.JustDown(this.keyFor("opt"))) EventBus.emit("ui:panel", { panel: "opt" });
       /* v3.0.16 — 몬스터 컬렉션 패널 (M키) */
-      if (Phaser.Input.Keyboard.JustDown(this.keyFor("collection"))) EventBus.emit("ui:panel", { panel: "collection" });
+      if (this.canPlayerAction("collection") && Phaser.Input.Keyboard.JustDown(this.keyFor("collection"))) EventBus.emit("ui:panel", { panel: "collection" });
       /* vc142 (#1) — PC 자동전투 토글 단축키 (기본 B · 설정에서 재배치 가능) */
-      if (Phaser.Input.Keyboard.JustDown(this.keyFor("autohunt"))) EventBus.emit("rpg:autohunt", {});
+      if (this.canPlayerAction("autohunt") && Phaser.Input.Keyboard.JustDown(this.keyFor("autohunt"))) EventBus.emit("rpg:autohunt", {});
       /* v1.1.4 (#개편 입력버퍼링) — 공격/스킬 모션이 끝나면 대기 중인 스킬을 발동한다. */
       this.flushBufferedSkill();
 
@@ -12501,7 +12576,7 @@ export class WorldScene extends Phaser.Scene {
       for (const d of this.drops) {
         if (!d.active) continue;
         d.tick(dt, this.player.x, this.player.y);
-        if (d.active && this.pet && Phaser.Math.Distance.Between(d.x, d.y, this.pet.x, this.pet.y) < 26) {
+        if (d.active && !d.getData("tutorialSupply") && this.pet && Phaser.Math.Distance.Between(d.x, d.y, this.pet.x, this.pet.y) < 26) {
           this.collectDrop(d.kind, d.amount, d.x, d.y, true);
           d.release();
         }
@@ -12685,6 +12760,7 @@ export class WorldScene extends Phaser.Scene {
     this.touchMove.set(0, 0);
     this.player?.stopFreeDash();
     this.attackQueued = false;
+    this.skillBuf.clear();
     this.dirOrder.x.length = 0;
     this.dirOrder.y.length = 0;
     try {
@@ -13309,6 +13385,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private freeDashInputAllowed() {
+    if (!this.canPlayerAction("dash")) return false;
     const ae = document.activeElement as HTMLElement | null;
     const typing = !!ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable);
     return !!this.player && !typing && !this.chatFocused && !this.panelNavOpen && !this.dialoguing &&
@@ -15103,6 +15180,7 @@ export class WorldScene extends Phaser.Scene {
     let best: (typeof this.interactables)[number] | null = null;
     let bd = 130;
     for (const it of this.interactables) {
+      if (this.tut && !it.dlg?.startsWith("tutorial|")) continue;
       if (it.kind === "gm" && this.adminRole !== "admin") continue; // 비관리자에게 GM 접속 UI는 존재하지 않는다
       const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, it.x, it.y);
       if (d < bd) {
@@ -15175,10 +15253,15 @@ export class WorldScene extends Phaser.Scene {
   }
   /** E키/모바일 버튼 — 가까운 NPC 대화 시작, 전직 상담, 건물 출입, 실내 상호작용, 상점 열기 */
   tryInteract() {
-    if (this.dialoguing || this.sleeping || !this.player || this.player.state === "dead") return;
+    if (!this.canPlayerAction("interact")) return;
     const it = this.nearInteract;
     if (!it) return;
-    this.tut?.notify("talk"); // v1.0.11 — 튜토리얼 대화 학습 판정
+    if (it.dlg === "tutorial_history") { this.openHistoryDialogue(); return; }
+    if (it.dlg?.startsWith("tutorial|")) {
+      const who = it.dlg.slice(9);
+      if (who === "lilac" || who === "register") this.tut?.interact(who);
+      return;
+    }
     /* v1.2.4 (버그 3) — 씹덕 NPC 대화. 기존 showDialogue 경로를 그대로 쓴다.
      *  vc204 (지시서 #7) — 이제 3단계 미니 퀘스트 라인을 갖는다(수주→진행→보상).
      *  "대사만 있고 퀘스트나 상호작용 안됨" 지적의 직접 해소. 새 UI 없이
@@ -16082,144 +16165,8 @@ export class WorldScene extends Phaser.Scene {
    */
   /** v1.1.0 (#18) — 프롤로그 시청 플래그 저장 */
   private introSeenSave() {
-    try {
-      const s = loadSave();
-      if (s && !s.introSeen) {
-        s.introSeen = true;
-        writeSave(s);
-      }
-    } catch { /* 세이브 실패 무시 — 재생돼도 치명적이지 않다 */ }
-  }
-
-  /* v1.1.0 (#18) — 프롤로그: 게임 첫 시작 시 세계관 내레이션 시네마틱.
-   *  클릭/탭/스페이스로 넘기고, 건너뛰기 버튼 제공. 종료 시 인트로(플레이형)로 자연 연결 */
-  private showPrologue(onDone: () => void) {
-    const beats = [
-      "라일락 월드. 세 왕국은 무한의 보석을 두고 전쟁을 벌였다.",
-      "이웃 부부에게 길러진 하루는 절벽에서 라일락에게 목숨을 구한다.",
-      "누군가를 죽이는 사람, 두려움에 도망치는 사람, 그리고 누군가를 살리는 사람.",
-      "너는 어떤 사람이 되고 싶니? 별빛 펜던트와 한 자루 검의 여정이 시작된다.",
-    ];
-    this.dialoguing = true;
-    /* vc206 (지시 #2 "WASD 조작 변경시 게임 멈추는 버그" / 실측: 월드 진입 직후 physics 가
-     *  이미 pause 상태로 남아 조작 불가) — 프롤로그가 dialogueSince 를 세팅하지 않아
-     *  20초 자가치유 워치독(1870행)의 조건(dialogueSince > 0)을 만족하지 못했다.
-     *  프롤로그 도중 창을 벗어나거나 컨텍스트가 끊기면 physics.pause() 가 영구 잠금이 된다. */
-    this.dialogueSince = this.time.now;
-    this.physics.world.pause();
-    /* ═══ vc283 (지시 #02 "프롤로그·컷씬의 게임 HUD 숨김") ═══
-     * [증상] 프롤로그 내레이션이 떠 있는데 그 위로 HP바·인벤토리 칩(좌상단),
-     *  도감/랭킹/설정 버튼(우상단), 스킬 버튼·이동 조이스틱(우하단), 채팅(좌하단)이
-     *  전부 그대로 보인다. 검은 오버레이(alpha 0.97) 위에 HUD 만 밝게 떠서
-     *  "컷씬"이 아니라 "게임 화면에 글자 얹은 것"으로 읽힌다.
-     *
-     * [원인] GameRoot 는 이미 `cinematic:state` 를 구독해 HUD 를 hidden 처리한다
-     *  (GameRoot.tsx:204-219). 그런데 그 이벤트를 **궁극기 컷신과 챕터 카드만**
-     *  발신하고(WorldScene:2528/2624), 정작 가장 먼저 나오는 프롤로그는
-     *  발신하지 않았다. 즉 배선이 없는 게 아니라 이 경로만 빠져 있었다.
-     *
-     * [해결] 프롤로그 시작 시 active:true, cleanup 에서 active:false.
-     *  cleanup 은 스킵/완료/오버레이 탭 **세 경로가 모두 거치는 단일 출구**이고
-     *  `closed` 플래그로 1회만 실행되므로 이벤트도 정확히 한 번씩 짝을 이룬다. */
-    EventBus.emit("cinematic:state", { active: true });
-    const cam = this.cameras.main;
-    const W = cam.width;
-    const H = cam.height;
-    const d = 3000;
-    /* 구역 진입 fadeIn이 아직 끝나지 않았으면 즉시 정리 — 프롤로그 텍스트가 페이드에 덮여
-     *  어둡게 보이는 문제 방지 (저사양 기기에서 페이드가 수 초 늘어지는 환경 보호) */
-    try { (cam as unknown as { resetFX?: () => void }).resetFX?.(); } catch { /* 미지원 무시 */ }
-    const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x04060d, 0.97).setDepth(d).setScrollFactor(0).setInteractive();
-    const deco = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0).setDepth(d).setScrollFactor(0).setStrokeStyle(2, 0xffd76a, 0.25);
-    const t0 = this.add.text(W / 2, H * 0.32, "프롤로그", {
-      fontFamily: "Galmuri11, sans-serif", fontSize: "15px", color: "#ffd76a", align: "center",
-    }).setOrigin(0.5).setDepth(d + 1).setScrollFactor(0).setAlpha(0);
-    const t1 = this.add.text(W / 2, H * 0.52, beats[0], {
-      fontFamily: "Galmuri11, sans-serif", fontSize: "17px", color: "#fffbe8", align: "center", lineSpacing: 9,
-      wordWrap: { width: W * 0.82 },
-      shadow: { offsetX: 0, offsetY: 2, color: "#000000", blur: 4, fill: true },
-    }).setOrigin(0.5).setDepth(d + 1).setScrollFactor(0).setAlpha(0);
-    const t2 = this.add.text(W - 18, H - 20, "탭하여 계속 ▶", {
-      fontFamily: "Galmuri11, sans-serif", fontSize: "11px", color: "#ffe9b0",
-    }).setOrigin(1, 0.5).setDepth(d + 1).setScrollFactor(0).setInteractive({ useHandCursor: true });
-    const tSkip = this.add.text(18, H - 20, "건너뛰기", {
-      fontFamily: "Galmuri11, sans-serif", fontSize: "11px", color: "#ffffffc0",
-    }).setOrigin(0, 0.5).setDepth(d + 1).setScrollFactor(0).setInteractive({ useHandCursor: true });
-    this.tweens.add({ targets: t2, alpha: 0.55, duration: 800, yoyo: true, repeat: -1 });
-
-    let i = 0;
-    /* 하루 v1 (버그 수정) — 스킵/완료 후에도 `once("keydown-SPACE")` 리스너가 남아 있었다.
-     *  tSkip 은 cleanup() 으로 텍스트를 파괴하는데 리스너는 그대로여서, 이후 Space 를 누르면
-     *  next() → t1.setText() 가 파괴된 Text 에 접근해 TypeError 를 던졌다.
-     *  Phaser 의 rAF 루프는 update 예외 시 다음 프레임을 예약하지 못하므로 게임이 영구 정지한다.
-     *  상호작용 키가 Space 로 통일되면서 이 경로가 상시 발생하므로 닫힘 상태를 명시적으로 잠근다. */
-    let closed = false;
-    const showBeat = () => {
-      if (closed) return;
-      /* 알파 트윈 폐기 — 저FPS 환경에서 트윈이 수 초 늘어져 텍스트가 어둡게 보이고
-       *  빠른 탭이 씹히는 문제의 근본 차단. 비트 전환은 즉시 확정 + 짧은 위징(흔들림)만 */
-      t0.setAlpha(1);
-      t1.setAlpha(1).setText(beats[i]);
-      t1.setScale(1);
-      this.tweens.add({ targets: t1, scale: { from: 1.015, to: 1 }, duration: 260, overwrite: true });
-    };
-    const cleanup = () => {
-      if (closed) return;
-      closed = true;
-      this.input.keyboard?.off("keydown-SPACE", next); // 잔여 리스너 해제 (파괴된 Text 접근 차단)
-      this.input.keyboard?.off("keydown-ENTER", next); // vc256 — Enter 도 진행키로 받는다
-      this.events.off("shutdown", onSceneGone);        // vc284 — 씬 종료 훅 해제
-      this.tweens.killTweensOf(t1);
-      overlay.destroy(); deco.destroy(); t0.destroy(); t1.destroy(); t2.destroy(); tSkip.destroy();
-      this.input.keyboard?.removeCapture("SPACE");
-      this.dialoguing = false;
-      this.physics.world.resume();
-      /* vc283 (지시 #02) — 프롤로그로 숨긴 HUD 를 반드시 되돌린다.
-       *  `closed` 가드로 1회만 실행되므로 active:false 도 정확히 한 번 발신된다.
-       *  (짝이 깨지면 HUD 가 영구히 사라진 채 게임이 진행된다 —
-       *   GameRoot 는 별도 복구 경로 없이 이 플래그만 신뢰한다.) */
-      EventBus.emit("cinematic:state", { active: false });
-      this.introSeenSave(); // v1.1.0 (#18) — 시청/스킵 모두 1회 기록 (재시작 시 재생 방지)
-    };
-    /* ═══ vc284 (리뷰 지적: 짝 안 맞는 종료 경로) ═══
-     * [지적] 위 주석이 "완료·건너뛰기·오버레이 탭 세 경로가 모두 거치는 단일 출구"라고
-     *  단언했지만, 실제로 cleanup 에 닿는 길은 next() 와 tSkip 뿐이다.
-     *  프롤로그가 떠 있는 채 씬이 내려가면(exitToMenu·재시작·강제 종료)
-     *  active:true 가 **영구 미해제**되어 HUD 가 사라진 채로 게임이 남는다.
-     *  GameRoot 는 이 플래그 외에 복구 경로가 없다(GameRoot.tsx:204-209).
-     *
-     * [해결] 형제 연출 경로(sceneCinematic)는 이미 shutdown/destroy 를 훅한다.
-     *  같은 방식으로 씬 shutdown 에서 짝을 맞춘다. `closed` 가드가 있으므로
-     *  정상 종료 뒤의 shutdown 에서는 중복 발신되지 않는다. */
-    const onSceneGone = () => {
-      closed = true; // 이후 cleanup 본체가 오버레이를 건드리지 않게 잠근다(파괴된 객체 접근 방지)
-      EventBus.emit("cinematic:state", { active: false });
-    };
-    this.events.once("shutdown", onSceneGone);
-    const next = () => {
-      if (closed) return;
-      i += 1;
-      if (i >= beats.length) { cleanup(); onDone(); return; }
-      showBeat();
-    };
-    overlay.on("pointerdown", next);
-    t2.on("pointerdown", next);
-    tSkip.on("pointerdown", () => { cleanup(); onDone(); });
-    this.input.keyboard?.addCapture("SPACE");
-    /* vc256 (지시 #9 — "초반 알림 스트레스" 조사 중 발견한 실제 버그)
-     *  [버그] `once("keydown-SPACE", next)` 였다. Phaser 의 `once` 는 **첫 호출 뒤 리스너를
-     *   스스로 제거**하므로, 두 번째 비트부터는 Space 를 눌러도 진행되지 않았다.
-     *   프롤로그는 비트 4개인데 입력은 1회만 먹혔다 → `dialoguing=true` + `physics.pause()`
-     *   인 채로 영구 고정. 20초 자가치유 워치독도 `dialoguing` 을 되돌리지만 프롤로그
-     *   오버레이는 그대로 남아 화면을 덮고, 무엇보다 **튜토리얼 시작 게이트
-     *   (`!this.dialoguing`)가 영원히 막혀 신규 유저가 튜토리얼을 아예 못 봤다.**
-     *   실측: 새 캐릭터로 입장 후 Space 12회를 눌러도 `dialoguing=true` 유지,
-     *   `tut=null`, `tutStep=0` 인 채 변화 없음.
-     *  [수리] `on` 으로 바꾸고 cleanup 에서 off 한다(이미 off 코드가 있었다 — 즉 원래
-     *   의도는 `on` 이었다). `closed` 플래그가 파괴된 Text 접근도 막아 준다. */
-    this.input.keyboard?.on("keydown-SPACE", next);
-    this.input.keyboard?.on("keydown-ENTER", next);
-    showBeat();
+    this.introSeen = true;
+    this.flushSave();
   }
 
   private startIntroSequence() {
@@ -16831,7 +16778,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private updateEdgeArrow() {
-    const target = this.questTargetPos();
+    const target = this.tut || sceneCinematicPlaying(this) ? null : this.questTargetPos();
     if (!target) {
       if (this.edgeArrow) {
         this.edgeArrow.destroy();
@@ -17505,7 +17452,9 @@ export class WorldScene extends Phaser.Scene {
     const safeZone = !!this.stageDef.isVillage || this.isInterior;
     const payload: QuestLogState = {
       stageName: `${this.stageDef.name} — ${this.stageDef.subtitle}`,
-      list: safeZone ? [] : list,
+      list: this.tut && this.fieldReq ? [{ title: `${this.fieldReq.npcName}의 수련 의뢰`,
+        desc: `${this.fieldReq.mobName} ${this.fieldReq.count}/${this.fieldReq.need} · 완료 후 레지스터에게 보고`,
+        state: "active", accepted: true, canAccept: false }] : safeZone ? [] : list,
       trackedList: safeZone ? [] : tracked,
       closed: safeZone ? true : undefined,
       /* v3.0.26 (#76) — 스토리 미완료 시 반복 의뢰 섹션 자체를 숨김 ("스토리 다 완료 후 창이 뜨게") */
@@ -17708,6 +17657,8 @@ export class WorldScene extends Phaser.Scene {
       invasionKills: this.invasionKillCount,
       /* v1.0.11 — 튜토리얼 완료 + 진행 단계 (구 세이브 호환: 없으면 미완료/미시작) */
       tutorialDone: this.tutorialDone,
+      tutorialVersion: this.tutorialVersion,
+      introSeen: this.introSeen,
       tutStep: this.tutStep,
       gateBest: this.gateBest,
       closetBest: this.closetBest,
@@ -18203,6 +18154,90 @@ export class WorldScene extends Phaser.Scene {
 
   /* ═════════ v1.0.11 — 튜토리얼 지원 (Tutorial.ts 호출 API) ═════════ */
 
+  /** Optional world conversations retain the old prologue's lore without stopping first play. */
+  private addHistoryNpc() {
+    if (this.stageDef.key !== "howlrstone1x2" || this.interactables.some(it => it.dlg === "tutorial_history")) return;
+    const point = this.tutorialPoint(-110, 80);
+    const actor = createCastSprite(this, "recorder", point.x, point.y);
+    if (!actor) return;
+    actor.setDepth(this.yDepthFor(point.y));
+    this.interactables.push({ ...point, kind: "talk", dlg: "tutorial_history", label: "기록관 · 세계의 이야기" });
+    this.add.text(point.x, point.y - 42, "기록관", { fontFamily: "Galmuri11, sans-serif", fontSize: "12px", color: "#ffe4a0", stroke: "#101522", strokeThickness: 3 }).setOrigin(0.5).setDepth(this.yDepthFor(point.y) + 0.1);
+  }
+
+  private openHistoryDialogue() {
+    const options = [
+      { id: "lilac00_open", label: "세 왕국의 이야기" },
+      { id: "lilac00_war", label: "인피니트보석과 전쟁" },
+      { id: "lilac00_close", label: "빛과 어둠, 웨폰마스터" },
+    ];
+    const clear = () => { EventBus.off("dialogue:choice", pick); EventBus.off("dialogue:done", clear); this.events.off("shutdown", clear); };
+    const pick = (v: { id: string }) => {
+      clear();
+      const dialogue = options.some(o => o.id === v.id) ? DIALOGUES[v.id] : undefined;
+      if (dialogue) this.showDialogueRaw({ ...dialogue, speaker: "기록관", portrait: "cast_recorder" });
+    };
+    EventBus.on("dialogue:choice", pick);
+    EventBus.on("dialogue:done", clear);
+    this.events.once("shutdown", clear);
+    this.showDialogueRaw({ speaker: "기록관", portrait: "cast_recorder", lines: ["궁금한 이야기가 있나?"], choices: options });
+  }
+
+  tutorialPoint(dx: number, dy: number): { x: number; y: number } {
+    return this.cutsceneActorPosition({ x: this.entryHome.x + dx, y: this.entryHome.y + dy });
+  }
+
+  private clearTutorialNpc() {
+    this.tutorialNpcSprite?.destroy();
+    this.tutorialNpcLabel?.destroy();
+    this.tutorialNpcSprite = null;
+    this.tutorialNpcLabel = null;
+    this.interactables = this.interactables.filter((it) => !it.dlg?.startsWith("tutorial|"));
+  }
+
+  tutorialNpc(who: "lilac" | "register", point: { x: number; y: number }): void {
+    this.clearTutorialNpc();
+    const actor = createCastSprite(this, who, point.x, point.y);
+    if (!actor) return; // 없는 캐릭터 에셋을 임시 도형으로 대체하지 않는다.
+    actor.setDepth(this.yDepthFor(point.y));
+    this.tutorialNpcSprite = actor;
+    const name = who === "lilac" ? "라일락" : "레지스터";
+    this.tutorialNpcLabel = this.add.text(point.x, point.y - 42, name, {
+      fontFamily: "Galmuri11, sans-serif", fontSize: "12px", color: "#ffe4a0", stroke: "#101522", strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(this.yDepthFor(point.y) + 0.1);
+    this.interactables.push({ ...point, kind: "talk", dlg: `tutorial|${who}`, npcId: who, label: `${name}${who === "lilac" ? "과" : "와"} 대화` });
+    if (who === "register") this.fieldReqNpcPos = point;
+    this.restoreTutorialRequest();
+  }
+
+  tutorialTransition(): void {
+    this.resetInputState();
+    this.startTransition("howlrstone1x2", { delay: 520 });
+  }
+
+  tutorialDrop(point: { x: number; y: number }): void {
+    const drop = this.acquireDrop();
+    if (!drop) return;
+    drop.spawn("potion_hp", point.x, point.y, 1);
+    drop.setData("tutorialSupply", true);
+    (drop.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
+  }
+
+  private restoreTutorialRequest() {
+    const id = this.tut?.currentId ?? TUTORIAL_STEPS[this.tutStep]?.id;
+    if ((id === "mission" || id === "reward") && !this.fieldReq) {
+      this.fieldReq = { mob: "x2_rat", mobName: "수련용 쥐", need: 1,
+        count: id === "reward" ? 1 : 0, gold: 40 + this.player.lv * 8, exp: 30 + this.player.lv * 10, npcName: "레지스터" };
+    }
+    this.emitQuestLog();
+  }
+
+  tutorialRequest(): void {
+    this.restoreTutorialRequest();
+    this.fieldNpcPortrait = "cast_register";
+    this.openFieldNpcRequest("", "레지스터", "수련용 쥐 한 마리를 직접 상대해 보고 내게 돌아와 보고해라.");
+  }
+
   /** 튜토리얼 개시 — 인트로 종료 후(step 0, 시작 물약 지급) 또는 진행 중 세이브 재개.
    *  v1.0.11 버그 수정: 후속 대사/컷신 재생 중 시작 시도는 update 루프 재시도로 연기 —
    *  튜토리얼이 영영 시작되지 않았다 → dialoguing이면 1.2s 뒤 재시도(재스케줄) */
@@ -18212,28 +18247,45 @@ export class WorldScene extends Phaser.Scene {
       this.tutRetryMs = 1; // update 루프 재시도로 연기 (v1.0.11 — 대사 종료 후 자동 착화)
       return;
     }
-    if (step === 0) {
-      /* 시작 물약 +2 — 물약 학습 단계가 보유 부족으로 막히지 않게 (기본 지급 hp2에 추가) */
-      this.player.addPotion("hp");
-      this.player.addPotion("hp");
-      this.emitHud();
-    }
     this.tutStep = step;
+    this.tutorialVersion = TUTORIAL_VERSION;
+    this.autoHunt = false;
+    this.minimap?.setVisible(false);
     this.tut = new Tutorial(this, step);
   }
 
   /** 단계 통과 시마다 세이브 — 씬 전환(마을→사냥터) 후에도 이어서 재개 */
   saveTutorialProgress(step: number) {
     this.tutStep = step;
-    this.saveSoon();
+    this.tutorialVersion = TUTORIAL_VERSION;
+    this.flushSave();
   }
 
   /** 완료/스킵 — 세이브 플래그 확정 */
   completeTutorialSave() {
     this.tutorialDone = true;
+    this.tutorialVersion = TUTORIAL_VERSION;
+    this.introSeen = true;
+    this.storyChoices = { haruWho: "flee", ...this.storyChoices };
+    if (!this.cutsceneSeen.includes("lilacCut_rea1_lilac00")) this.cutsceneSeen.push("lilacCut_rea1_lilac00");
+    if (this.stageDef.key === "howlrstone1x2") {
+      const introKey = stageIntroSeenKey("howlrstone1", 2);
+      if (!this.cutsceneSeen.includes(introKey)) this.cutsceneSeen.push(introKey);
+    }
     this.tutStep = -1;
     this.tut = null;
-    this.saveSoon();
+    const learned: FeatureKey[] = ["bag", "skill", "quest"];
+    for (const key of learned) if (!this.player.tutSeen.includes(tutSeenKey(key))) this.player.tutSeen.push(tutSeenKey(key));
+    this.pendingFeatureTuts = this.pendingFeatureTuts.filter(key => !learned.includes(key));
+    this.featureTutDelay = 15000;
+    this.resetInputState();
+    this.clearTutorialNpc();
+    for (const drop of this.drops) if (drop.active && drop.getData("tutorialSupply")) drop.release();
+    this.addHistoryNpc();
+    this.redrawMinimap();
+    this.updateEdgeArrow();
+    EventBus.emit("tut:state", { active: false, step: null });
+    this.flushSave();
   }
 
   /** 축하 연출 — 스파클 버스트 (v1.0.13 — 벚꽃 소나기 제거 대체, 골드 광륜) */

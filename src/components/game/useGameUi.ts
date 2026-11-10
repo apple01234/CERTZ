@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { EventBus, type HudState, type QuestState, type EndState, type RpgState, type PanelKind, type QuestLogState } from "./EventBus";
+import { tutorialAllows, type TutorialUiState } from "@/game/tutorialFlow";
 
 type Skills = { mp: number; s1Cd: number; s1Max: number; s2Cd: number; s2Max: number; s3Cd: number; s3Max: number; s4Cd: number; s4Max: number; s3Unlocked: boolean; s4Unlocked: boolean; s5Cd?: number; s5Max?: number; s5Unlocked?: boolean; atkName?: string; s1Name?: string; s2Name?: string; s3Name?: string; s4Name?: string; s5Name?: string; s1Icon?: string; s2Icon?: string; s3Icon?: string; s4Icon?: string; s5Icon?: string; s5bIcon?: string; s5bCd?: number; s5bMax?: number; s5bUnlocked?: boolean; s5bName?: string };
 
@@ -35,8 +36,22 @@ export function useGameUi() {
   const [banner, setBanner] = useState<string | null>(null);
   const [end, setEnd] = useState<EndState | null>(null);
   const [rpg, setRpg] = useState<RpgState>(emptyRpg);
-  const [panel, setPanel] = useState<PanelKind>(null);
+  const [panel, setPanelState] = useState<PanelKind>(null);
+  const [cinematic, setCinematic] = useState(false);
+  const [tutorial, setTutorial] = useState<TutorialUiState>({ active: false, step: null });
+  const uiGate = useRef({ cinematic: false, tutorial: { active: false, step: null } as TutorialUiState });
   const [questLog, setQuestLog] = useState<QuestLogState>(emptyQuestLog);
+
+  // 이벤트 요청과 React 버튼 모두 현재 컷씬/실습의 동일한 제한을 따른다.
+  const canOpenPanel = useCallback((next: PanelKind) => {
+    if (!next) return true;
+    const gate = uiGate.current;
+    return !gate.cinematic && (!gate.tutorial.active || gate.tutorial.step === null
+      || tutorialAllows(gate.tutorial.step, next));
+  }, []);
+  const setPanel = useCallback((next: PanelKind) => {
+    if (canOpenPanel(next)) setPanelState(next);
+  }, [canOpenPanel]);
 
   useEffect(() => {
     const onHud = (v: HudState) => setHud(v);
@@ -62,6 +77,9 @@ export function useGameUi() {
       window.setTimeout(() => setBanner(null), 2300);
     };
     const onTitle = () => {
+      uiGate.current = { cinematic: false, tutorial: { active: false, step: null } };
+      setCinematic(false);
+      setTutorial({ active: false, step: null });
       setState("title");
       setBoss(null);
       setEnd(null);
@@ -74,8 +92,23 @@ export function useGameUi() {
     };
     const onRespawn = () => setEnd(null);
     const onRpg = (v: RpgState) => setRpg(v);
-    const onPanel = (v: { panel: PanelKind }) =>
-      setPanel((cur) => (v.panel === "inv" ? (cur === "inv" ? null : "inv") : v.panel));
+    const onPanel = (v: { panel: PanelKind }) => {
+      if (canOpenPanel(v.panel)) {
+        setPanelState((cur) => (v.panel === "inv" ? (cur === "inv" ? null : "inv") : v.panel));
+      }
+    };
+    const onCinematic = (v?: { active?: boolean }) => {
+      const active = !!v?.active;
+      uiGate.current.cinematic = active;
+      setCinematic(active);
+      // 패널의 키보드 리스너가 대사 키를 소비하지 않도록 컷씬 진입 시 닫는다.
+      if (active) setPanelState(null);
+    };
+    const onTutorial = (v: TutorialUiState) => {
+      uiGate.current.tutorial = v;
+      setTutorial(v);
+      setPanelState((cur) => canOpenPanel(cur) ? cur : null);
+    };
 
     EventBus.on("hud", onHud);
     EventBus.on("quest", onQuest);
@@ -93,6 +126,8 @@ export function useGameUi() {
     EventBus.on("respawn", onRespawn);
     EventBus.on("rpg:state", onRpg);
     EventBus.on("ui:panel", onPanel);
+    EventBus.on("cinematic:state", onCinematic);
+    EventBus.on("tut:state", onTutorial);
 
     return () => {
       EventBus.off("hud", onHud);
@@ -111,10 +146,12 @@ export function useGameUi() {
       EventBus.off("respawn", onRespawn);
       EventBus.off("rpg:state", onRpg);
       EventBus.off("ui:panel", onPanel);
+      EventBus.off("cinematic:state", onCinematic);
+      EventBus.off("tut:state", onTutorial);
     };
-  }, []);
+  }, [canOpenPanel, setPanel]);
 
-  return { state, hud, quest, questLog, skills, dialogue, boss, banner, end, rpg, panel, setPanel };
+  return { state, hud, quest, questLog, skills, dialogue, boss, banner, end, rpg, panel, setPanel, canOpenPanel, cinematic, tutorial };
 }
 
 export type { Skills };

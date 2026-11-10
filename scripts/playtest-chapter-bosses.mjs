@@ -36,7 +36,9 @@ try {
   await page.getByRole('button', { name: /다음/ }).click();
   await page.getByRole('button', { name: '모험가로 생성!' }).click();
   await page.getByRole('button', { name: '이 캐릭터로 시작' }).click();
-  await page.waitForFunction(() => window.__SERTZ_SCENE__?.player, { timeout: 120000 });
+  await page.waitForFunction(() => window.__SERTZ_SCENE__?.player, null, { timeout: 120000 });
+  // Fixture setup: finish onboarding before isolated chapter/cast jumps.
+  await page.evaluate(() => window.__SERTZ_SCENE__.tut?.skip());
   await page.keyboard.press('Escape');
   console.log('Booted original game; testing fixed attacks on a disposable save');
   for (const [stage, id, kind, hp01, expectedTexture] of cases) {

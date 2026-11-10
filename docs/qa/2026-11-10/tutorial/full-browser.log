@@ -1,0 +1,37 @@
+STEP move
+STEP talk
+STEP attack
+PASS actual practice reload
+PRACTICE_SAVE { step: 4, version: 2, stage: 'howlrstone1x2' }
+STEP evade
+STEP skill
+STEP pickup
+STEP inventory
+STEP accept
+STEP mission
+STEP reward
+STEP ending
+DONE {
+  stage: 'howlrstone1x2',
+  step: null,
+  cinema: false,
+  dialogue: false,
+  paused: false,
+  player: {
+    x: 306.4574096100591,
+    y: 543.8629099546017,
+    mp: 90,
+    gold: 5723,
+    potions: { hp: 6, mp: 4 }
+  },
+  target: null,
+  enemy: null,
+  windup: false,
+  done: true,
+  near: null,
+  allow: true,
+  nav: false,
+  pending: undefined,
+  kb: true
+}
+ERRORS []

@@ -1,0 +1,14 @@
+OPEN normal
+PASS completed
+OPEN normal
+PASS legacy
+OPEN attack
+PASS reload-skip 4
+OPEN mission
+PASS reload-skip 10
+OPEN reward
+PASS reload-skip 11
+OPEN ending
+PASS reload-skip 12
+OPEN evade
+PASS mobile 844

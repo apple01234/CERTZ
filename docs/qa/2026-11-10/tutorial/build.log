@@ -1,0 +1,78 @@
+
+> nextjs_tailwind_shadcn_ts@2.2.7 prebuild
+> node scripts/sync-android-version.mjs || true
+
+[android-version] 변경 없음 — vc263 / 2.2.7
+
+> nextjs_tailwind_shadcn_ts@2.2.7 build
+> prisma generate && next build && (bun scripts/fc-server/postbuild.js || node scripts/fc-server/postbuild.js) && node campaign-assets.mjs
+
+Prisma schema loaded from prisma/schema.prisma
+
+✔ Generated Prisma Client (v6.19.2) to ./node_modules/@prisma/client in 41ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+
+▲ Next.js 16.1.3 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 17.0s
+  Running TypeScript ...
+  Collecting page data using 2 workers ...
+  Generating static pages using 2 workers (0/34) ...
+  Generating static pages using 2 workers (8/34)
+  Generating static pages using 2 workers (16/34)
+  Generating static pages using 2 workers (25/34)
+✓ Generating static pages using 2 workers (34/34) in 284.0ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/admin/summary
+├ ƒ /api/auth/claimname
+├ ƒ /api/auth/cloud-save
+├ ƒ /api/auth/delete
+├ ƒ /api/auth/gmcheck
+├ ƒ /api/auth/google
+├ ƒ /api/auth/login
+├ ƒ /api/auth/logout
+├ ƒ /api/auth/me
+├ ƒ /api/auth/nametaken
+├ ƒ /api/auth/register
+├ ƒ /api/auth/releasename
+├ ƒ /api/auth/sns
+├ ƒ /api/campaign
+├ ƒ /api/campaign/purchase
+├ ƒ /api/chat
+├ ƒ /api/iap/verify
+├ ƒ /api/maps
+├ ƒ /api/market
+├ ƒ /api/market/buy
+├ ƒ /api/market/cancel
+├ ƒ /api/market/collect
+├ ƒ /api/market/list
+├ ƒ /api/party
+├ ƒ /api/rank
+├ ƒ /api/support
+├ ○ /api/version
+├ ○ /editor
+├ ○ /icon.png
+├ ○ /privacy
+├ ○ /skill-editor
+└ ○ /support
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+sh: 1: bun: not found
+[fc-postbuild] .next/static → standalone 복사 완료
+[fc-postbuild] public → standalone 복사 완료
+[fc-postbuild] Bun 런타임 없음 — fc-multi 번들링 건너뜀 (루트 server.js 경로로 멀티플레이 정상 / FC 주입만 생략)
+[fc-postbuild] server.js → next-server.js 개명 완료
+[fc-postbuild] 래퍼 server.js 작성 완료 — FC 배포 멀티플레이 준비됨
+[fc-postbuild] .secrets/github_token 없음 — FC 계정 백업 쓰기는 무인증으로 불가 (복원만 가능)
+Original runtime asset packs preserved in build outputs.

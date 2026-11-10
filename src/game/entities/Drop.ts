@@ -86,7 +86,7 @@ export class Drop extends Phaser.Physics.Arcade.Image {
     // 튕긴 직후(250ms)는 자석 무시 — 자연스러운 흩어짐
     // v3.0.6 (지시 #5) — 3번째 펫(아틀라스) 보유 시 맵 전체에서 즉시 끌려온다
     const atlas = this.scene.player?.pet === "pet_atlas";
-    if (age > 250 && (atlas || d < 120)) {
+    if (!this.getData("tutorialSupply") && age > 250 && (atlas || d < 120)) {
       const pull = atlas ? (d > 320 ? 620 : 420) : d < 34 ? 560 : 260;
       const a = Phaser.Math.Angle.Between(this.x, this.y, px, py);
       body.setVelocity(Math.cos(a) * pull, Math.sin(a) * pull);
@@ -103,6 +103,7 @@ export class Drop extends Phaser.Physics.Arcade.Image {
   }
 
   release() {
+    this.setData("tutorialSupply", false);
     this.setActive(false).setVisible(false);
     this.scene.tweens.killTweensOf(this); // v3.0.6 — 발광 펄스 트윈 정리 (풀 재사용 잔존 방지)
     this.setScale(0.72);

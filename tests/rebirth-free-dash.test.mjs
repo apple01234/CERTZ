@@ -7,7 +7,7 @@ import { FREE_DASH, freeDashDirection, freeDashFraction } from '../src/game/comb
 const source = readFileSync('src/game/entities/Player.ts', 'utf8');
 const ast = ts.createSourceFile('Player.ts', source, ts.ScriptTarget.Latest, true);
 const player = ast.statements.find(n => ts.isClassDeclaration(n) && n.name.text === 'Player');
-const names = new Set(['useFreeDash', 'stopFreeDash', 'tickFreeDash']);
+const names = new Set(['actionAllowed', 'useFreeDash', 'stopFreeDash', 'tickFreeDash']);
 const methods = player.members.filter(n => names.has(n.name?.getText(ast))).map(n => n.getText(ast)).join('\n');
 const Subject = new Function('FREE_DASH', 'freeDashDirection', ts.transpile(`class Subject { ${methods} } return Subject;`))(FREE_DASH, freeDashDirection);
 function vector(x = 0, y = 0) { return { x, y, set(x, y) { this.x = x; this.y = y; } }; }
@@ -73,8 +73,8 @@ test('PC and mobile use same gate; listener cleanup, focus cancellation and walk
   const touch = readFileSync('src/components/game/TouchControls.tsx', 'utf8');
   assert.match(world, /JustDown\(this.keys.SHIFT\)\) this.tryFreeDash\(\)/);
   assert.match(world, /const onDash = \(\) => this.tryFreeDash\(\)/);
-  assert.match(world, /EventBus.on\("input:dash", onDash\)/);
-  assert.match(world, /EventBus.off\("input:dash", onDash\)/);
+  assert.match(world, /listen\("input:dash", onDash\)/);
+  assert.match(world, /unlisten\("input:dash", onDash\)/);
   assert.match(world, /this.player\?\.stopFreeDash\(\)/);
   assert.match(touch, /EventBus.emit\("input:dash"\)/);
   assert.match(source, /this.scene.freeDashTravelFraction/);

@@ -98,7 +98,7 @@ test("preview and hit geometry retain direction, range, size and distinct signat
 const playerSource = readFileSync(new URL("../src/game/entities/Player.ts", import.meta.url), "utf8");
 const playerAst = ts.createSourceFile("Player.ts", playerSource, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
 const playerClass = playerAst.statements.find(node => ts.isClassDeclaration(node) && node.name.text === "Player");
-const methods = new Set(["useSkill1", "useSignatureSkill", "cancelSkillCast", "useSkill2", "skillCastPhase", "skill1Name", "attackElem"]);
+const methods = new Set(["actionAllowed", "useSkill1", "useSignatureSkill", "cancelSkillCast", "useSkill2", "skillCastPhase", "skill1Name", "attackElem"]);
 const subjectSource = `class Subject { ${playerClass.members.filter(member => methods.has(member.name?.getText(playerAst))).map(member => member.getText(playerAst)).join("\n")} } return Subject;`;
 class Vector {
   constructor(x = 0, y = 0) { this.x = x; this.y = y; }

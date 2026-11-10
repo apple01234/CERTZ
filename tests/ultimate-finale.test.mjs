@@ -109,7 +109,8 @@ const playerAst = ts.createSourceFile('Player.ts', playerSrc, ts.ScriptTarget.La
 const playerClass = playerAst.statements.find(n => ts.isClassDeclaration(n) && n.name?.text === 'Player');
 const method = playerClass?.members.find(n => ts.isMethodDeclaration(n) && n.name.getText(playerAst) === 'useSkill5b');
 assert.ok(method?.body, 'real Player.useSkill5b method found');
-const secondSkill = stripTypeScriptTypes(`class ExtractedPlayer { ${method.getText(playerAst)} }`);
+const gate = playerClass.members.find(n => n.name?.getText(playerAst) === "actionAllowed");
+const secondSkill = stripTypeScriptTypes(`class ExtractedPlayer { ${gate.getText(playerAst)} ${method.getText(playerAst)} }`);
 const finalContracts = {
   /* vc235 — inside/outside 를 **실제 판정 사거리 실측값** 기준으로 다시 잡았다.
    *  종전 좌표는 9개 중 7개가 outside 가 inside 보다 가까워서("범위 밖"이 범위 안)

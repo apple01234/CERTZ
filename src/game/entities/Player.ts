@@ -855,6 +855,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * v2.5 (지시 #3) — 계열별 기본공격: 미전직 참격 / 전사 강화 참격(2연타) / 궁수 활쏘기 / 마법사 마법탄 */
 
   private doAttack() {
+    if (!this.actionAllowed("attack")) return;
+    this.tutNotify("attack");
     this.state = "attack";
     this.atkCooldown = 300;
     this.swingDone = false;
@@ -1581,6 +1583,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /** v1.0.11 — 튜토리얼 알림 (월드 튜토리얼 컨트롤러에 이벤트 전달 — 스킬/물약 학습 판정) */
+  private actionAllowed(action: string): boolean {
+    return (this.scene as unknown as { canPlayerAction?: (action: string) => boolean }).canPlayerAction?.(action) ?? true;
+  }
+
   tutNotify(ev: string) {
     const w = this.scene as unknown as { tut?: { notify: (e: string) => void } | null };
     w.tut?.notify(ev);
@@ -1618,6 +1624,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   useSkill1() {
+    if (!this.actionAllowed("skill1")) return;
     if (this.silenceMs > 0) return; // vc288 — 침묵 중 스킬 봉인
     if (this.state !== "idle" || this.skill1Cd > 0 || this.mp < 15) return;
     const signature = weaponMasterProfileOf(this.cls) ?? (!this.cls || this.cls === "warrior" ? STARTER_SIGNATURE : null);
@@ -2670,6 +2677,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** REBIRTH: independent locomotion, available from creation in every class. */
   useFreeDash() {
+    if (!this.actionAllowed("dash")) return;
     if (this.freeDashing && this.scene.time.now >= this.freeDashUntil) this.tickFreeDash();
     if (this.state !== "idle") return false;
     const dir = freeDashDirection(this.scene.currentMoveVec(), this.facing);
@@ -2717,6 +2725,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   useSkill2() {
+    if (!this.actionAllowed("skill2")) return;
     if (this.silenceMs > 0) return; // vc288 — 침묵 중 스킬 봉인
     if (this.signatureCast && this.state === "attack" && this.skill2Cd <= 0 && this.mp >= 20) this.cancelSkillCast();
     if (this.state !== "idle" || this.skill2Cd > 0 || this.mp < 20) return;
@@ -3244,6 +3253,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   useSkill3() {
+    if (!this.actionAllowed("skill3")) return;
     if (this.silenceMs > 0) return; // vc288 — 침묵 중 스킬 봉인
     if (this.state !== "idle" || !this.skill3Unlocked || this.skill3Cd > 0 || this.mp < 25) return;
     const kind = SKILL3_KIND[this.cls ?? ""] as Skill3Kind | undefined;
@@ -3858,6 +3868,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   useSkill4() {
+    if (!this.actionAllowed("skill4")) return;
     if (this.silenceMs > 0) return; // vc288 — 침묵 중 스킬 봉인
     if (this.state !== "idle" || !this.skill4Unlocked || this.skill4Cd > 0 || this.mp < 40) return;
     const kind = SKILL4_KIND[this.cls ?? ""] as Skill4Kind | undefined;
@@ -4355,6 +4366,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  · 시퀀스 전체에 화면 플래시/쉐이크/기둥/폭발/필드를 겹쳐 "궁극기"급 임팩트
    * v3.3.0 (지시 #2) — 4차 세부직업 8종 전부 "고유 궁극기"로 분리 (겹침 0).
    *  4차 미달 플레이어는 기존 계열 궁극기 폴백. */  useSkill5() {
+    if (!this.actionAllowed("skill5")) return;
     if (this.silenceMs > 0) return; // vc288 — 침묵 중 스킬 봉인
     if (this.state !== "idle" || !this.skill5Unlocked || this.skill5Cd > 0 || this.mp < 100) return;
     this.mp -= 100;
@@ -6152,6 +6164,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  1차 궁극기와 겹치지 않는 12종(계열 폴백 4 + 4차 세부직업 8) — 종결 계수 합산이
    *  1차 궁극기의 1.4~2배급. 광역 필드·시간 정지·무적 성역·피해 재현 등 2분다운 규모. */
   useSkill5b() {
+    if (!this.actionAllowed("skill5b")) return;
     if (this.silenceMs > 0) return; // vc288 — 침묵 중 스킬 봉인
     if (this.state !== "idle" || !this.skill5bUnlocked || this.skill5bCd > 0 || this.mp < 150) return;
     this.mp -= 150;

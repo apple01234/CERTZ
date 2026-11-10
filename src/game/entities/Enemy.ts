@@ -108,6 +108,26 @@ const AWARE_OMNISCIENT_MS = 1000;
  */
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
   declare scene: WorldScene;
+  private tutorialPause: { active: boolean; visible: boolean; body: boolean; shadow: boolean; hp: boolean; bg: boolean } | null = null;
+
+  /** Park the original population during practice, then restore its exact prior state. */
+  setTutorialPaused(on: boolean) {
+    if (on) {
+      if (this.tutorialPause) return;
+      this.tutorialPause = { active: this.active, visible: this.visible, body: this.body?.enable ?? false,
+        shadow: this.shadow?.visible ?? false, hp: this.hpBar?.visible ?? false, bg: this.hpBarBg?.visible ?? false };
+      this.setVelocity(0, 0).setActive(false).setVisible(false);
+      if (this.body) this.body.enable = false;
+      this.shadow?.setVisible(false); this.hpBar?.setVisible(false); this.hpBarBg?.setVisible(false);
+    } else if (this.tutorialPause) {
+      const old = this.tutorialPause;
+      this.tutorialPause = null;
+      this.setActive(old.active).setVisible(old.visible);
+      if (this.body) this.body.enable = old.body;
+      this.shadow?.setVisible(old.shadow); this.hpBar?.setVisible(old.hp); this.hpBarBg?.setVisible(old.bg);
+    }
+  }
+
 
   def: EnemyDef;
   /** v3.0.15 (#16) — 이 적의 원소 (챕터 테마 결정: 무스펠헤임 화염 등) */
@@ -473,7 +493,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     };
     const windupState: FSMState<AICtx> = {
       name: "windup", // SHORT — 공격 예고: 제자리 부들부들 / 원거리는 주문 시전 / 돌진형은 조준 플래시
-      enter: (c) => c.enemy.setTint(prof?.charge ? 0xffd0b0 : 0xffb0a0),
+      enter: (c) => {
+        c.enemy.setTint(prof?.charge ? 0xffd0b0 : 0xffb0a0);
+        if (c.enemy.getData("tutorialEvade")) {
+          c.enemy.modeTimer = 1100;
+          c.enemy.scene.tut?.notify("evade_windup", { enemy: c.enemy });
+        }
+      },
       update: (c) => {
         const e = c.enemy;
         c.vx = Math.sin(e.scene.time.now * 0.06) * 12;
@@ -503,11 +529,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
           e.modeTimer = prof.charge.time;
           return "chargeDash";
         }
+        if (e.getData("tutorialEvade")) e.scene.tut?.notify("evade_resolved", { enemy: e, missed: c.dist > 58 });
         if (c.dist <= 58) {
           c.player.takeDamage(e.def.atk, c.toPlayer, 0, 0); /* v1.4.41 (#8) — 유저 지시: 고정 % 피해는 '식인초·카오스 보스 특정 패턴'에만.
          *  일반 몹 접촉에 4.5% 고정 하한이 걸려 밸런스가 무너져 있었다 → 수치 피해만. */
           /* v3.0.3 — 접촉 공격 상태이상 (출혈/독/감속) */
-          const ap = prof?.apply;
+          const ap = e.getData("tutorialOwned") ? undefined : prof?.apply;
           if (ap && e.rnd.chance(ap.chance)) {
             c.player.applyEnemyStatus(ap.kind, ap.dps, ap.dur);
           }
@@ -855,6 +882,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       const advD = elemAdvantage(atkElemD, this.elem);
       const dealtD = advD === 1 ? dmg : Math.max(1, Math.round(dmg * advD));
       this.scene.addDojangScore(dealtD);
+      if (dealtD > 0) this.scene.tut?.notify("hit", { enemy: this });
       this.hitFlash = 90;
       this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
       this.scene.spawnDamageText(this.x, this.y - 20, dealtD, crit);

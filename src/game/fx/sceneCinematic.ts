@@ -14,7 +14,7 @@ export type CinematicScene = Phaser.Scene & {
 
 const sessions = new WeakMap<Phaser.Scene, CinematicSession>();
 export const sceneCinematicPlaying = (scene: Phaser.Scene): boolean => sessions.has(scene);
-export function cancelSceneCinematic(scene: Phaser.Scene): void { sessions.get(scene)?.finish("shutdown"); }
+export function cancelSceneCinematic(scene: Phaser.Scene, reason: "shutdown" | "skip" = "shutdown"): void { sessions.get(scene)?.finish(reason); }
 
 /** vc264 (지시 #2) — 연출 재생 여부를 React HUD 에 알린다.
  *  "연출 중에는 모든 대사창을 제외한 모든 UI 안보이게 해"

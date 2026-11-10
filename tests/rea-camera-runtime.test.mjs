@@ -48,7 +48,7 @@ function load(relative) {
 }
 const { playAutoCutscene, autoCutscenePlaying } = load('src/game/fx/AutoCutscene.ts');
 const { playStoryCutscene, storyCutscenePlaying } = load('src/game/fx/StoryCutscene.ts');
-const { sceneCinematicPlaying } = load('src/game/fx/sceneCinematic.ts');
+const { sceneCinematicPlaying, cancelSceneCinematic } = load('src/game/fx/sceneCinematic.ts');
 const { LILAC_SCENARIOS } = load('src/game/lilacScenarios.ts');
 
 test('cinematics hide obstructing portal art and restore exact visibility on skip', () => {
@@ -374,4 +374,16 @@ test('skip while the shared dialogue box is open closes it', () => {
   fake.advance(400);
   fake.scene.input.keyboard.emit('keydown-ESC');
   assertReleased(fake); assert.equal(cancelled, 1); assert.equal(fake.pending(), 0);
+});
+
+// Full tutorial skip is a live skip, not scene shutdown: restore camera and physics.
+test('programmatic live skip releases physics/camera and cancels pending dialogue', () => {
+  const fake = fakeScene(); let completed = 0;
+  playStoryCutscene(fake.scene, { shots: [{ x: 200, y: 200, holdMs: 5000 }], onDone: () => completed++ });
+  assert.equal(fake.scene.physics.world.isPaused, true);
+  cancelSceneCinematic(fake.scene, "skip");
+  assertReleased(fake);
+  assert.equal(completed, 1);
+  fake.advance(20000);
+  assert.equal(completed, 1);
 });

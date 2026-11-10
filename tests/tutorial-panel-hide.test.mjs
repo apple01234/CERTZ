@@ -36,11 +36,12 @@ const eq = (n, a, b) => { assert.deepEqual(a, b, `✗ ${n}`); checks++; };
   ok(`면적 감소율 ${Math.round((1 - after / before) * 100)}% >= 20%`, 1 - after / before >= 0.2);
 
   /* desc 최대 길이가 새 랩폭에 들어가는지 — 데이터와 레이아웃이 어긋나면 패널이 넘친다 */
-  const descs = [...SRC.matchAll(/desc:\s*"([^"]*)"/g)].map((m) => m[1]);
+  const flow = fs.readFileSync(path.join(ROOT, "src/game/tutorialFlow.ts"), "utf8");
+  const descs = [...flow.matchAll(/desc:\s*"([^"]*)"/g)].map((m) => m[1]);
   ok("desc 를 하나 이상 찾았다", descs.length > 0);
   const maxLen = Math.max(...descs.map((d) => [...d].length));
   /* 랩폭 = PANEL_W - 124, 12px 폰트 ≈ 한글 1자 12px */
-  const perLine = Math.floor((w - 124) / 12);
+  const perLine = Math.floor((w - 32) / 12);
   const needLines = Math.ceil(maxLen / perLine);
   /* 제목(18) + desc(2줄×16) + 키배지(22) + 여백 ≈ 84px 안에 들어와야 한다 */
   ok(`desc 최대 ${maxLen}자 → ${needLines}줄 @ ${perLine}자/줄 — 3줄 이하`, needLines <= 3);
@@ -62,7 +63,7 @@ const eq = (n, a, b) => { assert.deepEqual(a, b, `✗ ${n}`); checks++; };
   const upd = code.slice(code.indexOf("update()"), code.indexOf("private finish()"));
   ok("update 안에 hidden 조기 반환이 있다", /if\s*\(\s*this\.hidden\s*\)/.test(upd));
   const guardIdx = upd.indexOf("this.hidden");
-  const visTrueIdx = upd.indexOf("setVisible(true)");
+  const visTrueIdx = upd.indexOf("setVisible(!!target)");
   ok("조기 반환이 setVisible(true) 보다 앞이다", guardIdx >= 0 && visTrueIdx > guardIdx);
   /* hidden 상태에서 마커를 명시적으로 끈다 */
   const guardBlock = upd.slice(guardIdx, guardIdx + 220);
@@ -99,13 +100,7 @@ const eq = (n, a, b) => { assert.deepEqual(a, b, `✗ ${n}`); checks++; };
   ok("currentId getter 유지", /get currentId\(\)/.test(code));
 }
 
-/* ═══ 7. depth 관계 — 튜토리얼(9200)이 프롤로그(3000)보다 위라 숨김이 유일한 해법임을 기록 ═══ */
-{
-  ok("튜토리얼 depth 9200 유지", /setDepth\(9200\)/.test(code));
-  const ws = fs.readFileSync(path.join(ROOT, "src/game/scenes/WorldScene.ts"), "utf8");
-  /* 프롤로그 오버레이가 3000 대라면 튜토리얼이 위 — 자동 숨김이 필요하다는 근거 */
-  const m = ws.match(/const d = 3000/);
-  ok("프롤로그 오버레이 depth < 튜토리얼 depth (숨김 필요 근거)", !!m || /setDepth\(3000\)/.test(ws));
-}
-
+// The black-screen renderer is gone; visibility is owned by the shared director.
+const world = fs.readFileSync(path.join(ROOT, "src/game/scenes/WorldScene.ts"), "utf8");
+ok("black prologue removed", !world.includes("showPrologue"));
 console.log(`tutorial-panel-hide: ${checks} checks OK`);

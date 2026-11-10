@@ -7,6 +7,7 @@ import { Swords, Bot, Pause, Star, Sparkles } from "lucide-react";
 import type { Skills } from "./useGameUi";
 import { loadKeyMap, keyLabel } from "@/game/keymap";
 import { ITEMS } from "@/game/data"; // vc150 (#신규1) — 장착 물약 아이콘 실경로 조회 // v1.0.4 — 물약 키 힌트를 키맵 따라 표시
+import { tutorialAllows, type TutorialUiState } from "@/game/tutorialFlow";
 
 /* v3.0.18 — 52→64px: 스틱 반경 확대로 미세 조작 정밀도 향상 + 풀 기울임이 쉬워짐
  *  (기존 52px는 손가락이 조금만 쉬어도 실질 60~85% 속도 — "이속이 느림" 체감의 주원인) */
@@ -53,6 +54,7 @@ export function TouchControls({
   s5bName,
   canAutoHunt,
   autoHunt,
+  tutorial,
 }: {
   skills: Skills;
   hpPot: number;
@@ -72,7 +74,10 @@ export function TouchControls({
   s5bName?: string;
   canAutoHunt?: boolean;
   autoHunt?: boolean;
+  tutorial?: TutorialUiState;
 }) {
+  const learning = !!tutorial?.active && tutorial.step !== null;
+  const allows = (action: string) => !learning || tutorialAllows(tutorial?.step ?? null, action);
   /* v3.0.18 — 조이스틱 걸림 근원 제거: 기존엔 스틱 1px마다 setJoyKnob(setState) →
    *  모바일 WebView에서 매 프레임 리렌더 → 입력/프레임 지연 = "움직일 때 뭔가 걸리는 느낌".
    *  이제 베이스/노브를 ref 직접 DOM 조작으로 그린다 — 드래그 중 리렌더 0.
@@ -243,10 +248,10 @@ export function TouchControls({
     { key: "s2", name: s2Name || "돌진베기", mp: 20, ready: s2Ready, cd: s2Pct, cdMax: skills.s2Max, icon: skills.s2Icon, emit: "input:skill2", hint: km.skill2 },
     { key: "s3", name: s3Name ?? "", mp: 25, ready: s3Ready, cd: s3Pct, cdMax: skills.s3Max, icon: skills.s3Icon, emit: "input:skill3", hint: km.skill3 },
     { key: "s4", name: s4Name ?? "", mp: 40, ready: s4Ready, cd: s4Pct, cdMax: skills.s4Max, icon: skills.s4Icon, emit: "input:skill4", hint: km.skill4 },
-  ].filter((s) => s.name); // 미해금(빈 이름) 스킬은 그리드에서 제외
-  const hasUlt = !!s5Name;
+  ].filter((s) => s.name && (!learning || (s.key === "s1" && allows("skill1")))); // 실습 중에는 현재 배울 주력 스킬만 표시
+  const hasUlt = !learning && !!s5Name;
   /* vc146 (#2) — 제2궁극기 버튼 표시 조건 */
-  const hasUlt2 = !!s5bName;
+  const hasUlt2 = !learning && !!s5bName;
 
   const autoBtn = canAutoHunt ? (
     <button
@@ -293,8 +298,9 @@ export function TouchControls({
     <>
       {/* 조이스틱 영역 — v3.0.5: 화면 왼쪽 전체(45% × 전체 높이)에서 좌하단(46% × 아래 55%)으로 축소.
           NPC 머리 위 상호작용 칩과 겹치던 인식 범위 문제 해소 (터치 기기에서만, PC는 마우스 방해 금지) */}
-      {isTouch && (
+      {isTouch && allows("move") && (
       <div
+        data-tutorial-control="move"
         className="absolute bottom-0 left-0 h-[55%] w-[46%] touch-none"
         onPointerDown={onJoyDown}
         onPointerMove={onJoyMove}
@@ -339,14 +345,14 @@ export function TouchControls({
       >
         {/* [자동+물약] 세로열 — 옛날 좌측 클러스터. 좁은 세로 화면(clusterFloat)은
          *  조이스틱 겹침 방지(v1.4.18 안전장치 유지) 때문에 행 위쪽 가로열로 피난 */}
-        {!clusterFloat && (
+        {!learning && !clusterFloat && (
           <div className="pointer-events-auto flex flex-col items-center gap-1.5">
             {autoBtn}
             {hpBtn}
             {mpBtn}
           </div>
         )}
-        <button
+        {allows("dash") && <button
           type="button"
           aria-label="돌진 — 쿨타임 0초, 자원 소모 없음"
           className="pointer-events-auto shrink-0 touch-none rounded-lg border border-white/40 bg-black/70 px-2 py-3 text-xs font-bold text-white"
@@ -357,7 +363,7 @@ export function TouchControls({
           }}
         >
           돌진<span className="block text-[10px]">Shift · 0초</span>
-        </button>
+        </button>}
         {/* [스킬그리드] — 해금된 스킬 2열 랩 그리드(아래→위로 쌓임), 궁극기는 마지막 칸의
          *  살짝 큰 황금 버튼(현행 스타일). 미해금 스킬은 그리드에서 제외 */}
         <div
@@ -367,7 +373,7 @@ export function TouchControls({
           {unlocked.map((s) => (
             /* vc206 (지시 #12) — 래퍼 높이를 SK 로 고정하면 버튼 **아래** 스킬명이 잘린다.
              *  버튼만 SK×SK 로 두고 래퍼는 내용 높이만큼 늘어나게 한다. */
-            <div key={s.key} style={{ width: SK }}>
+            <div key={s.key} style={{ width: SK }} data-tutorial-control={s.key === "s1" ? "skill1" : undefined}>
               <div style={{ width: SK, height: SK }}>
               <SkillButton
                 ready={s.ready}
@@ -436,7 +442,8 @@ export function TouchControls({
           )}
         </div>
         {/* [공격] — 행 끝 대형 원형 버튼 (현행 스타일·크기 유지) */}
-        <button
+        {allows("attack") && <button
+          data-tutorial-control="attack"
           aria-label="공격"
           className="pointer-events-auto relative flex touch-none select-none items-center justify-center rounded-full border-[3px] border-rose-200/70 bg-gradient-to-b from-rose-500 to-rose-700 text-white shadow-[0_4px_14px_rgba(0,0,0,0.5)] transition-transform active:scale-90"
           style={{ width: ATK, height: ATK }}
@@ -481,10 +488,10 @@ export function TouchControls({
            *  컨테이너(좌상단=자동 버튼 위)를 기준으로 배치돼, 어디서 왔는지 모를 유령 "X" 칩이
            *  자동 버튼 위에 떠 있었다. 키탭 자체를 제거해 근본 해결 — 스킬 버튼 키탭(Z/C/V/A/S)은
            *  relative 버튼 내부에 정상 렌더되므로 유지한다. */}
-        </button>
+        </button>}
         {/* clusterFloat(좁은 세로 화면) — [자동+물약]을 행 위쪽 가로열로 피난:
          *  배치 복귀와 무관하게 조이스틱(화면 좌하단 46%)과의 겹침만 막는 안전장치(v1.4.18 계승) */}
-        {clusterFloat && (
+        {!learning && clusterFloat && (
           <div className="pointer-events-auto absolute bottom-full right-0 mb-2 flex items-center gap-2">
             {autoBtn}
             {hpBtn}

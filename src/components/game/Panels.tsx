@@ -1861,10 +1861,10 @@ function InvBtn({ children, onClick, disabled, tone = "amber", title }: { childr
   );
 }
 
-export function InventoryPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
+export function InventoryPanel({ rpg, onClose, initialTab = "equip" }: { rpg: RpgState; onClose: () => void; initialTab?: InvTab }) {
   useEscClose(onClose);
   const modal = useModal("가방"); // v1.0.16 (F2)
-  const [tab, setTab] = useState<InvTab>("equip");
+  const [tab, setTab] = useState<InvTab>(initialTab);
   /* v1.1.4 (#개편) — 아이템 검색어. 소문자 비교로 영문/한글 모두 부분 일치. */
   const [q, setQ] = useState("");
   const [sel, setSel] = useState<InvSel | null>(null);
@@ -3900,7 +3900,11 @@ export function GamePanels({
   hud,
   questLog,
   onClose,
+  inventoryTab,
+  tutorialQuest = false,
 }: {
+  inventoryTab?: InvTab;
+  tutorialQuest?: boolean;
   panel: PanelKind;
   rpg: RpgState;
   hud: HudState;
@@ -3912,7 +3916,7 @@ export function GamePanels({
    *  (버튼마다 잠금 조건을 복사하지 않는다). 이미 열린 패널을 열어 둔 채
    *  레벨이 오르는 경우는 있지만, 잠금은 "열기" 시점에만 판정하면 충분하다. */
   const gate = panel ? LOCKED_PANELS[panel as keyof typeof LOCKED_PANELS] : undefined;
-  if (gate) {
+  if (gate && !(panel === "quest" && tutorialQuest)) {
     const need = unlockLevel(gate);
     if ((hud?.lv ?? 1) < need) {
       const def = unlockDef(gate);
@@ -3925,7 +3929,7 @@ export function GamePanels({
   if (panel === "trade") return <TradePanel rpg={rpg} onClose={onClose} />; // v3.0.7 — 유저 거래소
   if (panel === "trade2") return <Trade2Panel rpg={rpg} onClose={onClose} />; // vc142 — 1:1 플레이어 거래
   if (panel === "playerinfo") return <PlayerInfoPanel onClose={onClose} />; // v1.0.13 피드백#12 — 상대 정보창
-  if (panel === "inv") return <InventoryPanel rpg={rpg} onClose={onClose} />;
+  if (panel === "inv") return <InventoryPanel rpg={rpg} onClose={onClose} initialTab={inventoryTab} />;
   if (panel === "warp") return <WarpPanel rpg={rpg} onClose={onClose} />;
   if (panel === "job") return <JobPanel rpg={rpg} onClose={onClose} />;
   /* vc291 — 보스 러시. 세이브에서 최고 기록·해금 여부를 읽어 넘긴다.

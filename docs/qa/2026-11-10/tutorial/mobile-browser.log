@@ -1,0 +1,25 @@
+OPEN evade
+PASS mobile 844
+OPEN evade
+PORTRAIT_BUTTONS [ '' ]
+PASS mobile 390
+[
+  {
+    "kind": "mobile-844",
+    "dash": {
+      "x": 456.6500000000002,
+      "y": 590,
+      "mp": 90,
+      "state": "idle"
+    }
+  },
+  {
+    "kind": "mobile-390",
+    "dash": {
+      "x": 456.6500000000002,
+      "y": 590,
+      "mp": 90,
+      "state": "idle"
+    }
+  }
+]

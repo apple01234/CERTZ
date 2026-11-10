@@ -263,6 +263,7 @@ export type SaveData = {
   invasionKills?: number;
   /* v1.0.11 — 튜토리얼 완료 플래그 + 진행 단계 (구 세이브 호환: 없으면 미완료/미시작) */
   tutorialDone?: boolean;
+  tutorialVersion?: number;
   tutStep?: number;
   /* v3.3.0 (지시 #3/#8) — 5차 각성 상태 + 각성 시련 완료 여부
    *  fifth=true면 레벨 무관하게 궁극기 해금 + 전 스킬 강화 적용 */
