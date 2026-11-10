@@ -1,0 +1,15 @@
+{
+  "testedAt": "2026-11-10T22:03:36.307389+00:00",
+  "tests": {
+    "pass": 601,
+    "fail": 0
+  },
+  "commands": {
+    "npm test": "pass",
+    "npx tsc --noEmit": "pass",
+    "npm run lint:strict": "pass",
+    "npm run build:next": "pass"
+  },
+  "sourceBase": "6632911e2d0caaf6a6220461b09ff8abe5c1e4f1",
+  "assetGeneration": false
+}

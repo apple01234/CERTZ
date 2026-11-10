@@ -1,0 +1,104 @@
+[
+  {
+    "mode": "keyboard",
+    "early": {
+      "alpha": 0.44466666666666665,
+      "mp": 75,
+      "cooldown": 3531.7599999999993
+    },
+    "lateAlpha": 0.6422222222222222,
+    "cancelled": {
+      "phase": "cooldown",
+      "state": "dash",
+      "mp": 75,
+      "cooldown": 2913.690000000003,
+      "liveCastFx": 0,
+      "warningTween": false,
+      "hits": 0
+    },
+    "normal": {
+      "enemy": "x2_frog_idle1"
+    },
+    "final": {
+      "hits": 1,
+      "liveCastFx": 0
+    },
+    "mastery": {
+      "uses": 5,
+      "level": 1,
+      "maxLevel": 10,
+      "maxUses": 491,
+      "levelUses": 0,
+      "levelRequired": 8,
+      "usesToNext": 8,
+      "powerBonusPct": 2,
+      "mentor": "아리",
+      "name": "태양검 · 일광참",
+      "savedUses": 5
+    },
+    "restored": {
+      "uses": 5,
+      "level": 1,
+      "maxLevel": 10,
+      "maxUses": 491,
+      "levelUses": 0,
+      "levelRequired": 8,
+      "usesToNext": 8,
+      "powerBonusPct": 2,
+      "mentor": "아리",
+      "name": "태양검 · 일광참"
+    },
+    "pageErrors": []
+  },
+  {
+    "mode": "touch",
+    "early": {
+      "alpha": 0.4337777777777778,
+      "mp": 75,
+      "cooldown": 3560.0600000000013
+    },
+    "lateAlpha": 0.6072222222222223,
+    "cancelled": {
+      "phase": "cooldown",
+      "state": "dash",
+      "mp": 75,
+      "cooldown": 2785.2599999999998,
+      "liveCastFx": 0,
+      "warningTween": false,
+      "hits": 0
+    },
+    "normal": {
+      "enemy": "x2_frog_idle1"
+    },
+    "final": {
+      "hits": 1,
+      "liveCastFx": 0
+    },
+    "mastery": {
+      "uses": 5,
+      "level": 1,
+      "maxLevel": 10,
+      "maxUses": 491,
+      "levelUses": 0,
+      "levelRequired": 8,
+      "usesToNext": 8,
+      "powerBonusPct": 2,
+      "mentor": "아리",
+      "name": "태양검 · 일광참",
+      "savedUses": 5
+    },
+    "restored": {
+      "uses": 5,
+      "level": 1,
+      "maxLevel": 10,
+      "maxUses": 491,
+      "levelUses": 0,
+      "levelRequired": 8,
+      "usesToNext": 8,
+      "powerBonusPct": 2,
+      "mentor": "아리",
+      "name": "태양검 · 일광참"
+    },
+    "pageErrors": []
+  }
+]

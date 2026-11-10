@@ -42,6 +42,7 @@ import { damageMultiplier } from "../combat/damageModel";
 import { copiedReactionElement, signatureZones, signatureZoneContains, startSignatureCast, STARTER_SIGNATURE, weaponMasterProfileOf, type SignatureCast, type WeaponMasterProfile } from "../weaponMasterProfiles";
 import { WeaponMasterCombat } from "../fx/WeaponMasterCombat";
 import { skillMasteryProgress, type SkillMastery } from "../skillMastery";
+import { notice } from "../fx/Notice";
 
 /**
  * 주인공 세르츠.
@@ -1737,8 +1738,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.skillMastery[taughtSkill] = mastery.uses + 1;
             this.scene.saveSoon();
             const next = skillMasteryProgress(mastery.uses + 1);
-            if (next.level > mastery.level) this.scene.spawnPickupText(this.x, this.y - 50,
-              `${profile.name} 숙련 ${next.level}/${next.maxLevel}`, "#ffe29c");
+            if (next.level > mastery.level) notice(
+              `${profile.mentor} 전수 · ${profile.name} 숙련 ${next.level}/${next.maxLevel} · 위력·치유량 +${next.powerBonusPct}%${next.level === next.maxLevel ? " · 최대 숙련 달성!" : ""}`,
+              next.level === next.maxLevel ? 3500 : 2500,
+            );
           }
           this.scene.sfxSkill(profile.style === "hammer" ? "superhit" : profile.style === "lightning" ? "thunder" : "wind2", 0.9);
           if (profile.style === "life" || profile.style === "art") {

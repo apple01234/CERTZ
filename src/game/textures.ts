@@ -74,8 +74,23 @@ export async function loadBodyPrefix(scene: Phaser.Scene, prefix: string | null 
   if (scene.textures.exists(`${prefix}_idle0`)) registerBodyAnims(scene, [prefix]);
 }
 
+function loadedAnimations(scene: Phaser.Scene) {
+  return {
+    exists: (key: string) => scene.anims.exists(key),
+    generateFrameNumbers: (key: string, config?: Phaser.Types.Animations.GenerateFrameNumbers) =>
+      scene.textures.exists(key) ? scene.anims.generateFrameNumbers(key, config) : [],
+    create: (config: Phaser.Types.Animations.Animation) => {
+      if (config.key && scene.anims.exists(config.key)) return false;
+      if (!Array.isArray(config.frames) || !config.frames.length || !config.frames.every(frame =>
+        typeof frame.key === "string" && scene.textures.exists(frame.key) &&
+        (frame.frame === undefined || scene.textures.get(frame.key).has(String(frame.frame))))) return false;
+      return scene.anims.create(config);
+    },
+  };
+}
+
 export function registerBodyAnims(scene: Phaser.Scene, prefixes: readonly string[]) {
-  const a = scene.anims;
+  const a = loadedAnimations(scene);
   const fr = (prefix: string, n: number, rate: number, repeat: number) => ({
     frames: Array.from({ length: n }, (_, i) => ({ key: `${prefix}${i}` })),
     frameRate: rate,
@@ -83,7 +98,6 @@ export function registerBodyAnims(scene: Phaser.Scene, prefixes: readonly string
   });
   for (const p of prefixes) {
     if (!scene.textures.exists(`${p}_idle0`)) continue; // 미로드 시트 스킵 (안전)
-    if (a.exists(`${p}-idle`)) continue; // 이중 등록 방지
     a.create({ key: `${p}-idle`, ...fr(`${p}_idle`, 4, 4, -1) });
     a.create({ key: `${p}-walk`, ...fr(`${p}_walk`, 4, 9, -1) });
     a.create({ key: `${p}-walk-up`, ...fr(`${p}_walkup`, 4, 9, -1) });
@@ -96,8 +110,7 @@ export function registerBodyAnims(scene: Phaser.Scene, prefixes: readonly string
 
 /** 전역 애니메이션 등록 (최초 1회) — 실제 에셋 시트 프레임 기반 */
 export function buildAllAnims(scene: Phaser.Scene) {
-  const a = scene.anims;
-  if (a.exists("hero-idle")) return;
+  const a = loadedAnimations(scene);
   const fr = (prefix: string, n: number, rate: number, repeat: number) => ({
     frames: Array.from({ length: n }, (_, i) => ({ key: `${prefix}${i}` })),
     frameRate: rate,

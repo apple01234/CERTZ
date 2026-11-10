@@ -1,8 +1,13 @@
-SERTZ 기억의 서약 v2.1.5 (versionCode 251)
+SERTZ Android v2.2.9 (versionCode 265)
 
-새 캠페인 소스 및 빌드 설정입니다. 새 서명 APK는 아직 생성·게시하지 않았습니다.
-웹 / 실제 APK 배포 여부는 GitHub Releases에서 확인하세요. 기존 APK는 새 캠페인 버전으로 표시하지 않습니다.
-운영 설정과 검증 절차: docs/campaign/OPERATIONS.md
+다운로드: https://github.com/apple01234/CERTZ/releases/download/v2.2.9/SERTZ-vc265.apk
+공식 배포 목록: https://github.com/apple01234/CERTZ/releases
+설치 안내: https://sertz.vercel.app/apk-guide.html
+
+초기 로딩 분리, 구 세이브 보존, 전수 기술 숙련 성장·상승 알림을 개선한 버전입니다.
+서명 APK의 빌드·게시 완료 여부는 공식 배포 목록에서 확인하세요.
+웹의 업데이트 시점과 APK 파일 게시 시점은 다를 수 있습니다.
+기존 앱은 삭제하지 말고 새 APK를 덮어 설치해 로컬 캐릭터를 유지하세요.
 
 --- 이전 배포 기록 ---
 ════════════════════════════════════════════

@@ -29,7 +29,13 @@ export function chapterTerrainData(lay: RoomLayout, place: Place) {
   };
   // Reuse gameplay navigation to draw ONE continuous road, rather than a cross in every cell.
   const road = new Set<number>();
-  const paint = (x: number, y: number) => { for (const dx of [-1, 0]) for (const dy of [-1, 0]) road.add((y + dy) * cols + x + dx); };
+  // Six fine tiles (about 192–240px) leave room for several character bodies.
+  // Clip against the shared walkable mask so wider bends never paint over walls.
+  const paint = (x: number, y: number) => {
+    for (let dx = -3; dx < 3; dx++) for (let dy = -3; dy < 3; dy++) {
+      if (open(x + dx, y + dy)) road.add((y + dy) * cols + x + dx);
+    }
+  };
   let cur = lay.entry;
   for (let count = 0; count < lay.open.length && cur !== lay.exit; count++) {
     const next = nextStepToward(lay, cur, lay.exit); if (next === null) break;

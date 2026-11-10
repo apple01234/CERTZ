@@ -18,7 +18,7 @@ import {
   type AuthUser,
   type SnsProviders,
 } from "@/game/account";
-import { SAVE_KEY, activeSaveKey, type SaveData } from "@/game/config";
+import { loadSave, type SaveData } from "@/game/config";
 import { importCloudSave, importCharsFromCloud, collectLocalChars, SLOTS_KEY } from "@/game/slots"; // v1.4.32 — 슬롯 편입 복원 · vc149 (#2) — 전 캐릭터 백업/복원
 import { resolveApiBase } from "@/game/server"; // v1.4.20 — 멀티서버 분리: 정적 배포에서 원격 서버 OAuth 시작
 import { googleWebSignIn, googleWebRedirectToken } from "@/lib/googleAuth"; // v1.0.5-beta (vc134) — 웹 구글 로그인 안정화(모바일 리다이렉트)
@@ -76,26 +76,18 @@ export function AuthPanel() {
   }, []);
 
   // 게임 진입 시 자동 백업 (3분 주기, 로그인 중일 때만)
-  // v1.4.32 (#세이브복원) — 활성 캐릭터 키(sertz_char_<id>) 우선 조회.
-  //  기존엔 레거시 키만 읽었다 — 미러가 곧바로 동기화되어 동일했지만,
-  //  멀티캐릭터 라우팅의 진실 원천은 캐릭터 키이므로 순서를 명확히 한다.
-  const readCurrentSaveRaw = (): string | null => {
-    try {
-      return localStorage.getItem(activeSaveKey()) ?? localStorage.getItem(SAVE_KEY);
-    } catch {
-      return null;
-    }
-  };
   useEffect(() => {
     if (!user) return;
     /* vc145 (#1 랭킹 갱신) — 3분 → 90초 단축 + 자동저장 훅(auth:cloudPush) 즉시 업로드.
      *  랭킹은 클라우드 세이브(db.saves) 실시간 파생이라 업로드 주기가 곧 랭킹 신선도다. */
     const push = () => {
       try {
-        const raw = readCurrentSaveRaw();
+        const save = loadSave();
         /* vc149 (#2) — 활성 캐릭터 + 전 캐릭터 스냅샷 동시 백업 (캐릭터 유실 방지) */
-        if (raw) cloudSaveUpload(JSON.parse(raw), collectLocalChars()).catch(() => {});
-      } catch { /* 세이브 파싱 실패 무시 */ }
+        if (save) cloudSaveUpload(save, collectLocalChars()).catch(() => {});
+      } catch (error) {
+        EventBus.emit("banner:show", { text: error instanceof Error ? error.message : "캐릭터 백업을 안전하게 만들 수 없어 업로드를 중단했어요", ms: 5000 });
+      }
     };
     const t = window.setInterval(push, 90 * 1000);
     const onCloudPush = () => push();
@@ -108,8 +100,7 @@ export function AuthPanel() {
 
   const refreshSaveInfo = async () => {
     try {
-      const raw = readCurrentSaveRaw();
-      return raw ? JSON.parse(raw) : null;
+      return loadSave();
     } catch {
       return null;
     }
@@ -161,16 +152,21 @@ export function AuthPanel() {
 
   const doBackup = async () => {
     setMsg("");
-    const data = await refreshSaveInfo();
-    if (!data) {
-      setMsg("백업할 세이브가 없어요 — 게임을 시작한 뒤 시도해 주세요");
-      return;
-    }
     setBusy(true);
-    /* vc149 (#2) — 활성 캐릭터 + 전 캐릭터 동시 백업 */
-    const r = await cloudSaveUpload(data, collectLocalChars());
-    setBusy(false);
-    setMsg(r.ok ? "클라우드 백업 완료! 전 캐릭터가 저장됐어요 — 어느 기기에서든 복원할 수 있어요" : (r.error ?? "백업 실패"));
+    try {
+      const data = await refreshSaveInfo();
+      if (!data) {
+        setMsg("백업할 세이브가 없어요 — 게임을 시작한 뒤 시도해 주세요");
+        return;
+      }
+      /* vc149 (#2) — 활성 캐릭터 + 전 캐릭터 동시 백업 */
+      const r = await cloudSaveUpload(data, collectLocalChars());
+      setMsg(r.ok ? "클라우드 백업 완료! 전 캐릭터가 저장됐어요 — 어느 기기에서든 복원할 수 있어요" : (r.error ?? "백업 실패"));
+    } catch (error) {
+      setMsg(error instanceof Error ? error.message : "캐릭터 백업을 안전하게 만들 수 없어 업로드를 중단했어요");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const doRestore = async () => {

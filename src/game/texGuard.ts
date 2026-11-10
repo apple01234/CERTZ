@@ -22,6 +22,11 @@ export type TexRec = { url: string; type: "image" | "spritesheet"; fw?: number; 
 /** 기대 텍스처 레지스트리 — 부트+지연로드 filecomplete/loaderror 합집합 */
 const REGISTRY = new Map<string, TexRec>();
 
+/** Native image loads share the same recovery registry as Phaser loader loads. */
+export function rememberTexture(key: string, record: TexRec) {
+  REGISTRY.set(key, record);
+}
+
 /** 훅 설치된 로더 (중복 설치 방지) */
 const HOOKED = new WeakSet<object>();
 

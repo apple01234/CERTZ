@@ -18,6 +18,7 @@ import { loadDb, mutateDb, type SaveRec } from "@/lib/ghdb";
 import { currentUser, deductEscrow, escrowedCounts, json, options, rateLimit } from "@/lib/sapi";
 import { saveFingerprint } from "@/lib/saveCodec";
 import { packSaveRec, unpackSaveRec } from "@/lib/saveAccess";
+import { cloudReadVersionConflict, cloudWriteVersionConflict } from "@/lib/saveVersionPolicy";
 
 export function OPTIONS(req: NextRequest) { return options(req); }
 
@@ -43,7 +44,8 @@ function asNumber(v: unknown): number | null {
 
 export async function GET(req: NextRequest) {
   try {
-    const { db } = await loadDb(false);
+    // An explicit restore must inspect the latest schema and backup, not an instance's old snapshot.
+    const { db } = await loadDb(true);
     const user = currentUser(db, req);
     if (!user) return json(req, 401, { error: "로그인이 필요해요" });
     const s = db.saves[user.id];
@@ -51,6 +53,11 @@ export async function GET(req: NextRequest) {
      *  클라이언트는 압축을 몰라도 된다(응답 형태는 종전과 동일).
      *  셋 다 문자열이면 풀고, 하나라도 아니면 종전 평문으로 취급한다. */
     const unpacked = unpackSaveRec(s);
+    if (s && (!unpacked || (s.chars && !unpacked.chars))) {
+      return json(req, 503, { error: "저장된 백업을 읽을 수 없어요 — 원본을 유지하고 다시 시도해 주세요" });
+    }
+    const conflict = cloudReadVersionConflict(unpacked, req.nextUrl.searchParams.get("saveVersion"));
+    if (conflict) return json(req, 409, conflict);
     /* vc149 (#2) — chars: 전 캐릭터 백업분 동시 반환 */
     return json(req, 200, { data: unpacked?.data ?? null, chars: unpacked?.chars ?? null, updatedAt: unpacked?.updatedAt ?? null });
   } catch (e) {
@@ -100,6 +107,12 @@ export async function POST(req: NextRequest) {
        *  통째로 지우던 데이터 손실을 막는다. 미포함이면 기존 chars를 그대로 보존한다. */
       const prev = fdb.saves[user.id];
       const incoming = d as Record<string, unknown>;
+      const previous = unpackSaveRec(prev);
+      if (prev && (!previous || (prev.chars && !previous.chars))) {
+        return { status: 503, body: { error: "저장된 백업을 읽을 수 없어요 — 원본을 유지하고 다시 시도해 주세요" } };
+      }
+      const conflict = cloudWriteVersionConflict(previous, incoming, chars);
+      if (conflict) return { status: 409, body: conflict };
 
       /* vc205 (감사 #1) — 서버 소유 재화를 정본으로 확정한다.
        *  prev 가 없으면 최초 업로드이므로 클라 값을 1회 시드로 받아들인다(기존 유저 마이그레이션).
@@ -108,7 +121,7 @@ export async function POST(req: NextRequest) {
        *  여기서 한 번 풀어서 읽는다. 종전엔 `prev.data[f]` 를 바로 읽었는데,
        *  압축 저장으로 바뀌면 그 값이 문자열이라 `asNumber` 가 null 을 주고
        *  **서버 재화가 통째로 삭제**된다(골드 증발). */
-      const prevPlain = unpackSaveRec(prev)?.data;
+      const prevPlain = previous?.data;
       if (prevPlain) {
         for (const f of SERVER_OWNED_FIELDS) {
           const serverVal = asNumber(prevPlain[f]);
@@ -118,7 +131,7 @@ export async function POST(req: NextRequest) {
       }
 
       const nextData = incoming;
-      const nextChars = chars ?? prev?.chars;
+      const nextChars = chars ?? previous?.chars;
       /* v1.4.41 (감사 #1) — 거래소에 걸어둔 수량은 업로드 세이브에서 다시 차감한다.
        *  이게 없으면 등록 후 예전 세이브를 되올려 에스크로를 무효화하고 물건을 복제할 수 있다. */
       const esc = escrowedCounts(fdb, user.id);

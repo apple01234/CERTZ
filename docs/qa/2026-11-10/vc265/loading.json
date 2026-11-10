@@ -1,0 +1,188 @@
+[
+  {
+    "mode": "canvas-slow",
+    "elapsedMs": 29085,
+    "progress": {
+      "phase": "world-ready",
+      "elapsedMs": 20995,
+      "total": 531,
+      "complete": 531,
+      "active": 0,
+      "failed": []
+    },
+    "resources": {
+      "count": 584,
+      "bytes": 10390560
+    },
+    "history": [
+      {
+        "phase": "title-assets",
+        "elapsedMs": 0,
+        "total": 3,
+        "complete": 0,
+        "active": 0,
+        "failed": []
+      },
+      {
+        "phase": "title-ready",
+        "elapsedMs": 81,
+        "total": 3,
+        "complete": 3,
+        "active": 0,
+        "failed": []
+      },
+      {
+        "phase": "world-assets",
+        "elapsedMs": 0,
+        "total": 531,
+        "complete": 0,
+        "active": 0,
+        "failed": []
+      },
+      {
+        "phase": "world-assets-ready",
+        "elapsedMs": 20875,
+        "total": 531,
+        "complete": 531,
+        "active": 0,
+        "failed": []
+      },
+      {
+        "phase": "world-ready",
+        "elapsedMs": 20995,
+        "total": 531,
+        "complete": 531,
+        "active": 0,
+        "failed": []
+      }
+    ],
+    "renderer": 1,
+    "stage": "howlrstone1x2",
+    "anims": [
+      {
+        "key": "hero-idle",
+        "exists": true
+      },
+      {
+        "key": "hero-walk",
+        "exists": true
+      }
+    ],
+    "pageErrors": []
+  },
+  {
+    "mode": "webgl",
+    "elapsedMs": 6367,
+    "progress": {
+      "phase": "world-ready",
+      "elapsedMs": 2213,
+      "total": 531,
+      "complete": 531,
+      "active": 0,
+      "failed": []
+    },
+    "resources": {
+      "count": 588,
+      "bytes": 10396550
+    },
+    "history": [
+      {
+        "phase": "title-assets",
+        "elapsedMs": 0,
+        "total": 3,
+        "complete": 0,
+        "active": 0,
+        "failed": []
+      },
+      {
+        "phase": "title-ready",
+        "elapsedMs": 124,
+        "total": 3,
+        "complete": 3,
+        "active": 0,
+        "failed": []
+      },
+      {
+        "phase": "world-assets",
+        "elapsedMs": 0,
+        "total": 531,
+        "complete": 0,
+        "active": 0,
+        "failed": []
+      },
+      {
+        "phase": "world-assets-ready",
+        "elapsedMs": 2099,
+        "total": 531,
+        "complete": 531,
+        "active": 0,
+        "failed": []
+      },
+      {
+        "phase": "world-ready",
+        "elapsedMs": 2213,
+        "total": 531,
+        "complete": 531,
+        "active": 0,
+        "failed": []
+      }
+    ],
+    "renderer": 2,
+    "stage": "howlrstone1x2",
+    "anims": [
+      {
+        "key": "hero-idle",
+        "exists": true
+      },
+      {
+        "key": "hero-walk",
+        "exists": true
+      }
+    ],
+    "pageErrors": []
+  },
+  {
+    "mode": "title-failure",
+    "failure": {
+      "progress": {
+        "phase": "title-assets",
+        "elapsedMs": 23,
+        "total": 3,
+        "complete": 2,
+        "active": 0,
+        "failed": [
+          "glow"
+        ],
+        "error": "자료를 불러오지 못했습니다. 다시 시도해 주세요."
+      },
+      "ready": false,
+      "chars": [
+        "sertz_char_cmwb80opk9"
+      ]
+    },
+    "recovered": true,
+    "pageErrors": []
+  },
+  {
+    "mode": "world-failure",
+    "failure": {
+      "progress": {
+        "phase": "world-assets",
+        "elapsedMs": 616,
+        "total": 531,
+        "complete": 223,
+        "active": 6,
+        "failed": [
+          "ground_meadow"
+        ],
+        "error": "자료를 불러오지 못했습니다. 다시 시도해 주세요."
+      },
+      "ready": false,
+      "chars": [
+        "sertz_char_cmwb80opk9"
+      ]
+    },
+    "recovered": true,
+    "pageErrors": []
+  }
+]

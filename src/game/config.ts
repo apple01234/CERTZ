@@ -1,3 +1,7 @@
+import saveSchema from "../../accounts/save-schema.json" with { type: "json" };
+import { migrateLegacySkillMastery, normalizeSkillMastery } from "./skillMastery";
+import { migrateStoryProgress } from "./storyRevision";
+
 /** 게임 전역 상수 */
 export const GAME_W = 960;
 export const GAME_H = 540;
@@ -66,6 +70,7 @@ export type SaveData = {
    *   · version 이 없는 세이브는 0 으로 간주한다(현재 존재하는 모든 구 세이브).
    */
   v?: number;
+  storyRevision?: string;
   stage: string;
   lv: number;
   exp: number;
@@ -396,7 +401,7 @@ export function mutateFriends(fn: (list: { code: string; name: string }[]) => { 
  *  이 값이 필요한 이유는 "지금"이 아니라 "나중"이다. 의미 변경이 일어나는 순간
  *  이 상수가 없으면 구 세이브를 구분할 방법이 사라진다.
  */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = saveSchema.version;
 
 /**
  * 세이브 마이그레이션 — 로드 직후, 기본값 채우기 **전에** 호출한다.
@@ -415,19 +420,45 @@ export const SAVE_VERSION = 1;
 const REMOVED_REGION_RE = /^(forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss)(v|[1-9]|10)$/;
 
 export function migrateSave(d: SaveData): SaveData {
-  /* vc251 — 버전 게이트보다 **먼저** 돌린다. 버전이 이미 최신인 세이브에도
-   *  삭제 지역 키가 남아 있을 수 있으므로 조기 return 뒤에 두면 놓친다. */
-  if (typeof d.stage === "string" && REMOVED_REGION_RE.test(d.stage)) d.stage = "village";
+  const from = typeof d.v === "number" && Number.isInteger(d.v) && d.v >= 0 ? d.v : 0;
+  if (from > SAVE_VERSION) return d;
+  const next = migrateStoryProgress(d);
+  if (typeof next.stage === "string" && REMOVED_REGION_RE.test(next.stage)) next.stage = "village";
+  next.skillMastery = from < 2 ? migrateLegacySkillMastery(d.skillMastery) : normalizeSkillMastery(d.skillMastery);
+  next.v = SAVE_VERSION;
+  return next;
+}
 
-  const from = typeof d.v === "number" ? d.v : 0; // v 없음 = 0 (도입 이전 세이브)
-  if (from >= SAVE_VERSION) return d;
+export function saveMigrationBackupKey(key: string): string {
+  return `sertz:migration-backup:v${SAVE_VERSION}:${key}`;
+}
 
-  /* ---- 0 → 1 : 버전 도입. 데이터 변환은 없다. ---- */
-  /* (예시) 1 → 2 : 경험치 단위가 절대값 → 퍼센트로 바뀌면 여기서 변환한다.
-   *   if (from < 2) { d.exp = toPercent(d.exp); }  */
+export function reportSaveFailure(reason: string) {
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("sertz:save-failed", { detail: { reason } }));
+}
 
-  d.v = SAVE_VERSION;
-  return d;
+/** Called at every persistence boundary, before originals can be overwritten. */
+export function backupSaveOriginal(key: string, raw: string) {
+  if (typeof window === "undefined") return;
+  const backupKey = saveMigrationBackupKey(key);
+  try {
+    if (window.localStorage.getItem(backupKey) === null) window.localStorage.setItem(backupKey, raw);
+  } catch {
+    const reason = "기존 저장을 안전하게 백업하지 못했습니다. 저장 공간을 확보한 뒤 다시 시도해 주세요. 원본은 유지됩니다.";
+    reportSaveFailure(reason);
+    throw new Error(reason);
+  }
+}
+
+export function prepareSave(data: SaveData, key: string, raw = JSON.stringify(data)): SaveData {
+  if (typeof data.v === "number" && Number.isInteger(data.v) && data.v > SAVE_VERSION) {
+    const reason = "더 최신 버전에서 만든 저장입니다. 게임을 업데이트한 뒤 불러와 주세요. 원본은 유지됩니다.";
+    reportSaveFailure(reason);
+    throw new Error(reason);
+  }
+  const next = migrateSave(data);
+  if (JSON.stringify(next) !== raw) backupSaveOriginal(key, raw);
+  return next;
 }
 
 export function loadSave(): SaveData | null {
@@ -441,7 +472,7 @@ export function loadSave(): SaveData | null {
     /* vc219 — 마이그레이션을 기본값 채우기보다 먼저 돌린다.
      *  순서가 반대면 "기본값으로 채워진 뒤" 마이그레이션이 그 위를 덮어써
      *  변환 결과가 사라진다. */
-    const d = migrateSave(parsed);
+    const d = prepareSave(parsed, activeSaveKey(), raw);
     // 신규 필드 기본값 채우기 (구버전 세이브 호환)
     if (typeof d.gold !== "number") d.gold = 30;
     if (!d.potions) d.potions = { hp: 2, mp: 1 };
@@ -570,11 +601,23 @@ export function writeSave(data: SaveData) {
     /* v1.0.16 (O12) — 종전엔 활성 캐릭터가 있으면 같은 데이터를 두 번 직렬화했다
      *  (char_<id> 키 + 레거시 미러 키). 세이브는 스테이지 전환마다 불리므로 낭비가 컸다.
      *  한 번만 문자열로 만들고 두 키에 같은 값을 쓴다. */
-    const json = JSON.stringify(data);
+    const existing = window.localStorage.getItem(key);
+    if (existing) {
+      const previous = JSON.parse(existing) as SaveData;
+      if ((previous.v ?? 0) > SAVE_VERSION) {
+        reportSaveFailure("더 최신 버전의 저장은 덮어쓸 수 없습니다. 게임을 업데이트해 주세요.");
+        return;
+      }
+      if ((previous.v ?? 0) < SAVE_VERSION || previous.storyRevision === "memory-oath-v1") backupSaveOriginal(key, existing);
+    }
+    const json = JSON.stringify(prepareSave(data, key));
     window.localStorage.setItem(key, json);
     /* v1.0.18 — 로비 멀티캐릭터: 활성 캐릭터가 있으면 레거시 키에도 미러링
      *  (구버전 APK 롤백 시 "마지막 플레이 캐릭터" 이어하기 보장 — 원본은 char_<id>가 진실) */
-    if (activeCharId && key !== SAVE_KEY) window.localStorage.setItem(SAVE_KEY, json);
+    if (activeCharId && key !== SAVE_KEY) {
+      try { window.localStorage.setItem(SAVE_KEY, json); }
+      catch { reportSaveFailure("캐릭터 저장은 완료됐지만 이전 버전 호환 사본을 갱신하지 못했습니다. 저장 공간을 확인해 주세요."); }
+    }
     for (const fn of saveHooks) {
       try {
         fn(data);

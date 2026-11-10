@@ -26,6 +26,7 @@ import { useGameUi } from "./useGameUi";
 import { loadMuted, writeMuted } from "@/game/config";
 import { installCrashGuard } from "./crashGuard"; // v1.0.20 — 크래시 가드 (검은 화면 → 복구 오버레이)
 import { tutorialAllows } from "@/game/tutorialFlow";
+import { LoadingStatus } from "./LoadingStatus";
 
 /**
  * 게임 루트: Phaser 캔버스 + React UI 오버레이의 합체점
@@ -97,10 +98,11 @@ export default function GameRoot() {
       if (shown) return;
       shown = true;
       const quota = !!(e as CustomEvent<{ quota?: boolean }>).detail?.quota;
+      const reason = (e as CustomEvent<{ reason?: string }>).detail?.reason;
       setSaveWarn(
-        quota
+        reason || (quota
           ? "저장 공간이 가득 찼습니다 — 진행이 저장되지 않고 있어요. 브라우저 데이터를 정리한 뒤 다시 시도해 주세요."
-          : "진행 저장에 실패했습니다 — 잠시 후 다시 시도해 주세요. 계속 실패하면 설정에서 클라우드 백업을 사용하세요.",
+          : "진행 저장에 실패했습니다 — 잠시 후 다시 시도해 주세요. 계속 실패하면 설정에서 클라우드 백업을 사용하세요."),
       );
       setTimeout(() => setSaveWarn(null), 12000);
     };
@@ -216,6 +218,7 @@ export default function GameRoot() {
 
   return (
     <div className="game-root fixed inset-0 select-none overflow-hidden bg-[#05070d]" data-tutorial-step={learning ? tutorial.step : undefined}>
+      <LoadingStatus />
       {/* Phaser 캔버스가 들어갈 부모 — FIT 스케일이 이 영역을 채움 */}
       <div ref={parentRef} className="absolute inset-0 touch-none" aria-label="게임 화면" />
 

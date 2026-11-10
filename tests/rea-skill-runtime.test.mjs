@@ -118,10 +118,10 @@ class EffectStub {
   release(pulse) { (this.releases ??= []).push(pulse); }
   clear() { this.cleared = true; }
 }
-const Subject = new Function("Phaser", "weaponMasterProfileOf", "STARTER_SIGNATURE", "copiedReactionElement", "ELEMENT_META", "WeaponMasterCombat", "startSignatureCast", "signatureZones", "signatureZoneContains", "audio", "resolveSkill1Of", "resolveSkill2Of", "familyOf", "FAMILY_ELEM", "sweptHitsTarget", "FREE_DASH", "freeDashDirection", "skillMasteryProgress", ts.transpile(subjectSource))(
+const Subject = new Function("Phaser", "weaponMasterProfileOf", "STARTER_SIGNATURE", "copiedReactionElement", "ELEMENT_META", "WeaponMasterCombat", "startSignatureCast", "signatureZones", "signatureZoneContains", "audio", "resolveSkill1Of", "resolveSkill2Of", "familyOf", "FAMILY_ELEM", "sweptHitsTarget", "FREE_DASH", "freeDashDirection", "skillMasteryProgress", "notice", ts.transpile(subjectSource))(
   PhaserStub, weaponMasterProfileOf, STARTER_SIGNATURE, copiedReactionElement,
   Object.fromEntries(["none", "fire", "nature", "water", "electric", "light", "dark", "wind", "earth", "ice"].map(elem => [elem, { hex: 123 }])),
-  EffectStub, startSignatureCast, signatureZones, signatureZoneContains, { sfx: { elemCast() {} } }, resolveSkill1Of, resolveSkill2Of, familyOf, { warrior: "fire", thief: "dark" }, () => false, FREE_DASH, freeDashDirection, skillMasteryProgress,
+  EffectStub, startSignatureCast, signatureZones, signatureZoneContains, { sfx: { elemCast() {} } }, resolveSkill1Of, resolveSkill2Of, familyOf, { warrior: "fire", thief: "dark" }, () => false, FREE_DASH, freeDashDirection, skillMasteryProgress, () => {},
 );
 function player(cls = null) {
   const timer = clock(), hits = [], scene = {
@@ -259,17 +259,17 @@ test("taught skills count one completed release per cast; cancellation and coold
 test("mastery damage/healing actually scale, cap at +20%, and persist independently across branch/tier changes", () => {
   for (const cls of ['berserker', 'guardian', 'sage']) {
     const damage = [], healing = [];
-    for (const uses of [0, 200, 999999]) {
+    for (const uses of [0, 491, 999999]) {
       const { p, timer, target, hits } = player(cls), key = weaponMasterProfileOf(cls).style;
       p.skillMastery = normalizeSkillMastery({ [key]: uses });
       target(70, 0); p.useSkill1(); timer.advance(3000);
       damage.push(hits[0].dmg); healing.push(p.hp - 100);
-      assert.equal(p.skillMastery[key], uses === 0 ? 1 : 200);
+      assert.equal(p.skillMastery[key], uses === 0 ? 1 : 491);
     }
     assert.ok(Math.abs(damage[1] / damage[0] - 1.2) < 1e-10); assert.equal(damage[2], damage[1]);
     if (cls !== 'berserker') assert.ok(healing[1] > healing[0]);
   }
-  const { p } = player('berserker'); p.skillMastery = { solar: 20, life: 40 };
+  const { p } = player('berserker'); p.skillMastery = { solar: 5, life: 13 };
   p.cls = 'warlord'; assert.equal(p.skill1Mastery.level, 1);
   p.cls = 'guardian'; assert.equal(p.skill1Mastery.level, 2);
   p.cls = 'berserker'; assert.equal(p.skill1Mastery.level, 1);
@@ -277,9 +277,9 @@ test("mastery damage/healing actually scale, cap at +20%, and persist independen
 
 test("legacy/corrupt mastery data is bounded and level thresholds are exact", () => {
   for (const v of [undefined, null, [], 'invalid']) assert.deepEqual(normalizeSkillMastery(v), {});
-  assert.deepEqual(normalizeSkillMastery({ solar: -2, life: NaN, lightning: Infinity, art: '20', shadow: 99999, unknown: 20 }), { shadow: 200 });
-  assert.equal(skillMasteryProgress(19).level, 0); assert.equal(skillMasteryProgress(20).level, 1);
-  assert.equal(skillMasteryProgress(199).usesToNext, 1); assert.equal(skillMasteryProgress(200).usesToNext, 0);
+  assert.deepEqual(normalizeSkillMastery({ solar: -2, life: NaN, lightning: Infinity, art: '20', shadow: 99999, unknown: 20 }), { shadow: 491 });
+  assert.equal(skillMasteryProgress(4).level, 0); assert.equal(skillMasteryProgress(5).level, 1);
+  assert.equal(skillMasteryProgress(490).usesToNext, 1); assert.equal(skillMasteryProgress(491).usesToNext, 0);
   assert.equal(skillMasteryProgress(999999).powerBonusPct, 20);
 });
 

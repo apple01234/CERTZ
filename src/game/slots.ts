@@ -9,7 +9,8 @@
  *  구 세이브(sertz_save_v2)는 첫 부팅 시 1번 캐릭터로 자동 마이그레이션되며
  *  원본은 삭제하지 않는다 (구버전 APK 롤백 안전망).
  */
-import { loadSave, writeSave, registerSaveHook, setActiveCharId, SAVE_KEY, type SaveData } from "./config";
+import { loadSave, writeSave, registerSaveHook, setActiveCharId, SAVE_KEY, SAVE_VERSION, prepareSave, backupSaveOriginal, reportSaveFailure, type SaveData } from "./config";
+import { STORY_REVISION } from "./storyRevision";
 
 export const SLOTS_KEY = "sertz_slots_v1";
 /** vc149 (#2) — 슬롯 메타 이중 백업 키 — 본 키 파손/유실 시 복구용 */
@@ -203,6 +204,8 @@ export function createCharacter(
   const now = Date.now();
   const tint = lookTint ?? null;
   const stub: SaveData = {
+    v: SAVE_VERSION,
+    storyRevision: STORY_REVISION,
     stage: "village",
     lv: 1,
     exp: 0,
@@ -249,7 +252,9 @@ export function readCharSave(id: string): SaveData | null {
   try {
     const raw = window.localStorage.getItem(`sertz_char_${id}`);
     if (!raw) return null;
-    return JSON.parse(raw) as SaveData;
+    const data = JSON.parse(raw) as SaveData;
+    if (!data || typeof data.stage !== "string") return null;
+    return prepareSave(data, `sertz_char_${id}`, raw);
   } catch {
     return null;
   }
@@ -283,10 +288,18 @@ export function importCloudSave(
   }
   const id = target ?? `c${Date.now().toString(36)}${Math.floor(Math.random() * 36).toString(36)}`;
   try {
+    const key = `sertz_char_${id}`;
+    const existing = window.localStorage.getItem(key);
+    if (existing) {
+      prepareSave(JSON.parse(existing) as SaveData, key, existing);
+      backupSaveOriginal(`restore:${key}`, existing);
+    }
+    data = prepareSave(data, `cloud:${key}`);
     window.localStorage.setItem(`sertz_char_${id}`, JSON.stringify(data));
-    window.localStorage.setItem(SAVE_KEY, JSON.stringify(data)); // 롤백 안전망 미러 (기존 doRestore 동작 유지)
+    try { window.localStorage.setItem(SAVE_KEY, JSON.stringify(data)); }
+    catch { reportSaveFailure("캐릭터 복원은 완료됐지만 이전 버전 호환 사본을 갱신하지 못했습니다. 저장 공간을 확인해 주세요."); }
   } catch {
-    return { ok: false, reason: "저장 공간에 기록할 수 없어요" };
+    return { ok: false, reason: "안전하게 복원할 수 없어요. 게임 버전과 저장 공간을 확인해 주세요. 원본은 유지됩니다." };
   }
   const now = Date.now();
   const meta = store.chars[id];
@@ -320,12 +333,13 @@ export function importCharsFromCloud(chars: Record<string, unknown>): number {
   let added = 0;
   for (const [rawName, v] of Object.entries(chars)) {
     if (!v || typeof v !== "object") continue;
-    const data = v as SaveData;
+    let data = v as SaveData;
     if (typeof data.stage !== "string") continue;
     const name = String(data.playerName ?? rawName).trim().slice(0, 8) || "하루";
     if (names.has(name)) continue; // 이미 있음 — 로컬 유지
     const id = `c${Date.now().toString(36)}${Math.floor(Math.random() * 36).toString(36)}${added}`;
     try {
+      data = prepareSave(data, `cloud:sertz_char_${id}`);
       window.localStorage.setItem(`sertz_char_${id}`, JSON.stringify(data));
     } catch { continue; }
     store.chars[id] = {
@@ -357,9 +371,13 @@ export function collectLocalChars(): Record<string, SaveData> {
     const store = loadSlots();
     for (const meta of Object.values(store.chars)) {
       const save = readCharSave(meta.id);
-      if (save) out[meta.name] = save;
+      if (!save) throw new Error("읽을 수 없는 캐릭터 저장이 있어 전체 클라우드 백업을 중단했습니다. 기존 클라우드 기록은 유지됩니다.");
+      out[meta.name] = save;
     }
-  } catch { /* 무시 */ }
+  } catch (err) {
+    reportSaveFailure(err instanceof Error ? err.message : "전체 캐릭터 백업을 만들지 못했습니다.");
+    throw err;
+  }
   return out;
 }
 

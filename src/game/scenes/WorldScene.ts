@@ -46,7 +46,9 @@ import { ALL_KEYS, fillKeyObjects } from "./input/keyRegistration";
 import { notice } from "../fx/Notice";
 import { SkillInputBuffer, type SkillCaster, type SkillId } from "./input/skillBuffer";
 import { cine3d } from "../cine3d"; // vc181 — 3D 시네마틱 레이어
-import { writeSave, loadSave, getFcode, type SaveData, setPlayerName, getPlayerName } from "../config";
+import { writeSave, loadSave, prepareSave, SAVE_VERSION, getFcode, type SaveData, setPlayerName, getPlayerName } from "../config";
+import { STORY_REVISION } from "../storyRevision";
+import { ensureWorldAssets, markWorldReady, reportLoadingFailure } from "../stagedAssets";
 import { createSimRunner, SIM_STEP_MS } from "../sim/fixedStep"; // vc183 — 20Hz 고정 틱 시뮬레이션
 import { keyLabel, loadKeyMap, loadMoveScheme, moveKeysFor, type KeyMap, type GameAction, type MoveScheme } from "../keymap";
 import {
@@ -365,6 +367,8 @@ export class WorldScene extends Phaser.Scene {
   private featureTutDoDone = false;
   /** vc178 — 구 세이브 튜토리얼 마이그레이션 발생 여부 (1회 안내용) */
   private migratedTutSeen = false;
+  private storyRevision = STORY_REVISION;
+  private assetsReady = false;
   /* vc150 (#26번항목21) — 좀비 몬스터 청소 누적기 */
   private zombieSweepAt = 0;
 
@@ -857,6 +861,13 @@ export class WorldScene extends Phaser.Scene {
   }
 
   init(data: { stage?: StageKey; save?: SaveData; fresh?: boolean; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string }) {
+    this.assetsReady = false;
+    if (data.save) {
+      const originalStage = data.save.stage;
+      data = { ...data, save: prepareSave(data.save, `scene:${getActiveCharId() ?? "legacy"}`) };
+      if (data.stage === originalStage) data.stage = data.save!.stage as StageKey;
+    }
+    this.storyRevision = data.save?.storyRevision ?? STORY_REVISION;
     this.questIdx = 0;
     this.huntCount = 0;
     this.totalKills = 0;
@@ -1099,7 +1110,11 @@ export class WorldScene extends Phaser.Scene {
    *  1) 초기화 예외를 잡아 최소 안전 부팅(배경 + fadeIn)을 보장
    *  2) 실패 시 1회 한정 자동 재부팅 (세이브는 gotoStage마다 기록되어 있어 안전)
    *  3) fadeIn + 워치독은 성공/실패 무관하게 "항상" 마지막에 실행 */
-  create() {
+  async create() {
+    const loadStarted = performance.now();
+    try { await ensureWorldAssets(this, this.registry.get("initData")); }
+    catch { return; }
+    if (!this.sys.isActive()) return;
     this.bootAt = this.time.now;
     /* v1.4.0 (#16) — 월드 진입 기록: 재부팅(reload) 시 TitleScene이 이 플래그를 보고
      *  시작 화면 대신 마지막 캐릭터로 자동 복귀한다 (정상 종료 exitToMenu는 해제) */
@@ -1114,7 +1129,10 @@ export class WorldScene extends Phaser.Scene {
     } catch { /* 무시 */ }
     try {
       this.createInner();
+      this.assetsReady = true;
+      markWorldReady(loadStarted);
     } catch (err) {
+      reportLoadingFailure();
       console.error("[SERTZ] 씬 초기화 실패 — 안전 부팅으로 전환", err);
       this.cameras.main.setBackgroundColor("#0a0e18");
       this.cameras.main.fadeIn(320, 0, 0, 0);
@@ -10188,6 +10206,7 @@ export class WorldScene extends Phaser.Scene {
 
   canPlayerAction(action: string): boolean {
     if (action === "close" || action === "choice" || action === "skip") return true;
+    if (!this.assetsReady) return false;
     if (!this.player || this.player.state === "dead" || this.transitioning || this.sleeping
       || this.dialoguing || this.camCinema || sceneCinematicPlaying(this) || this.chatFocused) return false;
     if (this.panelNavOpen && ["move", "attack", "interact", "skill1", "skill2", "skill3", "skill4", "skill5", "skill5b"].includes(action)) return false;
@@ -12213,6 +12232,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number) {
+    if (!this.assetsReady) return;
     /* vc233 (#1) — update 전체를 try/catch 로 감싼다.
      *  Phaser 의 rAF 루프는 Scene.step → update 예외 시 다음 프레임을 예약하지
      *  못하고 영구 정지한다(RequestAnimationFrame.js: callback 실행 후 재예약).
@@ -17616,6 +17636,8 @@ export class WorldScene extends Phaser.Scene {
   /** 세이브 페이로드 생성 — stageOverride는 스테이지 전환 캐리용 */
   private buildSave(stageOverride?: StageKey): SaveData {
     return {
+      v: SAVE_VERSION,
+      storyRevision: this.storyRevision,
       stage: stageOverride ?? this.stageDef.key,
       /* vc232 (#4) — 토벌 진행도 영속화 (씬 재진입 시 복원) */
       huntKills: { ...this.killTotals },

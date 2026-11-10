@@ -19,7 +19,7 @@ try {
     await page.goto(base, { waitUntil: 'domcontentloaded', timeout: 120000 });
     await page.getByRole('button', { name: /게임 시작/ }).first().click({ timeout: 120000 });
     await page.getByRole('button', { name: '이 캐릭터로 시작' }).click();
-    await page.waitForFunction(() => window.__SERTZ_SCENE__?.player, null, { timeout: 120000 });
+    await page.waitForFunction(() => window.__SERTZ_SCENE__?.assetsReady, null, { timeout: 120000 });
     await page.waitForTimeout(1400);
     console.log('BOOT', mobile ? 'touch' : 'keyboard');
     await page.evaluate(() => {
@@ -29,8 +29,9 @@ try {
       s.agroHoldUntil = s.time.now + 999999; s.camCinema = false; s.dialoguing = false;
       s.physics.world.resume(); p.cancelSkillCast(); p.stopFreeDash();
       document.activeElement?.blur();
+      p.mpRegenAcc = -999999; // Isolate cast accounting from the passive +5 MP/second tick.
       p.cls = 'berserker'; p.state = 'idle'; p.mp = p.maxMp; p.skill1Cd = 0; p.iframes = 999999;
-      p.skillMastery = { solar: 19 };
+      p.skillMastery = { solar: 4 };
       p.facing.set(1, 0);
       s.time.timeScale = .2; s.tweens.timeScale = .2;
       window.__REFERENCE_HITS__ = 0;
@@ -66,7 +67,7 @@ try {
     });
     assert.equal(cancelled.liveCastFx, 0); assert.equal(cancelled.warningTween, false);
     assert.equal(cancelled.mp, early.mp); assert.ok(cancelled.cooldown > 0);
-    assert.equal(await page.evaluate(() => window.__SERTZ_SCENE__.player.skillMastery.solar), 19);
+    assert.equal(await page.evaluate(() => window.__SERTZ_SCENE__.player.skillMastery.solar), 4);
     await page.evaluate(() => { const s = window.__SERTZ_SCENE__; s.time.timeScale = 1; s.tweens.timeScale = 1; });
     await page.waitForTimeout(1500);
     assert.equal(await page.evaluate(() => window.__REFERENCE_HITS__), 0);
@@ -94,7 +95,7 @@ try {
       window.__SERTZ_EB__.emit('ui:panel', { panel: 'job' });
       return { ...s.player.skill1Mastery, savedUses: s.buildSave().skillMastery.solar };
     });
-    assert.equal(mastery.level, 1); assert.equal(mastery.savedUses, 20); assert.equal(mastery.powerBonusPct, 2);
+    assert.equal(mastery.level, 1); assert.equal(mastery.savedUses, 5); assert.equal(mastery.powerBonusPct, 2);
     const section = page.getByRole('region', { name: '전수 기술 숙련도' });
     await section.getByText('아리 · 전수 기술', { exact: true }).waitFor();
     await section.getByText(/숙련 1\/10/).waitFor();
@@ -102,9 +103,9 @@ try {
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: /게임 시작/ }).first().click({ timeout: 120000 });
     await page.getByRole('button', { name: '이 캐릭터로 시작' }).click();
-    await page.waitForFunction(() => window.__SERTZ_SCENE__?.player, null, { timeout: 120000 });
+    await page.waitForFunction(() => window.__SERTZ_SCENE__?.assetsReady, null, { timeout: 120000 });
     const restored = await page.evaluate(() => window.__SERTZ_SCENE__.player.skill1Mastery);
-    assert.equal(restored.uses, 20); assert.equal(restored.level, 1);
+    assert.equal(restored.uses, 5); assert.equal(restored.level, 1);
     assert.equal(errors.length, 0, errors.join('\n'));
     results.push({ mode: mobile ? 'touch' : 'keyboard', early, lateAlpha: late, cancelled, normal, final, mastery, restored, pageErrors: errors });
     console.log('PASS', mobile ? 'touch' : 'keyboard');

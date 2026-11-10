@@ -3,6 +3,7 @@ export const STORY_REVISION = "haru-evernote-v1";
 
 type StorySave = {
   storyRevision?: string;
+  storyChoices?: Record<string, string>;
   stage: string;
   youngPrincessCleared?: boolean;
   dlcTalked?: boolean;
@@ -23,19 +24,16 @@ function withoutStoryStages(values: Record<string, number> | undefined) {
   return Object.fromEntries(Object.entries(values ?? {}).filter(([stage]) => !isStoryStage(stage)));
 }
 
-/** A new story replays its own quests, never the player's earned character growth. */
+/** Only an explicitly identified legacy story may reset story progress. */
 export function migrateStoryProgress<T extends StorySave>(data: T): T {
   /* 유저 지시 — '영준 프린세스 시작 마을'(youngprincessv)을 진행 경로에서 제거했다.
    *  구 세이브가 이 구역을 가리키고 있으면 유효한 곳에서 이어서 시작하게 한다:
    *  영프 편을 끝낸 세이브는 그랜드 플래닛 입구로, 아니면 애델리오나 마을로 보낸다.
    *  (스테이지 정의 자체는 남아 있으므로 데이터 손실은 없다 — 위치만 정규화) */
-  if (data.stage === "youngprincessv") {
-    return { ...data, stage: data.youngPrincessCleared ? "dlcstargatev" : "village" };
-  }
-  if (data.storyRevision === STORY_REVISION) return data;
-  return {
+  const next = data.storyRevision !== "memory-oath-v1" ? { ...data } : {
     ...data,
     storyRevision: STORY_REVISION,
+    storyChoices: {},
     stage: "village",
     youngPrincessCleared: false,
     dlcTalked: false,
@@ -46,6 +44,9 @@ export function migrateStoryProgress<T extends StorySave>(data: T): T {
     cutsceneSeen: [],
     huntBase: { ...data.huntKills },
   };
+  if (next.stage === "youngprincessv") next.stage = next.youngPrincessCleared ? "dlcstargatev" : "village";
+  if (!next.storyRevision) next.storyRevision = STORY_REVISION;
+  return next;
 }
 
 /** The prefix deliberately does not match sertz_char_* orphan-character discovery. */

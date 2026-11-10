@@ -143,7 +143,7 @@ const ok = (name, cond) => { assert.ok(cond, `✗ ${name}`); checks++; };
   const page = read("src/app/page.tsx");
   ok("문서 title 이 SERTZ", /title:\s*"SERTZ"/.test(lay));
   ok("layout title 에 부제목 없음", !/title:\s*"[^"]*—/.test(lay) && !/title:\s*"SERTZ\s/.test(lay));
-  ok("page.tsx 로딩 제목이 SERTZ", page.includes("SERTZ"));
+  ok("page.tsx 로딩 제목이 현재 작품명", page.includes("하루는 웨폰마스터가 되었다."));
   /* 로딩/타이틀 화면의 실제 text() 노드에 부제목 문자열이 없어야 한다(주석 설명은 제외) */
   ok("BootScene 에 '라일락 월드' 부제목 없음", !/\.text\([^)]*["'`]라일락 월드["'`]/.test(boot));
   ok("BootScene 에 '기억의 서약' 부제목 없음", !/\.text\([^)]*["'`]기억의 서약["'`]/.test(boot));

@@ -81,3 +81,16 @@ test('all active canonical boss visuals and changing attack/cast frames ship off
   assert.equal(canonBossOf('harold').phases[1].visual, 'story_kraken');
   assert.ok(canonBossOf('feron').phases.every(p => !p.visual?.includes('dragon')));
 });
+
+test('main road is six fine tiles wide while keeping the collision mask and meadow margins', () => {
+  const cols=10, rows=8;
+  const open=Array.from({length:cols*rows},(_,i)=>i%cols>0&&i%cols<cols-1&&Math.floor(i/cols)>0&&Math.floor(i/cols)<rows-1);
+  const layout={cols,rows,cellW:144,cellH:128,open,entry:4*cols+1,exit:4*cols+8};
+  const place=CHAPTER_STORY_PLAN.howlrstone1.places[0];
+  const data=chapterTerrainData(layout,place), road=new Set(terrain.materials[place.path].tiles);
+  const centerX=4*data.detail+2;
+  const painted=data.ground.map((row,y)=>road.has(row[centerX])?y:-1).filter(y=>y>=0);
+  assert.equal(painted.length,6);
+  assert.ok(painted.length*data.tileH>=192);
+  assert.ok(data.ground.flat().filter(tile=>tile>=0&&!road.has(tile)).length>0);
+});

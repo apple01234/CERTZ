@@ -1,31 +1,25 @@
 "use client";
 import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
+
+function ShellLoading() {
+  const [expired, setExpired] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setExpired(true), 30000);
+    return () => window.clearTimeout(timer);
+  }, []);
+  return <div role="status" className="fixed inset-0 flex flex-col items-center justify-center gap-4 bg-[#171d2d] px-6 text-center text-[#dfc38b]">
+    <strong className="text-xl">하루는 웨폰마스터가 되었다.</strong>
+    <span>{expired ? "게임을 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요." : "모험을 준비하고 있어요…"}</span>
+    {expired && <button className="game-btn px-5 py-3" onClick={() => window.location.reload()}>다시 시도</button>}
+  </div>;
+}
 
 const GameRoot = dynamic(
   () => import("@/components/game/GameRoot"),
   {
     ssr: false,
-    loading: () => (
-      <div
-        role="status"
-        className="fixed inset-0 flex flex-col items-center justify-center gap-4 bg-[#171d2d] text-[#dfc38b]"
-      >
-        <svg
-          width="64"
-          height="64"
-          viewBox="0 0 16 16"
-          shapeRendering="crispEdges"
-          aria-hidden="true"
-        >
-          <path
-            fill="currentColor"
-            d="M1 3h6v1h2V3h6v10H9v1H7v-1H1V3zm1 1v8h5V5H2zm7 1v7h5V4H9v1zM3 6h3v1H3V6zm7 0h3v1h-3V6zM3 9h3v1H3V9zm7 0h3v1h-3V9z"
-          />
-        </svg>
-        <strong className="text-2xl tracking-widest">SERTZ</strong>
-        <span className="text-xs text-[#b5b5c8]">함께한 기억을 펼치는 중…</span>
-      </div>
-    ),
+    loading: ShellLoading,
   },
 );
 export default function Home() {

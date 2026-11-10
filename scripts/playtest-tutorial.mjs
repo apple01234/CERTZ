@@ -11,7 +11,7 @@ await page.getByRole('button',{name:'이 캐릭터로 시작'}).click();
 await page.waitForFunction(()=>window.__SERTZ_SCENE__?.player,null,{timeout:120000});
 const press = key => page.keyboard.press(key, { delay: 90 });
 let shotLilac = false;
-const state = () => page.evaluate(() => { const s=window.__SERTZ_SCENE__, t=s.tut, p=s.player; return { stage:s.stageDef.key, step:t?.currentId??null, cinema:s.camCinema, dialogue:s.dialoguing, paused:s.physics.world.isPaused, player:{x:p.x,y:p.y,mp:p.mp,gold:p.gold,potions:p.potions}, target:t?.target?{x:t.target.x,y:t.target.y}:null, enemy:t?.practice?{x:t.practice.x,y:t.practice.y,active:t.practice.active}:null, windup:!!t?.evadeOrigin, done:s.tutorialDone, near:s.nearInteract, allow:s.canPlayerAction("interact"), nav:s.panelNavOpen, pending:t?.pending, kb:s.input.keyboard.enabled }; });
+const state = async () => { await page.waitForFunction(() => window.__SERTZ_SCENE__?.assetsReady && window.__SERTZ_SCENE__?.physics?.world, null, {timeout:35000}); return page.evaluate(() => { const s=window.__SERTZ_SCENE__, t=s.tut, p=s.player; return { stage:s.stageDef.key, step:t?.currentId??null, cinema:s.camCinema, dialogue:s.dialoguing, paused:s.physics.world.isPaused, player:{x:p.x,y:p.y,mp:p.mp,gold:p.gold,potions:p.potions}, target:t?.target?{x:t.target.x,y:t.target.y}:null, enemy:t?.practice?{x:t.practice.x,y:t.practice.y,active:t.practice.active}:null, windup:!!t?.evadeOrigin, done:s.tutorialDone, near:s.nearInteract, allow:s.canPlayerAction("interact"), nav:s.panelNavOpen, pending:t?.pending, kb:s.input.keyboard.enabled }; }); };
 async function settle() {
   for (let i=0;i<170;i++) {
     const s=await state();

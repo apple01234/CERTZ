@@ -81,6 +81,7 @@ jobs:
       - name: Static export (APK_EXPORT=1) — 서버리스 라우트 8개+middleware 격리
         env:
           NODE_OPTIONS: --max-old-space-size=4096
+          CERTZ_BUILD_SHA: ${{ github.sha }}
         run: |
           set -e
           # vc247 — maps 추가. /api/maps 는 파일 쓰기(PUT)를 하므로 정적 export 불가

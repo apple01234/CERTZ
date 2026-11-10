@@ -1,1 +1,48 @@
-<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>기억의 서약 · 앱 안내</title><style>body{margin:0;padding:12vh 24px;background:#171d2d;color:#e9e1c9;font-family:system-ui;line-height:1.9}main{max-width:640px;margin:auto;border:1px solid #8d805e;padding:32px}h1,a{color:#dfc38b}a{display:inline-block;margin-right:24px}</style><main><p>SERTZ · v2.1.5 / vc251</p><h1>기억의 서약</h1><p>왕국의 전쟁에서 별 너머의 귀향까지.<br>당신만의 연합원으로 이어가는 34장의 이야기.</p><p>APK는 GitHub Releases 에서 내려받을 수 있습니다. 기존 버전은 새 캠페인과 별도로 보관됩니다.</p><a href="/">웹에서 시작하기</a><a href="https://github.com/apple01234/CERTZ/releases">공식 배포 목록</a></main></html>
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SERTZ · Android 설치 안내</title>
+<style>
+body{margin:0;padding:8vh 24px;background:#171d2d;color:#e9e1c9;font-family:system-ui;line-height:1.9}
+main{max-width:640px;margin:auto;border:1px solid #8d805e;padding:32px}
+h1,a{color:#dfc38b}a{display:inline-block;margin:8px 24px 8px 0}li{margin:8px 0}small{color:#b5b5c8}[hidden]{display:none}
+</style>
+<main>
+  <p>SERTZ · Android</p>
+  <h1>APK 설치 안내</h1>
+  <p id="version" role="status" aria-live="polite">최신 버전을 확인하는 중입니다.</p>
+  <ol>
+    <li>공식 배포 목록에서 최신 APK 파일을 내려받으세요.</li>
+    <li>Android의 다운로드 알림이나 파일 앱에서 APK를 열어 설치하세요. 필요한 경우 해당 앱의 ‘알 수 없는 앱 설치’를 허용하세요.</li>
+    <li>기존 앱을 삭제하지 않고 덮어 설치하면 로컬 캐릭터를 유지할 수 있습니다. 다른 기기로 옮기기 전에는 계정의 클라우드 백업도 확인하세요.</li>
+  </ol>
+  <p>웹 업데이트와 APK 게시 시점은 다를 수 있습니다. 파일이 아직 보이지 않으면 공식 배포 목록의 빌드·게시 상태를 확인하거나 웹에서 계속 플레이하세요.</p>
+  <a id="apk" hidden>해당 버전 APK 다운로드</a>
+  <a href="https://github.com/apple01234/CERTZ/releases" target="_blank" rel="noopener noreferrer">공식 배포 목록</a>
+  <a href="/">웹에서 시작하기</a>
+  <p><small>설치가 실패하면 저장 공간과 APK 다운로드 완료 여부를 확인하세요. 앱 삭제·데이터 초기화는 로컬 세이브를 지우므로 업데이트 방법으로 사용하지 마세요.</small></p>
+</main>
+<script>
+const controller = new AbortController();
+const timer = setTimeout(() => controller.abort(), 8000);
+fetch('/api/version', { cache: 'no-store', signal: controller.signal })
+  .then(response => {
+    if (!response.ok) throw new Error('version unavailable');
+    return response.json();
+  })
+  .then(version => {
+    if (!/^\d+\.\d+\.\d+$/.test(version.latest) || !Number.isInteger(version.code) || version.code <= 0) throw new Error('invalid version');
+    const apk = new URL(version.apk);
+    if (apk.origin !== 'https://github.com' || !apk.pathname.startsWith('/apple01234/CERTZ/releases/download/')) throw new Error('invalid APK link');
+    document.getElementById('version').textContent = `최신 앱: v${version.latest} · vc${version.code}`;
+    const link = document.getElementById('apk');
+    link.href = apk.href;
+    link.hidden = false;
+  })
+  .catch(() => {
+    document.getElementById('version').textContent = '버전 정보를 확인하지 못했습니다. 공식 배포 목록에서 최신 APK를 확인하세요.';
+  })
+  .finally(() => clearTimeout(timer));
+</script>
+</html>

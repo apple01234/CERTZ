@@ -7,9 +7,10 @@ import { buildAllAnims, registerBossAnims, BOSS_ATLAS } from "../textures";
 import { CORE_BODY_PREFIXES } from "../data";
 import { loadMapOverrides } from "../mapOverrides"; // vc258 — 에디터 저장 맵
 import { BGM_PRELOAD_TRACKS, SKILL_SFX_TRACKS } from "../audio";
-import { hookLoaderForGuard, runTexGuardCycle, getTexGuardStats, installEngineFrameGuard } from "../texGuard";
+import { installEngineFrameGuard } from "../texGuard";
 import { preloadCutsceneCast, registerCutsceneCast } from "../fx/cutsceneActors";
 import { preloadChapterTerrain } from "../fx/ChapterTerrain";
+import { captureAssetCatalog, installAssetCatalog, ensureTitleAssets } from "../stagedAssets";
 
 /**
  * 외부 에셋 로드 (public/assets/)
@@ -479,21 +480,6 @@ const TX_KINDS = [
   "bite_dn", "bite_up", "gvar1", "gvar2", "pvar",
 ] as const;
 
-/* v1.4.1 (#스프라이트로딩) — 로드 실패 파일 자동 재시도:
- *  Android WebView는 부팅 시 1천+ 로컬 에셋 요청 중 일부를 실패시킬 수 있고,
- *  Phaser 로더는 실패 파일을 조용히 건너뛰므로 해당 스프라이트가 그 세션에서 영구 누락됐다.
- *  실패 목록을 모아 (스프라이트시트 치수/오디오 타입 보존) create에서 최대 3회 재시도한다. */
-const FAILED_TRIES_MAX = 3;
-const SHEET_DIMS = new Map<string, { fw: number; fh: number }>();
-for (const [k, , h] of X2_SPELLS) SHEET_DIMS.set(k, { fw: h, fh: h });
-for (const [k, w, h] of [
-  ["vfx2_bolt", 48, 32], ["vfx2_charged", 63, 48],
-  ["vfx2_hit1", 96, 96], ["vfx2_hit3", 96, 96], ["vfx2_hit5", 96, 96],
-  ["vfx2_pulse", 64, 32], ["vfx2_wspark", 64, 32],
-  ["vfx2_elec", 128, 128], ["vfx2_tri", 128, 128], ["vfx2_cfx1", 128, 128],
-  ["sv_campfire", 32, 32], ["fx_tornado", 64, 64], ["chest_anim", 64, 64],
-  ["map_chest_f", 64, 64], // v1.4.4 — 보물상자 부활(리포트 ②) — 유적 삭제 때 함께 빠졌던 시트 치수 복구
-] as [string, number, number][]) SHEET_DIMS.set(k, { fw: w, fh: h });
 /* vc180 (지시: 제공 에셋 활용) — Sonniss GDC 2026 번들에서 판타지 RPG에 쓸 만한
  *  10종만 선별·경량화(모노 44.1k, 앞 2.2초, ogg q4 → 총 187KB)했다.
  *  자동차/모터사이클/공장 소음이 대부분이라 게임 맥락에 맞는 것만 골랐다.
@@ -504,60 +490,12 @@ export const SFX2_LIST = [
   "amb_rain_city", "amb_wind_strong", "pc_effort",
 ] as const;
 
-const AUDIO_KEYS = new Set<string>([...AUDIO_LIST, ...SFX3_LIST, ...SFX2_LIST]);
 
 export class BootScene extends Phaser.Scene {
   constructor() {
     super("boot");
     /* v1.4.3 — 엔진 프레임 가드 (파괴 프레임 재굽 크래시 무해화 — texGuard 참조) */
     installEngineFrameGuard();
-  }
-
-  /* v1.4.1 — 로드 실패 파일 수집 (재시도 큐) */
-  private failedLoads = new Map<string, { key: string; url: string; tries: number }>();
-
-  /* v1.4.1 — loaderror 수집기: 실패 파일의 key/완성 URL을 보존해 create에서 재시도.
-   *  file.url은 File 생성 시점에 loader.path가 이미 합성된 완성 상대경로("assets/xxx.webp")라
-   *  재시도 시 setPath("") 후 그대로 재사용하면 된다. */
-  private readonly onLoadError = (file: { key?: string; url?: string }) => {
-    const key = file?.key ?? "";
-    if (!key) return;
-    const prev = this.failedLoads.get(key);
-    const tries = (prev?.tries ?? 0) + 1;
-    if (tries > FAILED_TRIES_MAX) {
-      console.warn("[SERTZ] 에셋 로드 실패 — 재시도 한도 초과, 건너뜀:", key);
-      return;
-    }
-    this.failedLoads.set(key, { key, url: String(file?.url ?? ""), tries });
-    console.warn(`[SERTZ] 에셋 로드 실패 — 자동 재시도 예약 (${tries}/${FAILED_TRIES_MAX}):`, key);
-  };
-
-  /** v1.4.1 — 수집된 실패 파일 재시도 (최대 2라운드, 파일당 총 3회 한도) */
-  private async retryFailedLoads() {
-    for (let round = 0; round < 2 && this.failedLoads.size > 0; round++) {
-      const batch = Array.from(this.failedLoads.values());
-      this.failedLoads.clear();
-      this.load.setPath("");
-      for (const f of batch) {
-        try {
-          const dim = SHEET_DIMS.get(f.key);
-          if (dim) this.load.spritesheet(f.key, f.url, { frameWidth: dim.fw, frameHeight: dim.fh });
-          else if (AUDIO_KEYS.has(f.key)) this.load.audio(f.key, f.url);
-          else this.load.image(f.key, f.url);
-        } catch {
-          /* 큐잉 실패는 다음 라운드에서 재평가 */
-        }
-      }
-      if (this.load.list.size > 0) {
-        await new Promise<void>((resolve) => {
-          this.load.once("complete", () => resolve());
-          this.load.start();
-        });
-      }
-    }
-    if (this.failedLoads.size > 0) {
-      console.warn("[SERTZ] 재시도 후에도 로드 실패:", Array.from(this.failedLoads.keys()).join(", "));
-    }
   }
 
   /* v1.0.20 — 부팅 로딩 화면 (유저 지시: "검은화면 뜨는 버그 없애").
@@ -612,10 +550,13 @@ export class BootScene extends Phaser.Scene {
           })
           .setOrigin(0.5),
       );
-      this.load.on("progress", (p: number) => {
-        if (!fill.active) return; // resize로 파괴된 이전 채움 — 무시
-        fill.width = Math.max(2, barW * p);
-      });
+      const onProgress = (event: Event) => {
+        if (!fill.active) return;
+        const state = (event as CustomEvent<{ complete: number; total: number }>).detail;
+        fill.width = Math.max(2, barW * state.complete / Math.max(1, state.total));
+      };
+      window.addEventListener("sertz:loading", onProgress);
+      fill.once("destroy", () => window.removeEventListener("sertz:loading", onProgress));
       /* v1.4.1 — loaderror 수집은 preload()에서 1회 등록으로 이관 (재시도 체계 참조).
        *  rebuild가 resize마다 재실행돼도 핸들러가 중복 등록되지 않는다. */
     };
@@ -690,20 +631,13 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    /* v1.4.2 — 텍스처 무결성 감시 수집 훅 (filecomplete/loaderror → 전역 레지스트리).
-     *  수집된 레지스트리는 create에서 전수 감사 + 월드 상주 감시가 재사용한다. */
-    hookLoaderForGuard(this.load, this.textures);
-    /* v1.4.1 — 실패 수집기를 로드 시작 전 1회 등록 (rebuild 중복 등록 제거) */
-    this.load.off("loaderror", this.onLoadError as never);
-    this.load.on("loaderror", this.onLoadError as never);
-    /* v1.0.20 — 로딩 UI를 에셋 로드 시작 "직전"에 띄운다 (검은 화면 구간 0) */
     this.buildLoadingUi();
-    /* vc224 — 로더 병렬도 제한.
-     *  헤드리스 검증에서 1,678개 중 32개(1.9%)에서 무한 정체가 재현됐다(실패 0건, pending 1646).
-     *  pending 파일 state 가 전부 LOADING 으로 남아 있어 동시 요청이 브라우저 커넥션 한도에
-     *  걸린 것으로 보인다. Phaser 기본값 4 → 2 로 낮춰 정체를 회피한다.
-     *  로드 총량이 같으므로 완료 시간은 거의 동일하고, 대신 멈추지 않는다. */
-    this.load.maxParallelDownloads = 2;
+    const definitions = captureAssetCatalog(this, () => this.queueCatalog());
+    installAssetCatalog(this, definitions, registerLoadedAnimations);
+  }
+
+  /** Keep every original key and source; only the requested load phase changes. */
+  private queueCatalog() {
     this.load.setPath("assets");
     /* vc206 (지시 #11) — webp 우선 로드 후, PNG 원본이 있는 타일은 PNG 로 덮어 로드한다.
      *  Phaser 는 같은 키를 두 번 큐잉하면 나중 것이 이기므로 PNG 가 최종 텍스처가 된다.
@@ -990,49 +924,11 @@ export class BootScene extends Phaser.Scene {
   }
 
   async create() {
-    /* v1.4.1 — 실패 에셋 자동 재시도 완료 후 타이틀 진행 (몇몇 스프라이트 누락 원천 차단) */
-    await this.retryFailedLoads();
-    /* v1.4.2 — 재시도 후 최종 무결성 감사: loaderror 재시도 3회 한도 초과분까지
-     *  전수 대조해 누락/손상 텍스처를 타이틀 진입 전에 수복한다. */
-    await runTexGuardCycle(this, "부트");
-    (window as unknown as { __SERTZ_TEXGUARD__?: unknown }).__SERTZ_TEXGUARD__ = getTexGuardStats();
-    /* v1.0.20 — 타이틀로 넘어가기 전 로딩 UI 정리 (검은 화면 잔상 방지) */
+    try { await ensureTitleAssets(this); } catch { return; }
+    if (!this.sys.isActive()) return;
     this.bootUi?.destroy();
     this.bootUi = undefined;
-    buildAllAnims(this);
-    registerCutsceneCast(this);
-    registerStoryBosses(this);
-    /* vc140 — 보스 화질 복구 2차(엔진 측): pixelArt:true(antialias:false)는 모든 텍스처를
-     *  NEAREST(1)로 업로드한다 — 그림체 고해상 보스 아트가 카메라 줌(1.25~2.5배) 확대 시
-     *  계단 픽셀·격자 뭉개짐이 됐다("보스 화질 ㅈ구림"의 엔진 측 근본 원인).
-     *  보스 아틀라스 9종만 LINEAR(0)로 오버라이드 — 캐릭터/타일 등 픽셀아트는 기존 NEAREST 유지.
-     *  Phaser 문서 기준: "Use LINEAR for smooth scaling of high-resolution artwork". */
-    for (const { key } of Object.values(BOSS_ATLAS)) {
-      if (this.textures.exists(key)) this.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR);
-    }
-    /* v1.4.31 (#4) — 아틀라스 보스 9종 풀애니 부팅 즉시 등록 (시트가 preload에 포함되어 바로 가능 —
-     *  기존은 Boss 스폰 시점 등록이라 E2E·첫 스폰 직전까지 애니 부재). 구형 폴백 애니는 등록하지 않는다. */
-    for (const tex of Object.keys(BOSS_ATLAS)) registerBossAnims(this, tex);
-    /* [vc258 — 맵에디터] 에디터로 저장한 맵 오버라이드를 메모리에 올린다.
-     *  월드 씬이 레이아웃을 만들기 **전**에 끝나야 한다(부팅은 타이틀보다 앞).
-     *  실패해도 throw 하지 않으므로 오프라인/APK 첫 실행에서도 게임은 뜬다. */
     void loadMapOverrides();
-    /* vc142 (#9/#12) — vx_ 플립북 애니 등록 (유저 에셋팩 크롭분 — 보스 고유 패턴/3D 오버레이 공용) */
-    const VX_ANIMS: [string, string, number, number, number][] = [
-      ["vx-fire", "vx_fire", 0, 8, 14],
-      ["vx-elec", "vx_elec", 0, 13, 20],
-      ["vx-bolt", "vx_bolt", 0, 7, 16],
-      ["vx-smoke", "vx_smoke", 0, 7, 12],
-      ["vx-expcore", "vx_expcore", 0, 3, 12],
-      ["vx-smokecloud", "vx_smokecloud", 0, 3, 10],
-      ["vx-petal", "vx_petal", 0, 3, 8],
-      ["vx-debris", "vx_debris", 0, 8, 16],
-    ];
-    for (const [key, tex, from, to, rate] of VX_ANIMS) {
-      if (!this.textures.exists(tex)) continue;
-      if (this.anims.exists(key)) continue;
-      this.anims.create({ key, frames: this.anims.generateFrameNumbers(tex, { start: from, end: to }), frameRate: rate, repeat: 0 });
-    }
     /* v4.1.5 — Galmuri 픽셀 폰트 로딩 대기 (최대 2.5초 폴백).
      *  Phaser 캔버스 텍스트(데미지 숫자/배너/월드 라벨)가 Galmuri로 렌더되려면
      *  씬 시작 전 document.fonts 로드 완료가 필요하다. 실패해도 sans-serif 폴백. */
@@ -1051,6 +947,27 @@ export class BootScene extends Phaser.Scene {
     } catch {
       /* 폰트 로드 실패 — 기본 폰트로 계속 */
     }
-    this.scene.start("title");
+    if (this.sys.isActive()) this.scene.start("title");
+  }
+}
+
+/** Re-run safely after a package arrives; unloaded sheets cannot own animations. */
+function registerLoadedAnimations(scene: Phaser.Scene) {
+  buildAllAnims(scene);
+  registerCutsceneCast(scene);
+  registerStoryBosses(scene);
+  for (const { key } of Object.values(BOSS_ATLAS)) {
+    if (scene.textures.exists(key)) scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR);
+  }
+  for (const tex of Object.keys(BOSS_ATLAS)) registerBossAnims(scene, tex);
+  const sheets = [
+    ["vx-fire", "vx_fire", 0, 8, 14], ["vx-elec", "vx_elec", 0, 13, 20],
+    ["vx-bolt", "vx_bolt", 0, 7, 16], ["vx-smoke", "vx_smoke", 0, 7, 12],
+    ["vx-expcore", "vx_expcore", 0, 3, 12], ["vx-smokecloud", "vx_smokecloud", 0, 7, 12],
+    ["vx-petal", "vx_petal", 0, 3, 8], ["vx-debris", "vx_debris", 0, 8, 16],
+  ] as const;
+  for (const [key, texture, start, end, rate] of sheets) {
+    if (!scene.textures.exists(texture) || scene.anims.exists(key)) continue;
+    scene.anims.create({ key, frames: scene.anims.generateFrameNumbers(texture, { start, end }), frameRate: rate, repeat: 0 });
   }
 }

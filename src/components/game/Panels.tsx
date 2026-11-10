@@ -5165,15 +5165,15 @@ function JobPanel({ rpg, hud, onClose }: { rpg: RpgState; hud: HudState; onClose
           <section aria-label="전수 기술 숙련도" className="mb-3 rounded-md border border-amber-200/25 bg-amber-100/5 p-2.5 text-xs text-amber-100">
             <p className="font-bold">{hud.skill1Mastery.mentor} · 전수 기술</p>
             <p>{hud.skill1Mastery.name} — 숙련 {hud.skill1Mastery.level}/{hud.skill1Mastery.maxLevel}</p>
-            <p>위력·치유량 +{hud.skill1Mastery.powerBonusPct}% · {hud.skill1Mastery.usesToNext === 0 ? "최대 숙련 도달" : `다음 단계까지 ${hud.skill1Mastery.usesToNext}회 발동`}</p>
-            <p className="mt-1 text-white/60">전수받은 기술은 20회 발동마다 성장합니다. 최대 10단계·20%이며 준비 취소는 포함하지 않습니다.</p>
+            <p>위력·치유량 +{hud.skill1Mastery.powerBonusPct}% · {hud.skill1Mastery.usesToNext === 0 ? "최대 숙련 도달" : `다음 단계까지 ${hud.skill1Mastery.usesToNext}회 발동 (${hud.skill1Mastery.levelUses}/${hud.skill1Mastery.levelRequired})`}</p>
+            <p className="mt-1 text-white/60">초반 5단계는 빠르게 성장하며 이후 수련 요구량이 늘어납니다. 최대 10단계·20%, 누적 491회이며 준비 취소는 포함하지 않습니다.</p>
           </section>
         )}
 
         {/* 다음 전직 단계 */}
         {fin ? (
           <p className="mb-3 rounded-lg border border-amber-300/25 bg-amber-500/10 px-3 py-2.5 text-center text-[11px] font-black text-amber-200">
-            🏆 최종 전직 완료 — {chain[2].name}의 정점에 섰습니다
+            🏆 최종 전직 완료 — {chain[chain.length - 1].name}의 정점에 섰습니다
           </p>
         ) : locked ? (
           <div className="mb-3 rounded-lg border border-dashed border-white/15 px-3 py-4 text-center text-xs font-bold text-white/50">
