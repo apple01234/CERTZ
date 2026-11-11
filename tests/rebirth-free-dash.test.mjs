@@ -27,7 +27,33 @@ test('creation: no class, zero MP, silence, existing S2 cooldown do not gate das
   assert.equal(FREE_DASH.cooldownMs, 1000);
   assert.equal(p.useFreeDash(), true);
   assert.deepEqual({ x: p.dashDir.x, y: p.dashDir.y }, { x: 0, y: -1 });
-  assert.equal(p.mp, 0); assert.equal(p.iframes, 0); assert.equal(p.skill2Cd, 9999);
+  assert.equal(p.mp, 0); assert.equal(p.iframes, FREE_DASH.iFrameMs); assert.equal(p.skill2Cd, 9999);
+});
+
+/* vc268 — 대시는 짧은 무적을 준다. 무적이 0이면 예고 공격을 "피하는" 입력이 피해를 막지 못한다. */
+test('dash grants a short i-frame window shorter than the 600ms hit stun', () => {
+  const p = subject();
+  p.useFreeDash();
+  assert.equal(p.iframes, FREE_DASH.iFrameMs);
+  assert.ok(FREE_DASH.iFrameMs > FREE_DASH.durationMs, '무적은 대시 이동보다 길어야 한다');
+  assert.ok(FREE_DASH.iFrameMs < 600, '무적은 피격 경직보다 짧아 무한 무적이 아니다');
+});
+
+/* vc268 — 기존 무적이 더 길면 대시가 그걸 줄이면 안 된다. */
+test('dash never shortens a longer existing invulnerability', () => {
+  const p = subject();
+  p.iframes = 2200;
+  p.useFreeDash();
+  assert.equal(p.iframes, 2200);
+});
+
+/* vc268 — 피격 경직 중에도 회피가 가능해야 한다(종전엔 state가 idle이 아니면 전부 거부). */
+test('dash is allowed during hit stun but still blocked by an active dash', () => {
+  const p = subject();
+  p.iframes = 600; p.state = 'hurt';
+  assert.equal(p.useFreeDash(), true);
+  p.state = 'dash'; p.freeDashing = true;
+  assert.equal(p.useFreeDash(), false);
 });
 test('active dash cannot stack or extend; cooldown starts at dash end, not dash start', () => {
   const p = subject(); p.useFreeDash();

@@ -2705,7 +2705,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // JENNY-style startup cancellation on the current PC/touch dash path.
     // Cancelling owns timer/FX cleanup; the paid MP and cooldown remain spent.
     if (this.state === "attack" && this.signatureCast?.phase === "startup") this.cancelSkillCast();
-    if (this.state !== "idle") return false;
+    /* vc268 — 대시 중 재입력은 계속 막되(중복 이동 방지), 피격 경직(iframes) 중에는
+     * 회피를 허용한다. 종전엔 state가 idle이 아니면 무조건 거부해서, 맞은 직후 0.6초 동안
+     * 회피 입력이 전부 무시됐다 — 보스 연속기에 그대로 갈려 죽는 원인이었다. */
+    const recovering = this.iframes > 0 && this.state !== "dead";
+    if (this.state !== "idle" && !recovering) return false;
     /* 쿨타임은 대시 **종료 이후**부터 센다. 시작 기준이면 180ms 이동 중에 이미
      *  220ms가 흘러 다음 입력이 붙어버려 체감 쿨타임이 짧아진다. */
     const dir = freeDashDirection(this.scene.currentMoveVec(), this.facing);
@@ -2716,6 +2720,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.freeDashReadyAt = this.freeDashUntil + FREE_DASH.cooldownMs;
     this.freeDashing = true;
     this.state = "dash";
+    /* vc268 — 대시 자체에 짧은 무적. 예고 공격을 "피하는" 입력이 실제로 피해를 막게 한다.
+     * 종료는 stopFreeDash()가 담당하며, 기존 iframes보다 짧으면 줄이지 않는다. */
+    this.iframes = Math.max(this.iframes, FREE_DASH.iFrameMs);
     this.setVelocity(0, 0);
     return true;
   }

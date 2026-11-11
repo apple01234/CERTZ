@@ -5187,3 +5187,13 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
 - 기존 tutorial prop으로 회피 단계 돌진 버튼만 강조, 단계 전환 시 해제. 화면의 Shift·0초와 aria 안내를 FREE_DASH.cooldownMs에서 파생(현재 1초). 신규 이벤트·리스너·에셋·의존성·세이브 필드 없음.
 - 변경 전 미생성 재현 → 수정 후 609 tests/0실패, 타입/strict lint/프로덕션 빌드 통과. PC 및 실제 멀티터치 회피를 포함한 신규 캐릭터 전체 튜토리얼·중간 재접속 완료, 페이지 오류 0. HP·색상·몸 기준 위치·버튼 강조/해제·적 HP바 정리 실행 검증 및 캡처 시각 확인.
 - 근거·재현·검증·남은 범위: docs/qa/2026-11-11/crosscode/APPLIED_v267.md 및 v267/. 원본 런타임 에셋 7910개 유지.
+
+## Task — 2026-11-11 UTC: vc268 대시 무적 (첫 보스 실패 원인 수정)
+
+- 기존 실측(`docs/qa/2026-11-11/live-progression/first-boss-attempt.json`)을 분석했다. 보스가 HP 178,200 중 1.45%(2,578)만 깎였고, 플레이어는 411→80 HP로 급락해 사망했다. 보스 HP 과다가 아니라 **회피가 피해를 막지 못한 것**이 원인이었다.
+- 코드 원인 2건 확인: (1) `freeDash.ts` 주석대로 대시에 무적이 아예 없었다. (2) `useFreeDash()`가 `state !== "idle"`이면 거부해서, 피격 직후 0.6초(iframes 600) 동안 회피 입력이 전부 무시됐다.
+- 수정: `FREE_DASH.iFrameMs = 420`(이동 180ms보다 길고 피격 경직 600ms보다 짧음), 대시 성공 시 `iframes`를 max로 부여(기존 긴 무적은 축소 안 함), 피격 경직 중 회피 허용하되 대시 중 재입력은 차단. 보스 HP·데미지·배율·세이브는 미변경.
+- 검증: tsc·lint:strict 통과, `npm test` 612/612(기존 609 + 신규 3). 신규 테스트는 iframe 부여·상한 관계·기존 무적 보존·경직 중 회피 허용을 고정한다. 기존 `iframes === 0` 단언은 "대시는 무적이 아니다"라는 옛 계약이라 `FREE_DASH.iFrameMs`로 갱신했다.
+- 실제 런타임: `scripts/playtest-dash-iframes.mjs` PASS. 대시 전 iframes 0 → 대시 후 420, 무적 중 `takeDamage(50)`은 HP 172→172 차단, 무적 종료 후 같은 피해는 172→122 적용, 페이지 예외 0. HP/레벨/진행/보스 HP 주입 없음.
+- 미검증: 자연 진행 보스 클리어, S20+ 실기기 발열·터치 체감. CrossCode의 회피 무적 수치를 관찰로 확인하지 않았으므로 참고작 수치 복사가 아니라 CERTZ 기존 상수에서 도출한 설계다. 상세: `docs/qa/2026-11-11/crosscode/APPLIED_v268.md`.
+- 버전 vc268/2.2.12 동기화(build.gradle → sync 스크립트 → android-version.json, package.json, package-lock.json).
