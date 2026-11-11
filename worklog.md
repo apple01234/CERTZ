@@ -5157,3 +5157,14 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
 - 사용자 승인 후 Craft Anything MCP Deep 세션으로 공식 v0.7.1 BETA DEMO 타이틀/메뉴를 캡처하고 로드된14스크립트의 정적 그래프(12모듈/50엔드포인트)를 조사했다.
 - 실제 전투/맵/스킬 플레이와 게임 적용은 미완료. body 키 입력 도구는 DOM.focus 실패, 대체 실제 입력도 New Game 이후 진입 미확인. 이를 완료로 보고하지 않는다.
 - 사용자 요청에 따라 조사 중단 후 근거9건 압축 export, 조사 메모, 캡처와 실행·Deep 승인 및 다음 작업 지시서를 보존했다. docs/handoff/CROSSCODE_NEXT_AI.md 참조. 런타임·에셋·버전 변경 없음.
+
+## Task — 2026-11-11 UTC: CrossCode 데모 New Game 진입 해결과 인게임 관찰 인계
+
+- **진입 막힘 해결**: New Game 미진입 원인은 로딩 정지가 아니라 첫 실행 1회성 'German Language option added!' 안내 모달이 모든 입력을 흡수한 것이었다. 로딩률 0.99997은 타이틀 대기 정상값. 캔버스 클릭으로 모달을 닫고 Enter/클릭으로 확정하면 'Initializing avatar' 인트로를 거쳐 `Press W A S D to move around` 플레이어블 상태로 진입한다. Craft `web_walkthrough_record` 4/4단계 성공으로 기록(ev_95381b88…).
+- **인게임 실측**: 논리 568x320, 백킹 1136x640(정수 2배), CSS는 뷰포트 확대. 타이틀 `ig.t.entities`=0 → 인게임 203~209, `ig.t.screen`이 카메라 오프셋. 이동은 화면 중앙 고정 + 카메라 추적. 대화/컷신 중에는 이동이 잠기고 confirm 연타로 넘기면 복귀한다.
+- **난독화 대응**: `ig.game`/`ig.game.currentState`는 존재하지 않음. 실제 셸은 `ig.t`(`.dJ` 로딩 컨테이너, `.screen` 카메라, `.entities`). 키맵은 `sc.options.Sb`의 `keys-<action>`, confirm=Enter, dash=Alt, special=Space, skip-cutscene=G.
+- **도구 한계 확정**: Craft `web_walkthrough_record`의 `press`는 대상이 focusable해야 해서 `#canvas`/`body`/`html`/`#game` 모두 `DOM.focus: Element is not focusable`로 실패(4회 재현). 인게임 키 입력은 같은 CDP 세션에 Playwright를 붙여 수행하고 결과를 `web_page_show`로 교차 기록해야 한다. click/screenshot은 Craft로 정상 동작.
+- **환경 조치**: Playwright 크로미움을 root에서 쓰려면 `--no-sandbox` 래퍼가 필요해 `/usr/local/bin/chromium` 래퍼를 만들었다. `vision_analyze`의 기본 모델(gemini-3.8-flash)은 400 Invalid Model Name으로 실패해, 화면 판독은 로컬 9router의 `oc/glm-5-free`로 수행했다(판독은 추론으로 분류).
+- **미관찰 명시**: 근접/원거리/차지 사격 판정·데미지, 적 공격 예고와 후딜 중 회피(무적 프레임), 고저차 사격 판정, 보스 패턴/HP는 **관찰하지 못했다.** 봤다고 기록하지 않는다.
+- 근거 21건을 `docs/qa/2026-11-11/crosscode/craft-evidence-v2.json.gz`(sha256 b8cfcecd…)로 보존, 스크린샷 6장을 같은 폴더 `ingame/`에, 조사 요약은 `summary.json`에 갱신. 실행 가능한 인계 지시서는 `docs/handoff/CROSSCODE_NEXT_AI.md`로 전면 대체.
+- **런타임·에셋·스토리·버전·APK 변경 없음.** 이번 작업은 조사와 문서에 한정한다.

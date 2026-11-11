@@ -2,21 +2,62 @@
   "source": "https://www.cross-code.com/en/start",
   "observedVersion": "v0.7.1 BETA DEMO",
   "runtimeChangesToCERTZ": false,
-  "gameplayVerified": false,
+  "gameplayVerified": true,
+  "gameplayVerifiedScope": "타이틀 -> New Game -> 'Initializing avatar' 인트로 -> 컷신 대화 -> WASD 이동 가능한 플레이어블 상태. 첫 맵의 이동/카메라 추적/대화 잠금만 관찰했고 전투·스킬·보스는 미관찰.",
   "approved": [
     "isolated browser execution",
     "Deep mode"
   ],
+  "blockerResolved": {
+    "symptom": "New Game 이후 진입 실패, 로딩이 0.99997에서 멈춘 것처럼 보임",
+    "actualCause": "첫 실행 시 1회 표시되는 'German Language option added!' 안내 모달이 모든 입력을 흡수. 로딩 정지가 아니었음",
+    "fix": "캔버스 클릭으로 모달을 닫고(클릭 1~2회) Enter 또는 클릭으로 New Game 확정",
+    "evidence": "ev_95381b88f96eedabc889f09e739864fb79864d66781a9d062dd91dd99dc0d1f8"
+  },
+  "engineeringNotes": {
+    "engine": "Impact.js 1.18a 웹 빌드, 게임 번들 js/game.compiled.js 약 1.77MB 난독화",
+    "minifiedNames": "ig.game / ig.game.currentState 는 존재하지 않는다. 실제 셸은 ig.t 이고 ig.t.dJ=로딩 컨테이너, ig.t.screen=카메라 오프셋, ig.t.entities=엔티티 배열",
+    "resolution": "논리 568x320, 백킹 1136x640 (정수 2배), CSS는 뷰포트에 맞춰 확대",
+    "keymap": "sc.options.Sb 에 'keys-<action>' 형태로 저장. confirm=Enter(13), back=Backspace(8), menu=Tab(9), pause=Esc(27), up=W/↑, left=A/←, down=S/↓, right=D/→, special=Space(32), dash=Alt(18), quick=Shift(16)",
+    "craftLimitation": "web_walkthrough_record 의 press 는 대상이 focusable 해야 함. #canvas/body/html/#game 모두 'DOM.focus: Element is not focusable' 로 실패. 게임 키 입력은 같은 CDP 세션에 Playwright로 붙여 수행할 것(click 은 Craft로도 정상 동작)"
+  },
   "evidenceExport": {
-    "file": "craft-evidence.json.gz",
-    "sha256": "09a18ed57a6a10fda7ecf35a91aaa1042d2b070178203554cfbf3d16ce2c8d8f",
-    "records": 9,
-    "uncompressedBytes": 10284763
+    "previousSession": {
+      "file": "craft-evidence.json.gz",
+      "sha256": "09a18ed57a6a10fda7ecf35a91aaa1042d2b070178203554cfbf3d16ce2c8d8f",
+      "records": 9,
+      "uncompressedBytes": 10284763
+    },
+    "current": {
+      "file": "craft-evidence-v2.json.gz",
+      "sha256": "b8cfcecd82a4fdb407eec19152b6e6109b05d3eca401c3f5f1a8b01866979b13",
+      "records": 21,
+      "unknowns": 2,
+      "note": "gzip 이므로 core-evidence-import 전에 해제할 것"
+    }
   },
   "evidenceIds": {
     "title": "ev_295a08585bc8f2dfadc899823a3ed3dbdb2fc677ba3b088f5fd0cd54c2743e24",
     "menu": "ev_10c8893b204ce1685a5ed0e6a5b7335c937c187506a5d1c5f696a930d4b6fb0c",
     "staticScripts": "ev_4f5f6bae87b8b9aa99d872ad2fe8a200d23fd13afca756f2d583c803d80268fa",
-    "failedFocus": "ev_2fc31ff9f2b77f53c526ffaa5cb022590b0f79803c710d75ce5b14e6da9ffddb"
-  }
+    "failedFocus": "ev_2fc31ff9f2b77f53c526ffaa5cb022590b0f79803c710d75ce5b14e6da9ffddb",
+    "newGameClick": "ev_95381b88f96eedabc889f09e739864fb79864d66781a9d062dd91dd99dc0d1f8",
+    "ingameState": "ev_1aa98e2f0d95544215ce92a142862059e6ff19fc2cf18f9697336a465710c869",
+    "resolutionAndEntityCount": "ev_5287d0da08b0192f3cf04424d7ac4074e6a521327313e309d27ed14f4e4c0eac"
+  },
+  "screenshots": [
+    "ingame/01-title-newgame-selected.png",
+    "ingame/02-ingame-dialogue.png",
+    "ingame/03-wasd-tutorial.png",
+    "ingame/04-cutscene-locked.png",
+    "ingame/05-playable-info-hint.png",
+    "ingame/06-map-bridge-paths.png"
+  ],
+  "notYetObserved": [
+    "근접/원거리/차지 사격의 실제 판정과 데미지 수치",
+    "적 공격 예고(telegraph)와 후딜 중 회피 가능 여부",
+    "고저차 경로 이동과 원거리 사격 판정 차이",
+    "보스전 패턴과 HP/시간",
+    "상용판 전체(데모는 v0.7.1 BETA)"
+  ]
 }
