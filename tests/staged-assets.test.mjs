@@ -11,15 +11,16 @@ const ast = ts.createSourceFile('stagedAssets.ts', source, ts.ScriptTarget.Lates
 const body = ast.statements.find(node => ts.isClassDeclaration(node) && node.name.text === 'AssetManager').getText(ast);
 const javascript = ts.transpile(body, { target: ts.ScriptTarget.ES2022 });
 function harness(keys, deadline = 1000) {
-  const updates = [], cache = new Set(), starts = [], releases = new Map();
+  const updates = [], cache = new Set(), starts = [], releases = new Map(), metadataRequests = [];
   const window = { setTimeout, clearTimeout };
-  const Manager = new Function('publish', 'window', 'PHASE_LIMIT_MS', javascript + '; return AssetManager;')(p => updates.push(structuredClone(p)), window, deadline);
+  const { Manager, retry } = new Function('publish', 'window', 'PHASE_LIMIT_MS', 'json', 'let retryAction; ' + javascript + '; return { Manager: AssetManager, retry: () => retryAction?.() };')(p => updates.push(structuredClone(p)), window, deadline, async url => { metadataRequests.push(url); return { frames: {} }; });
   const game = { events: new EventEmitter(), textures: { exists: key => cache.has(key) } };
-  const scene = { events: new EventEmitter() };
+  const restarts = [];
+  const scene = { events: new EventEmitter(), sys: { isActive: () => true }, registry: { get: () => ({ fresh: true }) }, scene: { restart: data => restarts.push(data) } };
   const definitions = keys.map(key => ({ type: 'image', key, urls: [key] }));
   const manager = new Manager(game, definitions, () => {});
   manager.fetch = async def => { starts.push(def.key); await new Promise(resolve => releases.set(def.key, () => { cache.add(def.key); resolve(); })); };
-  return { manager, scene, definitions, updates, starts, releases, cache };
+  return { manager, scene, definitions, updates, starts, releases, cache, retry, restarts, metadataRequests };
 }
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
@@ -28,7 +29,7 @@ test('paths preserve rooted/external URLs and relative atlas metadata', () => {
   assert.equal(assetUrl('assets/', 'atlas/a.json'), 'assets/atlas/a.json');
 });
 
-test('world selection retains selected body/enemy/boss and defers other stages', () => {
+test('stage selection helper retains selected body/enemy/boss', () => {
   const scope = { body:'hero', bodies:['hero','job'], monsters:['rat'], allMonsters:['rat','wolf'], bosses:['story_dio'], highTier:false };
   const selected = key => isWorldAsset({ key, type:'image', urls:[] }, scope);
   for (const key of ['hero_walk2','job_idle0','rat_run0','story_dio','ground_meadow']) assert.equal(selected(key), true, key);
@@ -78,6 +79,55 @@ test('scene shutdown cancels waiting and never registers completion', async () =
   h.releases.get('slow')(); await tick();
   assert.equal(h.updates.length,count);
   assert.equal(h.scene.events.listenerCount('shutdown'),0);
+});
+
+
+test('atlas frames and effect metadata share one JSON request', async () => {
+  const h = harness([]);
+  const frames = h.manager.metadataFor('effect.json');
+  const effect = h.manager.metadataFor('effect.json');
+  assert.equal(frames, effect);
+  await frames;
+  assert.deepEqual(h.metadataRequests, ['effect.json']);
+});
+
+test('gameplay gate waits for the complete original catalog including deferred assets', async () => {
+  const gate = ast.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === 'ensureWorldAssets').getText(ast).replace(/^export /, '');
+  const h = harness(['hero', 'later-boss', 'later-costume', 'item-icon', 'skill-sound']);
+  let ready = false;
+  const ensure = new Function('managers', 'publish', 'lastProgress', ts.transpile(gate, { target: ts.ScriptTarget.ES2022 }) + '; return ensureWorldAssets;')(new WeakMap([[h.scene.game = {}, h.manager]]), () => { ready = true; }, {});
+  const done = ensure(h.scene, { stage: 'village' });
+  assert.equal(ready, false);
+  for (const key of ['hero', 'later-boss', 'later-costume', 'item-icon']) h.releases.get(key)();
+  await tick();
+  assert.equal(ready, false, 'a loaded initial map must not open gameplay before the last queued asset');
+  h.releases.get('skill-sound')(); await done;
+  assert.equal(ready, true);
+  assert.equal(h.updates.at(-1).complete, 5);
+});
+
+test('a progressing full load may exceed the inactivity deadline', async () => {
+  const h = harness(['a', 'b', 'c'], 80);
+  const done = h.manager.ensure(h.scene, ['a', 'b', 'c'], 'game-assets');
+  await new Promise(resolve => setTimeout(resolve, 45)); h.releases.get('a')();
+  await new Promise(resolve => setTimeout(resolve, 45)); h.releases.get('b')();
+  await new Promise(resolve => setTimeout(resolve, 45)); h.releases.get('c')();
+  await done;
+  assert.equal(h.updates.at(-1).complete, 3);
+  assert.equal(h.updates.at(-1).error, undefined);
+});
+
+test('failed asset retry restarts the gated scene and reuses completed cache entries', async () => {
+  const h = harness(['good', 'bad']);
+  h.manager.fetch = async def => { h.starts.push(def.key); if (def.key === 'bad') throw new Error('HTTP 404'); h.cache.add(def.key); };
+  await assert.rejects(h.manager.ensure(h.scene, ['good', 'bad'], 'game-assets'), /404/);
+  assert.deepEqual(h.updates.at(-1).failed, ['bad']);
+  h.retry(); assert.deepEqual(h.restarts, [{ fresh: true }]);
+  h.manager.fetch = async def => { h.starts.push(def.key); h.cache.add(def.key); };
+  await h.manager.ensure(h.scene, ['good', 'bad'], 'game-assets');
+  assert.equal(h.starts.filter(key => key === 'good').length, 1, 'successful assets remain cached on retry');
+  assert.equal(h.updates.at(-1).complete, 2);
+  assert.equal(h.updates.at(-1).error, undefined);
 });
 
 test('late body frames register missing motions without poisoning or replacing existing animations', () => {

@@ -1,12 +1,8 @@
 import type Phaser from "phaser";
-import { BODY_PREFIXES, DEFERRED_BODY_PREFIXES, ALL_ITEM_ICONS, STAGES, ENEMIES, BOSS_DEFS } from "./data";
-import { resolveBodyPrefix } from "./characterAppearance";
+import { DEFERRED_BODY_PREFIXES, ALL_ITEM_ICONS } from "./data";
 import type { SaveData } from "./config";
-import { BOSS_ATLAS } from "./textures";
 import { rememberTexture } from "./texGuard";
-import { tutorialResume, tutorialStage } from "./tutorialFlow";
-import { chapterPlace } from "./chapterStoryPlan";
-import { assetUrl, isWorldAsset, TITLE_ASSETS, type AssetDefinition } from "./assetSelection";
+import { assetUrl, TITLE_ASSETS, type AssetDefinition } from "./assetSelection";
 
 export type LoadProgress = { phase: string; elapsedMs: number; total: number; complete: number; active: number; failed: string[]; error?: string };
 const PHASE_LIMIT_MS = 30000;
@@ -16,6 +12,9 @@ const managers = new WeakMap<Phaser.Game, AssetManager>();
 
 let lastProgress: LoadProgress | undefined;
 let lastEmit = 0;
+let retryAction: (() => void) | undefined;
+export function retryLoading() { retryAction?.(); }
+export function getLoadingProgress() { return lastProgress; }
 const history: LoadProgress[] = [];
 function publish(progress: LoadProgress) {
   const changed = progress.phase !== lastProgress?.phase || !!progress.error;
@@ -80,33 +79,43 @@ type Job = { def: AssetDefinition; scene: Phaser.Scene; priority: boolean; resol
 class AssetManager {
   readonly definitions: Map<string, AssetDefinition>;
   private jobs = new Map<string, Job>();
+  private metadata = new Map<string, ReturnType<typeof json>>();
   private queue: Job[] = [];
   private active = 0;
   private disposed = false;
   private phase = 0;
-  private backgroundStarted = false;
-  private registerTimer: number | undefined;
   constructor(private game: Phaser.Game, definitions: AssetDefinition[], private register: (scene: Phaser.Scene) => void) {
     this.definitions = new Map(definitions.map(def => [def.key, def]));
-    game.events.once("destroy", () => { this.disposed = true; clearTimeout(this.registerTimer); });
+    game.events.once("destroy", () => { this.disposed = true; retryAction = undefined; });
   }
   private exists(def: AssetDefinition) {
     return def.type === "audio" ? this.game.cache.audio.exists(def.key) : def.type === "json" ? this.game.cache.json.exists(def.key) : this.game.textures.exists(def.key);
   }
-  private async fetch(def: AssetDefinition, scene: Phaser.Scene) {
+  private metadataFor(url: string) {
+    let pending = this.metadata.get(url);
+    if (!pending) {
+      pending = json(url).catch(error => { this.metadata.delete(url); throw error; });
+      this.metadata.set(url, pending);
+    }
+    return pending;
+  }
+  private async fetch(def: AssetDefinition) {
     if (this.exists(def)) return;
-    if (def.type === "json") { const data = await json(def.urls[0]); if (!this.disposed) this.game.cache.json.add(def.key, data); return; }
+    if (def.type === "json") { const data = await this.metadataFor(def.urls[0]); if (!this.disposed) this.game.cache.json.add(def.key, data); return; }
     if (def.type === "audio") {
       const context = (this.game.sound as Phaser.Sound.WebAudioSoundManager).context;
       if (!context) return;
       const response = await fetch(def.urls[0], { signal: AbortSignal.timeout(FILE_LIMIT_MS) });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.arrayBuffer();
-      const decoded = await Promise.race([context.decodeAudioData(data), new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("audio timeout")), FILE_LIMIT_MS))]);
-      if (!this.disposed && !this.exists(def)) this.game.cache.audio.add(def.key, decoded);
+      let timer: number | undefined;
+      try {
+        const decoded = await Promise.race([context.decodeAudioData(data), new Promise<never>((_, reject) => { timer = window.setTimeout(() => reject(new Error("audio timeout")), FILE_LIMIT_MS); })]);
+        if (!this.disposed && !this.exists(def)) this.game.cache.audio.add(def.key, decoded);
+      } finally { clearTimeout(timer); }
       return;
     }
-    const [img, atlas] = await Promise.all([image(def.urls[0]), def.type === "atlas" ? json(def.urls[1]) : Promise.resolve(null)]);
+    const [img, atlas] = await Promise.all([image(def.urls[0]), def.type === "atlas" ? this.metadataFor(def.urls[1]) : Promise.resolve(null)]);
     if (this.disposed) throw new Error("game destroyed");
     if (this.exists(def)) return;
     if (def.type === "atlas") this.game.textures.addAtlas(def.key, img, atlas);
@@ -114,11 +123,6 @@ class AssetManager {
     else this.game.textures.addImage(def.key, img);
     if (!this.exists(def)) throw new Error(`texture registration failed: ${def.key}`);
     if (def.type !== "atlas") rememberTexture(def.key, { url: def.urls[0], type: def.type, ...(def.config ? { fw: Number(def.config.frameWidth), fh: Number(def.config.frameHeight) } : {}) });
-    clearTimeout(this.registerTimer);
-    this.registerTimer = window.setTimeout(() => {
-      const activeScene = this.game.scene.getScenes(true)[0];
-      if (!this.disposed && activeScene) this.register(activeScene);
-    }, 50);
   }
   private pump() {
     // Native Image/TextureManager is already used by loadBodyPrefix. This avoids
@@ -129,7 +133,7 @@ class AssetManager {
       void (async () => {
         let failure: Error | undefined;
         for (let attempt = 0; attempt < 2; attempt++) {
-          try { await this.fetch(job.def, job.scene); failure = undefined; break; }
+          try { await this.fetch(job.def); failure = undefined; break; }
           catch (error) { failure = error instanceof Error ? error : new Error(String(error)); }
         }
         if (failure) { this.jobs.delete(job.def.key); job.reject(failure); }
@@ -148,77 +152,70 @@ class AssetManager {
   }
   async ensure(scene: Phaser.Scene, keys: string[], phase: string) {
     const generation = ++this.phase, started = performance.now();
-    const definitions = keys.map(key => this.definitions.get(key)).filter((def): def is AssetDefinition => !!def);
+    const uniqueKeys = [...new Set(keys)];
+    const definitions = uniqueKeys.map(key => this.definitions.get(key)).filter((def): def is AssetDefinition => !!def);
     let complete = 0, cancelled = false, settled = false;
-    const failed = keys.filter(key => !this.definitions.has(key));
+    const failed = uniqueKeys.filter(key => !this.definitions.has(key));
+    retryAction = undefined;
     const emit = (error?: string) => { if (this.phase === generation && !cancelled && !settled) publish({ phase, elapsedMs: Math.round(performance.now() - started), total: definitions.length, complete, active: this.active, failed, ...(error ? { error } : {}) }); };
     let rejectCancelled!: (error: Error) => void;
     const cancellation = new Promise<never>((_, reject) => { rejectCancelled = reject; });
     const onShutdown = () => { cancelled = true; rejectCancelled(new DOMException("Scene closed", "AbortError")); };
     scene.events.once("shutdown", onShutdown); scene.events.once("destroy", onShutdown);
     let timer: number | undefined;
+    let rejectDeadline!: (error: Error) => void;
+    const deadline = new Promise<never>((_, reject) => { rejectDeadline = reject; });
+    // A full catalog can exceed 30s on mobile; only a stalled load times out.
+    const advanceDeadline = () => {
+      clearTimeout(timer);
+      timer = window.setTimeout(() => rejectDeadline(new Error("loading deadline")), PHASE_LIMIT_MS);
+    };
+    advanceDeadline();
     emit();
     try {
       if (failed.length) throw new Error(`asset definitions missing: ${failed.join(", ")}`);
       await Promise.race([
-        Promise.all(definitions.map(async def => { try { await this.request(def, scene, true); complete++; emit(); } catch (error) { failed.push(def.key); throw error; } })),
-        new Promise<never>((_, reject) => { timer = window.setTimeout(() => reject(new Error("loading deadline")), PHASE_LIMIT_MS); }), cancellation,
+        Promise.all(definitions.map(async def => { try { await this.request(def, scene, true); complete++; if (!settled && !cancelled) advanceDeadline(); emit(); } catch (error) { failed.push(def.key); throw error; } })),
+        deadline, cancellation,
       ]);
       if (cancelled || this.disposed) throw new DOMException("Scene closed", "AbortError");
       this.register(scene); emit();
     } catch (error) {
-      if (!cancelled) emit("자료를 불러오지 못했습니다. 다시 시도해 주세요.");
+      if (!cancelled) {
+        retryAction = () => {
+          retryAction = undefined;
+          if (!this.disposed && scene.sys.isActive()) scene.scene.restart(scene.registry.get("initData"));
+        };
+        emit("자료를 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.");
+      }
       throw error;
     } finally { settled = true; clearTimeout(timer); scene.events.off("shutdown", onShutdown); scene.events.off("destroy", onShutdown); }
-  }
-  background(scene: Phaser.Scene) {
-    if (this.backgroundStarted) return; this.backgroundStarted = true;
-    // BGM already owns an on-demand decoder and PCM LRU; never preload all music.
-    const definitions = [...this.definitions.values()].filter(def => !def.key.startsWith("bgm_"));
-    definitions.sort((a, b) => Number(a.type === "audio") - Number(b.type === "audio"));
-    for (const def of definitions) void this.request(def, scene, false).catch(() => {});
   }
 }
 
 export function installAssetCatalog(scene: Phaser.Scene, definitions: AssetDefinition[], register: (scene: Phaser.Scene) => void) {
-  const manager = new AssetManager(scene.game, definitions, register); managers.set(scene.game, manager);
+  // Scene retries share completed textures and in-flight requests.
+  if (!managers.has(scene.game)) managers.set(scene.game, new AssetManager(scene.game, definitions, register));
 }
 export async function ensureTitleAssets(scene: Phaser.Scene) {
   await managers.get(scene.game)!.ensure(scene, [...TITLE_ASSETS], "title-assets");
   publish({ ...lastProgress!, phase: "title-ready" });
 }
-export function startBackgroundAssets(scene: Phaser.Scene) { managers.get(scene.game)?.background(scene); }
 
-export async function ensureWorldAssets(scene: Phaser.Scene, data: { stage?: string; save?: SaveData; gmBoss?: string; replayBoss?: string }) {
+export async function ensureWorldAssets(scene: Phaser.Scene, _data: { stage?: string; save?: SaveData; gmBoss?: string; replayBoss?: string }) {
   const manager = managers.get(scene.game);
   if (!manager) throw new Error("Asset catalog not installed");
-  const saved = data.save;
-  const tutorial = tutorialResume(saved);
-  const key = tutorial !== null ? tutorialStage(tutorial) : data.stage ?? saved?.stage ?? "village";
-  const stage = STAGES[key as keyof typeof STAGES] ?? STAGES.village;
-  const monsters = new Set(stage.enemies.map(enemy => enemy.key as string));
-  if (stage.elite) monsters.add(stage.elite.key);
-  if (/howlrstone1x[12]/.test(stage.key)) monsters.add("x2_rat"); // real onboarding practice target
-  const bosses: string[] = [];
-  for (const id of [stage.bossKey, data.gmBoss, data.replayBoss]) {
-    const boss = BOSS_DEFS[id as keyof typeof BOSS_DEFS];
-    if (!boss) continue;
-    bosses.push(boss.tex); const atlas = BOSS_ATLAS[boss.tex]; if (atlas) bosses.push(atlas.key);
-  }
-  const body = resolveBodyPrefix(saved ?? {});
-  const chapter = /^(howlrstone\d+)x(\d+)$/.exec(key) ?? /^(dlc[a-z]+)(\d+)$/.exec(key);
-  const nativeTerrain = !!chapter && !!chapterPlace(chapter[1], Number(chapter[2]));
-  const scope = { body, bodies: BODY_PREFIXES, monsters: [...monsters], allMonsters: Object.keys(ENEMIES).sort((a, b) => b.length - a.length), bosses, nativeTerrain, highTier: !!saved && (saved.lv >= 100) };
-  const keys = [...manager.definitions.values()].filter(def => isWorldAsset(def, scope)).map(def => def.key);
-  await manager.ensure(scene, keys, "world-assets");
+  // Preserve the original game queue, but finish it before gameplay starts.
+  // Music outside this catalog keeps audio.ts's bounded PCM cache.
+  await manager.ensure(scene, [...manager.definitions.keys()], "game-assets");
   publish({ ...lastProgress!, phase: "world-assets-ready" });
-  manager.background(scene);
 }
 
 export function markWorldReady(started: number) {
   publish({ ...lastProgress!, phase: "world-ready", elapsedMs: Math.round(performance.now() - started) });
 }
 export function reportLoadingFailure() {
+  retryAction ??= () => window.location.reload();
   publish({ ...(lastProgress ?? { phase: "engine", elapsedMs: 0, total: 0, complete: 0, active: 0, failed: [] }),
     error: "게임을 불러오지 못했습니다. 다시 시도해 주세요." });
 }

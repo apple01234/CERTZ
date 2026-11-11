@@ -1,6 +1,6 @@
-SERTZ Android v2.2.11 (versionCode 267)
+SERTZ Android v2.2.13 (versionCode 269)
 
-다운로드: https://github.com/apple01234/CERTZ/releases/download/v2.2.11/SERTZ-vc267.apk
+다운로드: https://github.com/apple01234/CERTZ/releases/download/v2.2.13/SERTZ-vc269.apk
 공식 배포 목록: https://github.com/apple01234/CERTZ/releases
 설치 안내: https://sertz.vercel.app/apk-guide.html
 
@@ -421,7 +421,7 @@ SERTZ v1.0.7 APK 다운로드 안내
 ================================
 
 이번 버전 (v1.0.7, versionCode 72) — 로그인 오류 근본 수정 + 코스튬 시스템
-- 릴리스 동반 물료: APK(105MB) · AAB 104MB(md5 d64cbe17e339e788fef5e9c1268fa57c) · 웹 ZIP 97MB(md5 5cf2c8c3d4e08ba86d98a7d1760920a5)
+- 릴리스 동반 물료: APK(105MB) · AAB 104MB(md5 d64cbe17e339e788fef5e9c1269fa57c) · 웹 ZIP 97MB(md5 5cf2c8c3d4e08ba86d98a7d1760920a5)
 - APK 로그인 실패 근본 수정: 서버 CORS/프리플라이트 OPTIONS 응답 + 로그인 토큰 본문 동봉 →
   앱(웹뷰)에서 아이디/비밀번호 로그인·클라우드 세이브·거래소가 정상 동작
   (기존엔 쿠키 세션이 웹뷰 크로스오리진에서 유지되지 않아 로그인이 실패했음)

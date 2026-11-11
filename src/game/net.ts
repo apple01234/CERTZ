@@ -21,6 +21,7 @@ import {
   relayChatReady, relaySendChat, relaySetIdentity,
   relayEnsureChatPoll, relayEnsurePartyPoll,
   relayPartyCreate, relayPartyJoin, relayPartyLeave,
+  relayPartyJoined,
   type RelayPartySnapshot,
 } from "./relay";
 /* v1.0.5-beta (vc134) — "웹에서 서로 안보임" 수정: 소켓 서버가 없는 배포(Vercel 웹·APK 기본)에서
@@ -221,6 +222,7 @@ function hookConnectFlush() {
     const info = pendingJoin ?? lastJoin;
     pendingJoin = null;
     if (info) s.emit("join", info); // 재접속 시에도 자동 재참여 — 채팅/멀티 자가 복구
+    if (partyBackend === "socket" && lastParty) s.emit("party:join", lastParty.id);
   });
 }
 
@@ -229,6 +231,7 @@ export function netJoin(info: JoinInfo) {
    *  릴레이 채팅/파티 발신자명이 여기서 세팅되는데, 기존엔 netConnect() null 즉시 리턴이
    *  relaySetIdentity보다 앞에 있어 이름이 전부 "이름없음"으로 전송됐다. → 주입을 최우선으로. */
   relaySetIdentity({ name: info.name, lv: info.lv, cls: info.cls });
+  lastJoin = info;
   const s = netConnect();
   if (!s) return;
   hookConnectFlush();
@@ -269,6 +272,8 @@ export type NetState = {
 };
 
 export function netState(st: NetState) {
+  relaySetIdentity({ name: lastJoin?.name || "이름없음", lv: st.lv, cls: st.cls });
+  if (lastJoin) lastJoin = { ...lastJoin, ...st };
   if (socket?.connected) socket.emit("state", st);
 }
 
@@ -358,12 +363,21 @@ export function netSelfId(): string | null {
 export type NetParty = {
   id: string;
   leader: string;
-  members: { id: string; name: string; lv: number; cls: string | null; online?: boolean }[];
+  members: { id: string; name: string; lv: number; cls: string | null; online?: boolean; leader?: boolean }[];
   max: number;
 };
 
 /* v1.4.27-w1 — 릴레이 파티: 등록된 UI 콜백으로 실패(null) 통지 → 위젯이 안내 문구 표시 */
-let relayPartyCb: ((p: NetParty | null) => void) | null = null;
+let partyBackend: "socket" | "relay" | null = null;
+const partyErrors = new Set<(message: string) => void>();
+function reportPartyError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  partyErrors.forEach((cb) => cb(message));
+}
+export function netOnPartyError(cb: (message: string) => void): () => void {
+  partyErrors.add(cb);
+  return () => { partyErrors.delete(cb); };
+}
 
 function relaySnapshotToNet(p: RelayPartySnapshot | null): NetParty | null {
   if (!p) return null;
@@ -371,28 +385,41 @@ function relaySnapshotToNet(p: RelayPartySnapshot | null): NetParty | null {
     id: p.id,
     leader: p.leader,
     max: p.max,
-    members: p.members.map((m) => ({ id: m.id, name: m.name, lv: m.lv, cls: m.cls, online: m.online })),
+    members: p.members.map((m) => ({ id: m.id, name: m.name, lv: m.lv, cls: m.cls, online: m.online, leader: m.leader })),
   };
 }
 
-export function netPartyCreate() {
+export async function netPartyCreate() {
   /* vc134 — 파티는 서버 상태(GitHub-DB relay) 관리 — MQTT 모드에선 소켓 이벤트 대신 relay 경로 */
-  if (socket?.connected && netTransport() === "socket") { socket.emit("party:create"); return; }
-  void relayPartyCreate().then((code) => { if (!code) relayPartyCb?.(null); });
+  if (!relayPartyJoined() && socket?.connected && netTransport() === "socket") {
+    partyBackend = "socket"; socket.emit("party:create"); return;
+  }
+  partyBackend = "relay";
+  try { await relayPartyCreate(); }
+  catch (error) { if (!relayPartyJoined()) partyBackend = null; throw error; }
 }
 
-export function netPartyJoin(partyId: string) {
-  if (socket?.connected && netTransport() === "socket") { socket.emit("party:join", partyId); return; }
-  void relayPartyJoin(partyId).then((ok) => { if (!ok) relayPartyCb?.(null); });
+export async function netPartyJoin(partyId: string) {
+  // Socket rooms use P1/P2; HTTP rooms use four-character invite codes.
+  if (/^P\d+$/i.test(partyId) && socket?.connected && netTransport() === "socket" && !relayPartyJoined()) {
+    partyBackend = "socket"; socket.emit("party:join", partyId); return;
+  }
+  const previous = partyBackend;
+  partyBackend = "relay";
+  try { await relayPartyJoin(partyId); }
+  catch (error) { partyBackend = previous; throw error; }
 }
 
-export function netPartyLeave() {
-  if (socket?.connected && netTransport() === "socket") { socket.emit("party:leave"); return; }
-  void relayPartyLeave();
+export async function netPartyLeave() {
+  if (partyBackend === "socket") {
+    if (!socket?.connected) throw new Error("멀티 서버에 재연결한 뒤 탈퇴해 주세요");
+    socket.emit("party:leave"); return;
+  }
+  await relayPartyLeave();
 }
 
 export function netPartyChat(text: string) {
-  if (socket?.connected && netTransport() === "socket") { socket.emit("party:chat", text); return; }
+  if (partyBackend === "socket" && socket?.connected) { socket.emit("party:chat", text); return; }
   /* v1.4.27-w1 — 릴레이 파티 채널로 발송 (relay 내부의 현재 파티 코드 사용) */
   void relaySendChat(text, true);
 }
@@ -403,15 +430,20 @@ export function netOnParty(cb: (p: NetParty | null) => void): () => void {
     cb(p);
   };
   const s = netConnect();
-  /* vc134 — MQTT 릴레이 모드에서도 파티는 GitHub-DB relay로 동작 (버스는 "party" 이벤트를 발생하지 않음) */
-  if (!s || netTransport() === "mqtt") {
-    /* v1.4.27-w1 — 소켓 없는 배포: 릴레이 폴링으로 스냅샷 수신 */
-    relayPartyCb = wrapped;
-    relayEnsurePartyPoll((p) => relayPartyCb?.(relaySnapshotToNet(p)));
-    return () => { relayPartyCb = null; };
-  }
-  s.on("party", wrapped as never);
-  return () => s.off("party", wrapped as never);
+  // Subscribe to both before connection: an early HTTP operation may finish after socket connect.
+  const offRelay = relayEnsurePartyPoll((p) => {
+    if (partyBackend === "socket") return;
+    if (p || relayPartyJoined()) partyBackend = "relay";
+    wrapped(relaySnapshotToNet(p));
+  }, reportPartyError);
+  const onSocket = (p: NetParty | null) => {
+    if (partyBackend === "relay" || relayPartyJoined()) return;
+    partyBackend = "socket";
+    wrapped(p);
+  };
+  if (s && !isMqtt(s)) s.on("party", onSocket as never);
+  if (s && !isMqtt(s)) s.on("party:error", reportPartyError);
+  return () => { offRelay(); if (s) { s.off("party", onSocket as never); s.off("party:error", reportPartyError); } };
 }
 
 /** v4.0.0 — 마지막 파티 스냅샷 조회 (미파티 null) */

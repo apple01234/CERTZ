@@ -6,6 +6,8 @@ import { getPlayerName } from "@/game/config";
 import { BOSS_DEFS } from "@/game/data";
 import { BOSS_ATLAS } from "@/game/textures"; // v1.4.31 — 보스 아틀라스 초상화 분기
 import * as audio from "@/game/audio"; // v1.4.8 — 대화 진행 클릭음
+import appearanceFrames from "@/game/appearanceFrames.json";
+import type { AppearanceFrame } from "@/game/characterAppearance";
 import portraitCrops from "../../../public/assets/npcportrait/_map.json";
 import { castPortrait, cutsceneCharacter } from "@/game/cutsceneCast";
 
@@ -205,6 +207,8 @@ export function DialogueBox({
   // 원본에 없는 표정을 그려 넣지 않는다. 현재 월드와 같은 픽셀 crop만 사용한다.
   const croppedFace = portrait ? faceFor(portrait.tex) : null;
   const portraitSrc = croppedFace ?? (portrait ? `/assets/${portrait.tex}.webp` : "");
+  const portraitFrame = (appearanceFrames as Record<string, AppearanceFrame>)[portraitSrc];
+  const portraitImage = portraitFrame?.src ?? portraitSrc;
   /* v3.0.25 (#이미지 안불러와짐) — 초상화 로드 상태 추적: 404 등 실패 시 깨진 이미지 대신
    *  프레임만 표시하고, 로드 완료 시에야 이미지를 보여준다 (깜빡임·깨짐 제거) */
   const [portraitOk, setPortraitOk] = useState(true);
@@ -441,23 +445,25 @@ export function DialogueBox({
             className="game-chip relative flex h-14 w-14 shrink-0 self-start items-center justify-center overflow-hidden sm:h-20 sm:w-20"
             style={{ borderColor: `${portrait.tone}88` }}
           >
-            {/* 유저 지시 — "초상화가 프레임 정중앙에 오지 않는다".
-                [원인] 종전 `object-cover object-top` 이 (a) 세로로 프레임을 꽉 채우려고
-                원본을 확대하며 위쪽 기준으로 잘라 **아래쪽(턱·어깨)이 잘렸고**,
-                (b) 잘린 결과가 시각적으로 위로 치우쳐 보였다.
-                [수정] `object-contain` 으로 원본 비율을 유지한 채 프레임 안에 **전체를**
-                넣고, 플렉스 중앙 정렬로 상하좌우 여백을 같게 둔다(크롭·왜곡 없음).
-                프레임 크기(h-14/w-20)는 고정이라 대사 줄 수에 따라 커지지 않는다. */}
+            {/* Alpha bounds center the face itself; atlas crops also recover the clipped right edge. */}
+            <span className="absolute inset-0 flex items-center justify-center overflow-hidden">
             <img
               key={portraitSrc}
-              src={portraitSrc}
+              src={portraitImage}
+              data-portrait-src={portraitSrc}
               alt=""
               draggable={false}
               onLoad={() => setPortraitOk(true)}
               onError={() => setPortraitOk(false)}
-              className="max-h-full max-w-full object-contain object-center"
-              style={{ imageRendering: "pixelated", display: portraitOk ? undefined : "none" }}
+              className={portraitFrame ? "absolute max-w-none" : "max-h-full max-w-full object-contain object-center"}
+              style={{ imageRendering: "pixelated", display: portraitOk ? undefined : "none", ...(portraitFrame ? {
+                width: `${portraitFrame.sheet.w / portraitFrame.crop.w * 100}%`,
+                height: `${portraitFrame.sheet.h / portraitFrame.crop.h * 100}%`,
+                left: `${-portraitFrame.crop.x / portraitFrame.crop.w * 100}%`,
+                top: `${-portraitFrame.crop.y / portraitFrame.crop.h * 100}%`,
+              } : {}) }}
             />
+            </span>
             {/* 초상 프레임 하단 음영 — 입체감 */}
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/50 to-transparent" />
           </div>

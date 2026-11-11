@@ -32,6 +32,7 @@ import mqtt from "mqtt";
  *  gmcheck 베이스 URL은 server.ts resolveApiBase(계정 API와 동일 출처 해석)를 쓴다. */
 import { getCachedUser, getAuthToken } from "./account";
 import { resolveApiBase } from "./server";
+import { presenceSessionId } from "./playerIdentity";
 
 /* 공개 브로커 후보 — 순차 폴백(첫 번째가 8초 내 연결 실패 시 다음)
  * vc140 실측(2026-10-08): eclipseprojects.io는 connack 타임아웃으로 완전 사망 —
@@ -86,20 +87,6 @@ type PeerState = {
 };
 
 type Listener = Set<(...args: never[]) => void>;
-
-/* ---------------- 세션 ID (relay.ts cid 재사용 — 기기당 안정) ---------------- */
-function sessionPid(): string {
-  try {
-    let cid = window.localStorage.getItem("sertz.relay.cid") || "";
-    if (!/^[A-Za-z0-9_-]{6,64}$/.test(cid)) {
-      cid = `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
-      window.localStorage.setItem("sertz.relay.cid", cid);
-    }
-    return `sz${cid}`.slice(0, 40);
-  } catch {
-    return `sz${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
-  }
-}
 
 /* ---------------- 페이로드 세탁 (서버 로직과 동일 방침) ---------------- */
 const clean = (s: unknown, max: number): string =>
@@ -193,7 +180,7 @@ export function mpForce(): string {
 
 class MqttBusImpl implements MqttBus {
   connected = false;
-  readonly id = sessionPid();
+  readonly id = presenceSessionId();
 
   private client: mqtt.MqttClient | null = null;
   private listeners = new Map<string, Listener>();
@@ -253,6 +240,7 @@ class MqttBusImpl implements MqttBus {
       return;
     }
     try {
+      this.brokerIdx = idx;
       const c = mqtt.connect(BROKERS[idx], {
         clientId: this.id.slice(0, 32),
         keepalive: 30,
@@ -271,6 +259,7 @@ class MqttBusImpl implements MqttBus {
         closeFails = 0;
         this.connected = true;
         this.subscribedStage = "";
+        this.presenceSubbed = false;
         this.syncStageSub();
         /* vc149 (#20) — 접속 즉시 내 개인 거래 토픽 구독.
          *  기존엔 tradeSend(보내기) 시에만 구독됐다 → 거래를 '받기만' 하는 쪽은
@@ -378,6 +367,8 @@ class MqttBusImpl implements MqttBus {
       return;
     }
 
+    /* Ignore in-flight messages from the previous map subscription. */
+    if (topic !== ROOT + "stage/" + this.stage) return;
     /* stage/<key> 토픽 */
     if (k === "hi" || k === "st") {
       const prev = this.peers.get(pid);
@@ -458,7 +449,10 @@ class MqttBusImpl implements MqttBus {
           code: clean(info.code, 12).toUpperCase(),
           gm: gmSelf.gm,
         };
-        this.stage = stageKey(info.stage);
+        const nextStage = stageKey(info.stage);
+        if (nextStage !== this.stage) { this.peers.clear(); this.emitPlayers(); }
+        this.stage = nextStage;
+        this.lastState = { x: num(info.x, -9999, 99999), y: num(info.y, -9999, 99999), flip: false, moving: false };
         this.syncStageSub();
         this.publishPresence();
         /* 입장 즉시 자리 알림 — 다음 state(≤120ms) 전에 이름표 좌표 확보 */
@@ -477,6 +471,8 @@ class MqttBusImpl implements MqttBus {
         const st = (args[0] ?? {}) as Record<string, unknown>;
         const nextStage = stageKey(st.stage);
         if (nextStage !== this.stage) {
+          this.peers.clear();
+          this.emitPlayers();
           this.stage = nextStage;
           this.syncStageSub();
           this.publishPresence();

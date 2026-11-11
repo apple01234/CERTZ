@@ -54,7 +54,7 @@ const LATEST_CODE = androidVer.code;
  *  package.json 과 build.gradle versionName 이 다르면 APK 실제 위치를 따라간다. */
 const LATEST_TAG = androidVer.name || LATEST_VERSION;
 const VERSION_NOTE =
-  `v${LATEST_VERSION} (vc${LATEST_CODE}) — 첫 피격 전 적 HP·공격 준비 표시, 회피 수련 돌진 버튼 안내.`;
+  `v${LATEST_VERSION} (vc${LATEST_CODE}) — 초상화 중심·남녀 기본 외형 복원, 전체 에셋 로딩 대기와 파티 연결 수정.`;
 const COMMIT_SHA = process.env.VERCEL_GIT_COMMIT_SHA?.trim() || process.env.CERTZ_BUILD_SHA?.trim() || null;
 const RELEASE_BASE = `https://github.com/apple01234/CERTZ/releases/download/v${LATEST_TAG}`;
 const APK_MIRROR =

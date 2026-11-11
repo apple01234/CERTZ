@@ -23,6 +23,7 @@ export function PartyWidget() {
   const [party, setParty] = useState<net.NetParty | null>(null);
   const [code, setCode] = useState("");
   const [err, setErr] = useState("");
+  const [pending, setPending] = useState(false);
   const [, force] = useState(0);
   const refresh = useCallback(() => force((n) => n + 1), []);
   /* v1.4.27-w1 — 마지막 시도(창설/참여) 기록: 실패(null 스냅샷) 안내 문구 분기용 */
@@ -31,7 +32,10 @@ export function PartyWidget() {
   useEffect(() => {
     const off = net.netOnParty((p) => {
       setParty(p);
-      if (p === null) {
+      if (p) {
+        lastTry.current = "";
+        setErr("");
+      } else {
         setErr(
           lastTry.current === "join"
             ? "파티에 참여하지 못했습니다 — 코드 확인"
@@ -42,7 +46,8 @@ export function PartyWidget() {
       }
       refresh();
     });
-    return off;
+    const offError = net.netOnPartyError(setErr);
+    return () => { off(); offError(); };
   }, [refresh]);
 
   /* 보드 진행도 실시간 갱신 (WorldScene 훅이 localStorage에 기록) */
@@ -70,6 +75,13 @@ export function PartyWidget() {
     };
   }, []);
 
+  const run = async (action: () => Promise<void>) => {
+    if (pending) return;
+    setPending(true);
+    try { await action(); }
+    catch (error) { setErr(error instanceof Error ? error.message : "파티 서버에 연결할 수 없어요"); }
+    finally { setPending(false); }
+  };
   const create = () => {
     setErr("");
     /* v1.4.27-w1 — 소켓 없는 배포에서도 릴레이로 창설 가능 (multiReady = 소켓 OR 릴레이) */
@@ -78,7 +90,7 @@ export function PartyWidget() {
       return;
     }
     lastTry.current = "create";
-    net.netPartyCreate();
+    void run(net.netPartyCreate);
   };
   const join = () => {
     setErr("");
@@ -89,11 +101,12 @@ export function PartyWidget() {
       return;
     }
     lastTry.current = "join";
-    net.netPartyJoin(c);
+    void run(() => net.netPartyJoin(c));
   };
   const leave = () => {
     setErr("");
-    net.netPartyLeave();
+    lastTry.current = "";
+    void run(net.netPartyLeave);
   };
 
   /* v1.4.3 — 파티 콘텐츠 상태 */
@@ -148,7 +161,7 @@ export function PartyWidget() {
                     key={m.id}
                     className={`flex items-center gap-1.5 rounded bg-white/[0.05] px-1.5 py-1 text-[11px] ${m.online === false ? "opacity-45" : "text-white/90"}`}
                   >
-                    {m.name === party.leader && <Crown size={11} className="text-amber-300" />}
+                    {(m.leader ?? m.name === party.leader) && <Crown size={11} className="text-amber-300" />}
                     <span className="font-bold">{m.name}</span>
                     <span className="text-white/55">Lv.{m.lv}</span>
                     {m.online === false && <span className="ml-auto text-[9px] font-bold text-white/55">오프라인</span>}
@@ -184,6 +197,7 @@ export function PartyWidget() {
 
               <button
                 onClick={leave}
+                disabled={pending}
                 className="flex w-full items-center justify-center gap-1 rounded-lg border border-rose-300/30 bg-rose-500/15 px-2 py-1.5 text-[11px] font-black text-rose-200 active:scale-95"
               >
                 <LogOut size={12} /> 파티 탈퇴
@@ -193,9 +207,10 @@ export function PartyWidget() {
             <>
               <button
                 onClick={create}
+                disabled={pending}
                 className="mb-1.5 w-full rounded-lg border border-sky-300/40 bg-sky-500/20 px-2 py-1.5 text-[11px] font-black text-sky-100 active:scale-95"
               >
-                파티 창설
+                {pending ? "처리 중…" : "파티 창설"}
               </button>
               <div className="flex gap-1">
                 <input
@@ -212,12 +227,12 @@ export function PartyWidget() {
                 />
                 <button
                   onClick={join}
+                  disabled={pending}
                   className="rounded-lg border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-black text-white/90 active:scale-95"
                 >
                   참여
                 </button>
               </div>
-              {err && <p className="mt-1 text-[10px] font-bold text-rose-300">{err}</p>}
               <p className="mt-1.5 text-[10px] leading-snug text-white/55">
                 파티원과 같은 구역에 보이고, 보스 출현이 파티 전체에 공지됩니다. 혼자 사냥하면 <b className="text-emerald-300">EXP +{SOLO_BLESS_EXP_PCT}%</b>(단독 가호)가 붙습니다.
                 <br />
@@ -225,6 +240,7 @@ export function PartyWidget() {
               </p>
             </>
           )}
+          {err && <p role="alert" className="mt-1 text-[10px] font-bold text-rose-300">{err}</p>}
 
           {/* ===== v1.4.3 (작업4) — 오늘의 파티 미션 (파티 퀘스트 보드) ===== */}
           <div className="mt-2 rounded-lg border border-emerald-300/25 bg-emerald-500/[0.07] px-2 py-1.5">

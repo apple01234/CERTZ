@@ -7,28 +7,13 @@
  *  - 신원: cid(localStorage 영속 UUID) + 플레이어 이름/레벨/직업 (WorldScene이 주입)
  *  - net.ts가 소켓 미연결 시 이 모듈로 위임한다 (UI·EventBus 흐름 불변)
  */
-import { Capacitor } from "@capacitor/core";
 import { resolveApiBase } from "./server";
+import { relayClientId as ensureCid } from "./playerIdentity";
 
 export type RelayChatMsg = { id: string; name: string; text: string; sys?: boolean; t: number };
 /* v1.0.16 보안(S8) — leader는 '이름'이다(과거엔 cid를 담아 보냈으나 클라가 이름으로 비교해
  *  왕관이 뜨지 않았고, cid가 노출됐다). members[].id도 표시용 슬롯이며 실제 cid가 아니다. */
-export type RelayPartySnapshot = { id: string; leader: string; max: number; members: { id: string; name: string; lv: number; cls: string | null; online: boolean }[] };
-
-let cid = "";
-function ensureCid(): string {
-  if (cid) return cid;
-  try {
-    cid = window.localStorage.getItem("sertz.relay.cid") || "";
-    if (!cid || !/^[A-Za-z0-9_-]{6,64}$/.test(cid)) {
-      cid = `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
-      window.localStorage.setItem("sertz.relay.cid", cid);
-    }
-  } catch {
-    cid = `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
-  }
-  return cid;
-}
+export type RelayPartySnapshot = { id: string; leader: string; max: number; members: { id: string; name: string; lv: number; cls: string | null; online: boolean; leader?: boolean }[] };
 
 let me: { name: string; lv: number; cls: string | null } = { name: "이름없음", lv: 1, cls: null };
 export function relaySetIdentity(v: { name: string; lv: number; cls: string | null }) {
@@ -137,77 +122,93 @@ export async function relaySendChat(text: string, party = false): Promise<boolea
 
 /* ---------------- 파티 릴레이 ---------------- */
 let partyCode = "";
-let partyTimer: ReturnType<typeof setTimeout> | null = null;
-let partyHooked = false;
-let beatTimer: ReturnType<typeof setTimeout> | null = null;
-let onParty: ((p: RelayPartySnapshot | null) => void) | null = null;
-
-export function relayPartyJoined(): boolean {
-  return !!partyCode;
-}
-export function relayPartyCode(): string {
-  return partyCode;
-}
-
-/* v1.0.16 보안(S8) — 좌석 비밀(seat). 서버가 create/join 응답으로 1회 발급하며,
- *  leave·beat의 본인 증명에 쓴다. cid는 파티 스냅샷에 공개되므로 증명이 못 된다.
- *  파티를 떠나면 즉시 폐기한다(재입장 시 새로 발급). */
 let partySeat = "";
-function setPartySeat(s: unknown) {
-  partySeat = String(s ?? "");
+let partyTimer: ReturnType<typeof setTimeout> | null = null;
+let beatTimer: ReturnType<typeof setTimeout> | null = null;
+let partyHooked = false;
+let onParty: ((p: RelayPartySnapshot | null) => void) | null = null;
+let onPartyError: ((message: string) => void) | null = null;
+let lastParty: RelayPartySnapshot | null = null;
+const PARTY_SESSION = "sertz.relay.party";
+
+export function relayPartyJoined(): boolean { return !!partyCode; }
+export function relayPartyCode(): string { return partyCode; }
+
+function savePartySession() {
+  try {
+    if (partyCode && partySeat) window.sessionStorage.setItem(PARTY_SESSION, JSON.stringify({ code: partyCode, seat: partySeat }));
+    else window.sessionStorage.removeItem(PARTY_SESSION);
+  } catch { /* memory session */ }
 }
-function clearPartySeat() {
+
+function publishParty(p: RelayPartySnapshot | null) {
+  lastParty = p;
+  onParty?.(p);
+}
+
+function clearParty() {
+  partyCode = "";
   partySeat = "";
+  savePartySession();
+  relaySetPartyCode("");
+  stopPartyLoops();
+  publishParty(null);
+}
+
+async function partyPost(action: string, code = partyCode) {
+  const response = await fetch(`${base()}/api/party`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action, code, cid: ensureCid(), seat: partySeat, ...me }),
+    signal: AbortSignal.timeout(10000),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(body.error || `파티 서버 요청에 실패했어요 (${response.status})`);
+    Object.assign(error, { status: response.status });
+    throw error;
+  }
+  return body;
+}
+
+function reportPartyError(error: unknown) {
+  onPartyError?.(error instanceof Error ? error.message : "파티 서버에 연결할 수 없어요 — 잠시 후 다시 시도");
 }
 
 async function partyTick() {
-  if (!partyCode || document.hidden) return;
+  const code = partyCode;
   try {
-    /* vc185 (#5) — 파티도 동일: CDN 캐시 사용 */
-    const r = await fetch(`${base()}/api/party?code=${encodeURIComponent(partyCode)}`)
-      .then((x) => (x.ok ? x.json() : null)).catch(() => null);
-    if (r && "party" in r) {
-      const p = r.party as RelayPartySnapshot | null;
-      if (p) onParty?.(p);
-      else {
-        /* 파티 소멸(전원 이탈/청소) — 해제 통보 */
-        partyCode = "";
-        clearPartySeat();
-        relaySetPartyCode("");
-        onParty?.(null);
-        return;
-      }
-    }
-  } catch { /* 무시 */ }
+    if (!code || document.hidden) return;
+    const response = await fetch(`${base()}/api/party?code=${encodeURIComponent(code)}`, { signal: AbortSignal.timeout(8000) });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error || `파티 상태를 가져올 수 없어요 (${response.status})`);
+    if (partyCode !== code) return; // A completed request must not restore a party we left.
+    if (body.party) publishParty(body.party);
+    else clearParty();
+  } catch (error) { reportPartyError(error); }
   finally {
-    if (partyHooked && partyCode) partyTimer = setTimeout(partyTick, 8000); // vc185 (#5) — 5초→8초
+    if (partyHooked && partyCode) partyTimer = setTimeout(partyTick, 8000);
   }
 }
 
 async function beatTick() {
-  if (!partyCode || document.hidden) return;
+  const code = partyCode;
   try {
-    const r = await fetch(`${base()}/api/party`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "beat", cid: ensureCid(), seat: partySeat, name: me.name, lv: me.lv, cls: me.cls || "", code: partyCode }),
-      signal: AbortSignal.timeout(8000),
-    });
-    /* v1.0.16 — seat 불일치(403)면 하트비트가 조용히 거부되어 15분 뒤 명단에서 사라진다.
-     *  화면상 "파티에 있음"과 어긋나므로 즉시 재입장해 새 seat을 받는다.
-     *  (R9 교훈: 실패를 삼키면 사용자는 정상으로 보이고 서버만 어긋난다) */
-    if (r.status === 403 || r.status === 404) {
-      const code = partyCode;
-      void relayPartyJoin(code);
-    }
-  } catch { /* 무시 */ }
-  finally {
+    if (!code || document.hidden) return;
+    const body = await partyPost("beat", code);
+    if (partyCode === code && body.party) publishParty(body.party);
+  } catch (error) {
+    if (partyCode !== code) return;
+    const status = (error as { status?: number }).status;
+    if (status === 403 || status === 404) clearParty();
+    reportPartyError(error); // Never replace a rejected seat silently with a new one.
+  } finally {
     if (partyHooked && partyCode) beatTimer = setTimeout(beatTick, 90 * 1000);
   }
 }
 
 function startPartyLoops() {
-  if (partyHooked) return;
+  stopPartyLoops();
   partyHooked = true;
   partyTimer = setTimeout(partyTick, 600);
   beatTimer = setTimeout(beatTick, 30 * 1000);
@@ -219,65 +220,50 @@ function stopPartyLoops() {
   if (beatTimer) { clearTimeout(beatTimer); beatTimer = null; }
 }
 
-export function relayEnsurePartyPoll(cb: (p: RelayPartySnapshot | null) => void) {
+export function relayEnsurePartyPoll(cb: (p: RelayPartySnapshot | null) => void, onError?: (message: string) => void) {
   onParty = cb;
+  onPartyError = onError || null;
+  if (!partyCode) {
+    try {
+      const saved = JSON.parse(window.sessionStorage.getItem(PARTY_SESSION) || "null");
+      if (/^[A-Z0-9]{4,8}$/.test(saved?.code) && /^[A-Za-z0-9_-]{32}$/.test(saved?.seat)) {
+        partyCode = saved.code;
+        partySeat = saved.seat;
+        relaySetPartyCode(partyCode);
+        startPartyLoops();
+        if (beatTimer) clearTimeout(beatTimer);
+        void beatTick();
+      }
+    } catch { /* no saved seat */ }
+  }
+  cb(lastParty);
+  return () => { if (onParty === cb) { onParty = null; onPartyError = null; } };
 }
 
-export async function relayPartyCreate(): Promise<string | null> {
-  try {
-    const r = await fetch(`${base()}/api/party`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "create", cid: ensureCid(), name: me.name, lv: me.lv, cls: me.cls || "" }),
-      signal: AbortSignal.timeout(10000),
-    }).then((x) => (x.ok ? x.json() : null)).catch(() => null);
-    const code = r?.code ? String(r.code) : null;
-    if (code) { partyCode = code; setPartySeat(r?.seat); relaySetPartyCode(code); startPartyLoops(); }
-    return code;
-  } catch {
-    return null;
-  }
+async function enterParty(action: "create" | "join", code = "") {
+  const body = await partyPost(action, code);
+  if (!body.code || !body.seat) throw new Error("파티 서버 응답이 올바르지 않아요 — 다시 시도해 주세요");
+  partyCode = String(body.code);
+  partySeat = String(body.seat);
+  savePartySession();
+  relaySetPartyCode(partyCode);
+  if (body.party) publishParty(body.party);
+  else await partyTick(); // Older compatible servers return only code/seat.
+  startPartyLoops();
+  return partyCode;
+}
+
+export async function relayPartyCreate(): Promise<string> {
+  return enterParty("create");
 }
 
 export async function relayPartyJoin(code: string): Promise<boolean> {
-  const c = (code || "").trim().toUpperCase();
-  try {
-    const r = await fetch(`${base()}/api/party`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "join", cid: ensureCid(), name: me.name, lv: me.lv, cls: me.cls || "", code: c }),
-      signal: AbortSignal.timeout(10000),
-    }).then((x) => (x.ok ? x.json() : null)).catch(() => null);
-    if (r?.ok) {
-      partyCode = c;
-      setPartySeat(r?.seat);
-      relaySetPartyCode(c);
-      startPartyLoops();
-      /* 즉시 스냅샷 1회 */
-      void partyTick();
-      return true;
-    }
-    return false;
-  } catch {
-    return false;
-  }
+  await enterParty("join", code.trim().toUpperCase());
+  return true;
 }
 
 export async function relayPartyLeave(): Promise<void> {
-  const c = partyCode;
-  const s = partySeat; // 전송 전에 확보 — 아래에서 즉시 폐기한다
-  partyCode = "";
-  clearPartySeat();
-  relaySetPartyCode("");
-  stopPartyLoops();
-  onParty?.(null);
-  if (!c) return;
-  try {
-    await fetch(`${base()}/api/party`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "leave", cid: ensureCid(), seat: s, code: c }),
-      signal: AbortSignal.timeout(8000),
-    });
-  } catch { /* 무시 */ }
+  if (!partyCode) { clearParty(); return; }
+  await partyPost("leave");
+  clearParty(); // Keep the seat and UI if the server could not confirm departure.
 }

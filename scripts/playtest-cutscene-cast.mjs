@@ -3,6 +3,7 @@ import { chromium } from 'playwright';
 import { mkdir, writeFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { CUTSCENE_CAST, castPortrait } from '../src/game/cutsceneCast.ts';
+import appearanceFrames from '../src/game/appearanceFrames.json' with { type: 'json' };
 
 const url = process.argv[2] ?? 'http://127.0.0.1:3100';
 const out = process.env.CAST_QA_OUT ?? '/dev/shm/cast-qa';
@@ -68,7 +69,7 @@ try {
       const expectedSpeaker = { pendant: '라일락', vellica: '벨리카', injury: '루시', relationship: '아리' }[id];
       if (!captured && state.actors.some((a) => a.tex === expected) && state.speaker === expectedSpeaker
         && (id !== 'pendant' || state.lines.some((l) => l.includes('펜던트')))
-        && await page.locator('img[src*="cutscene-cast/portraits"]').count()) {
+        && await page.locator('img[data-portrait-src*="cutscene-cast/portraits"]').count()) {
         if (id !== 'injury' || state.actors.some((a) => a.anim === 'cast_lucy-hurt')) {
           await page.screenshot({ path: `${out}/${id}.png` }); shots.push(id); captured = true;
         }
@@ -93,10 +94,12 @@ try {
   const portraits = [];
   for (const c of CUTSCENE_CAST) {
     await page.evaluate((speaker) => window.__SERTZ_EB__.emit('dialogue:show', { speaker, lines: ['초상화 일치 검증'] }), c.name);
-    const face = page.locator(`img[src="${castPortrait(c.id)}"]`);
+    const frame = appearanceFrames[castPortrait(c.id)];
+    const face = page.locator(`img[data-portrait-src="${castPortrait(c.id)}"]`);
     await face.waitFor({ timeout: 5000 });
     await face.evaluate((img) => img.decode());
-    assert.equal(await face.evaluate((img) => img.naturalWidth), 84, c.name); portraits.push(c.id);
+    assert.equal(await face.getAttribute('src'), frame.src, c.name);
+    assert.equal(await face.evaluate((img) => img.naturalWidth), frame.sheet.w, c.name); portraits.push(c.id);
   }
   await page.evaluate(() => { window.__SERTZ_EB__.emit('dialogue:hide'); window.__SERTZ_EB__.emit('dialogue:done'); });
   await page.setViewportSize({ width: 844, height: 390 });

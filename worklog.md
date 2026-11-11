@@ -5197,3 +5197,7 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
 - 실제 런타임: `scripts/playtest-dash-iframes.mjs` PASS. 대시 전 iframes 0 → 대시 후 420, 무적 중 `takeDamage(50)`은 HP 172→172 차단, 무적 종료 후 같은 피해는 172→122 적용, 페이지 예외 0. HP/레벨/진행/보스 HP 주입 없음.
 - 미검증: 자연 진행 보스 클리어, S20+ 실기기 발열·터치 체감. CrossCode의 회피 무적 수치를 관찰로 확인하지 않았으므로 참고작 수치 복사가 아니라 CERTZ 기존 상수에서 도출한 설계다. 상세: `docs/qa/2026-11-11/crosscode/APPLIED_v268.md`.
 - 버전 vc268/2.2.12 동기화(build.gradle → sync 스크립트 → android-version.json, package.json, package-lock.json).
+
+## Task — vc269 긴급 체크포인트 및 인계
+
+사용자 토큰 부족 지시로 즉시 마감. 초상화 alpha중심/기본 남녀28동작112원본 복원, 전체 catalog 로딩 gate/캐시 재시도/중복JSON60요청 제거, 파티 fallback/탭 identity/폴링·host 관련 수정을 포함. 선택 검사17개 통과. 전체빌드/실제브라우저/배포검증은 아직 미실행. 보스·궁극기·죽음FX·보스 기록전 미완성코드는 런타임에서 분리해 docs/handoff/v268-WIP-source.tar.gz로 보존. 다음AI 세부지시 docs/handoff/HANDOFF_V269.md. GM버튼/반복컷씬/NPC연출 강화와WorldScene경기연결은 미구현.

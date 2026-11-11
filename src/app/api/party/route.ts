@@ -64,6 +64,14 @@ function snapshot(p: RelayParty, now: number) {
   return { id: p.code, leader: leaderName, max: PARTY_MAX, members };
 }
 
+function removeMember(db: RelayPartyFile, code: string, cid: string) {
+  const party = db.parties[code];
+  delete party.members[cid];
+  const members = Object.entries(party.members).sort((a, b) => a[1].joinedAt - b[1].joinedAt);
+  if (!members.length) delete db.parties[code];
+  else if (party.leader === cid) party.leader = members[0][0];
+}
+
 /** 파티 청소 — 전 멤버 24시간 무활동 파티 제거 */
 function prune(db: RelayPartyFile, now: number) {
   for (const code of Object.keys(db.parties)) {
@@ -96,7 +104,7 @@ export async function GET(req: NextRequest) {
     if (e instanceof RelayAccessError) {
       return json(req, 503, { party: null, error: "파티 저장소에 접근할 수 없어요" });
     }
-    return json(req, 200, { party: null });
+    return json(req, 503, { error: "파티 상태를 가져올 수 없어요 — 잠시 후 다시 시도" });
   }
 }
 
@@ -121,6 +129,7 @@ export async function POST(req: NextRequest) {
     if (action === "beat") {
       if (!rateLimit(req, "party-beat", 3, 60 * 1000)) return json(req, 429, { error: "busy" });
       /* v1.4.27-w2 (#릴레이null) — mutator는 전달받은 객체를 제자리 변경 (빈 객체 전달 대응) */
+      let party;
       const r = await mutateRelay<RelayPartyFile>(PARTY_PATH, (raw) => {
         const d = (raw && typeof raw === "object" ? raw : {}) as RelayPartyFile;
         if (!d.parties || typeof d.parties !== "object") return { status: 404, body: { error: "파티가 없어요" } };
@@ -136,23 +145,27 @@ export async function POST(req: NextRequest) {
         m.seenAt = now;
         m.name = name || m.name;
         m.lv = lv || m.lv;
+        m.cls = cls;
+        party = snapshot(p, now);
         return null;
       });
-      return json(req, r.status, r.status === 200 ? { ok: true } : r.body);
+      return json(req, r.status, r.status === 200 ? { ok: true, party } : r.body);
     }
 
     if (action === "create") {
       if (!rateLimit(req, "party-create", 3, 60 * 1000)) return json(req, 429, { error: "요청이 너무 많아요" });
       let newCode = "";
       let newSeat = "";
+      let party;
       const r = await mutateRelay<RelayPartyFile>(PARTY_PATH, (raw) => {
         const d = (raw && typeof raw === "object" ? raw : {}) as RelayPartyFile;
         if (!d.parties || typeof d.parties !== "object") d.parties = {};
         prune(d, now);
         /* 1인 1파티 — 기존 파티에서 탈퇴 */
         for (const [c, p] of Object.entries(d.parties)) {
-          if (p.members[cid]) { delete p.members[cid]; if (Object.keys(p.members).length === 0) delete d.parties[c]; }
+          if (p.members[cid]) removeMember(d, c, cid);
         }
+        newCode = ""; // Optimistic-lock retries must allocate against the newly loaded file.
         newSeat = randomSeat();
         const member: RelayPartyMember = { name, lv, cls, seenAt: now, joinedAt: now, seat: newSeat };
         for (let i = 0; i < 8; i++) {
@@ -162,17 +175,19 @@ export async function POST(req: NextRequest) {
         }
         if (!newCode) return { status: 503, body: { error: "파티 코드 발급 실패 — 다시 시도" } };
         d.parties[newCode] = { code: newCode, leader: cid, members: { [cid]: member }, createdAt: now };
+        party = snapshot(d.parties[newCode], now);
         return null;
       });
       if (r.status === 200) audit("party:create", { uid: cid.slice(0, 8), code: newCode });
       /* seat은 생성자에게만 1회 반환 — 이후 leave/beat의 본인 증명에 쓴다 */
-      return json(req, r.status, r.status === 200 ? { ok: true, code: newCode, seat: newSeat } : r.body);
+      return json(req, r.status, r.status === 200 ? { ok: true, code: newCode, seat: newSeat, party } : r.body);
     }
 
     if (action === "join") {
       if (!rateLimit(req, "party-join", 6, 60 * 1000)) return json(req, 429, { error: "요청이 너무 많아요" });
       if (!/^[A-Z0-9]{4,8}$/.test(code)) return json(req, 400, { error: "코드 형식이 틀렸어요" });
       let joinSeat = "";
+      let party;
       const r = await mutateRelay<RelayPartyFile>(PARTY_PATH, (raw) => {
         const d = (raw && typeof raw === "object" ? raw : {}) as RelayPartyFile;
         if (!d.parties || typeof d.parties !== "object") d.parties = {};
@@ -185,17 +200,17 @@ export async function POST(req: NextRequest) {
         /* 1인 1파티 — 기존 파티에서 탈퇴 */
         for (const [c, op] of Object.entries(d.parties)) {
           if (c !== code && op.members[cid]) {
-            delete op.members[cid];
-            if (Object.keys(op.members).length === 0) delete d.parties[c];
+            removeMember(d, c, cid);
           }
         }
         /* 재입장 포함 매번 새 seat 발급 — 이전 seat은 무효화된다 */
         joinSeat = randomSeat();
         p.members[cid] = { name, lv, cls, seenAt: now, joinedAt: p.members[cid]?.joinedAt || now, seat: joinSeat };
+        party = snapshot(p, now);
         return null;
       });
       if (r.status === 200) audit("party:join", { uid: cid.slice(0, 8), code });
-      return json(req, r.status, r.status === 200 ? { ok: true, code, seat: joinSeat } : r.body);
+      return json(req, r.status, r.status === 200 ? { ok: true, code, seat: joinSeat, party } : r.body);
     }
 
     if (action === "leave") {
@@ -203,19 +218,14 @@ export async function POST(req: NextRequest) {
         const d = (raw && typeof raw === "object" ? raw : {}) as RelayPartyFile;
         if (!d.parties || typeof d.parties !== "object") return { status: 404, body: { error: "파티가 없어요" } };
         for (const [c, p] of Object.entries(d.parties)) {
+          if (c !== code) continue;
           if (!p.members[cid]) continue;
           /* v1.0.16 보안(S8) — 본인 확인. cid는 노출되는 공개 식별자라 증명이 못 된다 */
           const m = p.members[cid];
           if (!m.seat || m.seat !== seat) {
             return { status: 403, body: { error: "본인 확인에 실패했어요 — 파티에 다시 입장해 주세요" } };
           }
-          delete p.members[cid];
-          if (Object.keys(p.members).length === 0) { delete d.parties[c]; break; }
-          if (p.leader === cid) {
-            /* 최장 입장자 승계 */
-            const next = Object.entries(p.members).sort((a, z) => a[1].joinedAt - z[1].joinedAt)[0];
-            if (next) p.leader = next[0];
-          }
+          removeMember(d, c, cid);
           break;
         }
         return null;
@@ -226,6 +236,7 @@ export async function POST(req: NextRequest) {
     return json(req, 400, { error: "알 수 없는 요청이에요" });
   } catch (e) {
     console.error("[SERTZ-api] party POST 실패", e);
+    if (e instanceof RelayAccessError) return json(req, 503, { error: "파티 저장소에 접근할 수 없어요" });
     return json(req, 500, { error: "서버 오류 — 잠시 후 다시 시도해 주세요" });
   }
 }

@@ -926,9 +926,7 @@ export class BootScene extends Phaser.Scene {
   async create() {
     try { await ensureTitleAssets(this); } catch { return; }
     if (!this.sys.isActive()) return;
-    this.bootUi?.destroy();
-    this.bootUi = undefined;
-    void loadMapOverrides();
+    await loadMapOverrides((input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(8000) }));
     /* v4.1.5 — Galmuri 픽셀 폰트 로딩 대기 (최대 2.5초 폴백).
      *  Phaser 캔버스 텍스트(데미지 숫자/배너/월드 라벨)가 Galmuri로 렌더되려면
      *  씬 시작 전 document.fonts 로드 완료가 필요하다. 실패해도 sans-serif 폴백. */
@@ -947,7 +945,10 @@ export class BootScene extends Phaser.Scene {
     } catch {
       /* 폰트 로드 실패 — 기본 폰트로 계속 */
     }
-    if (this.sys.isActive()) this.scene.start("title");
+    if (!this.sys.isActive()) return;
+    this.bootUi?.destroy();
+    this.bootUi = undefined;
+    this.scene.start("title");
   }
 }
 

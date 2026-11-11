@@ -92,9 +92,11 @@ function attachMultiplayer(httpServer) {
 
   function partyPayload(p) {
     const members = [...p.members]
-      .map((id) => players.get(id))
-      .filter(Boolean)
-      .map((m) => ({ id: m.id, name: m.name, lv: m.lv, cls: m.cls }));
+      .map((id) => {
+        const m = players.get(id);
+        return m ? { id, name: m.name, lv: m.lv, cls: m.cls, leader: id === p.leader } : null;
+      })
+      .filter(Boolean);
     return { id: p.id, leader: players.get(p.leader)?.name ?? "?", members, max: p.max };
   }
 
@@ -228,7 +230,7 @@ function attachMultiplayer(httpServer) {
       if (!p) return;
       // 이미 가입한 파티가 있으면 무시
       for (const pt of parties.values()) {
-        if (pt.members.has(sock.id)) return;
+        if (pt.members.has(sock.id)) { sock.emit("party", partyPayload(pt)); return; }
       }
       const id = `P${++partySeq}`;
       parties.set(id, { id, leader: sock.id, max: PARTY_MAX, members: new Set([sock.id]) });
@@ -241,10 +243,12 @@ function attachMultiplayer(httpServer) {
       const id = String(rawId ?? "").trim().toUpperCase();
       const pt = parties.get(id);
       if (!p || !pt) {
-        sock.emit("party", null);
+        sock.emit("party:error", "없는 파티 코드예요");
+        if (![...parties.values()].some((party) => party.members.has(sock.id))) sock.emit("party", null);
         return;
       }
-      if (pt.members.size >= pt.max || pt.members.has(sock.id)) return;
+      if (pt.members.has(sock.id)) { sock.emit("party", partyPayload(pt)); return; }
+      if (pt.members.size >= pt.max) { sock.emit("party:error", "파티가 가득 찼어요 (최대 4인)"); return; }
       // 다른 파티 가입 중이면 먼저 탈퇴
       for (const other of parties.values()) {
         other.members.delete(sock.id);
@@ -367,6 +371,7 @@ function attachMultiplayer(httpServer) {
     if (players.size === 0) return;
     broadcastPlayers(true);
     io.emit("friends", friendsPayload());
+    for (const party of parties.values()) broadcastParty(party.id);
   }, 2000);
 
   return { io, heartbeat };
