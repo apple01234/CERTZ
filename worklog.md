@@ -5260,3 +5260,16 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
 - 검증: `npm test` **649/649**, tsc·lint:strict 통과, `next build` 성공.
 - 미검증: 실제 보스전에서 windup→release 전환이 눈에 어떻게 보이는지(애니메이션 등록까지만 확인), NPC 연출 강화, S20+ 실기기.
 - 버전 vc275/2.2.19 동기화.
+
+## Task — 2026-11-11 UTC: vc276 스킬 이펙트 3단 시점 분리(ISEKAI GATE 구조 참고)
+
+- 참고 게임 `com.awesomepiece.isekaigate`(Unity IL2CPP + SPUM, XAPK)의 Addressables 번들 26개를 UnityPy로 전수 파싱해 **구조만** 뽑았다. 추출 에셋은 런타임에 복사하지 않았다.
+- 확인한 구조 3가지: ① SPUM 파츠 조합(14종 파츠, 클립 582개를 전 파츠가 공유) ② **스킬 이펙트가 `_c`(시전)/`_Dust`(먼지)/`_Hit`(타격) 3개로 분리**되어 서로 다른 시점·위치에 배치됨 ③ 맵은 16×16 타일맵 154개, 스폰은 `CreepZone` 구역 볼륨으로 타일과 분리.
+- 적용한 것(②): `spawnSkillImpact`가 링·코어·슬라이스를 **전부 t=0** 에 터뜨려 한 덩어리로 뭉개지던 것을, 링(0ms)/먼지(stepMs)/타격(stepMs*2)으로 시점을 분리했다. 먼지는 새로 `hv2_smoke26`을 쓰고 발밑 +4px에 배치, 타격은 `hitDx/hitDy`로 전방 오프셋을 줄 수 있게 했다. **새 에셋 0장** — 이미 로드된 텍스처만 재사용.
+- 옵션 미지정 시 `stepMs = 70`으로 기존 호출부 6곳이 무수정 동작한다. 저사양 게이트(fxLevel 0)는 최상단 조기 반환을 그대로 유지해 4겹 전부 생략된다(+4px 먼지까지 포함).
+- 검증(실제 브라우저, `scripts/playtest-skill-impact-staging.mjs`): 링 t=33ms / 먼지 t=100ms / 타격 t=183ms — 간격 67·83ms로 `stepMs=70`과 일치. 저사양(fxLevel 0)은 생성 0건. 페이지 예외 0. 먼지 y가 507로 링(503)보다 +4px.
+- 계측 버그 1건 자체 수정: `t` 기준점을 instrument 시점에 잡아 측정 사이 경과 시간이 섞였고(첫 측정 33/183/533ms), 매 측정 시작 시 리셋하도록 고쳐 33/100/183ms로 정정했다. **첫 수치를 그대로 보고하지 않은 이유**이기도 하다.
+- 검증 실패 2건을 기록한다: ① 처음엔 `useSkill1`을 불렀는데 1차 직업은 시그니처 분기로 빠져 `spawnSkillImpact`에 도달하지 않았다 ② `useSkill3`은 `SKILL3_KIND[cls]`가 없어 초입 return. 결국 게이트와 무관하게 계측하려고 `__SERTZ__`에 `spawnSkillImpact`를 노출했다(순수 시각 함수라 판정 영향 없음).
+- 검증: 신규 `tests/skill-impact-staging.test.mjs` 4/4(3단 시점 분리·텍스처 실존·저사양 게이트 위치·stepMs 기본값), 전체 `npm test` **653/653**, tsc·lint:strict 통과, `next build --webpack` 성공.
+- 미검증: S20+ 실기기에서 70ms 간격이 실제로 "차고→내려찍고"로 읽히는지. 이펙트가 겹치는 근접 다수전에서의 가독성. 나머지 두 구조(SPUM 파츠 조합·구역 볼륨 스폰)는 **적용하지 않았다** — 코디 시스템·스폰 레이어 개편은 규모가 커 별도 판단이 필요하다.
+- 버전 vc276/2.2.20 동기화.

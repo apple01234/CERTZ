@@ -141,7 +141,9 @@ export function spawnRingPop(
  */
 export function spawnSkillImpact(
   scene: SceneLike, x: number, y: number, tint: number,
-  opts: { scale?: number; ringTex?: string; hitTex?: string; ringDep?: number; hitDep?: number } = {},
+  opts: { scale?: number; ringTex?: string; hitTex?: string; ringDep?: number; hitDep?: number;
+    /* vc276 — 3단 시점 분리용. 미지정이면 기존과 동일하게 동작한다. */
+    stepMs?: number; dustTex?: string; hitDx?: number; hitDy?: number } = {},
 ) {
   const s = opts.scale ?? 1;
   /* v1.4.33 (긴급수정 — "전사 스킬 사용시 캐릭터 멈추는 버그")
@@ -159,6 +161,26 @@ export function spawnSkillImpact(
    *    ③ 잔류 슬라이스: 진행 방향을 따라 남는 참격 잔상
    *  오브젝트 수는 1 → 3 이지만 수명이 340~560ms 로 짧고, 생성은 스킬 시전 시점 1회뿐이라
    *  매 프레임 생성하지 않는다(멈춤의 원인이던 배라주와 다르다). */
+  /* vc276 — 시전/먼지/타격 3단 시점 분리 (ISEKAI GATE `_c`/`_Dust`/`_Hit` 구조 참고)
+   *
+   *  종전에는 링·코어·슬라이스 3겹이 **전부 t=0** 에 동시에 터졌다. 셋이 겹쳐 한 덩어리로
+   *  보였고, "터졌다"는 인상만 남고 "무엇이 어떻게" 남는지가 없었다.
+   *
+   *  상용 2D 액션(ISEKAI GATE)의 스킬 이펙트는 한 덩어리가 아니라 **시점이 다른 3개**다:
+   *    _c    (시전)  t=0    발밑/몸 중심 — 준비 동작을 알린다
+   *    _Dust (먼지)  t≈70   발밑에서 옆으로 — 무게를 만든다
+   *    _Hit  (타격)  t≈140  전방 — 실제로 맞는 지점
+   *  같은 그림을 시점만 옮겨도 "차고 → 내려찍고 → 터진다"로 읽힌다. 새 에셋은 0장.
+   *
+   *  저사양(fxLevel 1)과 즉발 판정에는 영향을 주지 않는다 — 순수 시각 지연이다.
+   *  판정(피해)은 호출부에서 이미 확정되므로 이 지연은 전투 결과를 바꾸지 않는다.
+   */
+  const stepMs = opts.stepMs ?? 70;
+  const delayed = (ms: number, run: () => void) => {
+    if (ms <= 0) run();
+    else scene.time.delayedCall(ms, run);
+  };
+
   const ring = vfImage(scene, opts.ringTex ?? "hv2_circle2", x, y, tint); // vc232 (#2) fx_Circle2 는 미존재 키
   if (ring) {
     /* vfImage 가 depth 24 를 기본으로 잡으므로 **호출 후** 덮어써야 한다(순서 중요). */
@@ -169,37 +191,52 @@ export function spawnSkillImpact(
     });
   }
   if (fxLevel >= 2) {
-    /* ② 코어 섬광 — 중심에서 아주 짧게. 확산 링보다 먼저 사라져 "터지는" 느낌을 만든다. */
-    const core = vfImage(scene, "vf_impact", x, y, 0xffffff);
-    if (core) {
-      core.setDepth(opts.hitDep ?? 23).setAlpha(0.85).setScale(0.22 * s)
-        .setBlendMode(Phaser.BlendModes.ADD);
+    /* ② 발밑 먼지 — 링보다 살짝 늦게, 몸에서 옆으로 퍼진다. 무게 담당.
+     *    hv2_smoke26 은 회색 연기라 tint 로 클래스색을 옅게만 얹는다. */
+    delayed(stepMs, () => {
+      const dust = vfImage(scene, opts.dustTex ?? "hv2_smoke26", x, y + 4, tint);
+      if (!dust) return;
+      dust.setDepth((opts.ringDep ?? 6) + 1).setAlpha(0.42).setScale(0.34 * s)
+        .setAngle(Phaser.Math.Between(-18, 18));
       scene.tweens.add({
-        targets: core, scale: 0.9 * s, alpha: 0, duration: 280, ease: "Quad.out",
-        onComplete: () => core.destroy(),
+        targets: dust, scale: 0.92 * s, alpha: 0, duration: 380, ease: "Quad.out",
+        onComplete: () => dust.destroy(),
       });
-    }
-    /* ③ 참격 잔상 — 회전하며 옅게 남는다. 스킬마다 방향이 달라도 자연스럽게 겹친다. */
-    const slice = vfImage(scene, "vf_slash", x, y, tint);
-    if (slice) {
-      slice.setDepth((opts.hitDep ?? 23) - 1).setAlpha(0.6).setScale(0.7 * s)
-        .setAngle(-24).setBlendMode(Phaser.BlendModes.ADD);
-      scene.tweens.add({
-        targets: slice, angle: 24, scale: 1.35 * s, alpha: 0, duration: 420, ease: "Sine.out",
-        onComplete: () => slice.destroy(),
-      });
-    }
+    });
+    /* ③ 타격 — 전방으로 살짝 밀어 배치. 링/먼지가 깔린 뒤에 터져야 "맞은 지점"으로 읽힌다. */
+    delayed(stepMs * 2, () => {
+      const core = vfImage(scene, "vf_impact", x + (opts.hitDx ?? 0), y + (opts.hitDy ?? 0), 0xffffff);
+      if (core) {
+        core.setDepth(opts.hitDep ?? 23).setAlpha(0.85).setScale(0.22 * s)
+          .setBlendMode(Phaser.BlendModes.ADD);
+        scene.tweens.add({
+          targets: core, scale: 0.9 * s, alpha: 0, duration: 280, ease: "Quad.out",
+          onComplete: () => core.destroy(),
+        });
+      }
+      /* 참격 잔상 — 회전하며 옅게 남는다. 스킬마다 방향이 달라도 자연스럽게 겹친다. */
+      const slice = vfImage(scene, "vf_slash", x + (opts.hitDx ?? 0), y + (opts.hitDy ?? 0), tint);
+      if (slice) {
+        slice.setDepth((opts.hitDep ?? 23) - 1).setAlpha(0.6).setScale(0.7 * s)
+          .setAngle(-24).setBlendMode(Phaser.BlendModes.ADD);
+        scene.tweens.add({
+          targets: slice, angle: 24, scale: 1.35 * s, alpha: 0, duration: 420, ease: "Sine.out",
+          onComplete: () => slice.destroy(),
+        });
+      }
+    });
   }
   /* 히트 섬광은 궁극기에서만 쓴다 — 일반 스킬은 위 3겹으로 충분(부하 절감). */
   if (opts.hitTex === undefined) return;
-  const hit = vfImage(scene, opts.hitTex, x, y, tint);
-  if (hit) {
+  delayed(stepMs * 2, () => {
+    const hit = vfImage(scene, opts.hitTex as string, x + (opts.hitDx ?? 0), y + (opts.hitDy ?? 0), tint);
+    if (!hit) return;
     hit.setDepth(opts.hitDep ?? 23).setAlpha(0.9).setScale(0.35 * s);
     scene.tweens.add({
       targets: hit, scale: 1.9 * s, alpha: 0, duration: 340, ease: "Quad.out",
       onComplete: () => hit.destroy(),
     });
-  }
+  });
 }
 
 /* ---------------- 5차 궁극기 공통 인트로 (마법진+링+코어 4중 합성) ----------------

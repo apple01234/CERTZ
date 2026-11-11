@@ -1,5 +1,6 @@
 import { startRun } from "./sim/deterministic"; // vc183 — 세션 시드
 import { loadShakeScale } from "./fx/shakeScale"; // vc222 — 흔들림 접근성
+import { spawnSkillImpact } from "./fx/StudioFX"; // vc276 — E2E 계측 훅
 import Phaser from "phaser";
 import { GAME_W, GAME_H } from "./config";
 import { BootScene } from "./scenes/BootScene";
@@ -344,7 +345,10 @@ export function createGame(parent: HTMLElement): Phaser.Game {
   // E2E 검증/디버그 훅
   /* vc206 — EventBus 도 노출한다. 조작 스킴 변경처럼 React 패널이 이벤트로만
    *  씬에 명령하는 경로는 외부에서 재현할 방법이 없어 회귀 검증이 불가능했다. */
-  (window as unknown as { __SERTZ__?: unknown }).__SERTZ__ = { game, EventBus };
+  /* vc276 — spawnSkillImpact 도 노출한다. 스킬 진입 게이트(직업/해금/튜토리얼)를
+   *  통과해야만 도달하는 함수라, 게이트 상태와 무관하게 "이펙트 3단 시점"만
+   *  측정할 방법이 없었다. 순수 시각 함수라 노출해도 판정에 영향이 없다. */
+  (window as unknown as { __SERTZ__?: unknown }).__SERTZ__ = { game, EventBus, spawnSkillImpact };
   /* v1.3.1 (#9) — 부팅 판정 노출 (모바일 절전 기본 — 월드 진입 없이도 E2E 검증 가능) */
   (window as unknown as { __SERTZ_BOOT__?: unknown }).__SERTZ_BOOT__ = { fxMode: WorldScene.DEFAULT_FX_MODE };
   /* v1.4.39 (이펙트 강화) — **죽은 게이트 연결.**
