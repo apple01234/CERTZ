@@ -327,6 +327,10 @@ export class WorldScene extends Phaser.Scene {
   pxFx!: PixelFxManager;
   /* vc209 (#ponytail Must #1) — trade 리스너 참조 (wireTradeInput 분리) */
   private onTradeNearby?: (...args: never[]) => unknown;
+  /* vc274 — 보스 기록전(경품 경쟁) 세션. 서버가 확정한 attemptId/보스HP/제한시간만 보관하고,
+   * 실제 전투는 기존 보스전 파이프라인을 그대로 쓴다(새 전투 엔진 없음). */
+  private contestRun: { attemptId: string; contestId: string; limitMs: number; bossHp: number; startedAt: number; damage: number; hits: number } | null = null;
+  private onContestStart?: (...args: never[]) => unknown;
   private onTradeInvite?: (...args: never[]) => unknown;
   private onTradeAct?: (...args: never[]) => unknown;
   /* v1.3.0 (#에셋통합) — Drive 팩 VFX 통합 레이어 (참격/크리/폭발/낙뢰/마법진/불꽃놀이) */
@@ -9836,6 +9840,8 @@ export class WorldScene extends Phaser.Scene {
     /* vc147 (#19) — 각성의 대가: 보스 격파형 단계 카운트 (탑 보스도 인정) */
     if (def?.key) this.fifth2Progress({ kind: "boss", key: def.key });
     audio.sfx.bossDie();
+    /* vc274 — 기록전 중 보스 처치 → 서버에 성공 보고(승인 대기로 저장된다). */
+    if (this.contestRun) this.finishContest("defeated");
     /* v1.1.9 (#개편 B24) — 보스 사망 슬로우모션.
      *  보스 격파는 한 판의 클라이맥스인데 연출이 일반 몹과 같았다(폭발+소리).
      *  0.28배속으로 620ms 늘려 "끝났다"를 체감시킨 뒤 원복. 암전도 함께.
@@ -12139,6 +12145,50 @@ export class WorldScene extends Phaser.Scene {
 
   /** 1:1 플레이어 거래 배선.
    *  setupInput() 분해 구획 — 동작 변경 0, 순수 이동. */
+  /* ═══ vc274 — 보스 기록전 (경품 경쟁) ═══
+   * 서버가 보스·난이도·HP·제한시간을 고정하고, 이 클라이언트는 그 판을 실제로 돌린다.
+   * 여기서 만드는 것은 "제출 근거"일 뿐이며, 클라이언트 보고는 서버에서 승인 대기로만
+   * 저장된다(자동 지급 아님). HP·제한시간을 클라이언트가 바꾸지 않는다. */
+  private spawnContestBoss(bossHp: number) {
+    /* 이미 보스전이면 중복 스폰하지 않는다.
+     * (this.boss 를 직접 조건에 쓰면 TS 가 이후 never 로 좁혀 필드 접근이 막힌다.) */
+    const existing: Boss | null = this.boss;
+    if (existing) return;
+    this.spawnBoss(true);
+    /* spawnBoss 는 this.boss 를 채우지만 TS 는 그 부수효과를 모른다 — 지역 변수로 받는다. */
+    const b: Boss | null = this.boss;
+    if (!b) return;
+    /* 서버가 정한 HP로 고정 — stageScale/난이도 배율을 덮어써 클라이언트가 유리해지지 않게 한다. */
+    b.hp = bossHp;
+    b.maxHp = bossHp;
+    EventBus.emit("boss:show", { name: `[기록전] ${this.bossDef?.name ?? "보스"}`, hp: bossHp, maxHp: bossHp });
+    const run = this.contestRun;
+    if (!run) return;
+    /* 제한시간 종료 → 실패 보고(시간 초과). 서버도 expiresAt 으로 같은 판정을 한다. */
+    this.time.delayedCall(run.limitMs, () => {
+      if (!this.contestRun || this.contestRun.attemptId !== run.attemptId) return;
+      if (this.boss && this.boss.hp > 0) this.finishContest("failed");
+    });
+  }
+
+  /** 기록전 결과 보고. 성공/실패 모두 서버가 최종 판정한다. */
+  private finishContest(outcome: "defeated" | "failed" | "abandoned") {
+    const run = this.contestRun;
+    if (!run) return;
+    this.contestRun = null;
+    const combatMs = Math.max(0, Date.now() - run.startedAt);
+    /* 서버는 damage >= 보스HP 를 요구한다. 클라이언트가 별도 누적기를 두는 대신
+     * 보스 HP 감소분으로 계산해 실제 판과 어긋나지 않게 한다. */
+    const remaining = Math.max(0, this.boss?.hp ?? 0);
+    const dealt = outcome === "defeated" ? run.bossHp : Math.max(0, run.bossHp - remaining);
+    void import("../bossContest").then(({ finishBossContest }) =>
+      finishBossContest(outcome, {
+        bossHp: outcome === "defeated" ? 0 : remaining,
+        damage: dealt, hits: Math.max(1, run.hits), combatMs,
+      }),
+    ).catch(() => { /* 네트워크 실패 — 서버가 만료로 처리한다 */ });
+  }
+
   private wireTradeInput() {
     /* ================= vc142 (#3) — 1:1 플레이어 거래 ================= */
     initTrade({
@@ -12198,6 +12248,19 @@ export class WorldScene extends Phaser.Scene {
     };
     EventBus.on("trade:nearby", this.onTradeNearby as never);
     EventBus.on("rpg:tradeInvite", this.onTradeInvite as never);
+    /* vc274 — 보스 기록전(경품 경쟁). 서버가 시각·1회 출전·근거 검증을 담당하고,
+     *  클라이언트는 "그 보스전을 실제로 돌려 결과를 보고"하는 역할만 맡는다.
+     *  보고는 승인 대기(pending)로만 저장되며 GM 검토·순위 확정·지급은 서버 스토어가 강제한다. */
+    EventBus.on("contest:start", this.onContestStart as never);
+    this.onContestStart = (v: { attemptId?: string; contestId?: string; bossHp?: number; limitMs?: number }) => {
+      if (typeof v?.attemptId !== "string" || typeof v?.contestId !== "string") return;
+      const bossHp = Number(v.bossHp) || 0;
+      const limitMs = Number(v.limitMs) || 0;
+      if (bossHp <= 0 || limitMs <= 0) return;
+      this.contestRun = { attemptId: v.attemptId, contestId: v.contestId, limitMs, bossHp,
+        startedAt: Date.now(), damage: 0, hits: 0 };
+      this.spawnContestBoss(bossHp);
+    };
     this.onTradeAct = (v: { act: string; key?: string; gold?: number; emerald?: number }) => {
       switch (v?.act) {
         case "add": if (v.key) tradeAddItem(v.key); break;

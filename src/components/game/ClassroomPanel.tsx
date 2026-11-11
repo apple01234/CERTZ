@@ -19,9 +19,11 @@ import {
 } from "@/game/classroom";
 import { EventBus } from "./EventBus";
 import { loadSave } from "@/game/config";
+import { fetchBossContests, contestRequest, prepareBossContest, activeBossContest, type ContestSnapshot, type ContestAttempt } from "@/game/bossContest";
 
 export function ClassroomPanel() {
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<"activities" | "contest">("activities");
   const [snap, setSnap] = useState<ClassSnapshot | null>(null);
   const [code, setCode] = useState("");
   const [copied, setCopied] = useState(false);
@@ -31,8 +33,10 @@ export function ClassroomPanel() {
 
   useEffect(() => {
     const onToggle = () => setOpen((v) => !v);
+    const onContest = () => { setTab("contest"); setOpen(true); };
     EventBus.on("classroom:toggle", onToggle);
-    return () => { EventBus.off("classroom:toggle", onToggle); };
+    EventBus.on("contest:toggle", onContest);
+    return () => { EventBus.off("classroom:toggle", onToggle); EventBus.off("contest:toggle", onContest); };
   }, []);
 
   useEffect(() => {
@@ -72,7 +76,11 @@ export function ClassroomPanel() {
           </button>
         </div>
 
-        {!joined ? (
+        <div className="mb-3 flex gap-2" role="tablist" aria-label="교실 활동 선택">
+          <button role="tab" aria-selected={tab === "activities"} className="game-chip flex-1 px-2 py-2 text-xs" onClick={() => setTab("activities")}>교실 활동 6종</button>
+          <button role="tab" aria-selected={tab === "contest"} className="game-chip flex-1 px-2 py-2 text-xs text-amber-200" onClick={() => setTab("contest")}>🏆 보스 기록전</button>
+        </div>
+        {tab === "contest" ? <BossContestSection onPlay={() => setOpen(false)} /> : !joined ? (
           /* ── 참여 전: 생성 / 코드 참여 ── */
           <div className="space-y-2.5">
             <p className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2 text-[10px] font-bold leading-relaxed text-white/60">
@@ -349,4 +357,80 @@ function ProgressView({ snap }: { snap: ClassSnapshot }) {
       </div>
     </div>
   );
+}
+
+const CONTEST_STATE: Record<ContestAttempt["state"], string> = {
+  ready: "출전 준비 · 30초 안에 시작", running: "전투 중", pending: "승인 대기 · 클라이언트 처치 보고",
+  approved: "공식 기록 · GM 승인", rejected: "기록 거절", failed: "실패 · 순위 제외", abandoned: "중도 이탈 · 순위 제외", expired: "시간 초과 · 순위 제외",
+};
+function BossContestSection({ onPlay }: { onPlay: () => void }) {
+  const [data, setData] = useState<ContestSnapshot | null>(null);
+  const [selected, setSelected] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [title, setTitle] = useState("우리 반 보스 기록전");
+  const [prize, setPrize] = useState("간식 1개");
+  const [places, setPlaces] = useState(3);
+  const [minutes, setMinutes] = useState(30);
+  const [note, setNote] = useState("");
+  const [now, setNow] = useState(Date.now());
+  const clockOffset = useRef(0);
+  const reload = async () => {
+    try { const next = await fetchBossContests(); clockOffset.current = next.serverNow - Date.now(); setNow(next.serverNow); setData(next); setError(""); }
+    catch (e) { setError(e instanceof Error ? e.message : "대회 목록을 불러오지 못했어요"); }
+  };
+  useEffect(() => {
+    void reload();
+    const refresh = () => { void reload(); };
+    const clock = setInterval(() => setNow(Date.now() + clockOffset.current), 1000);
+    const poll = setInterval(refresh, 15000);
+    EventBus.on("contest:update", refresh);
+    return () => { clearInterval(clock); clearInterval(poll); EventBus.off("contest:update", refresh); };
+  }, []);
+  const act = async (body: Record<string, unknown>) => {
+    if (busy) return;
+    setBusy(true); setError("");
+    try { const result = await contestRequest(body); if (typeof result.contestId === "string") setSelected(result.contestId); await reload(); }
+    catch (e) { setError(e instanceof Error ? e.message : "대회 요청에 실패했어요"); }
+    finally { setBusy(false); }
+  };
+  const c = data?.contests.find(c => c.id === selected) ?? data?.contests[0];
+  const mine = c?.attempts.find(a => a.uid === data?.userId);
+  const isOpen = c && !c.finalizedAt && now + c.rules.limitMs + 30000 <= c.endsAt;
+  return <div className="space-y-3 text-[11px] text-white/80">
+    <p className="rounded-lg border border-amber-300/30 bg-amber-300/10 p-2 leading-relaxed">
+      같은 보스 <b>심연의 수호자 · 노말 · HP 120,000</b>를 혼자 처치하는 시간 기록전입니다. 3분 제한 · 계정당 1회 · 서버 시작/접수 시간으로 기록합니다. 장비와 레벨은 현재 캐릭터 기준입니다.
+      <br />실패·이탈·시간 초과는 순위에서 제외합니다. 동률은 공동 순위이며 수상 순위의 동률은 모두 경품 대상입니다.
+      <br />전투는 클라이언트에서 진행되어 변조를 완전히 막을 수 없습니다. <b>승인 대기 → GM 현장 확인 → 공식 기록 → 순위 확정 → 실제 경품 전달</b> 순서입니다.
+    </p>
+    {error && <p role="alert" className="rounded bg-rose-400/15 p-2 text-rose-200">{error}</p>}
+    <button disabled={busy} onClick={() => void reload()} className="game-chip px-3 py-1.5">목록 새로고침</button>
+    {data?.admin && <form className="space-y-2 rounded border border-white/15 p-2" onSubmit={e => { e.preventDefault(); void act({ action: "create", title, prize, places, minutes }); }}>
+      <p className="font-black text-amber-200">GM 대회 개최 · 개최 즉시 서버 접수 시작</p>
+      <label className="block">대회 이름<input required maxLength={50} value={title} onChange={e => setTitle(e.target.value)} className="game-input mt-1 w-full px-2 py-1.5" /></label>
+      <label className="block">실물 경품<input required maxLength={100} value={prize} onChange={e => setPrize(e.target.value)} className="game-input mt-1 w-full px-2 py-1.5" /></label>
+      <div className="flex gap-2"><label>수상 순위 (공동 순위 포함)<input aria-label="수상 순위" type="number" min={1} max={10} value={places} onChange={e => setPlaces(Number(e.target.value))} className="game-input w-16 px-2 py-1" /></label>
+      <label>개최 시간 (분)<input aria-label="개최 시간 분" type="number" min={5} max={1440} value={minutes} onChange={e => setMinutes(Number(e.target.value))} className="game-input w-16 px-2 py-1" /></label></div>
+      <button disabled={busy} className="game-btn w-full px-2 py-2">대회 개최</button>
+    </form>}
+    {data && data.contests.length === 0 && <p>아직 열린 대회가 없습니다. GM이 대회를 개최하면 여기에 표시됩니다.</p>}
+    {data && data.contests.length > 0 && <label className="block">대회 선택<select value={c?.id ?? ""} onChange={e => setSelected(e.target.value)} className="game-input mt-1 w-full px-2 py-2">{data.contests.map(c => <option key={c.id} value={c.id}>{c.title}{c.finalizedAt ? " · 순위 확정" : ""}</option>)}</select></label>}
+    {c && <>
+      <div className="rounded border border-white/15 p-2 leading-relaxed"><b className="text-amber-200">{c.title}</b><br />경품: {c.prize} · {c.places}위까지 (동률 포함)<br />서버 개최: {new Date(c.startsAt).toLocaleString("ko-KR")}<br />서버 종료: {new Date(c.endsAt).toLocaleString("ko-KR")}<br />{c.finalizedAt ? "순위 확정 · 경품 전달 가능" : isOpen ? `접수 중 · 종료까지 ${Math.max(0, Math.ceil((c.endsAt - now) / 60000))}분` : "신규 접수 마감 · 제출 기록 검토 중"}</div>
+      {!data?.admin && !mine && <button disabled={busy || !isOpen || !!activeBossContest()} className="game-btn w-full px-3 py-2 disabled:opacity-40" onClick={async () => {
+        setBusy(true); setError("");
+        try { await prepareBossContest(c.id); onPlay(); } catch (e) { setError(e instanceof Error ? e.message : "출전 준비 실패"); } finally { setBusy(false); }
+      }}>출전 준비 및 입장 (1회 소모)</button>}
+      {mine && <div className="rounded border border-sky-300/30 p-2"><b>내 출전: {CONTEST_STATE[mine.state]}</b>{mine.elapsedMs !== undefined && <p>서버 기록 {(mine.elapsedMs / 1000).toFixed(3)}초</p>}{mine.reviewNote && <p>GM 검토: {mine.reviewNote}</p>}{mine.state === "running" && <p>재접속 후 출전은 재개되지 않습니다. 제한시간이 지나면 순위에서 제외됩니다.</p>}</div>}
+      <div><p className="font-black text-amber-200">공식 기록 {c.finalizedAt ? "· 최종 순위" : "· GM 승인 순위 (변동 가능)"}</p>{c.official.length === 0 && <p className="py-2 text-white/60">아직 승인된 공식 기록이 없습니다.</p>}
+      {c.official.map(a => <div key={a.id} className="my-1 flex flex-wrap items-center justify-between gap-1 rounded bg-white/5 p-2"><span>{a.rank}위 · {a.name} · {(a.elapsedMs! / 1000).toFixed(3)}초 {a.rank <= c.places ? "🏆" : ""}<br />{a.awardedAt ? `경품 전달 완료 · ${new Date(a.awardedAt).toLocaleString("ko-KR")}` : "경품 미지급"}{data?.admin && a.awardNote && <><br />전달 메모: {a.awardNote}</>}</span>
+      {data?.admin && c.finalizedAt && a.rank <= c.places && !a.awardedAt && <button disabled={busy || !note.trim()} onClick={() => void act({ action: "award", contestId: c.id, attemptId: a.id, note })} className="game-chip px-2 py-1.5">실제 전달 완료 표시</button>}</div>)}</div>
+      {data?.admin && <div className="space-y-2 rounded border border-amber-300/30 p-2"><p className="font-black text-amber-200">GM 검토 및 경품 대장 · 참가 {c.attempts.length}명</p>
+      <label className="block">검토/거절/실제 전달 메모 (필수)<input value={note} maxLength={120} onChange={e => setNote(e.target.value)} placeholder="현장 확인 내용 · 개인정보는 적지 마세요" className="game-input mt-1 w-full px-2 py-2" /></label>
+      {c.attempts.map(a => <div key={a.id} className="rounded bg-white/5 p-2"><p>{a.name} · {CONTEST_STATE[a.state]} {a.elapsedMs !== undefined ? `· ${(a.elapsedMs / 1000).toFixed(3)}초` : ""}</p>{a.evidence && <p className="text-white/60">클라이언트 보고: 잔여 HP {a.evidence.bossHp} · 피해 {a.evidence.damage} · {a.evidence.hits}회 타격 · {(a.evidence.combatMs / 1000).toFixed(3)}초</p>}{a.reviewNote && <p>검토 메모: {a.reviewNote} · {a.reviewedBy}</p>}
+      {a.state === "pending" && !c.finalizedAt && <div className="mt-1 flex gap-2"><button disabled={busy || !note.trim()} onClick={() => void act({ action: "review", contestId: c.id, attemptId: a.id, decision: "approved", note })} className="game-chip px-2 py-1 text-emerald-200">현장 확인 후 승인</button><button disabled={busy || !note.trim()} onClick={() => void act({ action: "review", contestId: c.id, attemptId: a.id, decision: "rejected", note })} className="game-chip px-2 py-1 text-rose-200">거절</button></div>}</div>)}
+      {!c.finalizedAt && <button disabled={busy || c.attempts.some(a => ["ready", "running", "pending"].includes(a.state))} onClick={() => void act({ action: "finalize", contestId: c.id })} className="game-btn w-full px-2 py-2 disabled:opacity-40">접수 마감 및 최종 순위 확정</button>}
+      <p className="text-white/60">진행 중 출전과 승인 대기가 없어야 확정됩니다. 확정 뒤에는 순위/승인을 바꿀 수 없습니다. 경품은 직접 전달한 뒤 완료 표시해 주세요.</p></div>}
+    </>}
+  </div>;
 }

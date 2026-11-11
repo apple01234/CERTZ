@@ -558,6 +558,15 @@ export function HUD({
               <GameIcon name="skills" size={18} />
               <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-emerald-300/90">교실</span>
             </button>
+            {/* vc274 — 보스 기록전(경품 경쟁) 입구. 같은 패널의 기록전 탭을 바로 연다. */}
+            <button
+              onClick={() => { audio.sfx.uiClick(); EventBus.emit("contest:toggle"); }}
+              aria-label="보스 기록전 열기 (처치 기록 순위)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffd27a] active:scale-95"
+            >
+              <Trophy size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300/90">기록전</span>
+            </button>
             <button
               onClick={onOpenRank}
               aria-label={isLocked("rank") ? `랭킹 — Lv${lockLv("rank")}에 열립니다` : "랭킹창 열기 (전투력/레벨/콘텐츠 + 주간 랭커 보상)"}
