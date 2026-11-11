@@ -5294,3 +5294,17 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
   `not ok — contest (ROUTE_DIRS 누락 + force-static/revalidate 없음)` 로 정확히 실패했고,
   복원하니 3/3 통과. 잡지 못하는 테스트를 넣지 않기 위한 확인이다.
 - 전체 `npm test` **656/656**, lint:strict 통과.
+
+### vc276 후속 — CI 부팅 검증 워크플로 신설
+
+- 사고 2건(vc274 부팅 불가, vc274~276 APK 3연속 실패)의 공통점은 **소스 검사는 전부 초록불인데
+  실행하면 죽는다**는 것이었다. 타입검사·lint·소스 계약 테스트 656개가 하나도 잡지 못했다.
+- `.github/workflows/boot-check.yml` 신설: `npm ci` → `prisma generate` → `next build --webpack`
+  → `next start` → 서버 준비 대기(curl 120초) → Playwright Chromium 설치 →
+  **`scripts/playtest-v275-e2e.mjs` 실행**. 실패 시 서버 로그 + 스크린샷 아티팩트 업로드.
+- 새 검증 스크립트를 만들지 않고 기존 e2e 를 그대로 쓴다. 그 스크립트는 vc274 의 부팅 불가를
+  **실제로 잡아낸 이력**이 있어 감지 능력이 이미 실증됐다(assert 실패 → 비정상 종료).
+- 이 워크플로가 못 잡는 것을 파일 상단에 명시했다: GPU/셰이더 렌더 정합성(headless 는
+  swiftshader 소프트웨어 렌더), S20+ 실기기 성능·발열·터치, 서버 필요 기능(로그인은 스텁),
+  스킬 밸런스(부팅·등록 상태만 본다).
+- 기존 워크플로(android/exe/ios/production-verification)는 건드리지 않았다. 새 시크릿도 요구하지 않는다.

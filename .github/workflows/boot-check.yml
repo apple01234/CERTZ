@@ -1,0 +1,111 @@
+name: Boot Check (SERTZ)
+
+# vc276 — 게임이 **실제로 부팅되는지** 확인하는 CI.
+#
+# 왜 필요한가 (실제 사고 2건, 둘 다 기존 CI가 통과시켰다)
+# ---------------------------------------------------------
+#  ① vc274: EventBus.on("contest:start", undefined) 로 핸들러를 정의 전에 등록
+#     → TypeError: The listener must be a function → 씬 초기화 전체 실패 → 게임 부팅 불가.
+#     소스 계약 테스트 649개는 전부 통과했고, 빌드·린트·타입검사도 전부 성공했다.
+#  ② vc274~vc276: /api/contest 를 ROUTE_DIRS 에 넣지 않아 APK 정적 export 가 3연속 실패.
+#     (이건 tests/apk-route-isolation.test.mjs 로 별도 고정했다)
+#
+# 위 두 사고의 공통점: **소스 검사는 전부 초록불인데 실행하면 죽는다.**
+# 이 워크플로는 실제 빌드를 띄우고 실제 브라우저로 게임에 진입해 그것을 잡는다.
+#
+# 이 워크플로가 못 잡는 것
+# ------------------------
+#  · GPU/셰이더 렌더 결과의 시각적 정합성 (headless swiftshader 는 소프트웨어 렌더)
+#  · 실기기(Galaxy S20+) 성능·발열·터치 입력
+#  · 서버가 있어야 하는 기능 (APK 와 동일하게 서버리스 라우트를 격리하고 로그인은 스텁)
+#  · 스킬/전투 밸런스 (부팅과 등록 상태만 본다)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "scripts/playtest-v275-e2e.mjs"
+      - "tests/**"
+      - "package.json"
+      - "next.config.ts"
+      - ".github/workflows/boot-check.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "scripts/playtest-v275-e2e.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # 같은 브랜치에서 중복 실행되면 러너 시간만 버린다 — 최신 것만 남긴다
+  group: boot-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  boot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      - name: Build (webpack)
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+          CERTZ_BUILD_SHA: ${{ github.sha }}
+        # 운영 빌드와 같은 경로를 쓴다. Turbopack 은 러너에서 inotify 한계로 불안정했다.
+        run: npx next build --webpack
+
+      - name: Start server
+        run: |
+          set -e
+          npx next start -H 127.0.0.1 -p 4321 > /tmp/server.log 2>&1 &
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://127.0.0.1:4321/ || true)
+            if [ "$code" = "200" ]; then echo "server ready ($i)"; exit 0; fi
+            sleep 2
+          done
+          echo "::error::서버가 120초 안에 뜨지 않았습니다"
+          cat /tmp/server.log
+          exit 1
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Boot the game in a real browser
+        env:
+          E2E_URL: http://127.0.0.1:4321
+          E2E_OUT: ${{ github.workspace }}/boot-artifacts
+        # 에셋 3,675개 로딩 때문에 수십 초 걸린다 — 스크립트 자체 타임아웃을 넉넉히 준다.
+        timeout-minutes: 15
+        run: node scripts/playtest-v275-e2e.mjs
+
+      - name: Server log on failure
+        if: failure()
+        run: tail -100 /tmp/server.log || true
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: boot-check-artifacts
+          path: |
+            boot-artifacts/
+            /tmp/server.log
+          if-no-files-found: ignore
+          retention-days: 7
