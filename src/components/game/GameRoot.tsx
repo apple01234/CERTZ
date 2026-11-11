@@ -21,6 +21,7 @@ import { PartyWidget } from "./PartyWidget";
 import { ClassroomPanel } from "./ClassroomPanel";
 import { FriendsWidget } from "./FriendsWidget";
 import { AuthPanel } from "./AuthPanel"; // v4.9.0 — 자체/SNS 계정 + 클라우드 세이브
+import { authMe } from "@/game/account"; // vc270 — HUD GM 버튼 노출 판정(관리자 역할)
 import * as audio from "@/game/audio";
 import { useGameUi } from "./useGameUi";
 import { loadMuted, writeMuted } from "@/game/config";
@@ -40,7 +41,7 @@ export default function GameRoot() {
   const ordinaryUiHidden = cinematic || learning;
   const panelHidden = cinematic || (learning && !!panel && !tutorialAllows(tutorial.step, panel));
   /* v4.1.7 — 패널 개폐 UI음 (유니티 에셋스토어 유료 SFX): HUD 버튼 토글 클릭음 + 열림 사운드 */
-  const togglePanelSfx = (key: "inv" | "job" | "stat" | "quest" | "boss" | "benefit" | "content" | "opt" | "union" | "trade" | "rank" | "guide") => { // v1.3.0 — +rank · v1.4.12 — +guide
+  const togglePanelSfx = (key: "inv" | "job" | "stat" | "quest" | "boss" | "benefit" | "content" | "opt" | "union" | "trade" | "rank" | "guide" | "gm") => { // v1.3.0 — +rank · v1.4.12 — +guide · vc270 — +gm
     if (!canOpenPanel(key)) return;
     audio.sfx.uiClick();
     const opening = panel !== key;
@@ -49,6 +50,18 @@ export default function GameRoot() {
   };
   // 클라이언트 전용 컴포넌트(ssr:false)라 localStorage 지연 초기화 안전 — 음소거 설정 복원
   const [muted, setMuted] = useState(() => loadMuted());
+  /* vc270 — 관리자 역할 여부. HUD의 GM 버튼은 이 값으로만 노출되며, 실제 GM 액션 권한은
+   * 서버(authMe/GM API)가 계속 검사한다. 로그인/로그아웃 시 auth:changed로 즉시 갱신한다. */
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    const sync = () => {
+      void authMe().then((u) => { if (alive) setIsAdmin(u?.role === "admin"); }).catch(() => { if (alive) setIsAdmin(false); });
+    };
+    sync();
+    EventBus.on("auth:changed", sync);
+    return () => { alive = false; EventBus.off("auth:changed", sync); };
+  }, []);
   const [portraitMobile, setPortraitMobile] = useState(false);
   /* v1.0.19 (A-2 반응형) — 가로 유도 프롬프트를 유저가 닫으면 세로로도 플레이 허용.
    *  기존엔 세로 모바일을 강제로 가렸지만(Scale.FIT이라 실제로는 플레이 가능) AC "375×812에서
@@ -241,6 +254,9 @@ export default function GameRoot() {
                   writeMuted(next); // 설정 저장 — 새로고침/APK 재실행 후에도 유지
                 }}
                 onOpenInv={() => togglePanelSfx("inv")}
+                /* vc270 — 관리자에게만 GM 버튼을 노출하고, 기존 GmPanel 로 연결한다. */
+                isAdmin={isAdmin}
+                onOpenGm={() => togglePanelSfx("gm")}
                 onOpenJob={() => togglePanelSfx("job")}
                 onOpenStat={() => togglePanelSfx("stat")}
                 onOpenQuest={() => togglePanelSfx("quest")}

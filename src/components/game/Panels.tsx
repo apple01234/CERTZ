@@ -2777,6 +2777,33 @@ const GM_FAM_LABEL: Record<string, string> = {
 export function GmPanel({ onClose }: { onClose: () => void }) {
   useEscClose(onClose);
   const modal = useModal("GM 도구"); // v1.0.16 (F2)
+  /* vc270 — HUD 버튼으로 직접 열 수 있게 되면서, UI 숨김과 별개로 패널 자체도 관리자만
+   * 내용을 그리게 한다. 종전에는 마을 GM NPC 대화로만 열려 이 가드가 없었다.
+   * 판정은 서버 authMe()의 role 이며, 실제 GM 액션은 각 API가 다시 검사한다. */
+  const [allowed, setAllowed] = useState<boolean | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void authMe()
+      .then((u) => { if (alive) setAllowed(u?.role === "admin"); })
+      .catch(() => { if (alive) setAllowed(false); });
+    return () => { alive = false; };
+  }, []);
+  if (allowed === null) return null;
+  if (!allowed) {
+    return (
+      <div
+        {...modal}
+        className="pointer-events-auto fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]"
+        onPointerDown={onClose}
+      >
+        <div className="game-panel p-4 text-center" onPointerDown={(e) => e.stopPropagation()}>
+          <p className="text-sm font-black text-amber-300">관리자 전용</p>
+          <p className="mt-1 text-[11px] text-white/70">GM 계정으로 로그인해야 열 수 있다.</p>
+          <button onClick={onClose} className="mt-3 rounded-md border border-white/20 bg-black/40 px-3 py-1 text-xs">닫기</button>
+        </div>
+      </div>
+    );
+  }
   const tierLabel = (t: number) => (t === 1 ? "1차" : t === 2 ? "2차" : t === 3 ? "3차" : "4차");
   const all = Object.values(CLASSES);
   const byTier = [1, 2, 3, 4].map((t) => all.filter((d) => d.tier === t));

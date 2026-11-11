@@ -115,6 +115,8 @@ export function HUD({
   onOpenTrade,
   onOpenRank, // v1.3.0 (#7) — 랭킹창
   onOpenGuide, // v1.4.12 (#16) — 안내인의 UI 기능 안내
+  isAdmin = false, // vc270 — 관리자 역할일 때만 GM 버튼 노출
+  onOpenGm, // vc270 — 가방 왼쪽 GM 패널 진입
 }: {
   hud: HudState;
   quest: QuestState;
@@ -147,6 +149,10 @@ export function HUD({
   onOpenRank: () => void;
   /** v1.4.12 (#16) — 안내인의 UI 기능 안내 */
   onOpenGuide: () => void;
+  /** vc270 — 관리자 역할 여부 (서버 authMe 판정). 기본 false */
+  isAdmin?: boolean;
+  /** vc270 — GM 패널 진입 (관리자 전용) */
+  onOpenGm?: () => void;
 }) {
   /* v1.0.16 (F3) — 우측 버튼 컬럼의 zoom 배율. 화면 폭에 따라 커지므로 계산을 한 곳에 모은다.
    *  같은 값을 --tap-zoom으로도 넘겨 .tap-safe 히트 영역이 zoom을 역보정하게 한다. */
@@ -351,6 +357,20 @@ export function HUD({
           {/* vc149 (#15) — 소리 버튼 더보기 안으로 이동 */}
           {/* v1.3.0 (#2) — HUD ☰ 버튼 제거 (유저 지시 "선 3개 짜리 ui저거 없애").
            *  메뉴 나가기 기능은 설정(⚙) → 메뉴 화면 카드로 이동 — 기능 유지, UI 간소화 */}
+          {/* vc270 — GM 패널 버튼을 가방 **왼쪽**에 둔다(유저 지시). 관리자 역할일 때만 보인다.
+           *  종전에는 마을 우물 옆 GM NPC와 대화해야만 열 수 있어 관리자가 매번 맵을 찾아가야 했다.
+           *  권한은 서버 authMe()의 role 로만 판정하며, 숨김은 편의일 뿐 실제 GM 액션 가드는
+           *  서버(authMe/GM API)가 계속 담당한다 — UI 숨김만으로 보안을 대신하지 않는다. */}
+          {isAdmin ? (
+            <button
+              onClick={() => onOpenGm?.()}
+              aria-label="GM 패널 열기 (관리자 전용)"
+              className="game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center text-[#ffd27a] active:scale-95"
+            >
+              <Crown size={17} />
+              <span className="absolute -bottom-1 -right-1 rounded bg-slate-900/90 px-1 text-[8px] font-black text-amber-300">GM</span>
+            </button>
+          ) : null}
           <button
             onClick={onOpenInv}
             aria-label={`가방 열기 (${km.bag})`}

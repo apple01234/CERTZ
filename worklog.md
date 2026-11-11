@@ -5201,3 +5201,12 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
 ## Task — vc269 긴급 체크포인트 및 인계
 
 사용자 토큰 부족 지시로 즉시 마감. 초상화 alpha중심/기본 남녀28동작112원본 복원, 전체 catalog 로딩 gate/캐시 재시도/중복JSON60요청 제거, 파티 fallback/탭 identity/폴링·host 관련 수정을 포함. 선택 검사17개 통과. 전체빌드/실제브라우저/배포검증은 아직 미실행. 보스·궁극기·죽음FX·보스 기록전 미완성코드는 런타임에서 분리해 docs/handoff/v268-WIP-source.tar.gz로 보존. 다음AI 세부지시 docs/handoff/HANDOFF_V269.md. GM버튼/반복컷씬/NPC연출 강화와WorldScene경기연결은 미구현.
+
+## Task — 2026-11-11 UTC: vc270 GM 패널 HUD 진입점·권한 가드
+
+- vc269 체크포인트 인계 문서가 "전체 회귀·빌드 재검증 미실시"로 남긴 항목을 실제로 돌렸다. tsc(29s)·lint:strict(63s)·`build:next`·`npm test` 622/622 모두 통과.
+- 사용자 요청 8번 구현: GM 패널 진입점이 마을 GM NPC 대화에만 있어 관리자가 매번 맵을 찾아가야 했다. HUD 가방 버튼 **왼쪽**에 GM 버튼(Crown+GM 배지)을 추가하고 `role==="admin"`일 때만 노출한다. 판정은 서버 `authMe()`, 갱신은 `auth:changed`.
+- 보안: `GmPanel`에 자체 가드가 없어 열리기만 하면 누구나 도구를 볼 수 있었다. 로딩 중엔 미렌더, 비관리자엔 "관리자 전용" 안내만 그리게 했다. **UI 숨김은 편의이며 실제 권한은 서버 API가 검사**한다는 점을 코드 주석과 문서에 명시.
+- 검증: `scripts/playtest-gm-button.mjs` PASS — 비관리자는 GM 버튼 false(가방 true), 관리자(role=admin 라우팅 대체)는 true이고 DOM 순서가 `gm-before-bag`. 관리자 케이스는 UI 반응만 검증하며 서버 권한을 대신하지 않는다.
+- 미검증: 실제 GM 계정으로 운영 서버 로그인해 버튼이 뜨는지, GM 액션의 서버측 거부 응답, S20+ 터치.
+- 버전 vc270/2.2.14 동기화. 상세: `docs/qa/2026-11-11/crosscode/APPLIED_v270.md`.
