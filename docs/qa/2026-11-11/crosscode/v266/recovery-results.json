@@ -1,0 +1,45 @@
+{
+  "fixture": "Boss spawned near disposable player; real endAttack(slam), normal ticking; no boss clear claimed",
+  "results": [
+    {
+      "mode": "keyboard",
+      "opened": {
+        "mode": "recover",
+        "ms": 1600,
+        "hp": 108000,
+        "maxHp": 108000
+      },
+      "cue": {
+        "text": "공격 기회 · 피해 +15% · 1.6초",
+        "visible": true,
+        "x": 396,
+        "y": 516
+      },
+      "cleanup": {
+        "label": null,
+        "active": false
+      },
+      "pageErrors": []
+    },
+    {
+      "mode": "touch",
+      "opened": {
+        "mode": "recover",
+        "ms": 1600,
+        "hp": 108000,
+        "maxHp": 108000
+      },
+      "cue": {
+        "text": "공격 기회 · 피해 +15% · 1.6초",
+        "visible": true,
+        "x": 396,
+        "y": 516
+      },
+      "cleanup": {
+        "label": null,
+        "active": false
+      },
+      "pageErrors": []
+    }
+  ]
+}

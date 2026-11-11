@@ -5,9 +5,11 @@ const base = process.env.TUTORIAL_QA_URL ?? 'http://127.0.0.1:3100';
 const out = process.env.TUTORIAL_QA_OUT ?? '/dev/shm';
 await mkdir(out, {recursive:true});
 const started = Date.now();
+const mobile = process.env.TUTORIAL_QA_TOUCH === '1';
 const browser = await chromium.launch({args:['--no-sandbox','--enable-unsafe-swiftshader']});
 try {
-const page = await browser.newPage({viewport:{width:1280,height:800}}); const errors=[]; page.on('pageerror',e=>errors.push(e.message));
+const page = await browser.newPage({viewport:mobile?{width:844,height:390}:{width:1280,height:800},isMobile:mobile,hasTouch:mobile});
+const touch = mobile ? await page.context().newCDPSession(page) : null; const errors=[]; page.on('pageerror',e=>errors.push(e.message));
 await page.goto(base,{waitUntil:'domcontentloaded',timeout:120000});
 await page.getByRole('button',{name:/게임 시작/}).first().click({timeout:120000});
 await page.getByRole('button',{name:'캐릭터 생성',exact:true}).first().click();
@@ -73,7 +75,21 @@ for(let i=0;i<7&&(await state()).step==='attack';i++){await press('x');await pag
 await waitStep('evade');await settle();
 for(let i=0;i<120&&(await state()).step==='evade';i++){
   const s=await state();
-  if(s.windup){await page.keyboard.down('ArrowRight');await page.waitForTimeout(680);await page.keyboard.up('ArrowRight');}
+  if(s.windup){
+    if(mobile){
+      const rect=await page.getByRole('button',{name:/돌진 —/}).boundingBox();
+      const joy={x:110,y:300,id:1};
+      await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[joy]});
+      joy.x+=64;
+      await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[joy]});
+      await page.waitForTimeout(50);
+      await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[joy,{x:rect.x+rect.width/2,y:rect.y+rect.height/2,id:2}]});
+      await page.waitForTimeout(180);
+      await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[joy]});
+      await page.waitForTimeout(500);
+      await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    }else{await page.keyboard.down('ArrowRight');await press('Shift');await page.waitForTimeout(680);await page.keyboard.up('ArrowRight');}
+  }
   else await page.waitForTimeout(120);
 }
 await waitStep('skill');await settle();await walk((await state()).enemy,42);await press('z');
@@ -81,7 +97,7 @@ await waitStep('pickup');await settle();await walk((await state()).target,10);
 await waitStep('inventory');await settle();
 await page.getByRole('button',{name:'가방 확인',exact:true}).click();await page.waitForTimeout(500);
 await page.screenshot({path:join(out, 'tutorial-real-inventory.png')});
-await press('i');await waitStep('accept');await settle();await walk((await state()).target,55);await press('Space');await page.waitForTimeout(400);
+await press('Escape');await waitStep('accept');await settle();await walk((await state()).target,55);await press('Space');await page.waitForTimeout(400);
 for(let i=0;i<15;i++){const b=page.getByRole('button',{name:'[의뢰 받기]',exact:true});if(await b.isVisible()){await b.click();break;}await press('Space');await page.waitForTimeout(250);}
 await waitStep('mission');await settle();
 await page.getByRole('button',{name:'퀘스트 확인',exact:true}).click();
@@ -98,5 +114,5 @@ await page.keyboard.down('ArrowRight');await page.waitForTimeout(200);await page
 await page.screenshot({path:join(out, 'tutorial-real-finished.png')});
 console.log('ERRORS',errors);if(errors.length)throw Error(errors.join('\n'));
 await page.context().storageState({path:join(out, 'tutorial-complete-storage.json')});
-await writeFile(join(out, 'tutorial-results.json'), JSON.stringify({base,elapsedMs:Date.now()-started,version:await page.evaluate(async()=>{const r=await fetch('/api/version');return r.json();}),final:await state(),pageErrors:errors},null,2));
+await writeFile(join(out, 'tutorial-results.json'), JSON.stringify({base,evadeInput:mobile?'real multitouch joystick + dash button':'keyboard direction + Shift',elapsedMs:Date.now()-started,version:await page.evaluate(async()=>{const r=await fetch('/api/version');return r.json();}),final:await state(),pageErrors:errors},null,2));
 } finally { await browser.close(); }

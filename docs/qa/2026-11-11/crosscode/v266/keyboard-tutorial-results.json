@@ -1,0 +1,40 @@
+{
+  "base": "http://127.0.0.1:3100",
+  "evadeInput": "keyboard direction + Shift",
+  "elapsedMs": 81376,
+  "version": {
+    "latest": "2.2.10",
+    "code": 266,
+    "note": "v2.2.10 (vc266) — 실제 돌진으로 회피 수련, 보스 공격 기회·남은 시간 표시.",
+    "apk": "https://github.com/apple01234/CERTZ/releases/download/v2.2.10/SERTZ-vc266.apk",
+    "exe": "https://github.com/apple01234/CERTZ/releases/download/v2.2.10/SERTZ-vc266-setup.exe",
+    "guide": "/apk-guide.html",
+    "commitSha": null
+  },
+  "final": {
+    "stage": "howlrstone1x2",
+    "step": null,
+    "cinema": false,
+    "dialogue": false,
+    "paused": false,
+    "player": {
+      "x": 471.9918677792553,
+      "y": 546.92554176949,
+      "mp": 90,
+      "gold": 5723,
+      "potions": {
+        "hp": 6,
+        "mp": 4
+      }
+    },
+    "target": null,
+    "enemy": null,
+    "windup": false,
+    "done": true,
+    "near": null,
+    "allow": true,
+    "nav": false,
+    "kb": true
+  },
+  "pageErrors": []
+}

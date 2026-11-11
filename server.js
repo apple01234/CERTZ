@@ -118,7 +118,7 @@ app.prepare().then(() => {
     }
     if (!LATEST_CODE) { LATEST_CODE = 240; _apkTag = LATEST_VERSION; }
     const VERSION_NOTE =
-      `v${LATEST_VERSION} (vc${LATEST_CODE}) — 초기 로딩 분리, 구 세이브 보존, 전수 기술 숙련 성장·상승 알림 개선.`;
+      `v${LATEST_VERSION} (vc${LATEST_CODE}) — 실제 돌진으로 회피 수련, 보스 공격 기회·남은 시간 표시.`;
     const COMMIT_SHA = process.env.VERCEL_GIT_COMMIT_SHA?.trim() || process.env.CERTZ_BUILD_SHA?.trim() || null;
   if (url === "/api/version") {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });

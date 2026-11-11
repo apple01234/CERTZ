@@ -13427,7 +13427,10 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private tryFreeDash() {
-    if (this.freeDashInputAllowed() && this.player.useFreeDash()) this.freeDashFx();
+    if (this.freeDashInputAllowed() && this.player.useFreeDash()) {
+      this.tut?.notify("dash"); // Only a committed dash counts; PC and touch share this path.
+      this.freeDashFx();
+    }
   }
 
   /* ================= 독립 대시 연출 (전직 계열별 차별화) =================

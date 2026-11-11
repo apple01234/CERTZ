@@ -78,11 +78,21 @@ test('attack/skill require actual hit on designated target after a successful ca
     h.tut.notify('hit', { enemy: h.tut.practice }); h.tick(); assert.equal(h.tut.currentId, next);
   }
 });
-test('evade requires a real missed windup and displacement, not an input or idle distance', () => {
+test('evade requires a committed dash during this target windup, a miss and displacement', () => {
   const h = harness(5); h.closeCine(); const enemy = h.tut.practice;
-  h.tut.notify('evade_resolved', { enemy, missed: true }); h.tick(); assert.equal(h.tut.currentId, 'evade');
-  h.tut.notify('evade_windup', { enemy }); h.tut.notify('evade_resolved', { enemy, missed: true }); h.tick(); assert.equal(h.tut.currentId, 'evade');
-  h.tut.notify('evade_windup', { enemy }); h.scene.playerRef.x += 90; h.tut.notify('evade_resolved', { enemy, missed: true }); h.tick(); assert.equal(h.tut.currentId, 'skill');
+  const stays = () => { h.tick(); assert.equal(h.tut.currentId, 'evade'); };
+  const windup = () => h.tut.notify('evade_windup', { enemy });
+  const resolve = missed => h.tut.notify('evade_resolved', { enemy, missed });
+  resolve(true); stays(); // No windup.
+  h.tut.notify('dash'); windup(); h.scene.playerRef.x += 90; resolve(true); stays(); // Too early.
+  windup(); h.scene.playerRef.x += 90; resolve(true); stays(); // Walking alone.
+  windup(); h.tut.notify('dash'); resolve(true); stays(); // Dash blocked by collision.
+  windup(); h.tut.notify('dash'); h.scene.playerRef.x += 90; resolve(false); stays(); // Was hit.
+  windup(); h.scene.playerRef.x += 90; resolve(true); stays(); // Previous dash cannot carry over.
+  h.tut.notify('evade_windup', { enemy: h.original }); h.tut.notify('dash'); resolve(true); stays();
+  windup(); h.tut.notify('dash'); h.scene.playerRef.x += 90; resolve(true);
+  h.tick(); assert.equal(h.tut.currentId, 'skill');
+  assert.equal(h.tut.evadeOrigin, null); assert.equal(h.tut.evadeDashed, false);
 });
 test('pickup must be manual potion; inventory needs actual open and close', () => {
   const h = harness(7); h.closeCine();

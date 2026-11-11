@@ -27,6 +27,7 @@ export class Tutorial {
   private inventoryOpened = false;
   private hitAction: { kind: "attack" | "skill"; at: number } | null = null;
   private evadeOrigin: Point | null = null;
+  private evadeDashed = false;
   private target: Point | null = null;
   private moveOrigin: Point | null = null;
   private practice: Enemy | null = null;
@@ -90,10 +91,12 @@ export class Tutorial {
       this.hitAction = { kind: ev, at: this.scene.time.now }; return;
     }
     if (ev === "hit" && data.enemy === this.practice && this.hitAction?.kind === id && this.scene.time.now - this.hitAction.at < 3000) this.advance();
+    if (id === "evade" && ev === "dash" && this.evadeOrigin) this.evadeDashed = true;
     if (id === "evade" && data.enemy === this.practice) {
       if (ev === "evade_windup") {
         const p = this.scene.playerRef!;
         this.evadeOrigin = { x: p.x, y: p.y };
+        this.evadeDashed = false;
         if (this.scene.textures.exists("vfx_ring")) {
           this.warning?.destroy();
           this.warning = this.scene.add.image(data.enemy.x, data.enemy.y, "vfx_ring")
@@ -103,8 +106,8 @@ export class Tutorial {
       if (ev === "evade_resolved") {
         const p = this.scene.playerRef!;
         this.warning?.destroy(); this.warning = null;
-        if (data.missed && this.evadeOrigin && Phaser.Math.Distance.Between(p.x, p.y, this.evadeOrigin.x, this.evadeOrigin.y) >= 64) this.advance();
-        this.evadeOrigin = null;
+        if (data.missed && this.evadeDashed && this.evadeOrigin && Phaser.Math.Distance.Between(p.x, p.y, this.evadeOrigin.x, this.evadeOrigin.y) >= 64) this.advance();
+        this.evadeOrigin = null; this.evadeDashed = false;
       }
     }
     if (id === "pickup" && ev === "pickup" && data.kind === "potion_hp" && !data.viaPet) this.advance();
@@ -192,7 +195,7 @@ export class Tutorial {
       this.brief("register", "레지스터", "앞의 표적에 다가가 검을 정확히 맞혀 봐. 허공에 휘두르기만 해서는 안 된다.", () => {});
     } else if (id === "evade") {
       this.spawnPractice(false, true);
-      this.brief("register", "레지스터", "이번에는 공격을 기다려라. 예고가 보이면 그 자리에서 걸어 나와 공격을 피하는 거다.", () => {});
+      this.brief("register", "레지스터", "이번에는 공격을 기다려라. 예고가 보이면 이동 방향을 잡고 돌진해 공격 범위를 벗어나라.", () => {});
     } else if (id === "skill") {
       this.spawnPractice(true);
       this.scene.playerRef!.mp = Math.max(15, this.scene.playerRef!.mp);
@@ -229,6 +232,7 @@ export class Tutorial {
   }
 
   private clearPractice() {
+    this.evadeOrigin = null; this.evadeDashed = false;
     this.warning?.destroy(); this.warning = null;
     if (this.practice) {
       const at = this.scene.enemyList.indexOf(this.practice);

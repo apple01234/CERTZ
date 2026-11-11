@@ -6,7 +6,7 @@ export const TUTORIAL_STEPS = [
   { id: "talk", title: "라일락과의 약속", desc: "라일락 곁에서 NPC/채집을 누르세요." },
   { id: "training", title: "레지스터의 수련", desc: "약속을 품고 기초 수련을 시작합니다." },
   { id: "attack", title: "검을 맞히기", desc: "앞의 수련 골렘을 기본 공격으로 맞히세요." },
-  { id: "evade", title: "공격 예고 피하기", desc: "상대가 준비하면 걸어서 공격 범위를 벗어나세요." },
+  { id: "evade", title: "공격 예고 피하기", desc: "예고가 보이면 방향을 잡고 돌진해 공격 범위를 벗어나세요." },
   { id: "skill", title: "기본 검술", desc: "주력 스킬로 수련 골렘을 맞히세요." },
   { id: "pickup", title: "수련 보급품", desc: "빛나는 보급품까지 걸어가 직접 주우세요." },
   { id: "inventory", title: "가방 확인", desc: "가방을 열어 방금 주운 물약을 확인하세요." },

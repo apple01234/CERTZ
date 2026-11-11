@@ -129,6 +129,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /* v1.4.30 (#15) — 반격 창 라벨 (startCounter에서 생성, destroyCounterRing에서 소멸) */
   private counterLabel: Phaser.GameObjects.Text | null = null;
   private counterHintShown = 0;
+  private recoveryLabel: Phaser.GameObjects.Text | null = null;
 
   /* ---- v1.4.9 — 보스 생동감 애니메이션 (호흡·예동·낙하 등장) ---- */
   private baseSX = 1;
@@ -452,6 +453,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
    *  v1.4.9 — + 생동감 애니메이션: 호흡(±2.2% 부피 보존 펄스) + 예동 감쇠 적용 */
   preUpdate(time: number, delta: number) {
     super.preUpdate(time, delta);
+    this.updateRecoveryCue();
     /* vc183 — 지속 피해 틱 */
     if (this.alive) this.tickDot(time);
     if (this.twin?.active) {
@@ -470,6 +472,20 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.scaleX = this.baseSX * (1 - breathe * 0.6 + this.squashX);
     this.scaleY = this.baseSY * (1 + breathe + this.squashY);
     this.twin?.setScale(this.scaleX, this.scaleY);
+  }
+
+  /** Reuse the existing recovery window, distinct from the yellow counter challenge. */
+  private updateRecoveryCue() {
+    const open = this.alive && this.mode === "recover" && this.modeTimer > 0;
+    if (!open) { this.recoveryLabel?.setVisible(false); return; }
+    if (!this.recoveryLabel) {
+      this.recoveryLabel = this.scene.add.text(0, 0, "", {
+        fontFamily: "Galmuri11, sans-serif", fontSize: "13px", color: "#decaff",
+        stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold",
+      }).setOrigin(0.5);
+    }
+    this.recoveryLabel.setVisible(true).setPosition(this.x, this.y - 74).setDepth(this.depth + 1)
+      .setText(`공격 기회 · 피해 +15% · ${(Math.ceil(this.modeTimer / 100) / 10).toFixed(1)}초`);
   }
 
   tick(dt: number, player: PlayerLike2) {
@@ -2251,6 +2267,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   }
 
   destroyPool() {
+    this.recoveryLabel?.destroy(); this.recoveryLabel = null;
     this.story?.destroy(); this.story = null;
     this.volleyTimer?.remove();
     this.spiralTimer?.remove();

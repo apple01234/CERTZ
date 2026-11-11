@@ -1,6 +1,6 @@
-SERTZ Android v2.2.9 (versionCode 265)
+SERTZ Android v2.2.10 (versionCode 266)
 
-다운로드: https://github.com/apple01234/CERTZ/releases/download/v2.2.9/SERTZ-vc265.apk
+다운로드: https://github.com/apple01234/CERTZ/releases/download/v2.2.10/SERTZ-vc266.apk
 공식 배포 목록: https://github.com/apple01234/CERTZ/releases
 설치 안내: https://sertz.vercel.app/apk-guide.html
 
