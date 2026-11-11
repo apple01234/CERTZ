@@ -48,7 +48,9 @@ concurrency:
 
 jobs:
   boot:
-    runs-on: ubuntu-latest
+    # 저장소 관례: ubuntu-latest 대신 **핀**한다. latest 는 러너 이미지가 바뀌면
+    # 갑자기 깨질 수 있고, 실제로 -latest 금지를 강제하는 테스트가 있다.
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4

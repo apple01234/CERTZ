@@ -124,6 +124,8 @@ import {
   generateRoomLayout, cellIndexOf, cellCenterOf, isOpenXY, nextStepToward,
   type RoomLayout,
 } from "../mapgen";
+/* vc277 — 구역 볼륨 스폰(종족별 인접 구역 배정) */
+import { assignCreepZones } from "../creepZone";
 
 /* vc204 (지시서 #2·#18) — 카메라 워치독 상한.
  *  보스 인트로 팬 등 camCinema 연출의 최대 길이(약 3초)에 여유를 둔 값.
@@ -2054,10 +2056,26 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- 적 배치 (v2.0 — 챕터/구역 난이도 배율 적용 / v3.0 — 개방 셀 스폰) ---------- */
     const sc = stageScale(stageKey, this.player?.lv);
     const rng = new Phaser.Math.RandomDataGenerator([stageKey]);
-    for (const group of this.stageDef.enemies) {
+    /* vc277 — 구역 볼륨 스폰(CreepZone). 종전엔 종족별로 개방 셀 **전체**에 균등 산개해
+     *  맵 어디를 가도 같은 종족이 섞여 나왔다("이 구역은 늑대, 저 구역은 유령"이 없음).
+     *  참고 게임(ISEKAI GATE)이 타일맵과 별도로 CreepZone 구역 레이어를 두는 것과 같은 발상.
+     *
+     *  [실측 후 수정] 처음엔 구역을 종족 수만큼만 나눴는데, 1-1(개방 57셀·종족 2)에서
+     *  구역이 맵 절반씩 2개로 갈려 응집도가 균등 산개와 같았다(ratio 1.25 → 1.26).
+     *  그래서 **종족 수 × 3 개**로 잘게 나눈 뒤 종족마다 연속 3구역을 배정한다.
+     *  한 종족이 차지하는 면적은 그대로면서 모양이 뭉친 덩어리가 된다. */
+    const creepZones = this.layout
+      ? assignCreepZones(this.layout, this.stageDef.enemies.length, `${stageKey}`, 3)
+      : null;
+    for (let gi = 0; gi < this.stageDef.enemies.length; gi++) {
+      const group = this.stageDef.enemies[gi];
+      /* 종족이 받은 구역들의 셀을 합쳐 하나의 후보 집합으로 쓴다. */
+      const zoneCells = creepZones?.[gi]?.flatMap((z) => z.cells) ?? [];
+      const zone = zoneCells.length > 0 ? { cells: zoneCells } : undefined;
       for (let i = 0; i < group.count; i++) {
-        /* v3.0 (#7) — 굴 레이아웃의 개방 셀 안에만 스폰 (입구 셀 회피 + 플레이어 380px 거리) */
-        const p = this.openPointRng(rng, { minDist: 380, avoidEntry: true });
+        /* v3.0 (#7) — 굴 레이아웃의 개방 셀 안에만 스폰 (입구 셀 회피 + 플레이어 380px 거리)
+         * vc277 — 구역이 있으면 그 구역 셀 안에서만 뽑는다. */
+        const p = this.openPointRng(rng, { minDist: 380, avoidEntry: true, zone });
         const e = new Enemy(this, p.x, p.y, group.key, {
           /* v3.0 (#8) — 몬스터 경험치 +35% (레벨업 속도 개선, 곡선 완화와 합산) */
           hp: sc.hp, atk: sc.atk, exp: sc.exp * 1.35, gold: sc.gold,
@@ -3262,15 +3280,28 @@ export class WorldScene extends Phaser.Scene {
   /** 레이아웃 내 무작위 개방 지점 — 적/오브젝트 스폰 공용 (결정적 rng 주입) */
   private openPointRng(
     rng: Phaser.Math.RandomDataGenerator,
-    opts?: { minDist?: number; avoidEntry?: boolean }
+    opts?: { minDist?: number; avoidEntry?: boolean; zone?: { cells: number[] } }
   ): { x: number; y: number } {
     const lay = this.layout;
     if (!lay) return { x: rng.between(240, this.stageW - 160), y: rng.between(120, this.stageH - 120) };
     const idxs: number[] = [];
-    for (let i = 0; i < lay.open.length; i++) {
-      if (!lay.open[i]) continue;
-      if (opts?.avoidEntry && i === lay.entry && lay.open.filter(Boolean).length > 2) continue;
-      idxs.push(i);
+    /* vc277 — 구역이 주어지면 그 구역 셀만 후보로 삼는다. 구역 볼륨 스폰의 핵심.
+     *  구역이 비었으면(경계 조건) 기존 전체 개방 셀로 폴백해 스폰이 사라지지 않게 한다. */
+    const zoneCells = opts?.zone?.cells;
+    const scoped = zoneCells && zoneCells.length > 0 ? zoneCells : null;
+    if (scoped) {
+      for (const i of scoped) {
+        if (!lay.open[i]) continue;
+        if (opts?.avoidEntry && i === lay.entry && lay.open.filter(Boolean).length > 2) continue;
+        idxs.push(i);
+      }
+    }
+    if (idxs.length === 0) {
+      for (let i = 0; i < lay.open.length; i++) {
+        if (!lay.open[i]) continue;
+        if (opts?.avoidEntry && i === lay.entry && lay.open.filter(Boolean).length > 2) continue;
+        idxs.push(i);
+      }
     }
     if (idxs.length === 0) idxs.push(lay.entry);
     const minDist = opts?.minDist ?? 0;
