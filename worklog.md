@@ -5250,3 +5250,13 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
 - 검증: `npm test` **643/643**(WIP 스토어 3 + 신규 클라이언트 경계 5), tsc·lint:strict 통과, `next build` 성공(`/api/contest` 라우트 생성 확인). 신규 테스트는 서버HP 덮어쓰기, 기존 보스 파이프라인 재사용, pending 전용 저장·자동 승인 부재, 처치 시에만 성공 보고, HUD 진입 경로를 고정한다.
 - 미검증: 실제 2인 이상이 참가해 순위가 매겨지는 흐름, 운영 DB에 `rank.bossContestsV1`이 실제로 쓰이는지, GM 계정으로 검토·확정·지급을 눌러보는 것. 브라우저 E2E 없음.
 - 버전 vc274/2.2.18 동기화.
+
+## Task — 2026-11-11 UTC: vc275 보스 예고/발동 연출(요청 6번) + 실제 브라우저 검증에서 치명 회귀 발견·수정
+
+- 요청 6번(보스 모션·프레임 수)에 **새 그림 생성 없이** 대응했다. 모든 보스 아틀라스는 16프레임(4동작×4)이고 `attack` 4장이 한계다. `registerStoryBosses`가 `windup`(attack 3→0 역재생 = 예비동작)과 `release`(0→3 정방향 1회)를 등록하도록 추가하고, WIP의 Boss `storyReleaseAt` 기반 windup/release 분기 + timeScale 보정을 이식했다. 기존 `atk` 루프는 유지.
+- **실제 브라우저 검증에서 치명적 회귀 발견**: vc274에서 넣은 `EventBus.on("contest:start", this.onContestStart)`가 **핸들러 정의보다 먼저** 실행돼 `undefined`를 리스너로 등록했다. 결과는 `TypeError: The listener must be a function` → **씬 초기화 전체 실패**로 게임 부팅 불가. 소스 계약 테스트로는 잡히지 않았고, 실제 부팅을 돌려서야 드러났다. 핸들러 정의 뒤로 등록을 옮겨 수정하고, 순서를 고정하는 회귀 테스트를 추가했다.
+- 검증 방식 오류도 하나 정정: 보스 아틀라스 키는 `scarlet`이 아니라 manifest의 `story_scarlet`이다. Phaser `anims.exists()`로 조회하도록 스크립트를 고쳤다.
+- 실제 브라우저 결과(`scripts/playtest-v275-e2e.mjs` **PASS**): 페이지 예외 0, 비관리자 GM버튼 false / 관리자 true·`gm-before-bag`, 기록전 버튼 true(더보기 안), **windup 6/6·release 6/6 등록**(scarlet·feron·kraken·dio·harold·aicore).
+- 검증: `npm test` **649/649**, tsc·lint:strict 통과, `next build` 성공.
+- 미검증: 실제 보스전에서 windup→release 전환이 눈에 어떻게 보이는지(애니메이션 등록까지만 확인), NPC 연출 강화, S20+ 실기기.
+- 버전 vc275/2.2.19 동기화.

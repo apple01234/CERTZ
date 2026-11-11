@@ -12251,7 +12251,6 @@ export class WorldScene extends Phaser.Scene {
     /* vc274 — 보스 기록전(경품 경쟁). 서버가 시각·1회 출전·근거 검증을 담당하고,
      *  클라이언트는 "그 보스전을 실제로 돌려 결과를 보고"하는 역할만 맡는다.
      *  보고는 승인 대기(pending)로만 저장되며 GM 검토·순위 확정·지급은 서버 스토어가 강제한다. */
-    EventBus.on("contest:start", this.onContestStart as never);
     this.onContestStart = (v: { attemptId?: string; contestId?: string; bossHp?: number; limitMs?: number }) => {
       if (typeof v?.attemptId !== "string" || typeof v?.contestId !== "string") return;
       const bossHp = Number(v.bossHp) || 0;
@@ -12261,6 +12260,9 @@ export class WorldScene extends Phaser.Scene {
         startedAt: Date.now(), damage: 0, hits: 0 };
       this.spawnContestBoss(bossHp);
     };
+    /* 핸들러를 만든 **뒤에** 등록한다. 종전처럼 먼저 등록하면 이 시점의 값이 undefined 라
+     * EventEmitter 가 "The listener must be a function" 으로 던지고 씬 초기화가 통째로 실패했다. */
+    EventBus.on("contest:start", this.onContestStart as never);
     this.onTradeAct = (v: { act: string; key?: string; gold?: number; emerald?: number }) => {
       switch (v?.act) {
         case "add": if (v.key) tradeAddItem(v.key); break;

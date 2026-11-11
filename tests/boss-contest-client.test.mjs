@@ -60,3 +60,12 @@ test('HUD 에 기록전 진입 경로가 있다', () => {
   const panel = readFileSync('src/components/game/ClassroomPanel.tsx', 'utf8');
   assert.match(panel, /EventBus\.on\("contest:toggle"/, '패널이 그 이벤트를 받아야 한다');
 });
+
+test('리스너는 핸들러를 정의한 뒤에 등록한다', () => {
+  /* 실제로 이 순서를 틀려서 "The listener must be a function" 으로 씬 초기화가
+   * 통째로 실패했다(부팅 불가). EventBus.on 에 undefined 를 넘기면 안 된다. */
+  const def = scene.indexOf('this.onContestStart = (v:');
+  const reg = scene.indexOf('EventBus.on("contest:start", this.onContestStart');
+  assert.ok(def > -1 && reg > -1, '핸들러 정의와 리스너 등록이 모두 있어야 한다');
+  assert.ok(def < reg, '핸들러 정의가 리스너 등록보다 먼저여야 한다(undefined 등록 방지)');
+});

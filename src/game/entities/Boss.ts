@@ -75,6 +75,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   private mode: BossMode = "idle";
   private visualKey = "";
+  private storyReleaseAt = 0;
   private story: StoryBossMechanics | null = null;
   private modeTimer = 1200;
   private nextAttackCd = 1600;
@@ -416,6 +417,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       case "vanished":
         return `${t}-walk`;
       case "storyCast":
+        return `${t}-${this.scene.time.now < this.storyReleaseAt ? "windup" : "release"}`;
       case "zonesTele":
       case "quakeCast":
         return `${t}-sp1`;
@@ -440,6 +442,10 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     const want = a.exists(key) ? key : `${this.visualKey || this.def.tex}-idle`;
     if (!a.exists(want) || this.anims.currentAnim?.key === want) return;
     this.play(want);
+    if (want.endsWith("-windup")) {
+      const duration = Math.max(100, this.storyReleaseAt - this.scene.time.now);
+      this.anims.timeScale = this.anims.currentAnim!.duration / duration;
+    } else this.anims.timeScale = 1;
     /* v1.4.31 (#4) — 트윈이 다른 텍스처(하티)면 대응 애니키로 치환해 동기화 */
     if (this.twin) {
       const twinWant = this.twinPrefix && want.startsWith(`${this.def.tex}-`)
@@ -816,6 +822,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     if ((STORY_ATTACKS as readonly string[]).includes(kind)) {
       const k = kind as StoryAttack;
       const duration = storyPattern(k, { x: this.x, y: this.y, phase: this.phase, key: this.def.key }, player).duration;
+      this.storyReleaseAt = this.scene.time.now + telegraphMs(k);
       this.setMode("storyCast", telegraphMs(k) + duration + 100);
       this.story?.start(k, player); return;
     }
