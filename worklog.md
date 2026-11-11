@@ -5273,3 +5273,24 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
 - 검증: 신규 `tests/skill-impact-staging.test.mjs` 4/4(3단 시점 분리·텍스처 실존·저사양 게이트 위치·stepMs 기본값), 전체 `npm test` **653/653**, tsc·lint:strict 통과, `next build --webpack` 성공.
 - 미검증: S20+ 실기기에서 70ms 간격이 실제로 "차고→내려찍고"로 읽히는지. 이펙트가 겹치는 근접 다수전에서의 가독성. 나머지 두 구조(SPUM 파츠 조합·구역 볼륨 스폰)는 **적용하지 않았다** — 코디 시스템·스폰 레이어 개편은 규모가 커 별도 판단이 필요하다.
 - 버전 vc276/2.2.20 동기화.
+
+### vc276 후속 — APK 빌드 3연속 실패 원인 규명·수정
+
+- vc276 푸시 후 **Android Build 가 실패**했다. 로그를 보니 내 변경과 무관한 곳이었다:
+  `Error: export const dynamic = "force-static" not configured on route "/api/contest"` →
+  `Failed to collect page data for /api/contest`.
+- 원인은 **vc274 에서 `/api/contest` 라우트를 신설하면서 `android-build.yml` 의 `ROUTE_DIRS`
+  격리 목록에 추가하지 않은 것**이다. APK 는 서버가 없어 서버리스 라우트를 빌드 전에
+  `.apk-hold/` 로 옮기는데, contest 가 빠져 정적 export 가 죽었다.
+- 영향 범위를 확인하니 **vc274·vc275·vc276 세 빌드가 연속 실패**였다(vc273 까지는 success).
+  즉 vc274·vc275 의 APK 는 실제로 갱신되지 않았고, "빌드 성공"으로 보고된 적도 없다.
+  이전 세션에서 EXE Build 실패를 보고 "정적 export 단계"라고만 적었는데, 같은 뿌리였다.
+- 수정: `ROUTE_DIRS` 에 `contest` 추가(+주석으로 "라우트 추가 시 여기도 추가" 명시).
+- **재발 방지 테스트 신설** `tests/apk-route-isolation.test.mjs` 3/3:
+  ① `src/app/api/*` 의 모든 라우트가 `ROUTE_DIRS` 에 있거나 `force-static`/`revalidate` 를
+     가져야 한다 ② `ROUTE_DIRS` 이름이 실제 디렉터리와 일치한다(오타 방지)
+  ③ 워크플로가 `APK_EXPORT=1 next build` + `index.html` 검증을 유지한다.
+- 이 테스트가 **실제로 잡는지** 검증했다: 워크플로를 vc274 상태(contest 누락)로 되돌리니
+  `not ok — contest (ROUTE_DIRS 누락 + force-static/revalidate 없음)` 로 정확히 실패했고,
+  복원하니 3/3 통과. 잡지 못하는 테스트를 넣지 않기 위한 확인이다.
+- 전체 `npm test` **656/656**, lint:strict 통과.

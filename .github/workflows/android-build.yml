@@ -78,7 +78,7 @@ jobs:
       - name: Lint gate (eslint src --max-warnings 0)
         run: npx eslint src --max-warnings 0
 
-      - name: Static export (APK_EXPORT=1) — 서버리스 라우트 8개+middleware 격리
+      - name: Static export (APK_EXPORT=1) — 서버리스 라우트 9개+middleware 격리
         env:
           NODE_OPTIONS: --max-old-space-size=4096
           CERTZ_BUILD_SHA: ${{ github.sha }}
@@ -87,7 +87,10 @@ jobs:
           # vc247 — maps 추가. /api/maps 는 파일 쓰기(PUT)를 하므로 정적 export 불가
           #  (Error: export const dynamic = "force-static" not configured on route "/api/maps")
           #  APK 는 서버가 없으니 이 라우트가 필요 없다 — 격리 대상에 포함한다.
-          ROUTE_DIRS="admin auth market rank support chat party campaign iap maps"
+          # vc276 — contest 추가. /api/contest 는 vc274 에서 신설됐는데 이 목록에 넣지 않아
+          #  vc274·vc275·vc276 세 빌드가 연속 실패했다
+          #  (Failed to collect page data for /api/contest). 라우트를 추가하면 반드시 여기도 추가한다.
+          ROUTE_DIRS="admin auth market rank support chat party campaign iap maps contest"
           mkdir -p .apk-hold/api-routes
           for d in $ROUTE_DIRS; do
             if [ -d "src/app/api/$d" ]; then mv "src/app/api/$d" ".apk-hold/api-routes/"; fi
