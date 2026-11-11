@@ -5219,3 +5219,11 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
 - 검증: 신규 `tests/cutscene-seen-persist.test.mjs` 5/5 — 컷신/대사 키 구분, 대사 400개에도 컷신 40개 전부 보존, **종전 slice(-160)이면 잃었을 케이스를 실제로 막는지**, 컷신 500개 미절단, 빈 입력·중복 안전. 전체 `npm test` **627/627**, tsc·lint:strict 통과.
 - 미검증: 실제 브라우저에서 맵 왕복·재접속으로 컷신이 다시 뜨지 않는지 확인하지 않았다(순수 함수 단위까지만). 후속 필요.
 - 버전 vc271/2.2.15 동기화.
+
+## Task — 2026-11-11 UTC: vc272 몬스터 사망 dissolve 가 아틀라스 전체를 그리던 버그
+
+- 사용자 요청 11번("몬스터가 죽을때 이펙트가 타일맵이나 스프라이트 아틀라스여서 짐침")의 원인을 찾았다. `spawnDissolve`가 `opts.frame`을 받고도 **전혀 쓰지 않아** 셰이더가 UV 0..1, 즉 아틀라스 전체를 샘플링했다. `Enemy.ts`는 이미 `frame: this.frame?.name`을 넘기고 있었으므로, 넘긴 값이 버려지던 상태였다.
+- 수정: 프래그먼트에 `uniform vec4 uUV`를 추가하고 `uv = mix(uUV.xy, uUV.zw, outTexCoord)`로 프레임 사각형만 샘플링한다. JS에서 프레임의 `cutX/cutY/cutWidth/cutHeight`를 텍스처 원본 크기로 나눠 UV 사각형을 만들어 유니폼으로 넘긴다. `frame`이 없으면 0..1 기본값을 유지해 단일 이미지 텍스처는 깨지지 않는다.
+- 검증: 신규 `tests/dissolve-frame-uv.test.mjs` 4/4 — uUV 선언·mix 변환·변환된 uv 샘플링, **프레임 무시 경로가 남아 있지 않은지**, cut 값으로 사각형 계산·유니폼 전달, frame 미지정 기본값, 호출부가 프레임 이름을 넘기는지. 전체 `npm test` **631/631**, tsc·lint:strict 통과.
+- 미검증: 실제 GPU 렌더 결과를 캡처로 확인하지 않았다(헤드리스 WebGL 소스 계약까지만). S20+ 실기기 확인 필요.
+- 버전 vc272/2.2.16 동기화.

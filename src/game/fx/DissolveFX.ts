@@ -32,10 +32,12 @@ const DISSOLVE_FRAG = [
   "uniform float uEdge;",          // 경계 밴드 폭
   "uniform vec3 uEdgeColor;",      // 밴드 발광색
   "uniform float uAlpha;",         // 전체 투명도
+  "uniform vec4 uUV;",             // vc271 — 아틀라스에서 이 프레임의 UV 사각형(x0,y0,x1,y1)
   "",
   "void main ()",
   "{",
-  "    vec4 src = texture2D(uTex, outTexCoord);",
+  "    vec2 uv = mix(uUV.xy, uUV.zw, outTexCoord);", // vc271 — 아틀라스 전체가 아니라 이 프레임만
+  "    vec4 src = texture2D(uTex, uv);",
   "    if (src.a <= 0.004) { gl_FragColor = vec4(0.0); return; }",
   "    float n = texture2D(uNoise, outTexCoord).r;",
   /* amount=0 → cut<0 (아무것도 안 잘림), amount=1 → cut>=1 (전부 잘림).
@@ -158,6 +160,28 @@ export function spawnDissolve(
     const edge = 0.16;
     const c = Phaser.Display.Color.IntegerToColor(opts.edgeColor ?? 0xffc98a);
 
+    /* vc271 — 아틀라스/시트 프레임의 UV 로 샘플 범위를 좁힌다.
+     *  종전에는 opts.frame 을 받고도 쓰지 않아 셰이더가 **아틀라스 전체(UV 0..1)** 를
+     *  샘플링했다. 그래서 몬스터가 죽을 때 타일맵·다른 스프라이트가 함께 튀어 보였다
+     *  (사용자 지적: "몬스터가 죽을때 이펙트가 타일맵이나 스프라이트 아틀라스여서 짐침").
+     *  frame 이 없으면 기존처럼 0..1 을 쓴다(단일 이미지 텍스처는 그게 정답). */
+    const tex = scene.textures.get(textureKey);
+    let uv = { x0: 0, y0: 0, x1: 1, y1: 1 };
+    if (opts.frame !== undefined) {
+      const fr = tex.get(opts.frame);
+      const cut = fr && "cutX" in fr ? fr : null;
+      if (cut && tex.source[0]) {
+        const sw = tex.source[0].width || 1;
+        const sh = tex.source[0].height || 1;
+        uv = {
+          x0: (cut.cutX || 0) / sw,
+          y0: (cut.cutY || 0) / sh,
+          x1: ((cut.cutX || 0) + (cut.cutWidth || sw)) / sw,
+          y1: ((cut.cutY || 0) + (cut.cutHeight || sh)) / sh,
+        };
+      }
+    }
+
     const obj = scene.add.shader(
       {
         name: "vc214-dissolve",
@@ -170,6 +194,8 @@ export function spawnDissolve(
           setUniform("uEdge", edge);
           setUniform("uEdgeColor", [c.red / 255, c.green / 255, c.blue / 255]);
           setUniform("uAlpha", opts.alpha ?? 1);
+          // vc271 — 프레임 UV 사각형(아틀라스에서 이 스프라이트가 차지하는 구간)
+          setUniform("uUV", [uv.x0, uv.y0, uv.x1, uv.y1]);
         },
       },
       x,
