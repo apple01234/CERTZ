@@ -62,13 +62,17 @@ jobs:
       - name: Prisma generate
         run: npx prisma generate
 
-      - name: Static export (APK_EXPORT=1) — serverless 라우트 7개 격리
+      - name: Static export (APK_EXPORT=1) — serverless 라우트 9개 격리
         shell: bash
         env:
           NODE_OPTIONS: --max-old-space-size=4096
         run: |
           set -e
-          ROUTE_DIRS="admin auth market rank support chat party campaign iap maps"
+          # vc277 — contest 추가. android-build.yml 과 **같은 목록을 유지해야 한다**.
+          #  vc274 에서 /api/contest 를 신설하고 두 워크플로 모두에 넣지 않아
+          #  APK·EXE 빌드가 함께 실패했다. 라우트를 추가하면 양쪽 다 고친다.
+          #  (tests/apk-route-isolation.test.mjs 가 두 파일을 모두 검사한다)
+          ROUTE_DIRS="admin auth market rank support chat party campaign iap maps contest"
           mkdir -p .apk-hold/api-routes
           for d in $ROUTE_DIRS; do
             if [ -d "src/app/api/$d" ]; then mv "src/app/api/$d" ".apk-hold/api-routes/"; fi

@@ -5336,3 +5336,17 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
   보로노이 분할 자체가 불균등(cells 18/23/11/7/3/2)해 BFS 가 흡수 중이나 개선 여지 있음.
 - **SPUM 파츠 조합(캐릭터 코디)은 여전히 미적용.**
 - 버전 vc277/2.2.21 동기화.
+
+### vc277 후속 — EXE 빌드도 같은 원인으로 실패 (exe-build.yml 격리 누락)
+
+- vc277 푸시 후 Android/Verify/Boot Check 는 success, **EXE Build 만 failure** 였다.
+  단계는 `Static export (APK_EXPORT=1) — serverless 라우트 7개 격리` — vc276 의 APK 실패와
+  **완전히 같은 뿌리**다. vc276 에서 android-build.yml 만 고치고 exe-build.yml 을 잊었다.
+- `exe-build.yml` 의 ROUTE_DIRS 에도 `contest` 추가. 두 파일이 같은 목록을 유지하도록 주석 명시.
+- 재발 방지 테스트를 **두 워크플로 모두 검사**하도록 확장(`tests/apk-route-isolation` 3→8건):
+  ① 각 워크플로의 라우트 커버리지 ② 오타 검사 ③ `APK_EXPORT=1 next build` 호출
+  ④ **두 워크플로의 ROUTE_DIRS 가 서로 같은지** (한쪽만 고치는 사고 방지).
+- 이 테스트가 실제로 잡는지 확인: exe-build.yml 을 vc276 상태(contest 누락)로 되돌리니
+  `not ok 4 [exe-build.yml] ... contest (ROUTE_DIRS 누락)` 과
+  `not ok 8 두 워크플로의 격리 목록이 서로 같다` 가 **동시에** 실패했고, 복원하니 8/8.
+- 전체 `npm test` **673/673**.
