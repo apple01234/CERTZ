@@ -841,12 +841,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     else if (!moving && this.anims.currentAnim?.key !== this.idleAnimKey) this.play(this.idleAnimKey);
     if (c.vx !== 0) this.setFlipX(c.vx > 0); // v3.0.10 — 몬스터 시트(32rogues/0x72 등) 기본 왼쪽 향함 → 오른쪽 이동 시 flip
 
-    // HP바 — v1.0.16 최적화: 풀피(숨김 상태)면 매 프레임 재배치를 건너뛴다
-    //  (적 20마리 × 60fps 중 대부분이 풀피 — Rectangle 2개 setPosition 절감)
+    // Idle full-health enemies keep lazy HP bars; engaged enemies are readable before a hit.
     this.syncHpBar();
   }
 
-  /** HP바 표시/위치 갱신 — 풀피(비가시)면 스킵 (v1.0.16 최적화 공용 경로) */
+  /** Reuse the same HP bars for pre-hit combat feedback and damage updates. */
   private syncHpBar() {
     /* vc236 (지시 #5) — 그림자 위치·depth 동기화. hpBar 와 달리 **항상** 보이므로
      *  풀피 스킵 경로에 넣지 않고 맨 앞에서 처리한다. yDepthFor 를 매 프레임 다시
@@ -859,18 +858,27 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       const d = this.scene.yDepthFor(this.y) - 0.05;
       if (this.shadow.depth !== d) this.shadow.setDepth(d);
     }
-    if (this.hpBar && this.hpBarBg) {
-      const show = this.hp < this.maxHp;
-      if (!show) {
-        if (this.hpBarBg.visible) this.hpBarBg.setVisible(false);
-        if (this.hpBar.visible) this.hpBar.setVisible(false);
-        return;
-      }
-      const py = this.y - this.displayHeight / 2 - 8;
-      this.hpBarBg.setVisible(true).setPosition(this.x, py);
-      this.hpBar.setVisible(true).setPosition(this.x, py);
-      this.hpBar.width = Math.max(1, (24 * this.hp) / this.maxHp);
+    const engaged = this.ai.current !== null && this.ai.current !== "wander" && !this.dummy && !this.flee && !this.scene.isPrologueSafe;
+    const show = this.alive && this.active && this.visible && !this.tutorialPause && (this.hp < this.maxHp || engaged);
+    if (!show) {
+      if (this.hpBarBg?.visible) this.hpBarBg.setVisible(false);
+      if (this.hpBar?.visible) this.hpBar.setVisible(false);
+      return;
     }
+    if (this.hpBarBg === null) {
+      /* v1.0.14 (#6) — 체력바 판(어두운 네모) 살짝 반투명화: 불투명 판이 몬스터 위에
+       *  "스티커"처럼 붙어 보이던 이질감 완화 (유령 판 잔존 자체는 destroy 훅으로 원천 차단) */
+      this.hpBarBg = this.scene.add.rectangle(this.x, this.y, 26, 4, 0x22262e).setDepth(20).setAlpha(0.88);
+      this.hpBar = this.scene.add.rectangle(this.x, this.y, 24, 2, 0xe84a5a).setDepth(21);
+    }
+    const py = this.y - this.hitH / 2 - 8; // Atlas padding must not push the bar away from the body.
+    this.hpBarBg!.setVisible(true).setPosition(this.x, py);
+    this.hpBar!.setVisible(true).setPosition(this.x, py);
+    this.hpBar!.width = Math.max(1, (24 * this.hp) / this.maxHp);
+    const warning = engaged && this.morale === "fight" && this.scene.time.now >= this.stunUntil &&
+      (this.ai.current === "windup" || this.ai.current === "chargeDash");
+    const color = warning ? 0xffb45c : 0xe84a5a;
+    if (this.hpBar!.fillColor !== color) this.hpBar!.setFillStyle(color);
   }
 
   takeDamage(dmg: number, dir: Phaser.Math.Vector2, knock: number, crit = false, noReact = false) {
@@ -992,12 +1000,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.scene.tweens.killTweensOf(this);
     this.setScale(sx * 1.16, sy * 0.84);
     this.scene.tweens.add({ targets: this, scaleX: sx, scaleY: sy, duration: 110, ease: "Back.out" });
-    if (this.hpBarBg === null) {
-      /* v1.0.14 (#6) — 체력바 판(어두운 네모) 살짝 반투명화: 불투명 판이 몬스터 위에
-       *  "스티커"처럼 붙어 보이던 이질감 완화 (유령 판 잔존 자체는 destroy 훅으로 원천 차단) */
-      this.hpBarBg = this.scene.add.rectangle(this.x, this.y, 26, 4, 0x22262e).setDepth(20).setAlpha(0.88);
-      this.hpBar = this.scene.add.rectangle(this.x, this.y, 24, 2, 0xe84a5a).setDepth(21);
-    }
+    this.syncHpBar();
     /* vc236 — 어픽스 후처리. 반사는 **실제로 들어간 피해(dealt)** 기준이고,
      *  보호막은 hp 차감 직후에 판정한다. 어픽스가 없으면 두 함수 모두 첫 줄에서 반환한다. */
     this.tryThornReflect(dealt);

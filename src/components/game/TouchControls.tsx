@@ -5,6 +5,7 @@ import { SkillButton } from "./SkillButton"; // vc206 — 아이콘 아래 스�
 import { EventBus } from "./EventBus";
 import { Swords, Bot, Pause, Star, Sparkles } from "lucide-react";
 import type { Skills } from "./useGameUi";
+import { FREE_DASH } from "@/game/combat/freeDash";
 import { loadKeyMap, keyLabel } from "@/game/keymap";
 import { ITEMS } from "@/game/data"; // vc150 (#신규1) — 장착 물약 아이콘 실경로 조회 // v1.0.4 — 물약 키 힌트를 키맵 따라 표시
 import { tutorialAllows, type TutorialUiState } from "@/game/tutorialFlow";
@@ -354,15 +355,15 @@ export function TouchControls({
         )}
         {allows("dash") && <button
           type="button"
-          aria-label="돌진 — 쿨타임 1초, 자원 소모 없음"
-          className="pointer-events-auto shrink-0 touch-none rounded-lg border border-white/40 bg-black/70 px-2 py-3 text-xs font-bold text-white"
+          aria-label={`돌진 — 쿨타임 ${FREE_DASH.cooldownMs / 1000}초, 자원 소모 없음`}
+          className={`pointer-events-auto shrink-0 touch-none rounded-lg border border-white/40 bg-black/70 px-2 py-3 text-xs font-bold text-white ${learning && tutorial?.step === "evade" ? "ring-4 ring-amber-300/90 motion-safe:animate-pulse" : ""}`}
           onPointerDown={(e) => {
             e.preventDefault();
             e.stopPropagation();
             EventBus.emit("input:dash");
           }}
         >
-          돌진<span className="block text-[10px]">Shift · 0초</span>
+          돌진<span className="block text-[10px]">Shift · {FREE_DASH.cooldownMs / 1000}초</span>
         </button>}
         {/* [스킬그리드] — 해금된 스킬 2열 랩 그리드(아래→위로 쌓임), 궁극기는 마지막 칸의
          *  살짝 큰 황금 버튼(현행 스타일). 미해금 스킬은 그리드에서 제외 */}

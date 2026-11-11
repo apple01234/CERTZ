@@ -54,3 +54,37 @@ test('boss recovery cue tracks the real window, reuses one label and clears on d
   b.destroyPool(); assert.equal(destroyed, 1); assert.equal(b.recoveryLabel, null);
   b.destroyPool(); assert.equal(destroyed, 1);
 });
+
+test('engaged enemies show full HP before a hit; warning color follows real attack readiness', () => {
+  const Subject = methods('src/game/entities/Enemy.ts', ['syncHpBar']);
+  let created = 0;
+  const rectangle = () => {
+    created++;
+    return {
+      visible: true, fillColor: 0xe84a5a,
+      setDepth() { return this; }, setAlpha() { return this; },
+      setPosition(x,y) { this.x=x; this.y=y; return this; },
+      setVisible(v) { this.visible=v; return this; }, setFillStyle(v) { this.fillColor=v; return this; },
+    };
+  };
+  const e = new Subject();
+  Object.assign(e, { scene: { add: { rectangle }, time: { now: 1000 }, isPrologueSafe: false },
+    ai: { current: 'wander' }, hp: 100, maxHp: 100, alive: true, active: true, visible: true,
+    dummy: false, flee: false, morale: 'fight', stunUntil: 0, x: 80, y: 100, displayHeight: 512, hitH: 32,
+    hpBar: null, hpBarBg: null, shadow: null, tutorialPause: null });
+  e.syncHpBar(); assert.equal(created, 0); // Idle populations keep lazy allocation.
+  e.ai.current = 'chase'; e.syncHpBar(); assert.equal(created, 2); assert.equal(e.hpBar.visible, true);
+  assert.equal(e.hpBar.width, 24); assert.equal(e.hpBar.y, 76);
+  e.ai.current = 'windup'; e.syncHpBar(); assert.equal(e.hpBar.fillColor, 0xffb45c);
+  e.stunUntil = 1200; e.syncHpBar(); assert.equal(e.hpBar.fillColor, 0xe84a5a); // Interrupted warning.
+  e.stunUntil = 0; e.ai.current = 'chargeDash'; e.syncHpBar(); assert.equal(e.hpBar.fillColor, 0xffb45c);
+  e.ai.current = 'cooldown'; e.syncHpBar(); assert.equal(e.hpBar.visible, true); assert.equal(e.hpBar.fillColor, 0xe84a5a);
+  e.ai.current = 'wander'; e.syncHpBar(); assert.equal(e.hpBar.visible, false);
+  e.hp = 50; e.syncHpBar(); assert.equal(e.hpBar.visible, true); assert.equal(e.hpBar.width, 12);
+  e.hp = 100; e.ai.current = 'windup'; e.scene.isPrologueSafe = true; e.syncHpBar(); assert.equal(e.hpBar.visible, false);
+  e.scene.isPrologueSafe = false;
+  for (const field of ['dummy', 'flee']) { e[field] = true; e.syncHpBar(); assert.equal(e.hpBar.visible, false); e[field] = false; }
+  for (const field of ['alive', 'active', 'visible']) { e[field] = false; e.syncHpBar(); assert.equal(e.hpBar.visible, false); e[field] = true; }
+  e.tutorialPause = {}; e.syncHpBar(); assert.equal(e.hpBar.visible, false);
+  e.tutorialPause = null; e.syncHpBar(); assert.equal(e.hpBar.visible, true); assert.equal(created, 2);
+});

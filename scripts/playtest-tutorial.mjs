@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 const base = process.env.TUTORIAL_QA_URL ?? 'http://127.0.0.1:3100';
@@ -20,7 +21,8 @@ await page.getByRole('button',{name:'이 캐릭터로 시작'}).click();
 await page.waitForFunction(()=>window.__SERTZ_SCENE__?.player,null,{timeout:120000});
 const press = key => page.keyboard.press(key, { delay: 90 });
 let shotLilac = false;
-const state = async () => { await page.waitForFunction(() => window.__SERTZ_SCENE__?.assetsReady && window.__SERTZ_SCENE__?.physics?.world, null, {timeout:35000}); return page.evaluate(() => { const s=window.__SERTZ_SCENE__, t=s.tut, p=s.player; return { stage:s.stageDef.key, step:t?.currentId??null, cinema:s.camCinema, dialogue:s.dialoguing, paused:s.physics.world.isPaused, player:{x:p.x,y:p.y,mp:p.mp,gold:p.gold,potions:p.potions}, target:t?.target?{x:t.target.x,y:t.target.y}:null, enemy:t?.practice?{x:t.practice.x,y:t.practice.y,active:t.practice.active}:null, windup:!!t?.evadeOrigin, done:s.tutorialDone, near:s.nearInteract, allow:s.canPlayerAction("interact"), nav:s.panelNavOpen, pending:t?.pending, kb:s.input.keyboard.enabled }; }); };
+let enemyWarning = null;
+const state = async () => { await page.waitForFunction(() => window.__SERTZ_SCENE__?.assetsReady && window.__SERTZ_SCENE__?.physics?.world, null, {timeout:35000}); return page.evaluate(() => { const s=window.__SERTZ_SCENE__, t=s.tut, p=s.player; return { stage:s.stageDef.key, step:t?.currentId??null, cinema:s.camCinema, dialogue:s.dialoguing, paused:s.physics.world.isPaused, player:{x:p.x,y:p.y,mp:p.mp,gold:p.gold,potions:p.potions}, target:t?.target?{x:t.target.x,y:t.target.y}:null, enemy:t?.practice?{x:t.practice.x,y:t.practice.y,active:t.practice.active,hp:t.practice.hp,maxHp:t.practice.maxHp,hitH:t.practice.hitH,bar:t.practice.hpBar?{visible:t.practice.hpBar.visible,color:t.practice.hpBar.fillColor,width:t.practice.hpBar.width,x:t.practice.hpBar.x,y:t.practice.hpBar.y}:null}:null, windup:!!t?.evadeOrigin, done:s.tutorialDone, near:s.nearInteract, allow:s.canPlayerAction("interact"), nav:s.panelNavOpen, pending:t?.pending, kb:s.input.keyboard.enabled }; }); };
 async function settle() {
   for (let i=0;i<170;i++) {
     const s=await state();
@@ -73,9 +75,22 @@ console.log('PRACTICE_SAVE',await page.evaluate(()=>{const s=window.__SERTZ_SCEN
 await walk((await state()).enemy,42);
 for(let i=0;i<7&&(await state()).step==='attack';i++){await press('x');await page.waitForTimeout(380);}
 await waitStep('evade');await settle();
+const dashButton=page.getByRole('button',{name:/돌진 —/});
+assert.match(await dashButton.innerText(),/Shift · 1초/);
+assert.match(await dashButton.getAttribute('class'),/ring-4/);
 for(let i=0;i<120&&(await state()).step==='evade';i++){
   const s=await state();
   if(s.windup){
+    if(!enemyWarning){
+      assert.equal(s.enemy.hp,s.enemy.maxHp);
+      assert.equal(s.enemy.bar?.visible,true);
+      assert.equal(s.enemy.bar?.color,0xffb45c);
+      assert.equal(s.enemy.bar?.width,24);
+      assert.ok(Math.abs(s.enemy.bar.y-(s.enemy.y-s.enemy.hitH/2-8))<=8,'HP bar follows body within one physics frame');
+      enemyWarning=s.enemy;
+      await page.evaluate(()=>{const e=window.__SERTZ_SCENE__.tut.practice;window.__EVADE_BAR_REFS__=[e.hpBar,e.hpBarBg];});
+      await page.screenshot({path:join(out,'tutorial-evade-guidance.png')});
+    }
     if(mobile){
       const rect=await page.getByRole('button',{name:/돌진 —/}).boundingBox();
       const joy={x:110,y:300,id:1};
@@ -92,7 +107,7 @@ for(let i=0;i<120&&(await state()).step==='evade';i++){
   }
   else await page.waitForTimeout(120);
 }
-await waitStep('skill');await settle();await walk((await state()).enemy,42);await press('z');
+await waitStep('skill');await settle();assert.ok(enemyWarning);assert.equal(await page.evaluate(()=>window.__EVADE_BAR_REFS__.every(bar=>!bar.active)),true);assert.doesNotMatch(await dashButton.getAttribute('class'),/ring-4/);await walk((await state()).enemy,42);await press('z');
 await waitStep('pickup');await settle();await walk((await state()).target,10);
 await waitStep('inventory');await settle();
 await page.getByRole('button',{name:'가방 확인',exact:true}).click();await page.waitForTimeout(500);
@@ -114,5 +129,5 @@ await page.keyboard.down('ArrowRight');await page.waitForTimeout(200);await page
 await page.screenshot({path:join(out, 'tutorial-real-finished.png')});
 console.log('ERRORS',errors);if(errors.length)throw Error(errors.join('\n'));
 await page.context().storageState({path:join(out, 'tutorial-complete-storage.json')});
-await writeFile(join(out, 'tutorial-results.json'), JSON.stringify({base,evadeInput:mobile?'real multitouch joystick + dash button':'keyboard direction + Shift',elapsedMs:Date.now()-started,version:await page.evaluate(async()=>{const r=await fetch('/api/version');return r.json();}),final:await state(),pageErrors:errors},null,2));
+await writeFile(join(out, 'tutorial-results.json'), JSON.stringify({base,enemyWarning,evadeInput:mobile?'real multitouch joystick + dash button':'keyboard direction + Shift',elapsedMs:Date.now()-started,version:await page.evaluate(async()=>{const r=await fetch('/api/version');return r.json();}),final:await state(),pageErrors:errors},null,2));
 } finally { await browser.close(); }
