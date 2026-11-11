@@ -6155,6 +6155,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     /* vc204 (지시서 #10) — 직업별 **고유 마무리**.
      *  유저 지적: "궁극기가 뒤에 부분 바뀐게 다 똑같잖아".
+     *  vc273 — 마무리는 본타가 끝난 뒤 scheduleUltFinale 로 재생한다(아래 본문 참조). */
+    this.scheduleUltFinale();
+  }
+
+  /** vc273 — 실제 마무리 연출. 본타가 모두 끝난 시점에 호출된다. */
+  private runUltFinaleNow() {
+    /* vc204 (#9) — 조작 잠금 타이머는 없다(시전 중 state 는 idle 유지). HUD만 갱신한다. */
+    this.scene.emitHud();
+    /* vc204 (지시서 #10) — 직업별 **고유 마무리** 본문.
      *  실측(tools/ult_dedup.py) 결과 직업 34개 중 다수가 마지막 3개 호출이
      *    `spawnBurstAt → sfxSkill → sfxCrit` 또는 `sfxSkill → sfxSkill → sfxCrit`
      *  로 완전히 같았다. 위 switch 는 본타(연타/난사)는 직업별로 달랐지만,
@@ -6186,11 +6195,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       },
       lite: this.scene.fxLevel === 0,
     });
+  }
 
-
-    /* vc204 (#9) — 조작 잠금 타이머 제거: 시전 중 state 가 idle 이므로 풀 것이 없다.
-     *  (연출은 각자의 delayedCall/tween 이 끝까지 재생된다) */
-    this.scene.emitHud();
+  /**
+   * vc273 — 마무리를 **마지막 본타 뒤로** 미룬다.
+   *
+   * 종전에는 useSkill5 의 switch 가 본타를 delayedCall(최대 2,220ms)로 예약해 두고,
+   * 그 직후 runUltFinale 를 **동기 호출**했다. 그래서 마무리 폭발이 첫 타보다 먼저 터지고
+   * 본타가 뒤따랐다(인계 문서가 지적한 "예약 직후 동기 실행").
+   * state 는 여전히 idle 이므로 조작 잠금은 생기지 않는다(기존 계약 유지).
+   */
+  private scheduleUltFinale() {
+    const ultFinaleAt = 280 + 9 * 200 + 140;
+    this.scene.time.delayedCall(ultFinaleAt, () => {
+      if (this.state === "dead" || !this.scene) return;
+      this.runUltFinaleNow();
+    });
   }
 
   /* ---------------- v3.0.3 — GM 도구 (임시 운영자 NPC용) ---------------- */
@@ -8061,7 +8081,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.scene.driveFx?.gvAura(residueX, residueY, hex, 2600, 1.5);
       this.scene.spawnPickupText(this.x, this.y - 92, "여운 — 잔존 필드 30초", "#e0a8ff");
     });
-    this.scene.time.delayedCall(Math.max(0, ult5bHoldOf(key5, familyOf(this.cls)) - 620), () => {
+    /* vc273 — 마무리 시점을 **실제 마지막 타격 직후**로 고정한다.
+     *  종전에는 `ult5bHoldOf(...) - 620`(=10~60초) 뒤에 재생해서, 실제 딜이 2초 안에
+     *  끝나는데도 마무리 연출이 44~60초 뒤에 늦게 터졌다(인계 문서 지적).
+     *  본타는 280 + i*430 (i<5) 이므로 마지막 타격은 2,000ms 다. 그 뒤 300ms 여유를 둔다.
+     *  여운 필드(30초)는 별개 delayedCall 이라 이 변경과 무관하게 유지된다. */
+    const ult5bFinaleAt = 280 + 4 * 430 + 300;
+    this.scene.time.delayedCall(ult5bFinaleAt, () => {
       if (this.state === "dead") return;
       runUltFinale(this.scene, {
         x: residueX, y: residueY, hex, cls: this.cls, slot: 2,

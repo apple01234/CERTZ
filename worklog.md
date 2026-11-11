@@ -5227,3 +5227,15 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
 - 검증: 신규 `tests/dissolve-frame-uv.test.mjs` 4/4 — uUV 선언·mix 변환·변환된 uv 샘플링, **프레임 무시 경로가 남아 있지 않은지**, cut 값으로 사각형 계산·유니폼 전달, frame 미지정 기본값, 호출부가 프레임 이름을 넘기는지. 전체 `npm test` **631/631**, tsc·lint:strict 통과.
 - 미검증: 실제 GPU 렌더 결과를 캡처로 확인하지 않았다(헤드리스 WebGL 소스 계약까지만). S20+ 실기기 확인 필요.
 - 버전 vc272/2.2.16 동기화.
+
+## Task — 2026-11-11 UTC: vc273 궁극기 마무리 타이밍 (요청 12번 1단계) + 사망 dissolve 교체
+
+- 인계 문서가 지적한 궁극기 원인 2건을 코드에서 확인하고 고쳤다.
+  1) `useSkill5`가 본타를 `delayedCall(최대 2,220ms)`로 예약해 두고 `runUltFinale`를 **동기 호출**해 마무리가 첫 타보다 먼저 터졌다. → `scheduleUltFinale()`로 분리해 `ultFinaleAt = 280+9*200+140`(2,220ms) 뒤에 재생. 마무리 본문은 `runUltFinaleNow()`로 추출.
+  2) `useSkill5b`가 `ult5bHoldOf - 620`(=10~60초) 뒤에 마무리를 재생해, 실제 딜이 2초 안에 끝나는데도 44~60초 뒤에 늦게 터졌다. → `ult5bFinaleAt = 280+4*430+300`(2,300ms), 즉 실제 마지막 타격(2,000ms) 직후로 고정. 30초 여운 필드는 별개 delayedCall이라 그대로 유지.
+- 사망 dissolve는 이전 vc272의 `cutX` 수동 UV 계산을 **보존 WIP 구현으로 교체**했다. WIP는 Phaser `setTextureCoordinatesFromFrame(frame)` + 프레임 실제 크기로 쿼드를 만들고, **회전·다중 소스 아틀라스는 안전하게 포기**하며, 프레임 미존재 시 전체 시트로 폴백하지 않고 null을 돌려준다. 수동 계산보다 정확하다.
+- `src/game/combat/ultimateSequence.ts`(중첩 타격 추적 → 마지막 타격 뒤 마무리)와 `tests/combat-presentation.test.mjs`를 WIP에서 이식했다. 다만 **Player에 UltimateSequence를 아직 연결하지 않았다** — 지연 상수 방식으로 이번 목표(순서 역전·수십 초 지연)를 해결했고, 시퀀스 연결은 후속 과제다.
+- 검증: 신규 `tests/ultimate-finale-timing.test.mjs` 4/4 — 1차 마무리가 delayedCall로 예약되고 지연이 본타 최대(2,220ms) 이상인지, 2차가 수십 초 지연 경로를 쓰지 않고 2,000ms 초과 6,000ms 미만인지, UltimateSequence가 중첩 타격 뒤에만 마무리를 내고 조작 잠금을 만들지 않는지, 사망 시 취소되는지. WIP `combat-presentation` 4/4. 전체 `npm test` **635/635**, tsc·lint:strict 통과.
+- 테스트 작성 중 오탐 1건 수정: `ult5bHoldOf - 620` 문자열이 **주석**에 남아 정규식에 걸렸다. 주석 줄을 제외한 코드만 검사하도록 고쳤다.
+- 미검증: 실제 브라우저에서 궁극기 연출 순서를 눈으로 확인하지 않았다. GPU 렌더 캡처도 없다. S20+ 실기기 확인 필요.
+- 버전 vc273/2.2.17 동기화.

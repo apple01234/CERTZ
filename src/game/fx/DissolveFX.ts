@@ -32,12 +32,10 @@ const DISSOLVE_FRAG = [
   "uniform float uEdge;",          // 경계 밴드 폭
   "uniform vec3 uEdgeColor;",      // 밴드 발광색
   "uniform float uAlpha;",         // 전체 투명도
-  "uniform vec4 uUV;",             // vc271 — 아틀라스에서 이 프레임의 UV 사각형(x0,y0,x1,y1)
   "",
   "void main ()",
   "{",
-  "    vec2 uv = mix(uUV.xy, uUV.zw, outTexCoord);", // vc271 — 아틀라스 전체가 아니라 이 프레임만
-  "    vec4 src = texture2D(uTex, uv);",
+  "    vec4 src = texture2D(uTex, outTexCoord);",
   "    if (src.a <= 0.004) { gl_FragColor = vec4(0.0); return; }",
   "    float n = texture2D(uNoise, outTexCoord).r;",
   /* amount=0 → cut<0 (아무것도 안 잘림), amount=1 → cut>=1 (전부 잘림).
@@ -144,12 +142,21 @@ export function spawnDissolve(
     alpha?: number;
     depth?: number;
     scale?: number;
+    scaleY?: number;
     flipX?: boolean;
+    originX?: number;
+    originY?: number;
   } = {},
 ): DissolveHandle | null {
   try {
     if (scene.game.renderer.type !== Phaser.WEBGL) return null;
     if (!scene.textures.exists(textureKey)) return null;
+    const texture = scene.textures.get(textureKey);
+    // Texture.get silently falls back to the entire sheet for an unknown name.
+    if (opts.frame !== undefined && !texture.has(String(opts.frame))) return null;
+    const frame = texture.get(opts.frame);
+    // ponytail: current enemies use single-source, unrotated atlases; skip others safely.
+    if (frame.rotated || frame.sourceIndex !== 0) return null;
     /* 예산 초과 → 이번 사망은 dissolve 를 생략한다(기존 파티클만).
      * 프레임이 밀리는 것보다 연출 1개를 빼는 편이 낫다. */
     if (activeCount >= MAX_ACTIVE) return null;
@@ -159,28 +166,7 @@ export function spawnDissolve(
     const dur = opts.duration ?? 420;
     const edge = 0.16;
     const c = Phaser.Display.Color.IntegerToColor(opts.edgeColor ?? 0xffc98a);
-
-    /* vc271 — 아틀라스/시트 프레임의 UV 로 샘플 범위를 좁힌다.
-     *  종전에는 opts.frame 을 받고도 쓰지 않아 셰이더가 **아틀라스 전체(UV 0..1)** 를
-     *  샘플링했다. 그래서 몬스터가 죽을 때 타일맵·다른 스프라이트가 함께 튀어 보였다
-     *  (사용자 지적: "몬스터가 죽을때 이펙트가 타일맵이나 스프라이트 아틀라스여서 짐침").
-     *  frame 이 없으면 기존처럼 0..1 을 쓴다(단일 이미지 텍스처는 그게 정답). */
-    const tex = scene.textures.get(textureKey);
-    let uv = { x0: 0, y0: 0, x1: 1, y1: 1 };
-    if (opts.frame !== undefined) {
-      const fr = tex.get(opts.frame);
-      const cut = fr && "cutX" in fr ? fr : null;
-      if (cut && tex.source[0]) {
-        const sw = tex.source[0].width || 1;
-        const sh = tex.source[0].height || 1;
-        uv = {
-          x0: (cut.cutX || 0) / sw,
-          y0: (cut.cutY || 0) / sh,
-          x1: ((cut.cutX || 0) + (cut.cutWidth || sw)) / sw,
-          y1: ((cut.cutY || 0) + (cut.cutHeight || sh)) / sh,
-        };
-      }
-    }
+    let amount = 0;
 
     const obj = scene.add.shader(
       {
@@ -188,27 +174,29 @@ export function spawnDissolve(
         fragmentSource: DISSOLVE_FRAG,
         // 셰이더가 샘플링할 텍스처를 유니폼으로 넘긴다
         setupUniforms: (setUniform: (name: string, value: unknown) => void) => {
-          setUniform("uTex", scene.textures.get(textureKey));
-          setUniform("uNoise", scene.textures.get(noiseKey));
-          setUniform("uAmount", 0);
+          setUniform("uTex", 0);
+          setUniform("uNoise", 1);
+          setUniform("uAmount", amount);
           setUniform("uEdge", edge);
           setUniform("uEdgeColor", [c.red / 255, c.green / 255, c.blue / 255]);
           setUniform("uAlpha", opts.alpha ?? 1);
-          // vc271 — 프레임 UV 사각형(아틀라스에서 이 스프라이트가 차지하는 구간)
-          setUniform("uUV", [uv.x0, uv.y0, uv.x1, uv.y1]);
         },
       },
       x,
       y,
-      64,
-      64,
+      frame.width,
+      frame.height,
+      [textureKey, noiseKey],
     );
+    obj.setTextureCoordinatesFromFrame(frame);
     obj.setOrigin(0.5);
     obj.setDepth(opts.depth ?? 30);
-    obj.setScale(opts.scale ?? 1);
+    const sx = (opts.scale ?? 1) * (opts.flipX ? -1 : 1), sy = opts.scaleY ?? opts.scale ?? 1;
+    obj.setScale(sx, sy);
+    obj.setPosition(x + (frame.x + frame.width / 2 - frame.realWidth * (opts.originX ?? .5)) * sx,
+      y + (frame.y + frame.height / 2 - frame.realHeight * (opts.originY ?? .5)) * sy);
     /* Shader 에는 setFlipX 가 없다(타입 확인). 좌우 반전은 음수 스케일로 준다
      * — 프리멀티플라이드 알파에는 영향이 없다. */
-    if (opts.flipX) obj.setScale(-(opts.scale ?? 1), opts.scale ?? 1);
 
     activeCount++;
     let released = false;
@@ -217,12 +205,12 @@ export function spawnDissolve(
       released = true;
       activeCount = Math.max(0, activeCount - 1);
     };
+    obj.once("destroy", release);
 
-    let amount = 0;
     const setAmount = (v: number) => {
-      amount = v;
+      amount = Math.max(0, Math.min(1, v));
       try {
-        obj.setUniform("uAmount", v);
+        obj.setUniform("uAmount", amount);
       } catch {
         /* 셰이더가 파괴된 뒤 호출 — 무시 */
       }
@@ -241,9 +229,6 @@ export function spawnDissolve(
         try { obj.destroy(); } catch { /* 이미 파괴됨 */ }
       },
     });
-    // 초기값 0 은 setupUniforms 가 이미 넣었다 — 상태 일관성을 위해 한 번 더
-    void amount;
-
     return {
       setAmount,
       destroy: () => {
