@@ -5210,3 +5210,12 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
 - 검증: `scripts/playtest-gm-button.mjs` PASS — 비관리자는 GM 버튼 false(가방 true), 관리자(role=admin 라우팅 대체)는 true이고 DOM 순서가 `gm-before-bag`. 관리자 케이스는 UI 반응만 검증하며 서버 권한을 대신하지 않는다.
 - 미검증: 실제 GM 계정으로 운영 서버 로그인해 버튼이 뜨는지, GM 액션의 서버측 거부 응답, S20+ 터치.
 - 버전 vc270/2.2.14 동기화. 상세: `docs/qa/2026-11-11/crosscode/APPLIED_v270.md`.
+
+## Task — 2026-11-11 UTC: vc271 본 컷신 재생 방지 (시청 기록 손실 수정)
+
+- 사용자 요청 7번("한번 봤던 컷씬은 맵이동시 다시는 안뜨게 해")의 실제 원인을 찾았다. `buildSave`가 `seen: [...this.seenSet].slice(-160)`으로 **Set 삽입 순서대로 잘라 먼저 본 컷신 기록부터 버리고 있었다.** 컷신을 160개 넘게 본 세이브에서 오래된 연출이 재생됐다.
+- 수정: 규칙을 `src/game/cutsceneSeen.ts`의 순수 함수 `buildSeenList`로 분리했다. 컷신 키(`lilacCut_*`, `*_intro`, `chapter_*`, `stageIntro_*`)는 전부 보존하고 일반 대사 키만 최근 것으로 상한을 둔다. WorldScene은 이 함수만 호출한다.
+- 테스트가 실제 결함을 하나 더 잡았다: 배열 입력 시 중복이 남아 세이브가 두 배가 될 수 있었다. `[...new Set(keys)]`로 정규화했다.
+- 검증: 신규 `tests/cutscene-seen-persist.test.mjs` 5/5 — 컷신/대사 키 구분, 대사 400개에도 컷신 40개 전부 보존, **종전 slice(-160)이면 잃었을 케이스를 실제로 막는지**, 컷신 500개 미절단, 빈 입력·중복 안전. 전체 `npm test` **627/627**, tsc·lint:strict 통과.
+- 미검증: 실제 브라우저에서 맵 왕복·재접속으로 컷신이 다시 뜨지 않는지 확인하지 않았다(순수 함수 단위까지만). 후속 필요.
+- 버전 vc271/2.2.15 동기화.

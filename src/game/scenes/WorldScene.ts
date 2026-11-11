@@ -32,6 +32,7 @@ import { getTraumaShake, playUltCinematic } from "../fx/UltCinematic"; // v1.4.4
 import { playStoryCutscene } from "../fx/StoryCutscene";
 import { sceneCinematicPlaying } from "../fx/sceneCinematic";
 import { chapterIntroOf, resolveChapterIntroShots, stageIntroOf, stageIntroSeenKey } from "../storyCutscenes";
+import { buildSeenList } from "../cutsceneSeen"; // vc270 — 본 컷신은 맵 이동 후 재생하지 않는다
 import { playAutoCutscene, type CutStep } from "../fx/AutoCutscene"; // v4.9.0 — 메이플식 자동 컷씬
 import { CANON_STORY_CHOICES } from "../grandPlanetCanon"; // vc279 — P7c 선택지 정본(id→label)
 import { PixelFxManager } from "../fx/PixelFxManager"; // v4.9.3 — pixelfx 통합 매니저
@@ -17716,7 +17717,11 @@ export class WorldScene extends Phaser.Scene {
       repeatCycle: this.repeatCycle,
       repeatStage: this.stageDef.key,
       autoUse: { ...this.player.autoUse },
-      seen: [...this.seenSet].slice(-160),
+      /* vc270 — 종전 `[...this.seenSet].slice(-160)`은 Set 삽입 순서대로 잘라
+       * **먼저 본 컷신 기록부터 버렸다.** 그 결과 오래전에 본 연출이 맵을 옮기면 다시 재생됐다
+       * (사용자 지적: "한번 봤던 컷씬은 맵이동시 다시는 안뜨게 해").
+       * 규칙은 cutsceneSeen.buildSeenList 로 분리해 테스트로 고정했다. */
+      seen: buildSeenList(this.seenSet),
       /* v2.5 — 방문 구역 기록 + 자동사냥 토글 */
       visited: [...this.visited],
       autoHunt: this.autoHunt,
