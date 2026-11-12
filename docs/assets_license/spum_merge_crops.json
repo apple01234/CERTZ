@@ -1,0 +1,160 @@
+{
+  "basis": "bcbcd2d",
+  "method": "Lossless source-region extraction; no image generation or recoloring.",
+  "assets": [
+    {
+      "key": "spum_butler",
+      "source": "/assets/spum_butler.webp",
+      "sourceSha256": "a9a8cc73b03804bc1b3459434d26e773ab840ea076b371f0677bdb6fcb7253cc",
+      "crop": {
+        "left": 16,
+        "top": 8,
+        "width": 48,
+        "height": 48
+      }
+    },
+    {
+      "key": "spum_devil",
+      "source": "/assets/spum_devil.webp",
+      "sourceSha256": "4241496633d2a92008488a4e1de5b1df8d4dc37b0ee5cb59c7ad3feeffda53c2",
+      "crop": {
+        "left": 16,
+        "top": 8,
+        "width": 48,
+        "height": 48
+      }
+    },
+    {
+      "key": "spum_elf",
+      "source": "/assets/spum_elf.webp",
+      "sourceSha256": "9a81dfbd9de08f21eec7afcac4a592260728bf3c70d3dd13f0deb2f4ca57703e",
+      "crop": {
+        "left": 16,
+        "top": 8,
+        "width": 48,
+        "height": 48
+      }
+    },
+    {
+      "key": "spum_fisher",
+      "source": "/assets/spum_fisher.webp",
+      "sourceSha256": "744361af528a72e20645cbb71b78054d0391524be682fb4a9af37e96f617edd0",
+      "crop": {
+        "left": 16,
+        "top": 8,
+        "width": 48,
+        "height": 48
+      }
+    },
+    {
+      "key": "spum_forager",
+      "source": "/assets/spum_forager.webp",
+      "sourceSha256": "7e8c6bba31843fee4e6af3ca16c75507ad70c92bc809a7dbaec52524686e8657",
+      "crop": {
+        "left": 16,
+        "top": 8,
+        "width": 48,
+        "height": 48
+      }
+    },
+    {
+      "key": "spum_knight",
+      "source": "/assets/spum_knight.webp",
+      "sourceSha256": "bcd5148248beac79e7e07da04f9814250138410c71c15661df971916da645126",
+      "crop": {
+        "left": 16,
+        "top": 8,
+        "width": 48,
+        "height": 48
+      }
+    },
+    {
+      "key": "spum_mage",
+      "source": "/assets/spum_mage.webp",
+      "sourceSha256": "8d7fb22e80bdbc1abccf8cedef096aae55ae7be9ac340ffd904cc7a4f6483675",
+      "crop": {
+        "left": 16,
+        "top": 8,
+        "width": 48,
+        "height": 48
+      }
+    },
+    {
+      "key": "spum_miner",
+      "source": "/assets/spum_miner.webp",
+      "sourceSha256": "f9ec0f2bef60d03b5a3b501ecd1abeffe2aa824bedd15c240453e6ee85bb2a90",
+      "crop": {
+        "left": 16,
+        "top": 8,
+        "width": 48,
+        "height": 48
+      }
+    },
+    {
+      "key": "spum_mystic",
+      "source": "/assets/spum_mystic.webp",
+      "sourceSha256": "ae56857450a5c98c2b5c28d7081d4f467ebed2a74c4c6ad354b3a6e443fa75eb",
+      "crop": {
+        "left": 16,
+        "top": 8,
+        "width": 48,
+        "height": 48
+      }
+    },
+    {
+      "key": "spum_scout",
+      "source": "/assets/spum_scout.webp",
+      "sourceSha256": "22b3e61d98e39cbf22828f9d70d9ed8d531a1d96c8f9d986b6679919c3dd01b1",
+      "crop": {
+        "left": 16,
+        "top": 8,
+        "width": 48,
+        "height": 48
+      }
+    },
+    {
+      "key": "spum_skel",
+      "source": "/assets/spum_skel.webp",
+      "sourceSha256": "4fb0e64eaa4e529513745c601707a7ce1954578e83db357da96dfb2b83fb7e72",
+      "crop": {
+        "left": 16,
+        "top": 8,
+        "width": 48,
+        "height": 48
+      }
+    },
+    {
+      "key": "spum_smith",
+      "source": "/assets/spum_smith.webp",
+      "sourceSha256": "59c671edfc849c7bb02a99a59642287068d1a962cbe22874e59844a75d5cbf71",
+      "crop": {
+        "left": 16,
+        "top": 8,
+        "width": 48,
+        "height": 48
+      }
+    },
+    {
+      "key": "spum_villager_f",
+      "source": "/assets/spum_villager_f.webp",
+      "sourceSha256": "123854207f91fbaf2f467c540ed7c78c3b863d79819a05bfc9e796872b9aa44b",
+      "crop": {
+        "left": 16,
+        "top": 8,
+        "width": 48,
+        "height": 48
+      }
+    },
+    {
+      "key": "spum_villager_m",
+      "source": "/assets/spum_villager_m.webp",
+      "sourceSha256": "9605b8fc23913dac4a273d5e6912c813862389fa66048dae57c0ca9b0f75cb74",
+      "crop": {
+        "left": 16,
+        "top": 8,
+        "width": 48,
+        "height": 48
+      }
+    }
+  ]
+}

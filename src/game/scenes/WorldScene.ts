@@ -35,6 +35,8 @@ import { getTraumaShake, playUltCinematic } from "../fx/UltCinematic"; // v1.4.4
 import { playStoryCutscene } from "../fx/StoryCutscene";
 import { sceneCinematicPlaying } from "../fx/sceneCinematic";
 import { chapterIntroOf, resolveChapterIntroShots, stageIntroOf, stageIntroSeenKey } from "../storyCutscenes";
+import { beginSceneCinematic, type CinematicSession } from "../fx/sceneCinematic";
+import { resolveVillageNpcTexture } from "../villageNpcAssets";
 import { buildSeenList } from "../cutsceneSeen"; // vc270 — 본 컷신은 맵 이동 후 재생하지 않는다
 import { playAutoCutscene, type CutStep } from "../fx/AutoCutscene"; // v4.9.0 — 메이플식 자동 컷씬
 import { CANON_STORY_CHOICES } from "../grandPlanetCanon"; // vc279 — P7c 선택지 정본(id→label)
@@ -385,6 +387,8 @@ export class WorldScene extends Phaser.Scene {
   private migratedTutSeen = false;
   private storyRevision = STORY_REVISION;
   private assetsReady = false;
+  private worldLoadAttempt = 0;
+  private npcDialogueSession: CinematicSession | null = null;
   /* vc150 (#26번항목21) — 좀비 몬스터 청소 누적기 */
   private zombieSweepAt = 0;
 
@@ -1127,10 +1131,22 @@ export class WorldScene extends Phaser.Scene {
    *  2) 실패 시 1회 한정 자동 재부팅 (세이브는 gotoStage마다 기록되어 있어 안전)
    *  3) fadeIn + 워치독은 성공/실패 무관하게 "항상" 마지막에 실행 */
   async create() {
+    const attempt = ++this.worldLoadAttempt;
+    this.input.enabled = false;
+    this.time.paused = true;
+    this.physics.world.pause();
     const loadStarted = performance.now();
     try { await ensureWorldAssets(this, this.registry.get("initData")); }
     catch { return; }
-    if (!this.sys.isActive()) return;
+    if (!this.sys.isActive() || attempt !== this.worldLoadAttempt) return;
+    // Restore before createInner: its opening cinematic may pause the world again.
+    this.time.paused = false;
+    this.physics.world.resume();
+    this.input.enabled = true;
+    if (this.registry.get("initData")?.fresh) {
+      this.startTime = Date.now();
+      this.registry.set("runStart", this.startTime);
+    }
     this.bootAt = this.time.now;
     /* v1.4.0 (#16) — 월드 진입 기록: 재부팅(reload) 시 TitleScene이 이 플래그를 보고
      *  시작 화면 대신 마지막 캐릭터로 자동 복귀한다 (정상 종료 exitToMenu는 해제) */
@@ -2229,7 +2245,7 @@ export class WorldScene extends Phaser.Scene {
       this.renderFieldDecor();
       /* v1.0.2 (#GM서버검증) — 부팅 시 서버 롤 조회 → 관리자만 GM NPC 표시 (일반 유저에겐 부재)
        *  v1.0.16 — 롤 확정 후 이름표/황금 오라 재계산 (이름표가 롤 조회보다 먼저 생기는 케이스) */
-      authMe()
+      authMe({ requireServer: true })
         .then((u) => {
           this.adminRole = u?.role ?? null;
           if (this.player) this.player.gmInfinite = this.adminRole === "admin"; // v1.1.0 (#5) — GM 무한 물약/엘릭서
@@ -2457,9 +2473,10 @@ export class WorldScene extends Phaser.Scene {
      *  "컨텐츠마다 NPC UI가 뜨는데 아무 의미 없다"는 지적으로 이어졌다 */
     const isContentStage = stageKey === "tower" || stageKey === "park" || stageKey === "gate" || stageKey === "closet" || stageKey === "dojang";
     // Restore the player first; one director owns physics/input until its final shot.
-    const directedIntro = resumeTutorial === null && !this.isInterior && !isContentStage &&
+    const viewedIntro = this.stagePresentationSeen(stageKey);
+    const directedIntro = !viewedIntro && resumeTutorial === null && !this.isInterior && !isContentStage &&
       (this.playLilacOpeningCutscene(stageKey) || this.playChapterIntroCutscene(stageKey));
-    if (resumeTutorial === null && !this.isInterior && !isContentStage && !directedIntro) {
+    if (!viewedIntro && resumeTutorial === null && !this.isInterior && !isContentStage && !directedIntro) {
       if (stageKey === "village" && !savedPlayer?.playerName) {
         // v1.1.0 (#18) — 신규 플레이어: 프롤로그 시네마틱(내레이션 4비트) → 플레이형 인트로(이동 → 우물 → 이름 짓기)
         this.startIntroSequence();
@@ -2637,6 +2654,22 @@ export class WorldScene extends Phaser.Scene {
     return this.playLilacOpeningCutscene(this.stageDef.key, { steps, done });
   }
 
+  private stagePresentationSeen(stageKey: StageKey): boolean {
+    const { ch, sub } = parseStage(stageKey);
+    const scenario = lilacScenarioIdAt(ch, sub);
+    return this.cutsceneSeen.includes(`stage:${stageKey}`)
+      || this.cutsceneSeen.includes(sub === 1 ? ch : stageIntroSeenKey(ch, sub))
+      || !!(scenario && this.cutsceneSeen.includes(`lilacCut_rea1_${scenario}`))
+      || this.seenSet.has(stageIntro(stageKey));
+  }
+
+  private rememberStagePresentation(stageKey: StageKey) {
+    const key = `stage:${stageKey}`;
+    if (!this.cutsceneSeen.includes(key)) this.cutsceneSeen.push(key);
+    this.seenSet.add(stageIntro(stageKey));
+    this.saveSoon();
+  }
+
   private playLilacOpeningCutscene(stageKey: StageKey, tutorial?: { steps: CutStep[] | null; done: () => void }): boolean {
     const parsed = parseStage(stageKey);
     const scenId = lilacScenarioIdAt(parsed.ch, parsed.sub);
@@ -2658,6 +2691,7 @@ export class WorldScene extends Phaser.Scene {
       steps: scen.steps,
     }, () => {
       if (tutorial) { this.resetInputState(); tutorial.done(); return; }
+      this.rememberStagePresentation(stageKey);
       if (!this.cutsceneSeen.includes(seenKey)) {
         this.cutsceneSeen = [...this.cutsceneSeen, seenKey];
         this.saveSoon();
@@ -2764,6 +2798,7 @@ export class WorldScene extends Phaser.Scene {
         return cancel;
       },
       onDone: () => {
+        this.rememberStagePresentation(stageKey);
         if (!this.cutsceneSeen.includes(seenKey)) {
           this.cutsceneSeen = [...this.cutsceneSeen, seenKey];
           this.saveSoon();
@@ -4842,12 +4877,8 @@ export class WorldScene extends Phaser.Scene {
           { x: cx - 90, y: cy - 90, tex: "spum_villager_f", name: "마을 아이", dlg: "villager2" },
         ];
     for (const v of villagers) {
-      /* v4.1.8 — 유료 SPUM 캐릭터(96px 캔버스) 배율 보정: 32px 무료 NPC × 1.6과 동일 화면 크기
-       * vc212 (#npc-body) — 자체 제작 전신 텍스처로 교체. 규격이 96×96 으로 같아 배율은 그대로.
-       *  로드 실패(텍스처 없음) 시 기존 spum_* 로 폴백해 NPC 가 사라지지 않게 한다. */
-      const cast = cutsceneCharacter(v.name);
-      const hasCast = cast && this.textures.exists(castTexture(cast.id));
-      const bodyTex = hasCast ? castTexture(cast.id) : this.textures.exists(NPC_BODY_OF[v.tex] ?? "") ? NPC_BODY_OF[v.tex] : v.tex;
+      // Keep the purchased SPUM body; use replacement art only if its source is missing.
+      const bodyTex = resolveVillageNpcTexture(v.tex, key => this.textures.exists(key), NPC_BODY_OF[v.tex]);
       /* vc212b — 그림자를 스프라이트에 굽지 않고 **별도 오브젝트**로 깐다.
        *  스프라이트에 구우면 scale 0.62 + nearest 샘플링에서 반투명 픽셀이
        *  뭉개져 지면에 안 보였다(스크린샷 실측). 별도 ellipse 는 축소와 무관하다. */
@@ -4858,10 +4889,9 @@ export class WorldScene extends Phaser.Scene {
        * 종전 y+15 는 발보다 10px 위에 떠서 다리에 겹쳤다. */
       this.add.ellipse(v.x, v.y + 40 * 0.62, 44, 14, 0x000000, 0.55)
         .setDepth(this.yDepthFor(v.y) - 0.5);
-      const img = hasCast ? createCastSprite(this, cast.id, v.x, v.y + 24)!
-        : this.add.image(v.x, v.y, bodyTex).setScale(0.62);
+      const img = this.add.image(v.x, v.y, bodyTex).setScale(0.62);
       img.setDepth(this.yDepthFor(v.y));
-      if (!hasCast) this.tweens.add({ targets: img, y: v.y - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+      this.tweens.add({ targets: img, y: v.y - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
       this.add
         .text(v.x, v.y - 34, v.name, {
           fontFamily: "Galmuri11, sans-serif",
@@ -4897,7 +4927,7 @@ export class WorldScene extends Phaser.Scene {
      * vc212 (#npc-body) — 자체 제작 전신으로 교체 + 발밑 그림자 별도 오브젝트.
      *  여기만 spum_knight 가 하드코딩돼 있어 다른 NPC 와 달리 교체가 빠져 있었다. */
     this.add.ellipse(jx, jy + 40 * 0.66, 44, 14, 0x000000, 0.55).setDepth(this.yDepthFor(jy) - 0.5);
-    this.jobNpc = this.add.image(jx, jy, "npcbody_knight").setDepth(this.yDepthFor(jy)).setScale(0.66);
+    this.jobNpc = this.add.image(jx, jy, resolveVillageNpcTexture("spum_knight", key => this.textures.exists(key), "npcbody_knight")).setDepth(this.yDepthFor(jy)).setScale(0.66);
     this.tweens.add({ targets: this.jobNpc, y: jy - 3, duration: 1000, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.add
       .text(jx, jy - 38, "직업 교관 카이엔", {
@@ -4915,7 +4945,7 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.3 (사용자 지시 #2) — GM NPC: 자유전직/골드/레벨 지원
      *  v1.0.2 (#GM서버검증) — GM은 NPC가 아닌 관리자 도구로 분리.
      *  · 마을 NPC는 관리자 계정(서버 롤) 확인 전까지 렌더 숨김 → 일반 유저에게는 존재하지 않음
-     *  · 인터랙션 시 authMe()로 서버 롤 재확인 — 클라 플래그(isGM=true)만으론 절대 열리지 않음 */
+     *  · 인터랙션 시 authMe({ requireServer: true })로 서버 롤 재확인 — 클라 플래그(isGM=true)만으론 절대 열리지 않음 */
     const gx = jx + 70;
     const gy = jy + 6;
     const gglow = this.add.image(gx, gy + 14, "glow").setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffe9a0).setScale(0.75).setAlpha(0.3).setVisible(false);
@@ -5913,16 +5943,13 @@ export class WorldScene extends Phaser.Scene {
       if (this.inOpenArea(tx, ty) && !this.nearSolidObstacle(tx, ty, 44)) { px = tx; py = ty; break; }
     }
     /* vc212b — 챕터 마을 NPC 도 같은 이유로 그림자를 별도 ellipse 로 깐다 */
-    const cast = cutsceneCharacter(s.name);
-    const hasCast = cast && this.textures.exists(castTexture(cast.id));
-    const bodyTex2 = hasCast ? castTexture(cast.id) : this.textures.exists(NPC_BODY_OF[s.tex] ?? "") ? NPC_BODY_OF[s.tex] : s.tex;
+    const bodyTex2 = resolveVillageNpcTexture(s.tex, key => this.textures.exists(key), NPC_BODY_OF[s.tex]);
     this.add.ellipse(px, py + 40 * 0.62, 44, 14, 0x000000, 0.55)
       .setDepth(this.yDepthFor(py) - 0.5);
     this.fieldNpcPortrait = bodyTex2;
-    const img = hasCast ? createCastSprite(this, cast.id, px, py + 24)!
-      : this.add.image(px, py, bodyTex2).setScale(0.62);
+    const img = this.add.image(px, py, bodyTex2).setScale(0.62);
     img.setDepth(this.yDepthFor(py));
-    if (!hasCast) this.tweens.add({ targets: img, y: py - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    this.tweens.add({ targets: img, y: py - 3, duration: 1100, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.add
       .text(px, py - 34, s.name, {
         fontFamily: "Galmuri11, sans-serif",
@@ -11337,8 +11364,9 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.3 — GM 패널 명령 (자유전직/골드/레벨/회복 — 임시 운영자 도구)
      *  v3.3.0 (지시 #3/#6) — 5차 전직(임시) 부여/해제 + 무릉도장 입장 추가
      *  v4.0.0 — 바르가 수비전/균열 던전 입장 + 무료 뽑기 + 티켓 충전 */
-    const onGm = (v: { type: "job" | "gold" | "lv" | "heal" | "ap" | "em" | "fifth" | "dojang" | "gate" | "closet" | "freegacha" | "tickets" | "boss" | "gmitems" | "dlc" | "youngprincess"; value?: number | string }) => {
-      if (!this.player) return;
+    const onGm = async (v: { type: "job" | "gold" | "lv" | "heal" | "ap" | "em" | "fifth" | "dojang" | "gate" | "closet" | "freegacha" | "tickets" | "boss" | "gmitems" | "dlc" | "youngprincess"; value?: number | string }) => {
+      const user = await authMe({ requireServer: true });
+      if (user?.role !== "admin" || !this.sys.isActive() || !this.player) return;
       const p = this.player;
       /* ═══ vc236 (지시 #4) — 영프 DLC 해금 ═══
        *  사용자 지시: "GM 패널에서 영프 DLC 해금 기능도 만들어줘"
@@ -12201,7 +12229,7 @@ export class WorldScene extends Phaser.Scene {
      *  (기존엔 마을 빌드 시 1회만 조회라, 마을 로드 뒤 admin으로 가입/로그인하면
      *   재입장 전까지 GM NPC가 안 떴다 — 유저 "GM 로그인 어케함?"의 실질 원인) */
     const onAuthChanged = () => {
-      authMe()
+      authMe({ requireServer: true })
         .then((u) => {
           this.adminRole = u?.role ?? null;
           const show = this.adminRole === "admin";
@@ -15701,7 +15729,7 @@ export class WorldScene extends Phaser.Scene {
       /* v1.0.2 (#GM서버검증) — GM 패널 진입은 서버 롤 재확인 후 허용 (매 상호작용 시 신선한 검증) */
       if (this.gmCheckBusy) return;
       this.gmCheckBusy = true;
-      authMe()
+      authMe({ requireServer: true })
         .then((u) => {
           this.adminRole = u?.role ?? null;
           if (this.adminRole === "admin") {
@@ -15760,7 +15788,7 @@ export class WorldScene extends Phaser.Scene {
   private spawnBossExitNpc(bx: number, by: number) {
     this.despawnBossExitNpc();
     /* vc212 (#npc-body) — 보스 퇴장 NPC 도 자체 제작 전신으로. */
-    const tex = this.textures.exists("npcbody_butler") ? "npcbody_butler" : "hero_idle0";
+    const tex = resolveVillageNpcTexture("spum_butler", key => this.textures.exists(key), "npcbody_butler");
     const nx = bx + 104;
     const ny = by + 64;
     this.add.ellipse(nx, ny + 40 * 0.62, 40, 13, 0x000000, 0.55).setDepth(10.5);
@@ -17145,7 +17173,7 @@ export class WorldScene extends Phaser.Scene {
     if (!q) return this.portalActive ? "▶ 차원문" : "";
     if (q.type === "hunt") return q.targetLabel ? `▶ ${q.targetLabel}` : "";
     if (q.type === "boss") return "▶ 보스";
-    if (q.type === "reach") return "▶ 동쪽 차원문"; /* v3.0.26 (#75) — 목적지 방향 명시 */
+    if (q.type === "reach") return "▶ 다음 구역 차원문"; /* v3.0.26 (#75) — 목적지 방향 명시 */
     if (q.type === "collect") return "▶ 결정";
     return "";
   }
@@ -18217,6 +18245,18 @@ export class WorldScene extends Phaser.Scene {
     return bubble;
   }
 
+  private focusNpcDialogue(npcId: string) {
+    const npc = this.interactables.find(it => it.npcId === npcId);
+    if (!npc || sceneCinematicPlaying(this) || this.camCinema) return;
+    const session = beginSceneCinematic(this, reason => {
+      this.npcDialogueSession = null;
+      if (reason === "skip") this.resumeFromDialogue();
+    });
+    if (!session) return;
+    this.npcDialogueSession = session;
+    session.pan((npc.x + this.player.x) / 2, (npc.y + this.player.y) / 2, 280, 1.08, () => {});
+  }
+
   showDialogue(id: string, npcId: string | null = null) {
     let d = DIALOGUES[id];
     if (!d) {
@@ -18236,6 +18276,7 @@ export class WorldScene extends Phaser.Scene {
     if (npcId) {
       const it = this.interactables.find((q) => q.npcId === npcId);
       if (it) this.emote("excl", it.x, it.y - 44);
+      this.focusNpcDialogue(npcId);
     }
     /* vc264 (지시 #5 "초상화와 NPC의 모습이 다른 버그") — 초상화를 npcId 로 **못박는다**.
      *
@@ -18266,6 +18307,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   resumeFromDialogue() {
+    this.npcDialogueSession?.finish();
     /* 하루 v2 — 연출(컷씬) 중에 띄운 대사는 카메라·물리 소유권이 연출에 있다. 대사가 끝나도 여기서
      *  조작/물리를 풀면 연출 도중 플레이어와 적이 움직인다 → 대사창만 닫고, 복원은 연출 종료(세션)에 맡긴다. */
     if (sceneCinematicPlaying(this)) {

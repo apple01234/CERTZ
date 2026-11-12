@@ -56,7 +56,7 @@ export default function GameRoot() {
   useEffect(() => {
     let alive = true;
     const sync = () => {
-      void authMe().then((u) => { if (alive) setIsAdmin(u?.role === "admin"); }).catch(() => { if (alive) setIsAdmin(false); });
+      void authMe({ requireServer: true }).then((u) => { if (alive) setIsAdmin(u?.role === "admin"); }).catch(() => { if (alive) setIsAdmin(false); });
     };
     sync();
     EventBus.on("auth:changed", sync);

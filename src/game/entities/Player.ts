@@ -2728,11 +2728,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.state = "idle";
       this.lungeTime = 0;
     }
-    /* vc268 — 대시 중 재입력은 계속 막되(중복 이동 방지), 피격 경직(iframes) 중에는
-     * 회피를 허용한다. 종전엔 state가 idle이 아니면 무조건 거부해서, 맞은 직후 0.6초 동안
-     * 회피 입력이 전부 무시됐다 — 보스 연속기에 그대로 갈려 죽는 원인이었다. */
-    const recovering = this.iframes > 0 && this.state !== "dead";
-    if (this.state !== "idle" && !recovering) return false;
+    // Hit recovery leaves the real Player idle. I-frames must not cancel released skills.
+    if (this.state !== "idle") return false;
     /* 쿨타임은 대시 **종료 이후**부터 센다. 시작 기준이면 180ms 이동 중에 이미
      *  220ms가 흘러 다음 입력이 붙어버려 체감 쿨타임이 짧아진다. */
     const dir = freeDashDirection(this.scene.currentMoveVec(), this.facing);

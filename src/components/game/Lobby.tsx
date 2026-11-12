@@ -79,7 +79,7 @@ export function Lobby({ onExit }: { onExit: () => void }) {
   const [lookGm, setLookGm] = useState(false);
   const [gmOk, setGmOk] = useState(false);
   useEffect(() => {
-    void authMe().then((u) => setGmOk(u?.role === "admin"));
+    void authMe({ requireServer: true }).then((u) => setGmOk(u?.role === "admin"));
   }, []);
   const [delId, setDelId] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null); // v1.1.0 — 구문 오류 복구 (v1.0.20 커밋분)

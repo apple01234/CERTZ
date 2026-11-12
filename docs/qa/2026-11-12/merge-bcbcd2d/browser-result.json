@@ -1,0 +1,27 @@
+{
+ "moreOpened": true,
+ "nonAdmin": {
+  "gmButton": false,
+  "contestButton": true,
+  "bag": true,
+  "anims": {
+   "windup": 6,
+   "release": 6,
+   "atk": 6,
+   "windupIds": [
+    "scarlet",
+    "feron",
+    "kraken",
+    "dio",
+    "harold",
+    "aicore"
+   ]
+  }
+ },
+ "nonAdminErrors": 0,
+ "admin": {
+  "gm": true,
+  "bag": true,
+  "order": "gm-before-bag"
+ }
+}

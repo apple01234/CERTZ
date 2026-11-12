@@ -18,7 +18,7 @@ const base = process.env.E2E_URL ?? 'http://127.0.0.1:4321';
 const out = process.env.E2E_OUT ?? '/dev/shm/certz-v275';
 await mkdir(out, { recursive: true });
 
-const browser = await chromium.launch({ args: ['--no-sandbox', '--enable-unsafe-swiftshader'] });
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH, args: ['--no-sandbox', '--enable-unsafe-swiftshader'] });
 const results = {};
 
 async function enter(page) {

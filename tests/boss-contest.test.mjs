@@ -57,3 +57,15 @@ test('동률 공동순위·실패/이탈 제외·검토 미완료시 마감차�
   assert.equal(c.official.length, 2);
   assert.equal(contestSnapshot(s, player('stranger'), 9000).contests[0].attempts.length, 0);
 });
+
+test('public official ranks hide account IDs, full names and reviewer identities', () => {
+  const s = setup(); join(s); finish(s);
+  contestAction(s, gm, { action: 'review', contestId: 'c1', attemptId: 'a-u1', decision: 'approved', note: 'private review' }, 9000, '');
+  const publicView = contestSnapshot(s, player('stranger'), 10000).contests[0];
+  assert.equal(publicView.createdBy, ''); assert.equal(publicView.attempts.length, 0);
+  assert.equal(publicView.official[0].uid, ''); assert.equal(publicView.official[0].name, 'u***');
+  assert.equal(publicView.official[0].reviewedBy, undefined);
+  assert.equal(publicView.official[0].reviewNote, undefined);
+  assert.equal(contestSnapshot(s, player(), 10000).contests[0].official[0].uid, 'u1');
+  assert.equal(contestSnapshot(s, gm, 10000).contests[0].official[0].reviewNote, 'private review');
+});

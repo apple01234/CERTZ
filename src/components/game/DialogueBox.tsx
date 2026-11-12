@@ -104,6 +104,8 @@ function bossPortraitKey(tex: string): string {
 function portraitOf(speaker: string, portraitId?: string): { tex: string; tone: string } | null {
   if (speaker === "데스크니스") return { tex: "story_desknis", tone: "#ae85ce" };
   if (speaker === "컨트롤타워 AI") return { tex: "story_aicore", tone: "#72cda0" };
+  const original = portraitCrops[portraitId ?? speaker];
+  if (original?.source?.startsWith("/assets/spum_")) return { tex: portraitId ?? speaker, tone: "#c9b3ff" };
   const cast = cutsceneCharacter(portraitId ?? speaker);
   if (cast) return { tex: `cast_${cast.id}`, tone: "#c9b3ff" };
   /* v1.0.2 (#초상화) — portraitId 명시 > 화자명 직접 매핑 > 보스 토큰 자동 매칭 순 */

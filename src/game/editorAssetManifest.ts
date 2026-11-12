@@ -6,7 +6,7 @@
  * 손으로 적은 목록은 반드시 디스크와 어긋난다(실제로 그런 주석이 있었다).
  * 이 파일은 디스크를 실제로 훑은 결과이며, 에셋을 추가/삭제하면 재생성 후 커밋한다.
  *
- * 총 1424개 · 카테고리 27종 · 생성 2026-11-10
+ * 총 1438개 · 카테고리 27종 · 생성 2026-11-12
  */
 
 export type EditorAsset = {
@@ -448,6 +448,20 @@ export const EDITOR_ASSETS: EditorAsset[] = [
   { url:"/assets/npcportrait/npcbody_smith.png", name:"npcbody_smith", category:"npcportrait", group:"" },
   { url:"/assets/npcportrait/npcbody_villager_f.png", name:"npcbody_villager_f", category:"npcportrait", group:"" },
   { url:"/assets/npcportrait/npcbody_villager_m.png", name:"npcbody_villager_m", category:"npcportrait", group:"" },
+  { url:"/assets/npcportrait/spum_butler.png", name:"spum_butler", category:"npcportrait", group:"" },
+  { url:"/assets/npcportrait/spum_devil.png", name:"spum_devil", category:"npcportrait", group:"" },
+  { url:"/assets/npcportrait/spum_elf.png", name:"spum_elf", category:"npcportrait", group:"" },
+  { url:"/assets/npcportrait/spum_fisher.png", name:"spum_fisher", category:"npcportrait", group:"" },
+  { url:"/assets/npcportrait/spum_forager.png", name:"spum_forager", category:"npcportrait", group:"" },
+  { url:"/assets/npcportrait/spum_knight.png", name:"spum_knight", category:"npcportrait", group:"" },
+  { url:"/assets/npcportrait/spum_mage.png", name:"spum_mage", category:"npcportrait", group:"" },
+  { url:"/assets/npcportrait/spum_miner.png", name:"spum_miner", category:"npcportrait", group:"" },
+  { url:"/assets/npcportrait/spum_mystic.png", name:"spum_mystic", category:"npcportrait", group:"" },
+  { url:"/assets/npcportrait/spum_scout.png", name:"spum_scout", category:"npcportrait", group:"" },
+  { url:"/assets/npcportrait/spum_skel.png", name:"spum_skel", category:"npcportrait", group:"" },
+  { url:"/assets/npcportrait/spum_smith.png", name:"spum_smith", category:"npcportrait", group:"" },
+  { url:"/assets/npcportrait/spum_villager_f.png", name:"spum_villager_f", category:"npcportrait", group:"" },
+  { url:"/assets/npcportrait/spum_villager_m.png", name:"spum_villager_m", category:"npcportrait", group:"" },
   { url:"/assets/skillicon/archmage_s1.webp", name:"archmage_s1", category:"skillicon", group:"archmage" },
   { url:"/assets/skillicon/archmage_s2.webp", name:"archmage_s2", category:"skillicon", group:"archmage" },
   { url:"/assets/skillicon/archmage_s3.webp", name:"archmage_s3", category:"skillicon", group:"archmage" },

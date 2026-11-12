@@ -130,12 +130,13 @@ async function get(path: string): Promise<{ ok: boolean; status: number; data: R
   }
 }
 
-export async function authMe(): Promise<AuthUser | null> {
+export async function authMe(options?: { requireServer?: boolean }): Promise<AuthUser | null> {
   const r = await get("/api/auth/me");
   const u = (r.data.user as AuthUser) ?? null;
-  if (u) setCachedUser(u); // v1.0.15 — /me 성공 시 캐시 최신화
+  if (r.ok && u) setCachedUser(u); // v1.0.15 — /me 성공 시 캐시 최신화
   /* v1.0.15 — 구서버에선 Bearer GET도 프리플라이트 404로 실패한다. 토큰이 살아있고
    *  캐시된 유저가 있으면 그걸로 대신 로그인 상태를 유지한다(오프라인 폴백과 동일 원리). */
+  if (options?.requireServer) return r.ok ? u : null;
   return u ?? getCachedUser();
 }
 

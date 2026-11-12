@@ -50,7 +50,7 @@ test('dash never shortens a longer existing invulnerability', () => {
 /* vc268 — 피격 경직 중에도 회피가 가능해야 한다(종전엔 state가 idle이 아니면 전부 거부). */
 test('dash is allowed during hit stun but still blocked by an active dash', () => {
   const p = subject();
-  p.iframes = 600; p.state = 'hurt';
+  p.iframes = 600; p.state = 'idle';
   assert.equal(p.useFreeDash(), true);
   p.state = 'dash'; p.freeDashing = true;
   assert.equal(p.useFreeDash(), false);
@@ -194,5 +194,14 @@ test('death or external action cancels active movement without resurrection', ()
     const p = subject(); p.useFreeDash(); p.state = state; p.scene.time.now = 60;
     assert.equal(p.tickFreeDash(), false); assert.equal(p.x, 100); assert.equal(p.state, state);
     assert.equal(p.freeDashing, false);
+  }
+});
+
+test('invulnerability never unlocks a released skill or S2 recovery', () => {
+  for (const phase of ['release', 'recovery', null]) {
+    const p = subject(); p.state = 'attack'; p.iframes = 600;
+    p.signatureCast = phase ? { phase } : null;
+    assert.equal(p.useFreeDash(), false);
+    assert.equal(p.state, 'attack');
   }
 });

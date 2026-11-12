@@ -42,8 +42,9 @@ function official(c: BossContest) {
 }
 export function contestSnapshot(store: BossContestStore, actor: ContestActor, now: number): ContestSnapshot {
   return { admin: actor.admin, userId: actor.id, serverNow: now, contests: Object.values(store.contests).sort((a, b) => b.startsAt - a.startsAt).map(c => ({
-    ...c, official: official(c).map(a => actor.admin || a.uid === actor.id ? a : {
-      id: a.id, contestId: a.contestId, uid: a.uid, name: a.name, preparedAt: a.preparedAt, readyUntil: a.readyUntil,
+    ...c, createdBy: actor.admin ? c.createdBy : "", finalizedBy: actor.admin ? c.finalizedBy : undefined,
+    official: official(c).map(a => actor.admin || a.uid === actor.id ? a : {
+      id: a.id, contestId: a.contestId, uid: "", name: [...a.name][0] + "***", preparedAt: 0, readyUntil: 0,
       startedAt: a.startedAt, finishedAt: a.finishedAt, elapsedMs: a.elapsedMs, state: a.state, rank: a.rank, awardedAt: a.awardedAt,
     }),
     attempts: Object.values(c.attempts).filter(a => actor.admin || a.uid === actor.id).map(a => ({ ...a, state: attemptState(a, now) })),

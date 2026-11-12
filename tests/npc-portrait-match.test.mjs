@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { resolveVillageNpcTexture } from '../src/game/villageNpcAssets.ts';
 
 /**
  * NPC 본체 ↔ 대화창 초상화 일치 — vc248 (지시 #8).
@@ -42,8 +43,8 @@ test('화자의 본체 텍스처와 초상화가 같은 파일을 가리킨다',
   const bad = [];
   for (const r of rows) {
     if (!r.tex.startsWith('spum_')) continue;
-    const bodyTex = world[r.tex] ?? boot[r.tex];
-    const portraitSrc = map[r.tex]?.source?.split('/').pop()?.replace('.png', '');
+    const bodyTex = resolveVillageNpcTexture(r.tex, key => fs.existsSync(path.join(ROOT, `public/assets/${key}.webp`)), world[r.tex] ?? boot[r.tex]);
+    const portraitSrc = map[r.tex]?.source?.split('/').pop()?.replace(/\.(png|webp)$/, '');
     if (bodyTex && portraitSrc && bodyTex !== portraitSrc) {
       bad.push(`${r.speaker}: 본체 ${bodyTex} / 초상화 ${portraitSrc}`);
     }

@@ -19,6 +19,14 @@ aliases = dict(re.findall(r'(spum_\w+):\s*"(npcbody_\w+)"', block))
 aliases.update({'npc_merchant': 'npcbody_merchant', 'spum_merchant': 'npcbody_merchant'})
 manifest = {}
 OUT.mkdir(parents=True, exist_ok=True)
+def save_crop(dest, crop):
+    # Keep original PNG bytes when their pixels already match (provenance hashes rely on them).
+    if dest.exists():
+        actual = Image.open(dest).convert('RGBA')
+        if actual.size == crop.size and actual.tobytes() == crop.tobytes():
+            return
+    crop.save(dest)
+
 for src in sorted((ROOT / 'public/assets/npcbody').glob('*.png')):
     key = src.stem
     im = Image.open(src).convert('RGBA')
@@ -32,7 +40,7 @@ for src in sorted((ROOT / 'public/assets/npcbody').glob('*.png')):
         actual = Image.open(dest).convert('RGBA')
         assert actual.size == crop.size and actual.tobytes() == crop.tobytes(), key
     else:
-        crop.save(dest)
+        save_crop(dest, crop)
     entry = {'src': f'/assets/npcportrait/{key}.png', 'source': f'/assets/npcbody/{key}.png',
              'crop': list(rect), 'sha256': hashlib.sha256(src.read_bytes()).hexdigest()}
     manifest[key] = entry
@@ -54,9 +62,28 @@ for key in ['npc_gm', 'spum_priest']:
         actual = Image.open(dest).convert('RGBA')
         assert actual.size == crop.size and actual.tobytes() == crop.tobytes(), key
     else:
-        crop.save(dest)
+        save_crop(dest, crop)
     manifest[key] = {'src': f'/assets/npcportrait/{key}.png', 'source': f'/assets/{key}.webp',
                      'crop': list(rect), 'sha256': hashlib.sha256(src.read_bytes()).hexdigest()}
+# Purchased originals override the old replacement aliases when the real source exists.
+for src in sorted((ROOT / 'public/assets').glob('spum_*.webp')):
+    key = src.stem
+    if key == 'spum_priest':
+        continue  # Keep its existing special-source crop contract.
+    rect = (16, 8, 64, 56)
+    crop = Image.open(src).convert('RGBA').crop(rect)
+    dest = OUT / f'{key}.png'
+    if '--check' in sys.argv:
+        actual = Image.open(dest).convert('RGBA')
+        assert actual.size == crop.size and actual.tobytes() == crop.tobytes(), key
+    else:
+        save_crop(dest, crop)
+    manifest[key] = {'src': f'/assets/npcportrait/{key}.png', 'source': f'/assets/{key}.webp',
+                     'crop': list(rect), 'sha256': hashlib.sha256(src.read_bytes()).hexdigest()}
+for alias, source in {'jobmaster': 'spum_knight', '카이엔': 'spum_knight', '직업 교관 카이엔': 'spum_knight',
+                      'innkeeper': 'spum_mage', '로안': 'spum_mage', '여관 주인 로안': 'spum_mage',
+                      'bossExit': 'spum_butler', '퇴장 관리인': 'spum_butler'}.items():
+    manifest[alias] = manifest[source]
 if '--check' in sys.argv:
     # [vc258] AI 생성 초상화(`npc_<key>.png`)가 `_map.json` 에 추가되면서
     #  "전체 일치" 비교가 실패했다. 이 도구가 책임지는 범위는 npcbody/spum 크롭뿐이므로,

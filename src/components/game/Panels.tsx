@@ -2783,7 +2783,7 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
   const [allowed, setAllowed] = useState<boolean | null>(null);
   useEffect(() => {
     let alive = true;
-    void authMe()
+    void authMe({ requireServer: true })
       .then((u) => { if (alive) setAllowed(u?.role === "admin"); })
       .catch(() => { if (alive) setAllowed(false); });
     return () => { alive = false; };
