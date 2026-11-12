@@ -40,7 +40,7 @@ import { memoCooldowns, restoreCooldowns } from "../cooldownMemo"; // v1.0.15 (�
 /* vc209 (#ponytail ①) — 데미지 배율 순수함수 (테스트 25케이스가 경계값 고정) */
 import { damageMultiplier } from "../combat/damageModel";
 import { copiedReactionElement, signatureZones, signatureZoneContains, startSignatureCast, STARTER_SIGNATURE, weaponMasterProfileOf, type SignatureCast, type WeaponMasterProfile } from "../weaponMasterProfiles";
-import { planUltWaves, waveIntensity } from "../combat/ultWaves"; // vc278 — 궁극기 지속 타격
+import { planUltWaves, createWavePool, type WavePool } from "../combat/ultWaves"; // vc278 — 궁극기 지속 타격
 import { WeaponMasterCombat } from "../fx/WeaponMasterCombat";
 import { skillMasteryProgress, type SkillMastery } from "../skillMastery";
 import { notice } from "../fx/Notice";
@@ -4452,11 +4452,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     //  이후 일반 스킬 전부가 ×3 배율(FIFTH1_MULT)로 오염됐다.
     //  rollDamage 는 순수 계산이 아니므로(내부에서 상태 조회·이벤트 발생)
     //  예외 가능성을 배제할 수 없다.
+    /* 지속 타격(wave) 계획과 피해 풀 — 직접 타격이 굴린 피해의 일부를 떼어 wave 가 지급한다
+     *  (총 피해 불변). 상세는 combat/ultWaves.ts createWavePool. */
+    const wavePlan = planUltWaves(ult5HoldOf(key5, familyOf(this.cls)));
+    const wavePool = createWavePool(wavePlan.at.length);
+    this.ultPool = wavePool; // WorldScene.notePlayerHit 이 적중 때마다 적립한다
     const rd = (m: number, forceCrit = false) => {
       const prev = this.ultSlot;
       this.ultSlot = 1;
       try {
-        return this.rollDamage(m, true, forceCrit);
+        const r = this.rollDamage(m, true, forceCrit);
+        return { dmg: wavePool.reduce(r.dmg), crit: r.crit };
       } finally {
         this.ultSlot = prev;
       }
@@ -4498,31 +4504,33 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.tweens.add({ targets: ring, scale: 3.4, alpha: 0, duration: 700, ease: "Cubic.out", onComplete: () => ring.destroy() });
     this.scene.spawnBurstAt(this.x, this.y, 34, hex);
 
-    /* vc278 — 지속 타격(wave). 4차 10종 실측 결과 시전 22~30초인데 실제 타격은
-     *  0~1.3초에 끝나 공백이 21~29초였다(타격 비율 0.0~4.3%). 연출만 돌고 피해가
-     *  없으니 "궁극기가 밋밋하다"로 체감된다.
-     *
-     *  여기서 시전 시간 전체에 걸쳐 소량 피해를 고르게 뿌린다. **기존 case 분기는
-     *  그대로 둔다** — 각 직업의 고유 연출·배율·종결기는 손대지 않고 위에 얹기만 한다.
-     *  총 피해는 늘리지 않기 위해 웨이브 배율을 낮게(1타당 0.35) 잡고 개수로 나눈다. */
+    /* vc278 — 지속 타격(wave). 시전 22~30초인데 타격이 0~1.3초에 끝나 공백이 21~29초였다.
+     *  시전 시간 전체에 피해를 편다. 기존 case 분기(직업별 고유 연출·배율)는 그대로 둔다.
+     *  2026-11-12 — wave 는 새 피해를 굴리지 않는다. 직접 타격에서 떼어 둔 풀(wavePool)을
+     *  나눠 지급하므로 궁극기 총 피해가 늘지 않고, 마지막 wave 가 종결(가장 큰 지급)이다. */
     {
-      const holdMs = ult5HoldOf(key5, familyOf(this.cls));
-      const plan = planUltWaves(holdMs);
-      const n = plan.at.length;
+      const n = wavePlan.at.length;
       for (let wi = 0; wi < n; wi++) {
-        this.scene.time.delayedCall(plan.at[wi], () => {
-          if (this.state === "dead") return;
-          const power = 0.35 * waveIntensity(wi, n);
-          for (const e of this.getAllTargetsIn(360)) {
-            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = rd(power);
-            if (crit) this.scene.sfxCrit();
-            e.takeDamage(dmg, away, 380, crit);
+        this.scene.time.delayedCall(wavePlan.at[wi], () => {
+          const last = wi === n - 1;
+          if (this.state === "dead") { if (this.ultPool === wavePool) this.ultPool = null; return; }
+          const targets = this.getAllTargetsIn(360);
+          const each = targets.length ? Math.round(wavePool.payout(wi, true) / targets.length) : wavePool.payout(wi, false);
+          if (last && this.ultPool === wavePool) this.ultPool = null;
+          if (each > 0) {
+            wavePool.paying(() => {
+              for (const e of targets) {
+                const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
+                e.takeDamage(each, away, 380, false);
+              }
+            });
           }
-          /* 타격 지점마다 작은 연출 — 큰 연출은 case 가 담당한다. */
+          /* 타격 지점마다 작은 연출 — 큰 연출은 case 가 담당한다. 마지막 한 번만 종결답게 키운다. */
           try {
-            this.scene.spawnBurstAt(this.x, this.y, 18, hex);
-            this.scene.impactFX.shake(60, 0.004);
+            const finale = last && n > 1;
+            this.scene.spawnBurstAt(this.x, this.y, finale ? 40 : 18, hex);
+            this.scene.impactFX.shake(finale ? 220 : 60, finale ? 0.012 : 0.004);
+            if (finale && each > 0) this.scene.spawnShockwave(this.x, this.y, hex, 2.2, 480, 0.55);
           } catch { /* 연출 실패가 판정을 막지 않는다 */ }
         });
       }
@@ -9603,6 +9611,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.onCosmeticChanged();
     return true;
   }
+
+  /** 진행 중인 1차 궁극기의 wave 피해 풀 (없으면 null) — combat/ultWaves.ts */
+  ultPool: WavePool | null = null;
 
   /* 망토 슬롯 — 장식(모자·날개)과 독립. 렌더는 WorldScene 이 characterParts 순서대로 그린다. */
   cape: CosmeticKey | null = null;

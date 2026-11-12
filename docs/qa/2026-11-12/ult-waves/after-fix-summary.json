@@ -1,0 +1,112 @@
+[
+ {
+  "cls": "warbringer",
+  "before_direct_est": 2964,
+  "before_total": 3503,
+  "after_total": 2971,
+  "hits": 49,
+  "last_ms": 23549,
+  "last_dmg": 335,
+  "last_rank": 2,
+  "max": "2483ms:454"
+ },
+ {
+  "cls": "crusader",
+  "before_direct_est": 991,
+  "before_total": 1421,
+  "after_total": 991,
+  "hits": 31,
+  "last_ms": 23499,
+  "last_dmg": 103,
+  "last_rank": 5,
+  "max": "2317ms:230"
+ },
+ {
+  "cls": "deadeye",
+  "before_direct_est": 16788,
+  "before_total": 17235,
+  "after_total": 16788,
+  "hits": 125,
+  "last_ms": 21649,
+  "last_dmg": 2071,
+  "last_rank": 1,
+  "max": "21649ms:2071"
+ },
+ {
+  "cls": "skylord",
+  "before_direct_est": 0,
+  "before_total": 188,
+  "after_total": 132,
+  "hits": 1,
+  "last_ms": 2250,
+  "last_dmg": 132,
+  "last_rank": 1,
+  "max": "2250ms:132"
+ },
+ {
+  "cls": "arclord",
+  "before_direct_est": 1132,
+  "before_total": 1789,
+  "after_total": 1363,
+  "hits": 41,
+  "last_ms": 25532,
+  "last_dmg": 132,
+  "last_rank": 2,
+  "max": "2783ms:321"
+ },
+ {
+  "cls": "eternal",
+  "before_direct_est": 1197,
+  "before_total": 1624,
+  "after_total": 1196,
+  "hits": 38,
+  "last_ms": 25549,
+  "last_dmg": 127,
+  "last_rank": 4,
+  "max": "2100ms:286"
+ },
+ {
+  "cls": "shadowlord",
+  "before_direct_est": 997,
+  "before_total": 1444,
+  "after_total": 997,
+  "hits": 44,
+  "last_ms": 21583,
+  "last_dmg": 69,
+  "last_rank": 6,
+  "max": "1233ms:267"
+ },
+ {
+  "cls": "blademaster",
+  "before_direct_est": 2744,
+  "before_total": 3191,
+  "after_total": 2743,
+  "hits": 77,
+  "last_ms": 21416,
+  "last_dmg": 324,
+  "last_rank": 1,
+  "max": "21416ms:324"
+ },
+ {
+  "cls": "seaking",
+  "before_direct_est": 439,
+  "before_total": 833,
+  "after_total": 439,
+  "hits": 26,
+  "last_ms": 27382,
+  "last_dmg": 37,
+  "last_rank": 5,
+  "max": "1717ms:213"
+ },
+ {
+  "cls": "dreadnought",
+  "before_direct_est": 614,
+  "before_total": 1166,
+  "after_total": 774,
+  "hits": 34,
+  "last_ms": 29416,
+  "last_dmg": 75,
+  "last_rank": 4,
+  "max": "1650ms:253"
+ }
+]

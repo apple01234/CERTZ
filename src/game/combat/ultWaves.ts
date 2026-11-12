@@ -85,3 +85,68 @@ export function waveIntensity(index: number, total: number): number {
   const t = index / (total - 1); // 0..1
   return 0.7 + 0.6 * t; // 0.7 → 1.3
 }
+
+/* ═══ 2026-11-12 — 총 피해 예산 정규화 (240 지시서 121·122) ═══
+ * [실측] wave 가 기존 직접 피해 **위에** 더해져 직업별 +3% ~ +90% 였고(주석은 "늘리지 않는다"),
+ *  직접 타격은 1.7~7초에 끝나는데 wave 는 시전 창 끝(21~30초)까지 이어져 종결 뒤에도 피해가 났다
+ *  (docs/qa/2026-11-12/ult-waves).
+ * [지금] 궁극기 한 번의 총 피해는 **직접 타격이 굴린 값 그대로**다. 직접 타격은 WAVE_SHARE 만큼
+ *  줄여 넣고, 그 타격이 **실제로 적에게 들어갈 때마다** 줄인 만큼을 풀에 적립해 wave 가 나눠 지급한다.
+ *  마지막 wave 는 풀의 FINALE_SHARE 이상을 가져가는 종결이다: 개막 연타(70%) → 고조되는 wave → 종결.
+ * [왜 굴릴 때가 아니라 들어갈 때 적립하나] 한 번 굴린 값을 여러 번/여러 적에게 넣는 직업이 있다
+ *  (deadeye 는 한 발이 2회 적중). 굴릴 때 적립하면 그런 직업만 총 피해가 줄었다(실측 82%).
+ * ponytail: 직업 간 직접 피해 합 자체의 격차(실측 최대 38배)는 여기서 다루지 않는다 — 직업별
+ *  배율 재설계(지시서 126~139)의 몫이다. 이 풀은 각 직업의 기존 총량을 보존만 한다. */
+export const WAVE_SHARE = 0.3;
+export const WAVE_FINALE_SHARE = 0.4;
+
+/** i 번째 wave 의 지급 가중치 — 고조(0.7→1.3) 뒤 마지막 한 번이 종결(전체 가중치의 FINALE_SHARE). */
+export function waveWeight(index: number, total: number): number {
+  if (total <= 1 || index < total - 1) return waveIntensity(index, total);
+  let others = 0;
+  for (let k = 0; k < total - 1; k++) others += waveIntensity(k, total);
+  return (others * WAVE_FINALE_SHARE) / (1 - WAVE_FINALE_SHARE);
+}
+
+export type WavePool = {
+  /** 직접 타격이 굴린 피해 → 줄여서 넣을 피해. 남은 wave 가 없으면 줄이지 않는다. */
+  reduce(dmg: number): number;
+  /** 적에게 실제로 들어간 피해 통보 — reduce 가 내준 값이면 줄인 만큼을 풀에 적립한다. */
+  credit(applied: number): void;
+  /** i 번째 wave 가 지급할 총액(범위 안 표적들에게 나눠 준다). 표적이 없으면 다음 wave 로 이월. */
+  payout(index: number, hasTargets: boolean): number;
+  /** wave 지급 타격을 넣는 동안은 적립하지 않는다(자기 지급을 다시 적립하는 고리 방지). */
+  paying(fn: () => void): void;
+};
+
+export function createWavePool(waves: number): WavePool {
+  let pool = 0;
+  let next = 0; // 아직 지급하지 않은 첫 wave
+  let inPayout = false;
+  const reduced = new Set<number>();
+  return {
+    reduce(dmg) {
+      if (next >= waves || !(dmg > 0)) return dmg;
+      const out = dmg - Math.round(dmg * WAVE_SHARE);
+      reduced.add(out);
+      return out;
+    },
+    credit(applied) {
+      if (inPayout || next >= waves || !reduced.has(applied)) return;
+      pool += Math.round((applied * WAVE_SHARE) / (1 - WAVE_SHARE));
+    },
+    payout(index, hasTargets) {
+      next = index + 1;
+      if (!hasTargets || pool <= 0) return 0;
+      let rest = 0;
+      for (let k = index; k < waves; k++) rest += waveWeight(k, waves);
+      const amount = Math.round((pool * waveWeight(index, waves)) / rest);
+      pool -= amount;
+      return amount;
+    },
+    paying(fn) {
+      inPayout = true;
+      try { fn(); } finally { inPayout = false; }
+    },
+  };
+}

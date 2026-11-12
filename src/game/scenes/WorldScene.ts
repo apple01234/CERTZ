@@ -10396,6 +10396,7 @@ export class WorldScene extends Phaser.Scene {
 
   notePlayerHit(dmg: number) {
     if (!Number.isFinite(dmg)) return;
+    this.player?.ultPool?.credit(dmg); // 궁극기 직접 타격이 실제로 들어간 만큼 wave 풀에 적립
     if (dmg > this.statBestHit) this.statBestHit = Math.round(dmg);
   }
 
