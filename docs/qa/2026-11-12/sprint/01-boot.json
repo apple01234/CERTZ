@@ -1,0 +1,25 @@
+{
+  "tDom": 444,
+  "canvasMs": 3569,
+  "state": {
+    "title": "SERTZ",
+    "canvas": {
+      "w": 1280,
+      "h": 720,
+      "cw": 1280,
+      "ch": 720
+    },
+    "bodyText": "✦ SERTZ 게임 시작 캐릭터를 선택하거나 새로 만들어요. Android 설치 안내 (새 창) 플레이 안내 ▶ 아트·음악 출처 (CC-BY) 🔑 로그인 / 계정",
+    "buttons": [
+      "게임 시작",
+      "🔑 로그인 / 계정"
+    ],
+    "webgl": true
+  },
+  "errors": [],
+  "logs": [
+    "Loading the script 'https://va.vercel-scripts.com/v1/speed-insights/script.debug.js' violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' 'unsafe-eval'\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has ",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+  ]
+}

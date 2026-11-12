@@ -40,6 +40,7 @@ import { memoCooldowns, restoreCooldowns } from "../cooldownMemo"; // v1.0.15 (�
 /* vc209 (#ponytail ①) — 데미지 배율 순수함수 (테스트 25케이스가 경계값 고정) */
 import { damageMultiplier } from "../combat/damageModel";
 import { copiedReactionElement, signatureZones, signatureZoneContains, startSignatureCast, STARTER_SIGNATURE, weaponMasterProfileOf, type SignatureCast, type WeaponMasterProfile } from "../weaponMasterProfiles";
+import { planUltWaves, waveIntensity } from "../combat/ultWaves"; // vc278 — 궁극기 지속 타격
 import { WeaponMasterCombat } from "../fx/WeaponMasterCombat";
 import { skillMasteryProgress, type SkillMastery } from "../skillMastery";
 import { notice } from "../fx/Notice";
@@ -4496,6 +4497,36 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       .setStrokeStyle(3, hex, 0.95).setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
     this.scene.tweens.add({ targets: ring, scale: 3.4, alpha: 0, duration: 700, ease: "Cubic.out", onComplete: () => ring.destroy() });
     this.scene.spawnBurstAt(this.x, this.y, 34, hex);
+
+    /* vc278 — 지속 타격(wave). 4차 10종 실측 결과 시전 22~30초인데 실제 타격은
+     *  0~1.3초에 끝나 공백이 21~29초였다(타격 비율 0.0~4.3%). 연출만 돌고 피해가
+     *  없으니 "궁극기가 밋밋하다"로 체감된다.
+     *
+     *  여기서 시전 시간 전체에 걸쳐 소량 피해를 고르게 뿌린다. **기존 case 분기는
+     *  그대로 둔다** — 각 직업의 고유 연출·배율·종결기는 손대지 않고 위에 얹기만 한다.
+     *  총 피해는 늘리지 않기 위해 웨이브 배율을 낮게(1타당 0.35) 잡고 개수로 나눈다. */
+    {
+      const holdMs = ult5HoldOf(key5, familyOf(this.cls));
+      const plan = planUltWaves(holdMs);
+      const n = plan.at.length;
+      for (let wi = 0; wi < n; wi++) {
+        this.scene.time.delayedCall(plan.at[wi], () => {
+          if (this.state === "dead") return;
+          const power = 0.35 * waveIntensity(wi, n);
+          for (const e of this.getAllTargetsIn(360)) {
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
+            const { dmg, crit } = rd(power);
+            if (crit) this.scene.sfxCrit();
+            e.takeDamage(dmg, away, 380, crit);
+          }
+          /* 타격 지점마다 작은 연출 — 큰 연출은 case 가 담당한다. */
+          try {
+            this.scene.spawnBurstAt(this.x, this.y, 18, hex);
+            this.scene.impactFX.shake(60, 0.004);
+          } catch { /* 연출 실패가 판정을 막지 않는다 */ }
+        });
+      }
+    }
 
     switch (key5) {
       /* 워브링어 — 천멸극: 참격 9연속 + 광역 출혈 + 분노의 대붕괴 종결일격 */

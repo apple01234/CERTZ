@@ -6,6 +6,7 @@ import { createGameState, type GameState } from "../state/gameState";
 /* vc238 (P4 후속) — 구역당 동시 스폰 상한. `data.ts` 는 명시 목록으로만 재수출하므로
  *  여기서 stages 를 직접 import 한다(리드 지시: data.ts 수정 금지). */
 import { zoneSpawnCap } from "../stages";
+import { HOWLRSTONE_CHAPTERS } from "../howlrstone"; // vc284 — GM 보스 체험 3단 탐색
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_STAGE_STATS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { finaleTargetOrder, finalePlanReach, type FinalePlan } from "../fx/ultFinalePlan";
@@ -888,7 +889,7 @@ export class WorldScene extends Phaser.Scene {
     super("world");
   }
 
-  init(data: { stage?: StageKey; save?: SaveData; fresh?: boolean; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; contestFrom?: StageKey }) {
+  init(data: { stage?: StageKey; save?: SaveData; fresh?: boolean; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; gmBossArena?: boolean; contestFrom?: StageKey }) {
     this.assetsReady = false;
     if (data.save) {
       const originalStage = data.save.stage;
@@ -4438,7 +4439,7 @@ export class WorldScene extends Phaser.Scene {
    *  init 데이터가 유실되어 create()가 비정상 종료 → 화면이 검은 채로 멈춘다.
    *  모든 전환을 단일 헬퍼로 모으고 transitioning 플래그로 1회만 실행되도록 막는다.
    */
-  private gotoStage(next: StageKey, extra?: { entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; contestFrom?: StageKey; save?: SaveData }, force = false) {
+  private gotoStage(next: StageKey, extra?: { entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; gmBossArena?: boolean; contestFrom?: StageKey; save?: SaveData }, force = false) {
     if (this.transitioning && !force) return;
     if (!storyEntryAllowed(next, this)) {
       notice(next.startsWith("dlc")
@@ -4478,7 +4479,7 @@ export class WorldScene extends Phaser.Scene {
    *  긴 블랙아웃 창이 원인. 이제 즉시 게이트를 닫고 포탈 오버랩을 전부 끊는다. */
   private startTransition(
     target: StageKey,
-    opts?: { delay?: number; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; contestFrom?: StageKey; save?: SaveData }
+    opts?: { delay?: number; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; gmBossArena?: boolean; contestFrom?: StageKey; save?: SaveData }
   ) {
     if (this.transitioning) return;
     if (this.tut && !(this.tut.currentId === "training" && target === "howlrstone1x2")) return;
@@ -11560,10 +11561,31 @@ export class WorldScene extends Phaser.Scene {
         /* v4.6.0 — GM 전 보스 체험: 해당 보스 구역으로 이동 후 스토리 스펙 보스 즉시 스폰.
          *  처치 처리는 재림 분리 경로 — 스토리 퀘스트/포탈 진행 영향 0 */
         const bk = BOSS_DEFS[v.value as BossKey];
-        const ch = CHAPTERS.find((c) => c.boss === (v.value as BossKey));
-        if (!bk || !ch) return;
-        notice(`GM 보스 체험 — ${bk.name} (${STAGE_SHORT[`${ch.key}10` as StageKey] ?? ch.title})`);
-        this.startTransition(`${ch.key}10` as StageKey, { gmBoss: v.value });
+        if (!bk) return;
+        /* vc292 (지시 #1 "GM 패널에서 몇몇 대부분의 보스들 플레이 안되는 버그") —
+         *  종전엔 `CHAPTERS.find(c => c.boss === bk)` 실패 시 조용히 return 했다.
+         *  CHAPTERS 에는 그랜드플래닛 10챕터만 있어 **28종 중 18종**이
+         *  (영프 편 11종 + guardian/behemoth/littlestar/jade/reversecore/fabian/snorikaking)
+         *  버튼을 눌러도 아무 반응이 없었다.
+         *
+         *  ⚠️ contest(기록전) 아레나로 보내는 폴백은 **틀렸다**: contest 는 700ms 뒤
+         *  `beginContestCountdown` → `startContestRun` 이 서버 출전 정보를 요구하므로,
+         *  GM 이 즉석에서 연 판에는 activeBossContest 가 없어 abortContest 로 튕겨 나간다
+         *  (설령 있어도 guardian 고정 스폰이라 요청한 보스가 안 나온다).
+         *
+         *  → 보스가 **실제로 서 있는 구역**을 3단으로 찾아 그리로 이동한다:
+         *     ① STAGES 의 bossKey 역색인(가장 정확 — 재림판 r5/r10/r15 포함)
+         *     ② CHAPTERS(그랜드플래닛 DLC) ③ HOWLRSTONE 챕터(영프 편)
+         *  셋 다 없으면 그때만 안내를 띄운다(조용한 실패 금지). */
+        const where = this.gmBossStageOf(v.value as BossKey);
+        if (!where) {
+          notice(`GM — ${bk.name} 의 배치 구역을 찾지 못했습니다`);
+          audio.sfx.deny();
+          return;
+        }
+        const label = STAGE_SHORT[where as StageKey] ?? CHAPTERS.find((c) => c.key === where)?.title ?? where;
+        notice(`GM 보스 체험 — ${bk.name} (${label})`);
+        this.startTransition(where as StageKey, { gmBoss: v.value });
       }
     };
 
@@ -12513,6 +12535,52 @@ export class WorldScene extends Phaser.Scene {
     }
     this.clearBossPostFX();
     EventBus.emit("boss:hide");
+  }
+
+  /**
+   * vc284 — GM 보스 체험: 이 보스가 **실제로 서 있는 구역**을 찾는다.
+   *
+   * 왜 필요한가 (유저 신고 "대부분의 보스 플레이 안됨")
+   * ---------------------------------------------------
+   * 종전 구현은 `CHAPTERS.find(c => c.boss === bk)` 하나만 봤다. 그런데 CHAPTERS 에는
+   * 그랜드 플래닛 10챕터만 있어서, 영프 편(howlrstone) 보스 11종·grandPlanetCanon 보스 5종·
+   * guardian/behemoth 등 **29종 중 19종이 버튼을 눌러도 조용히 return** 했다.
+   *
+   * contest(기록전) 아레나로 보내는 폴백도 틀렸다 — contest 는 700ms 뒤
+   * `beginContestCountdown → startContestRun` 이 서버 출전 정보를 요구하므로, GM 이
+   * 즉석에서 연 판에는 activeBossContest 가 없어 abortContest 로 튕긴다.
+   *
+   * 그래서 배치를 3단으로 찾는다:
+   *   ① STAGES 의 bossKey 역색인 — 가장 정확(재림판 r5/r10/r15 포함)
+   *   ② CHAPTERS(그랜드 플래닛 DLC) 의 boss 필드
+   *   ③ HOWLRSTONE_CHAPTERS(영프 편) 의 boss 필드
+   * 셋 다 없으면 null — 호출부가 안내를 띄운다(조용한 실패 금지).
+   */
+  private gmBossStageOf(bossKey: BossKey): string | null {
+    /* ① STAGES 역색인 — bossKey 가 정확히 일치하는 첫 스테이지 */
+    for (const key of Object.keys(STAGES) as StageKey[]) {
+      const def = STAGES[key];
+      if (def?.boss && def.bossKey === bossKey) return key;
+    }
+    /* ② CHAPTERS(그랜드 플래닛) — boss 필드가 BossKey 형태 */
+    const ch = CHAPTERS.find((c) => c.boss === bossKey);
+    if (ch) {
+      /* 챕터의 보스 구역 = {ch.key}10 (본편 관례) */
+      const stage = `${ch.key}10` as StageKey;
+      if (STAGES[stage]) return stage;
+    }
+    /* ③ 영프 편 — 챕터 보스가 해당 키면 그 챕터의 보스 구역(sub10 관례)으로 */
+    for (const hw of HOWLRSTONE_CHAPTERS) {
+      if (hw.boss !== bossKey) continue;
+      const stage = `${hw.key}10` as StageKey;
+      if (STAGES[stage]) return stage;
+      /* 관례가 다르면 이 챕터의 마지막 서브를 찾는다 */
+      for (let sub = 10; sub >= 1; sub--) {
+        const cand = `${hw.key}${sub}` as StageKey;
+        if (STAGES[cand]?.bossKey === bossKey) return cand;
+      }
+    }
+    return null;
   }
 
   private spawnContestBoss(bossHp: number) {

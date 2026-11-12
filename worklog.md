@@ -5847,3 +5847,58 @@ npm test 706/706, tsc EXIT 0, lint:strict EXIT 0, next build EXIT 0
 - `hair`/`face` 슬롯: 플레이어용 에셋이 없어 지시서대로 보류.
 - 다른 유저 화면(멀티)에서의 망토 표시는 확인하지 않았다.
 - 작업 B(지역별 로딩 실측)는 하지 않았다. 참고로 이 환경의 개발 서버 로컬 로딩은 약 3초였지만 네트워크 조건이 없어 기준선으로 쓸 수 없다.
+
+## Task — 2026-11-12 UTC: 4개 세션 작업 통합 커밋 (vc284)
+
+4개 병렬 세션이 남긴 변경을 하나로 합쳤다. **통합 과정에서 반쪽 구현 2건을 발견해 고쳤다.**
+
+### 세션 A — GM 보스 체험 3단 탐색 (WorldScene)
+
+- 유저 신고 "대부분의 보스 플레이 안됨". 원인: 종전 구현이 `CHAPTERS.find(c => c.boss === bk)`
+  **하나만** 봤다. CHAPTERS 에는 그랜드 플래닛 10챕터만 있어서 영프 편(howlrstone) 보스 11종·
+  grandPlanetCanon 5종·guardian/behemoth 등 **29종 중 19종이 조용히 return** 했다.
+- contest 아레나 폴백도 틀렸다 — contest 는 700ms 뒤 `beginContestCountdown → startContestRun`
+  이 서버 출전 정보를 요구하므로 GM 즉석 판에는 activeBossContest 가 없어 abortContest 로 튕긴다.
+- `gmBossStageOf()` 신설: ① STAGES bossKey 역색인(재림판 포함) ② CHAPTERS ③ HOWLRSTONE_CHAPTERS.
+  셋 다 없으면 null → 호출부가 안내(조용한 실패 금지).
+- **통합 중 발견한 반쪽 구현**: 다른 세션이 `gmBossStageOf` 호출부와 타입만 넣고
+  **메서드 본체를 빠뜨렸다**(`Property 'gmBossStageOf' does not exist`).
+  또한 `gmBossArena` 속성이 `init`/`gotoStage`/`startTransition` 3곳 타입에 없어 TS2353.
+  → 메서드 구현 + 3곳 타입 추가로 해결.
+
+### 세션 B — 궁극기 지속 타격(wave) (ultWaves)
+
+- 4차 10종의 시전 시간(hold)과 실제 타격 시점을 대조한 결과 **공백이 21~29초**였다:
+
+  | 직업 | hold | 최대 타격 | 타격비율 |
+  |---|---|---|---|
+  | arclord | 26,000ms | 560ms | 2.2% |
+  | blademaster | 22,000ms | **0ms** | **0.0%** |
+  | deadeye | 22,000ms | 240ms | 1.1% |
+  | dreadnought | 30,000ms | 1,300ms | 4.3% |
+  | seaking | 28,000ms | 200ms | 0.7% |
+
+  즉 60초 기다려 24초 얼어 있는데 때리는 건 0.26초. 이것이 "궁극기가 밋밋하다"의 실체.
+- `src/game/combat/ultWaves.ts` 신설: `planUltWaves`(순수 계산) + `waveIntensity`(고조 0.7→1.3).
+  시전 시간을 최대 24구간으로 나눠 각 지점에 틱 피해를 뿌린다. 인트로 600ms·종결 700ms 회피.
+- `Player.useSkill5` 에 wave 블록 추가 — **기존 case 분기는 손대지 않고** 위에 얹기만 했다
+  (직업별 고유 연출·배율·종결기 보존). 1타당 배율 0.35로 낮게 잡아 총량을 늘리지 않는다.
+- 경계 버그 1건 자체 수정: 창이 인트로+종결 패딩보다 짧을 때 웨이브가 0개가 되어
+  궁극기가 무피해로 끝났다 → 중앙 1회로 폴백.
+
+### 세션 C — QA 스프린트 스크립트 (scripts/qa)
+
+- `sprint-boot` / `sprint-create` / `sprint-enter` / `sprint-job` 4종(174줄)과
+  `docs/qa/2026-11-12/sprint/` 스크린샷 12장(872K) — 부팅·타이틀·진입·생성·직업 단계별 육안 확인용.
+- 검증 코드가 아니라 **수동 QA 보조** 산출물이라 테스트에는 포함되지 않는다.
+
+### 세션 D — 궁극기 wave 브라우저 검증 스크립트
+
+- `scripts/playtest-ult-waves.mjs` — 적 `takeDamage` 를 가로채 피해 시각을 기록,
+  4차 4종(warbringer·eternal·deadeye·dreadnought)에서 웨이브가 후반까지 이어지는지 실측.
+- **아직 실행하지 않았다** — 4직업 × 32초 대기로 2분 이상 걸리고, 당시 다른 세션의 빌드가
+  `.next/lock` 을 점유하고 있어 빌드·서버 기동이 막혀 있었다. 다음 작업에서 돌린다.
+
+### 통합 검증
+- `tsc --noEmit` 클린, `npm test` **761/761**, `lint:strict` 클린, `next build --webpack` EXIT 0.
+- 버전 vc284 / 2.2.26 동기화.
