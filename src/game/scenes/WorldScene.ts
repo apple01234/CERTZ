@@ -343,6 +343,8 @@ export class WorldScene extends Phaser.Scene {
   /* vc274 — 보스 기록전(경품 경쟁) 세션. 서버가 확정한 attemptId/보스HP/제한시간만 보관하고,
    * 실제 전투는 기존 보스전 파이프라인을 그대로 쓴다(새 전투 엔진 없음). */
   private contestRun: { attemptId: string; contestId: string; limitMs: number; bossHp: number; startedAt: number; damage: number; hits: number } | null = null;
+  /* vc282 — 서버 start 응답을 기다리는 동안 중복 시작을 막는 플래그 */
+  private contestStarting = false;
   private onContestStart?: (...args: never[]) => unknown;
   private onTradeInvite?: (...args: never[]) => unknown;
   private onTradeAct?: (...args: never[]) => unknown;
@@ -622,6 +624,12 @@ export class WorldScene extends Phaser.Scene {
   private towerNeed = 0;
   /* v1.4.3 (#멀티콘텐츠) — 파티 공동 토벌전(praid) 복귀지 기록 */
   private praidFrom: StageKey = "village";
+  /* vc282 — 보스 기록전 복귀지 기록 (전용 경기장 contest → 입장 전 구역) */
+  private contestFrom: StageKey = "village";
+  /** vc282 — 기록전 복귀지 해석. 기록이 사라졌거나 없으면 마을로 폴백한다. */
+  private contestReturnStage(): StageKey {
+    return STAGES[this.contestFrom] ? this.contestFrom : "village";
+  }
   /** ② 심층 균열 — 이번 입장 티어 (0=기본) */
   private closetTierNow = 0;
   /** ③ 일일 시련 — 진행 중 수정자 (null=일반 균열) */
@@ -880,7 +888,7 @@ export class WorldScene extends Phaser.Scene {
     super("world");
   }
 
-  init(data: { stage?: StageKey; save?: SaveData; fresh?: boolean; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string }) {
+  init(data: { stage?: StageKey; save?: SaveData; fresh?: boolean; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; contestFrom?: StageKey }) {
     this.assetsReady = false;
     if (data.save) {
       const originalStage = data.save.stage;
@@ -898,6 +906,12 @@ export class WorldScene extends Phaser.Scene {
     this.pendingReplayBoss = typeof data.replayBoss === "string" ? data.replayBoss : null;
     /* v4.6.0 — GM 전 보스 체험: init data로 전달된 보스키 보관 (create에서 소비) */
     this.pendingGmBoss = typeof data.gmBoss === "string" ? data.gmBoss : null;
+    /* vc282 — 보스 기록전: 입장 전 구역 보관 (복귀 차원문이 이 구역으로 돌려보낸다) */
+    if (typeof data.contestFrom === "string" && STAGES[data.contestFrom]) this.contestFrom = data.contestFrom;
+    /* 씬 재시작 시 이전 판 상태를 들고 가지 않는다. contestStarting 을 남기면
+     * 카운트다운이 영구히 잠긴다(beginContestCountdown 이 즉시 return). */
+    this.contestRun = null;
+    this.contestStarting = false;
     this.gmTrial = false;
     /* v3.0.28 (#보스난이도) — 재도전 난이도 전달 (scene.restart 후 create에서 소비) */
     this.pendingReplayBossDiff =
@@ -2228,6 +2242,17 @@ export class WorldScene extends Phaser.Scene {
        *  귀환할 포탈이 아예 없었다. 복귀 포탈을 무조건 열어 준다. */
       this.spawnPortal(this.portalHome.x, this.portalHome.y);
       this.activatePortal(true);
+    }
+    /* vc282 — 보스 기록전 경기장. 보스는 서버 계약(guardian/normal)을 받은
+     *  onContestStart 가 직접 스폰하므로 여기서는 복귀 차원문만 보장한다.
+     *  (stageDef.boss=false 라 일반 경로에서도 포탈이 생기지 않는다 — praid 와 같은 이유) */
+    if (stageKey === "contest") {
+      this.spawnPortal(this.portalHome.x, this.portalHome.y);
+      this.activatePortal(true);
+      /* vc282 — 경기장에 도착했으면 카운트다운 → 서버 start → 보스 스폰까지 스스로 진행한다.
+       *  (React 의 contest:start 는 전환 전에 이미 발사됐고, 씬이 새로 만들어지며 사라진다.
+       *   출전 정보는 bossContest 모듈의 active 에 남아 있으므로 여기서 이어받는다) */
+      this.time.delayedCall(700, () => this.beginContestCountdown());
     }
 
     /* ---------- 퀘스트 오브젝트 (v2.2 — 실내는 포탈/퀘스트 오브젝트 없음) ---------- */
@@ -4412,7 +4437,7 @@ export class WorldScene extends Phaser.Scene {
    *  init 데이터가 유실되어 create()가 비정상 종료 → 화면이 검은 채로 멈춘다.
    *  모든 전환을 단일 헬퍼로 모으고 transitioning 플래그로 1회만 실행되도록 막는다.
    */
-  private gotoStage(next: StageKey, extra?: { entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; save?: SaveData }, force = false) {
+  private gotoStage(next: StageKey, extra?: { entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; contestFrom?: StageKey; save?: SaveData }, force = false) {
     if (this.transitioning && !force) return;
     if (!storyEntryAllowed(next, this)) {
       notice(next.startsWith("dlc")
@@ -4452,7 +4477,7 @@ export class WorldScene extends Phaser.Scene {
    *  긴 블랙아웃 창이 원인. 이제 즉시 게이트를 닫고 포탈 오버랩을 전부 끊는다. */
   private startTransition(
     target: StageKey,
-    opts?: { delay?: number; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; save?: SaveData }
+    opts?: { delay?: number; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; contestFrom?: StageKey; save?: SaveData }
   ) {
     if (this.transitioning) return;
     if (this.tut && !(this.tut.currentId === "training" && target === "howlrstone1x2")) return;
@@ -4692,6 +4717,7 @@ export class WorldScene extends Phaser.Scene {
       : key === "closet" ? (STAGES[this.closetFrom] ? this.closetFrom : "village")
       : key === "tower" ? (STAGES[this.towerFrom] ? this.towerFrom : "village")
       : key === "praid" ? (STAGES[this.praidFrom] ? this.praidFrom : "village") // v1.4.3 — 공동 토벌전
+      : key === "contest" ? this.contestReturnStage() // vc282 — 보스 기록전
       : key === "park" ? (STAGES[this.parkFrom] ? this.parkFrom : "village") // v1.0.18 — 파크
       : PREV_STAGE[key];
     if (!prev) return;
@@ -4705,6 +4731,9 @@ export class WorldScene extends Phaser.Scene {
     if (this.towerActive) { this.exitTower(); this.showBanner(`탑 탈출 — 최고 기록 ${this.inf.towerBest}층`); }
     /* v1.0.18 — 파크 조기 퇴장 — 정산 후 복귀 */
     if (this.parkActive) { this.returnActive = false; this.exitPark(); return; }
+    /* vc282 — 기록전 중도 이탈은 서버에 abandoned 로 보고한다(순위 제외).
+     *  보고하지 않으면 서버 만료(expired)까지 running 으로 남아 그 대회 확정이 막힌다. */
+    if (this.stageDef.key === "contest" && this.contestRun) this.finishContest("abandoned");
     this.returnActive = false;
     audio.sfx.portal();
     this.startTransition(prev, { delay: 520 });
@@ -8688,7 +8717,7 @@ export class WorldScene extends Phaser.Scene {
   private tickGolden(dt: number) {
     if (this.goldenRef) return; // 이미 활동 중
     if (!this.stageDef || this.stageDef.isVillage || this.isInterior) return;
-    if (this.stageDef.key === "gate" || this.stageDef.key === "closet" || this.stageDef.key === "tower" || this.stageDef.key === "park" || this.stageDef.key === "dojang" || this.stageDef.key === "praid") return;
+    if (this.stageDef.key === "gate" || this.stageDef.key === "closet" || this.stageDef.key === "tower" || this.stageDef.key === "park" || this.stageDef.key === "dojang" || this.stageDef.key === "praid" || this.stageDef.key === "contest") return;
     if (this.stageDef.enemies.length === 0 || this.transitioning || !this.player) return;
     this.goldenAcc += dt;
     if (this.goldenAcc < GOLDEN.intervalMs) return;
@@ -12386,18 +12415,97 @@ export class WorldScene extends Phaser.Scene {
    * 서버가 보스·난이도·HP·제한시간을 고정하고, 이 클라이언트는 그 판을 실제로 돌린다.
    * 여기서 만드는 것은 "제출 근거"일 뿐이며, 클라이언트 보고는 서버에서 승인 대기로만
    * 저장된다(자동 지급 아님). HP·제한시간을 클라이언트가 바꾸지 않는다. */
+
+  /** vc282 — 입장 카운트다운 후 서버 start 를 호출하고 그 응답 시각으로 판을 시작한다.
+   *  start 응답의 startedAt/expiresAt 을 기준으로 삼는 이유: 클라이언트 시계를 믿고
+   *  시작 시각을 잡으면 기록을 앞당길 수 있다. 서버가 준 만료 시각까지만 유효하다. */
+  private beginContestCountdown() {
+    if (this.contestRun || this.contestStarting) return;
+    if (this.stageDef?.key !== "contest") return;
+    this.contestStarting = true;
+    let left = 3;
+    this.showBanner("3");
+    const tick = this.time.addEvent({
+      delay: 1000,
+      repeat: 2,
+      callback: () => {
+        left -= 1;
+        if (left > 0) { this.showBanner(String(left)); return; }
+        this.showBanner("시작!");
+        void this.startContestRun();
+      },
+    });
+    /* 씬이 내려가면 카운트다운 타이머를 남기지 않는다. */
+    this.events.once("shutdown", () => tick.remove(false));
+  }
+
+  /** vc282 — 서버 start 를 호출하고, 응답 시각으로 판을 세운 뒤 보스를 띄운다.
+   *  실패·만료는 abortContest 가 정리한다(플래그 해제도 그쪽 한 곳에서). */
+  private async startContestRun() {
+    try {
+      const { activeBossContest, startBossContest, CONTEST_RULES } = await import("../bossContest");
+      const a = activeBossContest();
+      if (!a) { this.abortContest("출전 정보를 찾을 수 없어요"); return; }
+      const { startedAt, expiresAt } = await startBossContest(a.id);
+      /* 서버 만료 시각이 이미 지났으면 스폰하지 않는다(제출도 거부된다). */
+      if (expiresAt <= Date.now()) { this.abortContest("출전 시간이 만료됐어요"); return; }
+      this.contestStarting = false;
+      /* HP 는 서버 규칙값으로 고정 — 클라이언트 배율(stageScale/난이도)이 끼어들지 않는다. */
+      const bossHp = CONTEST_RULES.bossHp;
+      this.contestRun = { attemptId: a.id, contestId: a.contestId, limitMs: Math.max(0, expiresAt - startedAt),
+        bossHp, startedAt, damage: 0, hits: 0 };
+      this.spawnContestBoss(bossHp);
+    } catch {
+      this.abortContest("출전 시작에 실패했어요 — 서버 연결을 확인해 주세요");
+    }
+  }
+
+  /** vc282 — 판을 시작할 수 없을 때 경기장에서 조용히 빠져나온다(출전은 서버가 만료 처리). */
+  private abortContest(reason: string) {
+    this.contestRun = null;
+    this.contestStarting = false;
+    this.showBanner(reason);
+    this.scheduleContestReturn(1200);
+  }
+
+  /** vc282 — 경기장에서 입장 전 구역으로 돌려보낸다(전환 중이면 건너뛴다).
+   *  정상 종료·시작 실패가 같은 경로를 쓴다. */
+  private scheduleContestReturn(delay: number) {
+    if (this.stageDef?.key !== "contest") return;
+    const back = this.contestReturnStage();
+    this.time.delayedCall(delay, () => { if (!this.transitioning) this.startTransition(back, { delay: 300 }); });
+  }
+
   private spawnContestBoss(bossHp: number) {
     /* 이미 보스전이면 중복 스폰하지 않는다.
      * (this.boss 를 직접 조건에 쓰면 TS 가 이후 never 로 좁혀 필드 접근이 막힌다.) */
     const existing: Boss | null = this.boss;
     if (existing) return;
-    this.spawnBoss(true);
-    /* spawnBoss 는 this.boss 를 채우지만 TS 는 그 부수효과를 모른다 — 지역 변수로 받는다. */
+    /* vc282 — 서버 계약과 같은 고정 보스(guardian)를 쓴다.
+     *  종전엔 this.spawnBoss(true) 로 "현재 지역 보스" 를 그대로 썼기 때문에 기록전
+     *  계약(guardian/normal)과 어긋났다(다른 보스가 나오면 서버 검증이 의미를 잃는다).
+     *  스폰 파이프라인 자체는 그대로 재사용한다 — spawnGmBoss 는 스토리 스펙 보스를
+     *  퀘스트/포탈 판정과 분리해 띄우는 기존 경로이고, 내부에서 this.boss 를 만든다.
+     *  난이도는 normal 고정(BOSS_DIFFS.normal 은 hp 1.0)이라 서버 HP 를 덮어쓰지 않는다. */
+    if (!BOSS_DEFS.guardian) return;
+    this.bossDiff = "normal";
+    this.bossDiffPending = false;
+    this.spawnGmBoss("guardian");
+    /* spawnBoss/spawnGmBoss 는 this.boss 를 채우지만 TS 는 그 부수효과를 모른다 — 지역 변수로 받는다. */
     const b: Boss | null = this.boss;
     if (!b) return;
     /* 서버가 정한 HP로 고정 — stageScale/난이도 배율을 덮어써 클라이언트가 유리해지지 않게 한다. */
     b.hp = bossHp;
     b.maxHp = bossHp;
+    /* vc282 — 제출 근거(타격 수·피해)를 실제 HP 감소분으로 집계한다.
+     *  종전엔 hits 를 세는 곳이 없어 항상 1 로 보고했고, damage 는 종료 시점 HP 차이로만
+     *  계산돼 회복/보호막 기믹이 끼면 실제와 어긋났다. */
+    b.onLandedHit = (dealt: number) => {
+      const run = this.contestRun;
+      if (!run) return;
+      run.hits += 1;
+      run.damage += Math.max(0, Math.round(dealt));
+    };
     EventBus.emit("boss:show", { name: `[기록전] ${this.bossDef?.name ?? "보스"}`, hp: bossHp, maxHp: bossHp });
     const run = this.contestRun;
     if (!run) return;
@@ -12413,17 +12521,22 @@ export class WorldScene extends Phaser.Scene {
     const run = this.contestRun;
     if (!run) return;
     this.contestRun = null;
-    const combatMs = Math.max(0, Date.now() - run.startedAt);
-    /* 서버는 damage >= 보스HP 를 요구한다. 클라이언트가 별도 누적기를 두는 대신
-     * 보스 HP 감소분으로 계산해 실제 판과 어긋나지 않게 한다. */
-    const remaining = Math.max(0, this.boss?.hp ?? 0);
-    const dealt = outcome === "defeated" ? run.bossHp : Math.max(0, run.bossHp - remaining);
+    /* vc282 — 전투 시간은 서버가 준 startedAt 기준(클라이언트 시계 조작 방지).
+     * 제출 근거의 damage 는 실제 HP 감소 누적분(run.damage)을 쓴다 — 종료 시점 HP 차이만
+     * 쓰면 회복 기믹이 낀 판에서 서버 검증(bossHp===0 && damage>=보스HP)과 어긋났다. */
+    const startedAt = Number(run.startedAt) || Date.now();
+    const combatMs = Math.max(0, Date.now() - startedAt);
+    const remaining = Math.max(0, Math.round(this.boss?.hp ?? 0));
+    const dealt = Math.max(0, Math.round(run.damage));
     void import("../bossContest").then(({ finishBossContest }) =>
       finishBossContest(outcome, {
         bossHp: outcome === "defeated" ? 0 : remaining,
         damage: dealt, hits: Math.max(1, run.hits), combatMs,
       }),
     ).catch(() => { /* 네트워크 실패 — 서버가 만료로 처리한다 */ });
+    /* 판이 끝났으면 경기장에 머무를 이유가 없다 — 입장 전 구역으로 돌려보낸다.
+     * (복귀 포탈을 직접 타지 않아도 되게, 보스 처리 연출 뒤 천천히 이동) */
+    this.scheduleContestReturn(outcome === "defeated" ? 4200 : 2200); // 처치 슬로우모션(1.2s) + 배너 여유
   }
 
   private wireTradeInput() {
@@ -12486,16 +12599,21 @@ export class WorldScene extends Phaser.Scene {
     EventBus.on("trade:nearby", this.onTradeNearby as never);
     EventBus.on("rpg:tradeInvite", this.onTradeInvite as never);
     /* vc274 — 보스 기록전(경품 경쟁). 서버가 시각·1회 출전·근거 검증을 담당하고,
-     *  클라이언트는 "그 보스전을 실제로 돌려 결과를 보고"하는 역할만 맡는다.
-     *  보고는 승인 대기(pending)로만 저장되며 GM 검토·순위 확정·지급은 서버 스토어가 강제한다. */
+     *  클라이언트는 그 보스전을 실제로 돌려 결과만 보고한다(승인 대기 → GM 검토).
+     *
+     *  vc282 — 종전엔 prepare 직후 현재 지역에 보스를 띄우고 서버 start 를 부르지 않아
+     *  제출이 전부 "시작하지 않은 출전" 으로 거부됐다. 이제 경기장으로 이동해
+     *  카운트다운 → 서버 start → 보스 스폰 순으로 진행한다(startContestRun).
+     *  출전 정보는 bossContest 모듈의 active 가 들고 있어 씬 재시작에도 살아남는다. */
     this.onContestStart = (v: { attemptId?: string; contestId?: string; bossHp?: number; limitMs?: number }) => {
       if (typeof v?.attemptId !== "string" || typeof v?.contestId !== "string") return;
-      const bossHp = Number(v.bossHp) || 0;
-      const limitMs = Number(v.limitMs) || 0;
-      if (bossHp <= 0 || limitMs <= 0) return;
-      this.contestRun = { attemptId: v.attemptId, contestId: v.contestId, limitMs, bossHp,
-        startedAt: Date.now(), damage: 0, hits: 0 };
-      this.spawnContestBoss(bossHp);
+      if (!(Number(v.bossHp) > 0) || !(Number(v.limitMs) > 0)) return;
+      /* 이미 경기장 안이면(중복 emit) 그 자리에서 시작한다. */
+      if (this.stageDef?.key === "contest") { this.beginContestCountdown(); return; }
+      const from = this.stageDef?.key;
+      this.contestFrom = from && STAGES[from] ? from : "village";
+      this.showBanner("보스 기록전 — 경기장으로 이동합니다");
+      this.startTransition("contest", { delay: 440, contestFrom: this.contestFrom });
     };
     /* 핸들러를 만든 **뒤에** 등록한다. 종전처럼 먼저 등록하면 이 시점의 값이 undefined 라
      * EventEmitter 가 "The listener must be a function" 으로 던지고 씬 초기화가 통째로 실패했다. */
@@ -15836,6 +15954,9 @@ export class WorldScene extends Phaser.Scene {
   /** 중도 이탈 확정 — 보스 정리 후 복귀 구역으로 전환 (공동토벌전은 입장 전 구역) */
   private leaveBossBattle() {
     this.despawnBossExitNpc();
+    /* vc282 — 기록전 중도 이탈 보고 (순위 제외). 보스를 지우기 전에 호출해야
+     *  finishContest 가 잔여 HP/피해를 실제 판에서 읽는다. */
+    if (this.stageDef.key === "contest" && this.contestRun) this.finishContest("abandoned");
     if (this.boss) {
       try { this.boss.destroyPool(); } catch { /* 이미 정리됨 */ }
       this.boss.destroy();
@@ -15846,6 +15967,7 @@ export class WorldScene extends Phaser.Scene {
     const key = this.stageDef.key;
     const prev: StageKey =
       key === "praid" ? (STAGES[this.praidFrom] ? this.praidFrom : "village")
+      : key === "contest" ? this.contestReturnStage() // vc282 — 보스 기록전
       : key === "tower" ? (STAGES[this.towerFrom] ? this.towerFrom : "village")
       : PREV_STAGE[key] ?? "village";
     this.showBanner("전투를 이탈다 — 복귀 구역으로 이동합니다");
@@ -17935,6 +18057,7 @@ export class WorldScene extends Phaser.Scene {
     else if (this.stageDef.key === "closet") stageOverride = STAGES[this.closetFrom] ? this.closetFrom : "village";
     else if (this.stageDef.key === "tower") stageOverride = STAGES[this.towerFrom] ? this.towerFrom : "village"; // v1.0.8 — 탑은 세이브 구역 아님
     else if (this.stageDef.key === "praid") stageOverride = STAGES[this.praidFrom] ? this.praidFrom : "village"; // v1.4.3 — 공동 토벌전도 세이브 구역 아님
+    else if (this.stageDef.key === "contest") stageOverride = this.contestReturnStage(); // vc282 — 기록전 경기장도 세이브 구역 아님
     else if (this.stageDef.key === "park") stageOverride = STAGES[this.parkFrom] ? this.parkFrom : "village"; // v1.0.18 — 파크도 세이브 구역 아님
     writeSave(this.buildSave(stageOverride));
   }

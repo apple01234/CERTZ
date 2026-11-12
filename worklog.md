@@ -5772,3 +5772,24 @@ npm test 706/706, tsc EXIT 0, lint:strict EXIT 0, next build EXIT 0
 - GM용 서버 확인이 오프라인 admin 캐시를 권한으로 쓰지 않게 하고 실제 명령도 재조회한다. 420ms 회피 무적/최신 기본공격 캔슬은 보존하고 무적으로 발동된 스킬까지 취소되던 경로를 막았다. 차원문 안내의 잘못된 동쪽 고정과 대회 공개 기록의 다른 계정 식별정보도 보완했다.
 - 전체 726/726, tsc, lint:strict, 프로덕션 webpack 빌드 통과. 기존 브라우저 E2E로 신규 생성→월드 진입, 페이지 예외0, GM 역할별 버튼과 가방 왼쪽 순서, 보스6종 windup/release 등록 PASS. 관리자 역할은 응답 fixture이며 운영 인증 검증이 아니다. PNG 재저장 과정에서 기존 아트 해시 검사가 잡은 압축 바이트 차이는 원래 파일을 복구하고 같은 픽셀은 다시 저장하지 않도록 수정한 뒤 관련 검사 재통과.
 - 미복구: 이전 임시 환경의 이세카이 원본 리그 bake/3종 FX 추출본·추가 전투 수명 정리/경기 재전송 소스·Claude 미커밋 타이틀/아이콘. 현재 Git/압축본에 없어 포함됐다고 보고하지 않는다. 기존 기록전의 서버 시작 미호출·보스 선택 문제도 남아 있다. 상세 출처·잔여 작업·다음 AI 프롬프트는 docs/handoff/MERGE_BCBCD2D.md. 운영 배포·APK 실기기·실제 서버 경기·모든 NPC 대화/맵 왕복은 미검증.
+
+## Task — 2026-11-12 vc283 / 2.2.25: 보스 기록전 입장 경로 완성 (전용 경기장 · 서버 start 연결)
+
+- 이전 인계(docs/handoff/MERGE_BCBCD2D.md "남은 기존 기록전 연결 문제")의 세 결함을 이어서 처리했다.
+  ① `startBossContest` 를 아무도 호출하지 않아 서버 `finish` 가 전부 "시작하지 않은 출전" 으로 거부됐다.
+  ② 현재 지역 보스를 그대로 띄워 고정 계약(`guardian`/`normal`)과 어긋났다.
+  ③ 경기장 개념이 없어 필드 몬스터·랜덤 이벤트가 기록에 끼어들었다.
+- 전용 구역 `contest` 를 `praid` 와 같은 체인 분리 방식으로 신설했다(전진 포탈 없음·복귀는 입장 전 구역·세이브 제외·황금 몬스터 제외·잡몹 0).
+- 흐름: React `prepareBossContest` → `contest:start` → 경기장 전환(`contestFrom` 기록) → 3초 카운트다운 → 서버 `start` → 응답의 `startedAt/expiresAt` 으로 판 세팅 → 보스 스폰. 시작 시각을 서버 응답으로 잡으므로 클라이언트가 기록을 앞당길 수 없다.
+- 보스는 `spawnGmBoss("guardian")` 로 기존 스폰 파이프라인을 재사용하되 계약 보스로 고정하고, HP 는 `CONTEST_RULES.bossHp`(120,000)로 덮어쓴다. 난이도는 `normal`.
+- 중도 이탈(복귀 포탈·퇴장 관리인)은 `abandoned` 로 보고한다. 보고하지 않으면 서버가 만료까지 `running` 으로 보아 그 대회 순위 확정이 막힌다.
+- 제출 근거를 실제 HP 감소분으로 집계한다(`Boss.onLandedHit`). 종전엔 `hits` 를 세는 곳이 없어 항상 1 로 보고했고 피해는 종료 시점 HP 차이로만 계산돼 회복 기믹이 낀 판에서 서버 검증과 어긋났다.
+- 판 종료(성공 4.2초·실패 2.2초 뒤) 또는 시작 실패 시 입장 전 구역으로 자동 복귀한다.
+- 기존 계약 테스트 2건은 "현재 지역 보스 재사용" 을 고정하고 있어 새 계약(guardian 고정)에 맞게 갱신했다. 신규 11건(`tests/boss-contest-flow.test.mjs` 6 · `tests/boss-contest-entry.test.mjs` 5)을 추가했다. entry 쪽은 prepare→start→finish 가 실제로 `pending` 까지 도달하는지, start 를 건너뛰면 거부되는지를 서버 스토어로 실행 검증한다.
+- 버전 283 / 2.2.25 (package.json·package-lock·android-version.json 동기화).
+- 게이트: 전체 737/737, tsc EXIT 0, lint:strict EXIT 0, `next build --webpack` 통과.
+
+### 못 한 것 / 확인 필요
+- **실제 브라우저 미검증.** 이 컨테이너에서 `server.js`(Turbopack)는 `OS file watch limit reached`(inotify 상한, sysctl 권한 없음)로, `next start` 는 `uv_interface_addresses` EACCES 로 기동에 실패했다. 따라서 Phaser 씬 안에서 경기장 전환·카운트다운·보스 스폰·복귀를 눈으로 확인하지 못했다. 서버 스토어 계약(5건)과 소스 계약(6건)으로만 검증했다.
+- S20+ 실기기·실제 서버 기록 제출·GM 현장 검토·경품 지급은 미검증. 공개 기록의 계정 식별정보 마스킹은 기존 테스트 범위 그대로다.
+- `startBossContest` 실패(네트워크) 시 서버에는 `ready` 상태가 남아 30초 뒤 만료된다. 재시도 UI 는 두지 않았고 배너 안내 후 자동 복귀한다.

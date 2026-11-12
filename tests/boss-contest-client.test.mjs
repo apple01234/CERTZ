@@ -18,7 +18,8 @@ const hud = readFileSync('src/components/game/HUD.tsx', 'utf8');
 
 test('기록전 보스 HP는 서버가 준 값으로 덮어쓴다', () => {
   // spawnContestBoss 가 서버 bossHp 로 hp/maxHp 를 고정해야 한다.
-  const m = /private spawnContestBoss\(bossHp: number\)\s*\{([\s\S]{0,1200}?)\n  \}/.exec(scene);
+  // 함수 본문 길이에 의존하지 않도록 다음 메서드 선언 전까지를 본문으로 본다.
+  const m = /private spawnContestBoss\(bossHp: number\)\s*\{([\s\S]*?)\n  \}\n\n  \/\*\*/.exec(scene);
   assert.ok(m, 'spawnContestBoss 구현이 있어야 한다');
   const body = m[1];
   assert.match(body, /b\.hp = bossHp/, '서버가 준 HP 로 고정해야 한다');
@@ -27,9 +28,17 @@ test('기록전 보스 HP는 서버가 준 값으로 덮어쓴다', () => {
   assert.doesNotMatch(body, /hp\s*=\s*Math\.round\(/, '클라이언트가 HP 를 계산해 넣으면 안 된다');
 });
 
-test('기록전은 기존 보스 파이프라인을 재사용한다', () => {
-  assert.match(scene, /private spawnContestBoss[\s\S]{0,400}?this\.spawnBoss\(true\)/,
-    '기존 spawnBoss 를 재사용해야 한다(새 전투 엔진 금지)');
+test('기록전은 기존 보스 파이프라인을 재사용하고 서버 계약 보스를 쓴다', () => {
+  /* vc282 — 종전엔 "현재 지역 보스" 를 띄워 고정 guardian 계약과 어긋났다.
+   * 새 전투 엔진을 만들지 않고 기존 스폰 경로(spawnGmBoss)를 재사용하되,
+   * 반드시 계약 보스(guardian)를 지정해야 한다. */
+  const m = /private spawnContestBoss\(bossHp: number\)\s*\{([\s\S]*?)\n  \}\n\n  \/\*\*/.exec(scene);
+  assert.ok(m, 'spawnContestBoss 구현이 있어야 한다');
+  const body = m[1];
+  assert.match(body, /this\.spawnGmBoss\("guardian"\)/,
+    '기존 스폰 파이프라인을 재사용하되 계약 보스(guardian)를 지정해야 한다');
+  assert.doesNotMatch(body.replace(/\/\*[\s\S]*?\*\//g, ''), /this\.spawnBoss\(true\)/,
+    '현재 지역 보스를 그대로 쓰면 서버 계약과 어긋난다');
 });
 
 test('클라이언트 보고는 승인 대기로만 저장되고 자동 승인 경로가 없다', () => {

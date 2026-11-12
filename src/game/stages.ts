@@ -1939,6 +1939,30 @@ NEXT_STAGE.praid = null;
 PREV_STAGE.praid = "village"; // 폴백 — 실제 복귀지는 입장 시 기록한 praidFrom
 STAGE_SHORT.praid = "공동 토벌전";
 
+/* ================= vc282 — 보스 기록전 전용 경기장 =================
+ *  ClassroomPanel 의 기록전 「출전 준비 및 입장」이 도착하는 구역.
+ *  종전에는 준비만 하면 현재 지역에 보스가 그대로 스폰됐고, 서버 start 를 부르지 않아
+ *  제출이 전부 거부됐다(고정 guardian 계약과도 어긋남). 연습용 필드 몬스터·랜덤 이벤트가
+ *  기록에 끼어들지 않도록 별도 구역으로 분리한다 — praid 와 같은 체인 분리 방식.
+ *  전진 포탈 없음, 복귀 포탈은 입장 전 구역(contestFrom). */
+STAGES.contest = {
+  key: "contest",
+  name: "보스 기록전",
+  subtitle: "심연의 수호자 · 노말 — 같은 판을 가장 빠르게 처치하는 기록 경쟁",
+  width: 1300,
+  height: 860,
+  groundTint: 0xffffff,
+  flowerCount: 0,
+  treeCount: 0,
+  rockCount: 0,
+  quests: [],
+  enemies: [], // 기록전은 보스 단일 판정 — 잡몹이 시간·피해 집계에 끼어들지 않게 비운다
+  boss: false, // 보스는 서버 계약(guardian/normal)으로 onContestStart 가 직접 스폰한다
+};
+NEXT_STAGE.contest = null;
+PREV_STAGE.contest = "village"; // 폴백 — 실제 복귀지는 입장 시 기록한 contestFrom
+STAGE_SHORT.contest = "보스 기록전";
+
 /* ================= v1.0.8 — 심연의 탑 (무한 층수 탑등반 — 무한 콘텐츠 ①) =================
  *  콘텐츠 패널에서 입장 — 층을 오를수록 강해지는 적, 10층마다 보스, 층 클리어 보상.
  *  체인 분리 — 전진 포탈 없음, 복귀 포탈은 입장 전 구역. */

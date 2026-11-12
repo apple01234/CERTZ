@@ -2058,6 +2058,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   sharedHp = 0;
   /** 피격 확정분 통보 훅 — 호스트는 합산, 비호스트는 릴레이 (WorldScene 주입) */
   onSharedDamage?: (dealt: number) => boolean | void;
+  /** vc282 — 기록전 근거 집계용. 실제로 HP 가 깎인 타격만 통보한다(연출·면역 타격 제외).
+   *  WorldScene 이 세팅하지 않으면 아무 비용도 없다. */
+  onLandedHit?: (dealt: number) => void;
   absorbMechanicDamage(dealt: number): boolean { return dealt > 0 && (this.story?.interceptDamage(dealt) ?? false); }
   healFromBlood(): void {
     if (this.sharedMode && !this.sharedIsHost) return;
@@ -2163,6 +2166,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     if (this.sharedMode) { if (this.onSharedDamage?.(dealt)) return; }
     else if (this.absorbMechanicDamage(dealt)) return;
     if (hpAuthority) this.hp -= dealt;
+    if (hpAuthority) this.onLandedHit?.(dealt); // vc282 — 기록전 타격 수/피해 집계
     this.knockVec.set(dir.x * knock * (canonBossOf(this.def.key)?.finish === "ringout" ? 3.5 : .12), dir.y * knock * (canonBossOf(this.def.key)?.finish === "ringout" ? 3.5 : .12)); // 보스는 넉백 거의 안 됨
     this.squash(0.035, -0.035); // v1.4.9 — 피격 미세 진동
     // 타격감: 화이트 플래시 — 카운터/기절 상태의 틴트는 유지
