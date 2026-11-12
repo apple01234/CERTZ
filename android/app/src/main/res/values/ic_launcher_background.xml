@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#05070D</color>
+    <!-- vc279 — 앱 아이콘 교체에 맞춰 adaptive icon 배경색을 아이콘 테두리 색으로 조정.
+         종전 #05070D(거의 검정)는 새 아트워크의 금빛 테두리와 어긋나 전경 주위에
+         검은 띠가 도는 것처럼 보인다. 값은 icon-512.png 모서리 6점 평균(#573825). -->
+    <color name="ic_launcher_background">#573825</color>
 </resources>

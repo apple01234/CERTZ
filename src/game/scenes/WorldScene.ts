@@ -3525,7 +3525,7 @@ export class WorldScene extends Phaser.Scene {
     };
     if (chapterNo <= 3) {
       /* 1~3화 해안 — 라일락 꽃잎이 바람에 흩날린다 (정본: 라일락+펜던트) */
-      swirl("wx_spark5", {
+      swirl("gvb_glow_white", {
         x: { min: -80, max: 1400 }, y: -10,
         lifespan: 7000,
         speedX: { min: -26, max: -8 }, speedY: { min: 12, max: 30 },
@@ -3537,7 +3537,7 @@ export class WorldScene extends Phaser.Scene {
       });
     } else if (chapterNo <= 6) {
       /* 4~6화 석양의 바다 — 물보라/모래 먼지가 수평으로 분다 */
-      swirl("wx_spark5", {
+      swirl("gvb_glow_white", {
         x: { min: -80, max: 1400 }, y: { min: 0, max: 900 },
         lifespan: 4000,
         speedX: { min: -90, max: -40 }, speedY: { min: -6, max: 10 },
@@ -3548,7 +3548,7 @@ export class WorldScene extends Phaser.Scene {
       });
     } else if (chapterNo <= 9) {
       /* 7~9화 격전 — 어둠의 재가 위로 떠오른다 */
-      swirl("wx_smoke", {
+      swirl("gvb_glow_white", {
         x: { min: -80, max: 1400 }, y: { min: 200, max: 1100 },
         lifespan: 5200,
         speedX: { min: -8, max: 8 }, speedY: { min: -26, max: -10 },
@@ -3559,7 +3559,7 @@ export class WorldScene extends Phaser.Scene {
       });
     } else {
       /* 10~15화 어둠의 성채·왕좌 — 불티가 아래에서 피어오른다 */
-      swirl("wx_spark5", {
+      swirl("gvb_glow_white", {
         x: { min: -80, max: 1400 }, y: { min: 300, max: 1200 },
         lifespan: 4200,
         speedX: { min: -10, max: 10 }, speedY: { min: -46, max: -18 },
