@@ -2,12 +2,15 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 /* vc291 — Windows 하드코딩 경로를 걷어냈다. 종전 `C:\\coding\\CERTZ` 는
  *  개발자 PC 에서만 맞고 리눅스 CI·컨테이너에서는 ENOENT 로 5개 테스트가
  *  통째로 실패했다(경로 문제를 게임 결함으로 오독하게 만든다).
  *  테스트 파일 위치 기준 상대경로로 해석하므로 어느 OS 에서도 맞는다. */
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+/* vc278 — `.pathname` 은 Windows 에서 `/C:/coding/...` 이라 path.join 이
+ *  `\C:\coding\...` 를 만들어 ENOENT. fileURLToPath 가 정본. */
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 /* ═══ vc285 — 초상화 매핑 누락 감사 ═══
  *

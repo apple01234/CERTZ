@@ -2,10 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
 const require = createRequire(new URL('../server.js', import.meta.url));
-const root = new URL('../', import.meta.url).pathname;
+/* vc278 — `.pathname` 은 Windows 에서 `/C:/coding/...` 이라 아래 __dirname 으로 넘기면
+ *  server.js 의 _readVer 가 `\C:\coding\...` 를 열려다 실패하고, 버전 폴백 상수 240 이
+ *  그대로 나온다(테스트가 '코드 회귀'로 오독하게 만든다). fileURLToPath 가 정본. */
+const root = fileURLToPath(new URL('../', import.meta.url));
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 const android = JSON.parse(readFileSync('android-version.json', 'utf8'));
 const release = `https://github.com/apple01234/CERTZ/releases/download/v${android.name}`;

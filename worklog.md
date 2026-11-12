@@ -5350,3 +5350,30 @@ pip uninstall pr-agent + PATH 에서 Scripts 제거 + 의존성 95개 일괄 삭
   `not ok 4 [exe-build.yml] ... contest (ROUTE_DIRS 누락)` 과
   `not ok 8 두 워크플로의 격리 목록이 서로 같다` 가 **동시에** 실패했고, 복원하니 8/8.
 - 전체 `npm test` **673/673**.
+
+## Task — 2026-11-12 KST: 로컬 환경 기준선 재현 (673/673) + Windows 경로 버그 3파일 수정
+
+- 새 개발 PC 에서 저장소를 새로 클론해 기준선을 재현하려 했더니 **664/646 실패 18** 이 나왔다.
+  원인은 게임 코드가 아니라 **환경 3가지**였다. 수치는 전부 실행 결과다.
+  1) `git` 미설치 → `howlrstone`·`story-portraits-audio` 등 2개 파일이 `spawnSync git ENOENT` 로 통째 실패.
+     `tests/python.mjs` 의 번들 파이썬 경로가 `C:/Users/apple/...` 로 박혀 있어 이 PC(`JOB_Dream-03`)에서는
+     Pillow 탐색 실패 → `floor-tiles` 등 2개 실패. → `REA_PYTHON` 환경변수로 해결(코드 수정 불필요).
+  2) 위 2건을 환경변수로 해결하니 **673 tests / 663 pass / 10 fail** 로 개수가 문서와 정확히 일치했다.
+     즉 "테스트 673개"라는 핸드오프 기재는 사실이고, 남은 10건만 진짜 결함이다.
+- 남은 10건의 정체는 **Windows 경로 버그 1종**이 4개 파일에 흩어져 있던 것이다.
+  `new URL(import.meta.url).pathname` 은 Windows 에서 `/C:/coding/...` 처럼 **앞 슬래시가 붙은 채** 나온다.
+  여기에 `path.join` 을 쓰면 `\C:\coding\...` 가 되어 ENOENT 가 난다(`C:\C:\coding\...`).
+  - `cinematic-state-pairing`·`ground-edge-crop`·`portrait-coverage`: `ROOT` 가 오염 → 9건 실패
+  - `version-build-sha`: `root` 를 `server.js` 의 `__dirname` 으로 넘겨 `_readVer` 가 실패 →
+    버전 폴백 상수 **240** 이 그대로 나와 `code: 240` vs 기대 `277` 불일치 1건.
+    **이건 게임 버그가 아니라 테스트 하네스 버그다.** 실제 `/api/version` 은 277 을 정상 반환한다.
+- 수정은 표준 라이브러리 `fileURLToPath` 로 교체한 **17줄**(4파일). 새 의존성 0, 게임 코드 무변경.
+  Ponytail 3단계(표준 라이브러리로 되나? → 된다)에서 멈췄다. 추상화·헬퍼 신설 안 함.
+- 검증(실측): `npm test` **673/673**, `tsc --noEmit` EXIT 0, `lint:strict` EXIT 0,
+  `next build --webpack` **EXIT 0**(라우트 35개, 오류 0건, 컴파일 37.7s).
+- 함정 기록: `npm ci` 가 세션 재개로 중단되면 `node_modules` 가 **부분 생성된 채 남는다**
+  (`.bin` 0개, `.package-lock.json` 부재, `next/package.json` 없음). 이 상태로 테스트를 돌리면
+  엉뚱한 실패가 쏟아진다. **`.bin` 개수와 `.package-lock.json` 존재로 완료를 판정**하고,
+  미완이면 `node_modules` 를 지우고 다시 `npm ci` 한다.
+- 재현 방법(이 PC 기준): `$env:REA_PYTHON` 에 Pillow 있는 파이썬 지정 + `PATH` 에 git 추가 후 `npm test`.
+  둘 다 없으면 테스트가 "게임 결함"처럼 보인다 — 다음 AI 는 먼저 환경을 의심하라.
