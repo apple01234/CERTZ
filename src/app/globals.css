@@ -441,6 +441,23 @@ html, body {
 .sertz-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.28); border-radius: 999px; }
 .sertz-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.45); }
 
+/* Keep the title's existing pixel art; only its surrounding controls reflow. */
+.title-screen { word-break: keep-all; overflow-wrap: anywhere; }
+.title-screen-inner {
+  padding-top: max(4.5rem, calc(env(safe-area-inset-top) + 3.75rem));
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+.title-account {
+  top: max(.5rem, env(safe-area-inset-top));
+  left: max(.5rem, env(safe-area-inset-left));
+}
+@media (max-height: 540px) {
+  .title-screen h1 { font-size: 2.75rem; }
+  .title-actions { margin-top: 1rem; }
+}
+
 /* v1.4.19 — v1.4.13 책 패널(.game-panel-book) 삭제: v1.4.12에서 컴포넌트 사용이
  *  철거됐던 데드 CSS. Tailwind 전환과 함께 잔존 ui2/book_*.webp 참조 제거. */
 

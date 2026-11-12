@@ -76,8 +76,8 @@ export function TitleScreen() {
     /* v1.0.19 (A-1/A-2) — 타이틀도 스크롤 가능하게: 저높이(가로 폰)에서 버튼/크레딧이 잘리던 것 수정.
      *  컨테이너 overflow-y-auto + 내부 min-h-full flex — 내용이 짧으면 중앙정렬 유지, 길면 스크롤
      *  v1.0.20 — AI스러운 텍스트 로고 → 게임 타이틀 로고타입(금 잉곽+왕관 문장+양피지 부제) 재디자인 */
-    <div className="sertz-scroll absolute inset-0 z-40 overflow-y-auto">
-      <div className="flex min-h-full flex-col items-center justify-center bg-transparent px-4 py-6">
+    <div className="title-screen sertz-scroll absolute inset-0 z-40 overflow-y-auto">
+      <div className="title-screen-inner flex min-h-full flex-col items-center bg-transparent px-4 pb-5 pt-16">
         <div className="mb-1 text-center">
           {/* 왕관 문장 — 픽셀 게임 타이틀 장식 */}
           <div aria-hidden className="mx-auto mb-1 flex items-center justify-center gap-2">
@@ -108,28 +108,32 @@ export function TitleScreen() {
         </a>
       )}
 
-      <div className="mt-8 flex w-56 flex-col gap-3 sm:w-64">
+       <div className="title-actions mt-7 flex w-full max-w-80 flex-col gap-3">
         {/* v1.0.18 — 시작/이어하기 모두 로비(캐릭터 선택·생성)로 진입 (메이플 메인메뉴 흐름) */}
         <button
           onClick={() => EventBus.emit("lobby:open")}
-          className="game-btn flex items-center justify-center gap-2 px-4 py-3 text-base font-black active:scale-95"
-        >
-          <Play size={18} />
-          게임 시작
-          <span className="text-[9px] font-bold text-[#6b4a1c]/80">— 캐릭터 선택·생성</span>
-        </button>
-        {save && (
-          <span className="game-chip mx-auto -mt-1 px-2 py-1 text-[9px] font-bold text-[#cbb88a]">
-            마지막 플레이: LV{save.lv} · {save.cleared ? "클리어" : stageLabel(save.stage)} — 로비에서 이어하기
+           aria-describedby="title-start-hint"
+           className="game-btn flex min-h-14 items-center justify-center gap-2 whitespace-nowrap px-4 py-3 text-lg font-black active:scale-95"
+         >
+           <Play size={18} aria-hidden="true" className="shrink-0" />
+           <span>게임 시작</span>
+         </button>
+         <p id="title-start-hint" className="-mt-1 text-center text-xs leading-relaxed text-[#e5d5b1]">
+           캐릭터를 선택하거나 새로 만들어요.
+         </p>
+         {save && (
+           <span className="game-chip mx-auto px-3 py-2 text-center text-xs leading-relaxed text-[#e5d5b1]">
+             마지막 플레이: LV{save.lv} · {save.cleared ? "클리어" : stageLabel(save.stage)}<br />캐릭터 선택에서 이어할 수 있어요.
           </span>
         )}
         {save && (
           <button
-            onClick={() => {
-              clearSave();
+             onClick={() => {
+               if (!window.confirm("마지막 플레이 저장을 삭제할까요? 활성 캐릭터의 진행 기록도 지워질 수 있으며 되돌릴 수 없어요. 계속하려면 삭제를 승인해 주세요.")) return;
+               clearSave();
               setSave(null);
             }}
-            className="mx-auto text-[11px] font-bold text-white/55 underline underline-offset-2 hover:text-white/70"
+             className="mx-auto min-h-11 px-2 text-xs font-bold text-[#e5d5b1] underline underline-offset-4 hover:text-white"
           >
             마지막 플레이 세이브 삭제 (로비에서 개별 캐릭터 삭제 가능)
           </button>
@@ -139,10 +143,11 @@ export function TitleScreen() {
           href="/apk-guide.html"
           target="_blank"
           rel="noopener noreferrer"
-          className="game-btn-ghost mx-auto mt-1 flex items-center gap-1.5 px-3.5 py-2 text-[11px] font-black text-[#f0e2c0] active:scale-95"
-        >
-          <Smartphone size={13} />
-          폰용 APK 다운로드
+           className="game-btn-ghost flex min-h-12 items-center justify-center gap-2 px-3.5 py-2 text-sm font-black text-[#f0e2c0] active:scale-95"
+         >
+           <Smartphone size={16} aria-hidden="true" className="shrink-0" />
+           Android 설치 안내
+           <span className="sr-only"> (새 창)</span>
         </a>
       </div>
 
@@ -150,26 +155,31 @@ export function TitleScreen() {
        *  max-w-[92%]가 무효가 되고 크레딧이 화면 밖으로 잘리던 버그
        *  v1.0.19 (A-1) — absolute → flow(mt-auto): 스크롤 컨테이너에서 absolute bottom이
        *  첫 화면 하단에 고정되어 콘텐츠와 겹치던 문제 수정 — 내용이 짧으면 하단, 길면 흐름 따름 */}
-      <div className="mt-auto flex flex-col items-center gap-1 px-3 pb-3 pt-8 text-center">
-        {/* v1.0.3 — 저높이(가로 폰)에서는 키 안내줄이 APK 링크와 겹치므로 숨김 (터치 유저에게 불필요)
-         *  v1.0.17 — 하드코딩 제거: 실제 키맵·이동 스킨을 읽어 표시 (WASD 스킨 지원) */}
-        <p className="game-chip px-2.5 py-1 text-[10px] font-bold text-[#cbb88a] [@media(max-height:540px)]:hidden">
+       <div className="mt-auto flex w-full max-w-xl flex-col items-center gap-1 pb-1 pt-8">
+         <details className="game-chip w-full px-3 text-xs text-[#e5d5b1]">
+           <summary className="flex min-h-11 cursor-pointer items-center justify-center font-bold">플레이 안내</summary>
+           <div className="space-y-2 border-t border-[#9c8051]/50 py-3 text-left leading-loose">
+             <p><strong className="text-[#ffe49a]">휴대폰</strong><br />왼쪽 화면을 드래그해 이동하고, 오른쪽 공격·스킬 버튼을 눌러요. 가로 화면을 권장해요.</p>
+             <p><strong className="text-[#ffe49a]">키보드</strong><br />
           {(() => {
             const km = loadKeyMap();
             const move = loadMoveScheme() === "wasd" ? "W A S D" : "방향키";
-            return `이동: ${move} / 왼쪽 화면 드래그 · 공격: ${keyLabel(km.attack)} · 스킬: ${keyLabel(km.skill1)}, ${keyLabel(km.skill2)}, ${keyLabel(km.skill3)}, ${keyLabel(km.skill4)}, ${keyLabel(km.skill5)} · 물약: ${keyLabel(km.potHp)}, ${keyLabel(km.potMp)}`;
+             return `이동: ${move} · 공격: ${keyLabel(km.attack)} · 스킬: ${keyLabel(km.skill1)}, ${keyLabel(km.skill2)}, ${keyLabel(km.skill3)}, ${keyLabel(km.skill4)}, ${keyLabel(km.skill5)} · 물약: ${keyLabel(km.potHp)}, ${keyLabel(km.potMp)}`;
           })()}
-        </p>
+             </p>
+             <p>다른 기기로 옮기거나 앱을 지우기 전에는 로그인 / 계정에서 저장 상태를 확인해 주세요.</p>
+           </div>
+         </details>
         {/* v1.0.18 (#크레딧분리) — 라이선스 원문 3줄이 타이틀 하단 10%를 상시 점유해
          *  "에셋 크레딧 페이지"처럼 보이던 문제. 첫 화면에는 요약 한 줄만 두고
          *  전문은 접이식(<details>)으로 옮긴다. CC-BY 표기 의무는 그대로 유지된다
          *  (요약줄에 저작자·라이선스가 남아 있고, 펼치면 전체 출처가 보인다). */}
         <details className="group w-full max-w-[min(94vw,760px)]">
-          <summary className="mx-auto flex w-fit cursor-pointer list-none items-center gap-1 rounded px-2 py-0.5 text-[9px] font-bold text-white/45 transition-colors hover:text-white/70">
-            <span className="transition-transform group-open:rotate-90">▶</span>
+           <summary className="mx-auto flex min-h-11 w-fit cursor-pointer list-none items-center gap-1 rounded px-2 text-xs font-bold text-[#d6c9ad] transition-colors hover:text-white">
+             <span aria-hidden="true" className="transition-transform group-open:rotate-90">▶</span>
             아트·음악 출처 (CC-BY)
           </summary>
-          <p className="mt-1 max-w-[min(94vw,760px)] text-[8px] leading-relaxed text-white/55 sm:text-[9px]">
+           <p className="mt-1 max-w-[min(94vw,760px)] text-left text-[11px] leading-loose text-[#d6c9ad]">
             Art: Zelda-like by ArMM1998 · Slash by Cethiel · Portal by varkalandar (CC-BY) · Kenney · LPC Wolf by
             williamthompsonj (CC-BY) · Sotrak by gilgaphoenixignis (CC-BY) · SPUM · Cartoon FX Remaster & Fantasy UI SFX (Unity Asset Store 유료 라이선스) · Music: Kevin MacLeod (incompetech.com, CC-BY 4.0) · SFX: Rubberduck (CC0)
           </p>

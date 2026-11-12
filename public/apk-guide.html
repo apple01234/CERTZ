@@ -1,32 +1,111 @@
 <!doctype html>
 <html lang="ko">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SERTZ · Android 설치 안내</title>
+<meta name="description" content="SERTZ Android 설치와 업데이트 방법, 저장 확인 및 설치 문제 해결 안내예요.">
+<meta property="og:title" content="SERTZ · Android 설치 안내">
+<meta property="og:description" content="설치 전에 저장을 확인하고, 공식 배포 목록에서 APK를 받아 주세요.">
+<meta name="theme-color" content="#101622">
 <style>
-body{margin:0;padding:8vh 24px;background:#171d2d;color:#e9e1c9;font-family:system-ui;line-height:1.9}
-main{max-width:640px;margin:auto;border:1px solid #8d805e;padding:32px}
-h1,a{color:#dfc38b}a{display:inline-block;margin:8px 24px 8px 0}li{margin:8px 0}small{color:#b5b5c8}[hidden]{display:none}
+*{box-sizing:border-box}
+html{color-scheme:dark}
+body{margin:0;background:#101622;color:#e9e1cf;font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;line-height:1.8;word-break:keep-all;overflow-wrap:anywhere}
+main{max-width:880px;margin:auto;padding:28px 24px 56px}
+a,button,summary{touch-action:manipulation;-webkit-tap-highlight-color:#e8c06433}
+a{color:#ffe49a;text-underline-offset:4px}
+a:hover{color:#fff5d8}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #ffe49a;outline-offset:4px}
+.back{display:inline-flex;align-items:center;min-height:44px;font-size:14px}
+header{padding:24px 0 28px;border-bottom:1px solid #756344}
+.brand{margin:0 0 8px;color:#d9c28f;font-weight:800;letter-spacing:.1em}
+h1{margin:0;color:#ffe49a;font-size:clamp(28px,5vw,42px);line-height:1.35;letter-spacing:-.025em;text-wrap:balance}
+header p:last-child{margin:12px 0 0;color:#c6c7cf}
+h2{margin:0 0 12px;font-size:20px;line-height:1.5;letter-spacing:-.02em;color:#ffe49a}
+p{margin:0 0 12px}p:last-child{margin-bottom:0}
+.save-note{margin:24px 0;padding:18px 20px;border-left:3px solid #e8c064;background:#202738}
+.save-note h2{font-size:17px;margin-bottom:6px}
+.download{padding:22px;border:1px solid #756344;background:#171f2e}
+.version{color:#e9e1cf;font-size:14px;min-height:26px}
+.actions{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0}
+.button{display:inline-flex;min-height:48px;align-items:center;justify-content:center;padding:10px 18px;border:1px solid #d7b56a;border-radius:4px;background:#e8c064;color:#241b0d;font:inherit;font-weight:750;text-align:center;text-decoration:none;cursor:pointer}
+.button:hover{background:#ffe49a;color:#241b0d}
+.secondary{background:transparent;color:#ffe49a;border-color:#8c7a59}
+.secondary:hover{background:#293044;color:#fff5d8}
+.retry{display:inline-flex;min-height:44px;align-items:center;padding:4px 0;border:0;background:none;font:inherit;color:#ffe49a;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+.retry:disabled{cursor:wait;opacity:.6}
+.muted{font-size:14px;color:#bdc1ce}
+.content{display:grid;grid-template-columns:1.15fr 1fr;gap:36px;margin-top:36px}
+ol{padding-left:24px;margin:0}li{padding-left:6px;margin-bottom:22px}li::marker{color:#e8c064;font-weight:800}
+li strong{display:block;color:#f3ead6;margin-bottom:3px}
+details{border-top:1px solid #424a5b}
+details:last-child{border-bottom:1px solid #424a5b}
+summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:10px 0;cursor:pointer;font-weight:650;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::after{content:'＋';flex:none;color:#e8c064}
+details[open] summary::after{content:'−'}
+details p{padding:0 0 18px;color:#cdd0d9;font-size:14px}
+footer{margin-top:32px;padding-top:20px;border-top:1px solid #424a5b}
+[hidden]{display:none!important}
+@media(max-width:640px){main{padding:16px max(20px,env(safe-area-inset-right)) max(36px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left))}.content{grid-template-columns:1fr;gap:22px;margin-top:28px}.download{padding:18px}.actions{flex-direction:column}.button{width:100%}header{padding-top:20px}}
 </style>
+</head>
+<body>
 <main>
-  <p>SERTZ · Android</p>
-  <h1>APK 설치 안내</h1>
-  <p id="version" role="status" aria-live="polite">최신 버전을 확인하는 중입니다.</p>
-  <ol>
-    <li>공식 배포 목록에서 최신 APK 파일을 내려받으세요.</li>
-    <li>Android의 다운로드 알림이나 파일 앱에서 APK를 열어 설치하세요. 필요한 경우 해당 앱의 ‘알 수 없는 앱 설치’를 허용하세요.</li>
-    <li>기존 앱을 삭제하지 않고 덮어 설치하면 로컬 캐릭터를 유지할 수 있습니다. 다른 기기로 옮기기 전에는 계정의 클라우드 백업도 확인하세요.</li>
-  </ol>
-  <p>웹 업데이트와 APK 게시 시점은 다를 수 있습니다. 파일이 아직 보이지 않으면 공식 배포 목록의 빌드·게시 상태를 확인하거나 웹에서 계속 플레이하세요.</p>
-  <a id="apk" hidden>해당 버전 APK 다운로드</a>
-  <a href="https://github.com/apple01234/CERTZ/releases" target="_blank" rel="noopener noreferrer">공식 배포 목록</a>
-  <a href="/">웹에서 시작하기</a>
-  <p><small>설치가 실패하면 저장 공간과 APK 다운로드 완료 여부를 확인하세요. 앱 삭제·데이터 초기화는 로컬 세이브를 지우므로 업데이트 방법으로 사용하지 마세요.</small></p>
+  <a class="back" href="/">SERTZ로 돌아가기</a>
+  <header>
+    <p class="brand">SERTZ</p>
+    <h1>Android 설치 안내</h1>
+    <p>APK 받기부터 업데이트까지, 순서대로 안내해 드려요.</p>
+  </header>
+
+  <aside class="save-note" aria-labelledby="save-heading">
+    <h2 id="save-heading">업데이트 전에, 저장부터 확인해 주세요.</h2>
+    <p>기존 앱을 삭제하거나 데이터를 초기화하면 이 기기의 캐릭터 기록이 지워질 수 있어요. 다른 기기로 옮기기 전에는 게임의 <strong>로그인 / 계정</strong>에서 클라우드 백업을 확인해 주세요.</p>
+  </aside>
+
+  <section class="download" aria-labelledby="download-heading">
+    <h2 id="download-heading">공식 파일 받기</h2>
+    <p id="version" class="version" role="status" aria-live="polite">앱 버전을 확인하고 있어요.</p>
+    <div class="actions">
+      <a id="apk" class="button" hidden>APK 다운로드</a>
+      <a class="button secondary" href="https://github.com/apple01234/CERTZ/releases" target="_blank" rel="noopener noreferrer" aria-label="공식 배포 목록 (새 창)">공식 배포 목록<span class="muted" aria-hidden="true"> ↗</span></a>
+    </div>
+    <p class="muted">웹 업데이트와 APK 게시 시점은 다를 수 있어요. 다운로드할 파일이 아직 없다면 공식 배포 목록을 확인하거나 웹에서 계속 플레이해 주세요.</p>
+    <button id="retry" class="retry" type="button" hidden>버전 다시 확인</button>
+    <noscript><p class="muted">자동 버전 확인을 사용할 수 없어요. 공식 배포 목록에서 최신 APK를 골라 주세요.</p></noscript>
+  </section>
+
+  <div class="content">
+    <section aria-labelledby="steps-heading">
+      <h2 id="steps-heading">설치는 이렇게 해요</h2>
+      <ol>
+        <li><strong>APK를 내려받아요</strong>위 다운로드 버튼이나 공식 배포 목록에서 APK 파일을 받아 주세요.</li>
+        <li><strong>받은 파일을 열어요</strong>다운로드 알림이나 파일 앱에서 APK를 열고 설치를 진행해 주세요. 필요한 경우 파일을 연 앱의 ‘알 수 없는 앱 설치’를 허용해 주세요.</li>
+        <li><strong>기존 앱에 덮어 설치해요</strong>업데이트할 때는 기존 앱을 삭제하지 말아 주세요. 설치 후 게임을 열어 캐릭터와 저장 상태를 확인해 주세요.</li>
+      </ol>
+    </section>
+    <section aria-labelledby="help-heading">
+      <h2 id="help-heading">설치가 막혔나요?</h2>
+      <details><summary>다운로드 파일이 없어요</summary><p>웹에는 업데이트가 반영됐어도 APK는 아직 게시되지 않았을 수 있어요. 공식 배포 목록을 확인해 주세요. 기다리는 동안 웹에서 플레이할 수 있어요.</p></details>
+      <details><summary>설치가 완료되지 않아요</summary><p>기기 저장 공간이 충분한지, APK 다운로드가 끝났는지 확인해 주세요. 다시 받을 때도 공식 배포 목록을 이용해 주세요. 앱 삭제나 데이터 초기화는 해결 방법으로 사용하지 말아 주세요.</p></details>
+      <details><summary>업데이트하려면 앱을 지워야 하나요?</summary><p>앱을 지우지 말고 받은 APK로 덮어 설치해 주세요. 삭제·재설치가 필요해 보이더라도 먼저 로그인 / 계정에서 클라우드 백업을 확인해 주세요.</p></details>
+    </section>
+  </div>
+  <footer><a class="back" href="/">설치하지 않고 웹에서 플레이</a><p class="muted">공식 배포 목록은 새 창에서 열려요.</p></footer>
 </main>
 <script>
-const controller = new AbortController();
-const timer = setTimeout(() => controller.abort(), 8000);
-fetch('/api/version', { cache: 'no-store', signal: controller.signal })
+const retry = document.getElementById('retry');
+function loadVersion() {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  const link = document.getElementById('apk');
+  link.hidden = true;
+  link.removeAttribute('href');
+  retry.disabled = true;
+  document.getElementById('version').textContent = '앱 버전을 확인하고 있어요.';
+  return fetch('/api/version', { cache: 'no-store', signal: controller.signal })
   .then(response => {
     if (!response.ok) throw new Error('version unavailable');
     return response.json();
@@ -35,14 +114,17 @@ fetch('/api/version', { cache: 'no-store', signal: controller.signal })
     if (!/^\d+\.\d+\.\d+$/.test(version.latest) || !Number.isInteger(version.code) || version.code <= 0) throw new Error('invalid version');
     const apk = new URL(version.apk);
     if (apk.origin !== 'https://github.com' || !apk.pathname.startsWith('/apple01234/CERTZ/releases/download/')) throw new Error('invalid APK link');
-    document.getElementById('version').textContent = `최신 앱: v${version.latest} · vc${version.code}`;
-    const link = document.getElementById('apk');
+    document.getElementById('version').textContent = `안내 버전 v${version.latest} · 빌드 ${version.code}`;
     link.href = apk.href;
     link.hidden = false;
   })
   .catch(() => {
-    document.getElementById('version').textContent = '버전 정보를 확인하지 못했습니다. 공식 배포 목록에서 최신 APK를 확인하세요.';
+    document.getElementById('version').textContent = '버전을 확인하지 못했어요. 공식 배포 목록에서 최신 APK를 확인하거나 다시 시도해 주세요.';
   })
-  .finally(() => clearTimeout(timer));
+  .finally(() => { clearTimeout(timer); retry.disabled = false; retry.hidden = false; });
+}
+retry.addEventListener('click', loadVersion);
+loadVersion();
 </script>
+</body>
 </html>

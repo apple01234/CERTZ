@@ -20,7 +20,7 @@ import { ULT_CLASSES,
 import { isZEvolved, isCEvolved, isVEvolved, isBEvolved, fifthFormDef } from "../skillEvolution"; // vc252 P5 · vc280 — V/B 확장 · vc281 — 5차 공격 형태
 import { ModStack, ModOp } from "../combat/modStack"; // vc276 — 배율 스택 (JENNY FloatModStack 이식)
 import { sweptHitsTarget } from "../collision/sweep";
-import { loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드
+import { bodyFramesReady, loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드
 import { resolveBodyPrefix } from "../characterAppearance";
 import { ult5HoldOf, ult5bHoldOf, ultBurstMultOf } from "../ultHold"; // v1.4.41 (#3) — 궁극기 시전 시간 · 지시 #9 — 극딜 배율
 import { playUltCinematic } from "../fx/UltCinematic"; // v1.4.41 (#13) — 궁극기 시네마틱 연출
@@ -9588,7 +9588,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   tickBodyPending() {
     if (!this.bodyPending) return;
     const wanted = this.bodyPending;
-    if (this.scene.textures.exists(`${wanted}_idle0`)) {
+    if (bodyFramesReady(this.scene, wanted)) {
       this.bodyPending = null;
       if (this.bodyPrefix !== wanted) {
         this.bodyPrefix = wanted;
@@ -9734,7 +9734,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
      *  로드 완료까지 bodyPrefix를 비워둔다 — bodyKey가 hero_*(부트 로드분)를 가리켜
      *  미로드 창 동안 setTexture(__MISSING) 깨짐 없이 기본 외형으로 안전하게 보인다.
      *  재적용은 preUpdate 폴링이 담당 (이벤트 경합 무관). */
-    if (this.bodyPrefix && !this.scene.textures.exists(`${this.bodyPrefix}_idle0`)) {
+    if (this.bodyPrefix && !bodyFramesReady(this.scene, this.bodyPrefix)) {
       const wanted = this.bodyPrefix;
       this.bodyPrefix = "";
       this.bodyPending = wanted;

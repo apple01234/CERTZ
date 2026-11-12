@@ -1,8 +1,10 @@
 import type Phaser from "phaser";
-import { DEFERRED_BODY_PREFIXES, ALL_ITEM_ICONS } from "./data";
+import { BODY_PREFIXES, DEFERRED_BODY_PREFIXES, ALL_ITEM_ICONS, STAGES, ENEMIES, BOSS_DEFS, resolveStage } from "./data";
+import { resolveBodyPrefix } from "./characterAppearance";
+import { tutorialResume, tutorialStage } from "./tutorialFlow";
 import type { SaveData } from "./config";
 import { rememberTexture } from "./texGuard";
-import { assetUrl, TITLE_ASSETS, type AssetDefinition } from "./assetSelection";
+import { assetUrl, isWorldAsset, TITLE_ASSETS, type AssetDefinition } from "./assetSelection";
 
 export type LoadProgress = { phase: string; elapsedMs: number; total: number; complete: number; active: number; failed: string[]; error?: string };
 const PHASE_LIMIT_MS = 30000;
@@ -129,9 +131,7 @@ class AssetManager {
   private pump() {
     // Native Image/TextureManager is already used by loadBodyPrefix. This avoids
     // Phaser4's documented re-entrant queue stall while bounding network pressure.
-    // vc279(2.2.23): 6 → 24. 운영(HTTP/2)은 파일당 지연이 지배적이라 6개 동시로는 3,675개에
-    // 약 92초가 걸렸다(평가 실측). 같은 80개 실측: 6개 2.4초 / 16개 0.8초 / 32개 0.5초.
-    // ponytail: 더 줄이려면 현재 맵 필수분만 기다리고 나머지는 뒤에서 받는 분할 로딩.
+    // Keep network pressure bounded even when only the current region is queued.
     while (!this.disposed && this.active < AssetManager.MAX_PARALLEL && this.queue.length) {
       const index = this.queue.findIndex(job => job.priority);
       const job = this.queue.splice(index < 0 ? 0 : index, 1)[0]; this.active++;
@@ -207,12 +207,24 @@ export async function ensureTitleAssets(scene: Phaser.Scene) {
   publish({ ...lastProgress!, phase: "title-ready" });
 }
 
-export async function ensureWorldAssets(scene: Phaser.Scene, _data: { stage?: string; save?: SaveData; gmBoss?: string; replayBoss?: string }) {
+export async function ensureWorldAssets(scene: Phaser.Scene, data: { stage?: string; save?: SaveData; gmBoss?: string; replayBoss?: string }) {
   const manager = managers.get(scene.game);
   if (!manager) throw new Error("Asset catalog not installed");
-  // Preserve the original game queue, but finish it before gameplay starts.
-  // Music outside this catalog keeps audio.ts's bounded PCM cache.
-  await manager.ensure(scene, [...manager.definitions.keys()], "game-assets");
+  const tutorial = tutorialResume(data.save);
+  const stage = STAGES[resolveStage(tutorial !== null ? tutorialStage(tutorial) : data.stage ?? data.save?.stage ?? "village")];
+  const allMonsters = Object.keys(ENEMIES).sort((a, b) => b.length - a.length);
+  // Only authored story fields have a closed spawn list. Tower/park/gate/raid
+  // waves and village activities can select enemies outside StageDef.enemies.
+  const regional = /^(?:howlrstone\d+x\d+|dlc[a-z]+\d+|r\d+)$/.test(stage.key);
+  const monsters = new Set<string>(regional ? stage.enemies.map(enemy => enemy.key) : allMonsters);
+  if (stage.elite) monsters.add(stage.elite.key);
+  for (const key of ["x2_rat", "golem", "runegolem"]) monsters.add(key); // tutorial and class trials
+  for (const boss of Object.values(BOSS_DEFS)) if (boss.summonKey) monsters.add(boss.summonKey);
+  const scope = { body: resolveBodyPrefix(data.save ?? {}), bodies: BODY_PREFIXES, monsters: [...monsters], allMonsters };
+  const keys = [...manager.definitions.values()].filter(def => isWorldAsset(def, scope)).map(def => def.key);
+  // Every region re-enters this gate before spawn; completed/in-flight jobs are
+  // reused. Do not start a full-catalog background burst during gameplay.
+  await manager.ensure(scene, keys, "world-assets");
   publish({ ...lastProgress!, phase: "world-assets-ready" });
 }
 

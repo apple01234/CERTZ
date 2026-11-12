@@ -23,6 +23,10 @@ const BODY_FRAME_NAMES = [
   "atkup0", "atkup1", "atkup2", "atkup3",
 ] as const;
 
+export function bodyFramesReady(scene: Phaser.Scene, prefix: string): boolean {
+  return BODY_FRAME_NAMES.every(frame => scene.textures.exists(`${prefix}_${frame}`));
+}
+
 /** v1.5.1 — Phaser 로더를 완전히 우회하는 단일 이미지 로딩:
  *  브라우저 네이티브 Image 로딩(병렬) + TextureManager.addImage 등록.
  *  이 Phaser 4 빌드의 로더는 진행 중 큐잉 시 멈추는(1장 후 정지) 결함이 있어
@@ -50,7 +54,7 @@ function loadImageRaw(scene: Phaser.Scene, key: string, url: string, bust = fals
  * 기존 타이틀의 37종 × 28프레임 일괄 요청을 제거해 입장 시 메인 스레드/네트워크
  * 압박을 크게 줄인다. */
 export async function loadBodyPrefix(scene: Phaser.Scene, prefix: string | null | undefined): Promise<void> {
-  if (!prefix || scene.textures.exists(`${prefix}_idle0`)) return;
+  if (!prefix) return;
 
   const need = BODY_FRAME_NAMES.filter((f) => !scene.textures.exists(`${prefix}_${f}`));
   if (need.length === 0) {

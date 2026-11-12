@@ -55,13 +55,17 @@ const applySource = playerSrc.slice(playerSrc.indexOf("  applyBodyLook() {"), pl
 const ts = (await import("typescript")).default;
 const { tier2RootOf } = await import("../src/game/classes.ts");
 const loads = [];
-const apply = new Function("resolveBodyPrefix", "tier2RootOf", "loadBodyPrefix", "FA_DISPLAY_SCALE", ts.transpile(`function applyBodyLook() ${applySource.slice(applySource.indexOf("{"))}; return applyBodyLook;`))(resolveBodyPrefix, tier2RootOf, (_scene, prefix) => loads.push(prefix), 1.17);
+const bodyFramesReady = (scene, prefix) => ["idle", "walk", "walkside", "walkup", "atk", "atkdown", "atkup"].every(name => [0,1,2,3].every(i => scene.textures.exists(`${prefix}_${name}${i}`)));
+const apply = new Function("resolveBodyPrefix", "tier2RootOf", "loadBodyPrefix", "bodyFramesReady", "FA_DISPLAY_SCALE", ts.transpile(`function applyBodyLook() ${applySource.slice(applySource.indexOf("{"))}; return applyBodyLook;`))(resolveBodyPrefix, tier2RootOf, (_scene, prefix) => loads.push(prefix), bodyFramesReady, 1.17);
 const ready = new Set(["jobm_berserker_idle0"]);
 const p = { cls: "warbringer", gender: "m", skinIdx: 2, outfit: null, gmSkin: false, gmApproved: false, scene: { textures: { exists: key => ready.has(key) }, anims: { exists: () => false } }, texture: { key: "hero_idle0" }, bodyKey: key => key, setTexture() {}, faActive: () => false, setScale() {}, applyBodyOffset() {}, applyLookTint() {} };
 apply.call(p);
 eq(p.bodyPending, "jobm_warbringer", "미로드 4차 외형을 2차로 고정하지 않고 직접 로드");
 eq(loads, ["jobm_warbringer"], "현재 직업 시트 로드 요청");
 ready.add("jobm_warbringer_idle0");
+apply.call(p);
+eq(p.bodyPending, "jobm_warbringer", "정지 프레임 한 장만으로 미완료 외형을 적용하지 않는다");
+for (const motion of ["idle", "walk", "walkside", "walkup", "atk", "atkdown", "atkup"]) for (let i=0;i<4;i++) ready.add(`jobm_warbringer_${motion}${i}`);
 apply.call(p);
 eq(p.bodyPrefix, "jobm_warbringer", "로드 후 선택창과 같은 외형 적용");
 // FA와 직업 외형 전환 시 이전 외형의 애니메이션이 덮어쓰지 않아야 한다.

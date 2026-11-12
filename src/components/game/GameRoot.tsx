@@ -351,7 +351,7 @@ export default function GameRoot() {
                 /* vc153 (#신규7) — z-30 → z-[60]: 타이틀 스크롤 오버레이(sertz-scroll z-40)가 버튼을 덮어
                  *  클릭이 전부 오버레이로 흡수돼 "로그인&회원가입 버튼 클릭안됨"(= 123456 로그인 안됨으로 체감) 버그.
                  *  실측 elementsFromPoint: BUTTON(z-30) 위에 DIV.sertz-scroll(z-40)이 깔려 클릭 도달 불능이었다. */
-                className="absolute left-2 top-2 z-[60] flex h-9 items-center gap-1.5 rounded-lg border-2 border-amber-200/50 bg-slate-900/85 px-2.5 text-[12px] font-black text-amber-100 shadow-lg transition active:scale-95 hover:border-amber-200/90 sm:left-3 sm:top-3"
+                 className="title-account absolute z-[60] flex min-h-11 items-center gap-1.5 rounded-lg border-2 border-amber-200/50 bg-slate-900/95 px-3 text-[12px] font-black text-amber-100 shadow-lg transition active:scale-95 hover:border-amber-200/90"
               >
                 🔑 로그인 / 계정
               </button>
@@ -387,8 +387,8 @@ export default function GameRoot() {
         <div className={ordinaryUiHidden ? "hidden" : "contents"}>
           {panel === "union" && <UnionPanel onClose={() => { audio.sfx.uiClose(); setPanel(null); }} />}
 
-          {/* v1.0.19 (A-2) — 가로 유지 프롬프트: 닫기 가능 (세로 플레이 허용) */}
-          <RotatePrompt active={portraitMobile && !rotateDismissed} onDismiss={() => setRotateDismissed(true)} />
+          {/* 회전 안내는 플레이 중에만 표시해 시작·계정·캐릭터 선택을 가리지 않는다. */}
+          <RotatePrompt active={state === "playing" && portraitMobile && !rotateDismissed} onDismiss={() => setRotateDismissed(true)} />
 
           {/* v1.1.6 (#개편 C39) — 세이브 저장 실패 경고. 놓치면 진행이 날아가므로
               화면 하단에 고정하고 12초간 유지한다(탭하면 닫힘). */}
@@ -411,4 +411,3 @@ export default function GameRoot() {
     </div>
   );
 }
-
