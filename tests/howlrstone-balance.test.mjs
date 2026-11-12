@@ -16,6 +16,7 @@ import { STAGES, ENEMIES, QUEST_EXP_MUL } from '../src/game/stages.ts';
 import { HOWLRSTONE_CHAPTERS } from '../src/game/howlrstone.ts';
 import { HOWLRSTONE_ENTRY } from '../src/game/howlrstone.ts';
 import { expToNext } from '../src/game/expTable.ts';
+import { trajectory } from '../scripts/measure-combat-balance.mjs';
 
 let checks = 0;
 const ok = (name, cond) => { assert.ok(cond, `✗ ${name}`); checks++; };
@@ -58,42 +59,28 @@ function needTo(exp0, target) {
 
 /* ── 2. 레벨 게이트가 실제로 진행을 잡는다 ─────────────────────────────── */
 {
-  /* 게이트는 "이전 장을 끝내면 자연히 도달하는 레벨"보다 높아야 의미가 있고,
-   *  "그 장을 다 해도 못 넘는 레벨"이면 진행이 막힌다. 두 경계를 동시에 본다. */
-  let prevExitLv = 1;
-  for (let i = 0; i < HOWLRSTONE_CHAPTERS.length; i++) {
-    const spec = HOWLRSTONE_CHAPTERS[i];
-    ok(`${spec.key}: enter >= mid`, spec.lvGate.enter <= spec.lvGate.mid);
-    ok(`${spec.key}: enter > 0`, spec.lvGate.enter >= 1);
-    /* 이 장에 들어가려면 이전 장 종료 시점 레벨 이상이어야 한다(막힘 방지). */
-    ok(
-      `${spec.key}: 게이트 ${spec.lvGate.enter} <= 이전 장 종료 Lv${prevExitLv}`,
-      spec.lvGate.enter <= prevExitLv,
-    );
-
-    /* 이 장을 정상 플레이(구역마다 스폰 전멸 + 퀘스트 수령)하면 mid 이상이 된다. */
-    const mul = spec.scaleMul.exp;
-    const avgBase = spec.enemies.reduce((t, e) => t + ENEMIES[e.key].exp, 0) / spec.enemies.length;
-    let gained = 0;
-    for (let sub = 1; sub <= spec.stages; sub++) {
-      const def = STAGES[`${spec.key}x${sub}`];
-      const kills = def.enemies.reduce((t, g) => t + g.count, 0);
-      gained += avgBase * mul * 1.35 * kills; // 사냥
-      gained += def.quests.reduce((t, q) => t + (q.expReward ?? 0) * QUEST_EXP_MUL, 0);
+  /* 2026-11-12 재조정 — 종전 시뮬은 "구역 스폰 1회 전멸"만 셌고 상한 검사가 없었다.
+   *  실제로는 사냥 퀘스트 요구량(후반 수백 마리)을 채워야 하므로 정상 플레이만으로
+   *  영프 편 종료 Lv154(게이트 128), 그랜드 플레닛 첫 행성에서 Lv219 가 됐다.
+   *  이제 사냥 요구량까지 넣은 공용 궤적(scripts/measure-combat-balance.mjs)으로
+   *  **하한(막힘 없음)과 상한(과속 없음)** 을 같이 본다. */
+  const story = trajectory().slice(0, HOWLRSTONE_CHAPTERS.length);
+  for (const t of story) {
+    const spec = HOWLRSTONE_CHAPTERS.find((c) => c.key === t.chapter);
+    ok(`${t.chapter}: enter <= mid`, spec.lvGate.enter <= spec.lvGate.mid);
+    ok(`${t.chapter}: 게이트 ${t.gateEnter} <= 입장 시점 Lv${t.enterLv} (막힘 없음)`, t.gateEnter <= t.enterLv);
+    if (t.exitLv > t.enterLv) {
+      ok(`${t.chapter}: 입장 Lv${t.enterLv} <= 게이트 ${t.gateEnter}+3 (과속 없음)`, t.enterLv <= t.gateEnter + 3);
+      ok(`${t.chapter}: 정상 클리어 후 Lv${t.exitLv} >= mid ${t.gateMid}`, t.exitLv >= t.gateMid);
     }
-    prevExitLv = levelFrom(prevExitLv, gained);
-    ok(`${spec.key}: 정상 클리어 후 Lv${prevExitLv} >= mid ${spec.lvGate.mid}`, prevExitLv >= spec.lvGate.mid);
   }
-  /* 마지막 장을 끝내면 그랜드 플레닛 진입 요구(126)를 넘어야 막다른 길이 없다. */
-  ok(`영프 편 종료 Lv${prevExitLv} >= 126 (그랜드 플레닛 진입)`, prevExitLv >= 126);
+  const end = story[story.length - 1].exitLv;
+  /* 마지막 장을 끝내면 그랜드 플레닛 진입 요구(130)를 넘되, 한참 넘지는 않는다. */
+  ok(`영프 편 종료 Lv${end} — 130~135 (그랜드 플레닛 진입)`, end >= 130 && end <= 135);
 }
 
-/* ── 3. 곡선이 단조 증가한다 (초반 폭주 / 후반 정체 재발 방지) ────────── */
+/* ── 3. 게이트가 단조 증가한다 ─────────────────────────────────────────── */
 {
-  const mul = HOWLRSTONE_CHAPTERS.map((c) => c.scaleMul.exp);
-  for (let i = 1; i < mul.length; i++) {
-    ok(`${i + 1}장 scaleMul.exp ${mul[i]} > ${i}장 ${mul[i - 1]}`, mul[i] > mul[i - 1]);
-  }
   const gates = HOWLRSTONE_CHAPTERS.map((c) => c.lvGate.enter);
   for (let i = 1; i < gates.length; i++) {
     ok(`${i + 1}장 게이트 ${gates[i]} > ${i}장 ${gates[i - 1]}`, gates[i] > gates[i - 1]);

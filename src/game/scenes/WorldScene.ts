@@ -6,7 +6,7 @@ import { createGameState, type GameState } from "../state/gameState";
 /* vc238 (P4 후속) — 구역당 동시 스폰 상한. `data.ts` 는 명시 목록으로만 재수출하므로
  *  여기서 stages 를 직접 import 한다(리드 지시: data.ts 수정 금지). */
 import { zoneSpawnCap } from "../stages";
-import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
+import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_STAGE_STATS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { finaleTargetOrder, finalePlanReach, type FinalePlan } from "../fx/ultFinalePlan";
 import { storyPortalDestination, storyEntryAllowed, howlFinalStage, YOUNG_PRINCESS_VILLAGE } from "../storyProgression";
@@ -9678,10 +9678,13 @@ export class WorldScene extends Phaser.Scene {
     // v3.0.28 (#보스난이도) — 이지 0.65 / 노말 1.0 / 하드 1.8 / 카오스 2.8 배율 (보상은 reward 배율)
     const sc = stageScale(this.stageDef.key, this.player?.lv);
     const dif = BOSS_DIFFS[this.bossDiff];
+    /* 본편 보스 구역은 노말 실효 스탯 표(BOSS_STAGE_STATS)를 쓰고 난이도 비율만 곱한다. */
+    const fixed = BOSS_STAGE_STATS[this.stageDef.key];
+    const normal = BOSS_DIFFS.normal;
     const def: BossDef = {
       ...base,
-      hp: Math.round(base.hp * 1.25 * Math.max(1, sc.hp * 1.6) * dif.hp),
-      atk: Math.round(base.atk * Math.max(1, sc.atk * 1.15) * dif.atk),
+      hp: Math.round(fixed ? fixed.hp * dif.hp / normal.hp : base.hp * 1.25 * Math.max(1, sc.hp * 1.6) * dif.hp),
+      atk: Math.round(fixed?.atk ? fixed.atk * dif.atk / normal.atk : base.atk * Math.max(1, sc.atk * 1.15) * dif.atk),
       exp: Math.round(base.exp * sc.exp * dif.reward),
       gold: Math.round(base.gold * sc.gold * dif.reward),
     };

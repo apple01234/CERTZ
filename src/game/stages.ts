@@ -866,8 +866,15 @@ for (const [key, boss] of Object.entries(BOSS_DEFS)) {
  *  조치: 계수를 완만한 곡선으로 바꾸고 후반 배율을 10 → 4로 낮췄다.
  *  결과: 1.9 ~ 19.7타 (편차 57.8배 → 10.2배), 즉사 구간 0.
  *  계산 근거: atkTotal = 12 + 3×(lv−1), 스킬 배율 1.25~2.36 (rollDamage 참조). */
-const CH_HP = [1.45, 1.9, 3.6, 4.7, 6.5, 9.5, 14.0, 20.0, 28.0, 42.0, 66.0, 105.0, 165.0, 260.0, 410.0, 650.0, 1020.0, 1600.0, 2500.0]; // vc186b — DLC 3챕터 + vc192 나머지 7행성 // 1챕터 1.45 — Lv20까지 1챕터에 머무는데 적 HP가 낮아 1.1타(즉사)였다
-const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5.0, 6.2, 7.8, 9.8, 12.5, 15.8, 20.0, 25.0, 31.0, 39.0, 49.0]; // vc186b — DLC 3챕터 + vc192 나머지 7행성 // 유저 피드백: 공격력은 현행 유지
+/* 2026-11-12 전 구간 재조정 — 그랜드 플레닛(인덱스 9~18)의 HP/ATK 계수를 실측으로 다시 뽑았다.
+ *  종전 값(42 → 2500, 6.2 → 49)은 행성마다 ×1.6 씩 오르는 지수 곡선인데 플레이어 공격력은
+ *  레벨당 약 +8.5 로 직선이라, 강화 0 기준 잡몹이 22 → 1,770타, 맞고 죽기까지 17 → 1.7대였다.
+ *  새 값은 "행성 1구역 중앙값 6타(행성마다 +6%) · 14대에 사망(행성마다 -3%)" 에 맞춘 것이다.
+ *  값이 단조 증가하지 않는 것은 의도다 — 행성마다 몬스터 조합의 기본 스탯이 달라서,
+ *  같은 타수를 내려면 계수가 달라야 한다. 손으로 매끈하게 고치지 말고 측정 스크립트로 다시 뽑을 것.
+ *  측정·검증: scripts/measure-combat-balance.mjs, tests/combat-balance.test.mjs. */
+const CH_HP = [1.45, 1.9, 3.6, 4.7, 6.5, 9.5, 14, 20, 28, 47.3, 37.2, 54.3, 52, 61.3, 79.4, 133, 92, 240, 194]; // vc186b — DLC 3챕터 + vc192 나머지 7행성 // 1챕터 1.45 — Lv20까지 1챕터에 머무는데 적 HP가 낮아 1.1타(즉사)였다
+const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5, 7.38, 6.23, 7.13, 7.03, 8.22, 8.89, 14.3, 10.5, 31.9, 18.8]; // vc186b — DLC 3챕터 + vc192 나머지 7행성 // 유저 피드백: 공격력은 현행 유지
 /* v1.2.2 — 챕터 EXP 계수 재조정 (레벨 곡선 정합)
  *  문제: expTable.ts는 메이플 공식(지수 성장)인데 적 EXP 계수는 1→9.2로 거의 평평했다.
  *        레벨업에 필요한 처치 수가 **25마리 ~ 2,105,941마리**(편차 84,780배)로 벌어져
@@ -877,6 +884,13 @@ const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5.0, 6.2, 7.8, 9.8, 12
  *        처치 수 목표는 35 → 807로 완만히 증가(후반일수록 몸값이 커지는 게 자연스럽다).
  *  결과: 처치 수 편차 84,780배 → 22.8배. 전 구간 레벨업 가능. */
 const CH_EXP = [0.7, 2.3, 7.2, 23.1, 74.0, 237.0, 758.3, 2426.4, 24000.0, 75000.0, 240000.0, 760000.0, 2400000.0, 7600000.0, 24000000.0, 75000000.0, 240000000.0, 750000000.0, 2400000000.0]; // vc186b — DLC 3챕터 + vc192 나머지 7행성
+/* 2026-11-12 전 구간 재조정 — 경험치 **전용** 계수.
+ *  CH_EXP 는 퀘스트 골드 보상식에도 물려 있어 그대로 두고, 경험치(몬스터·퀘스트·반복 의뢰)만
+ *  이 배열을 쓴다. 그랜드 플레닛(인덱스 9~18)은 실측으로 다시 뽑았다:
+ *  종전 값은 정상 플레이만으로 첫 행성에서 Lv154 → 219(게이트 130~140)가 되고 1~2마리당
+ *  1레벨이 올랐다. 새 값은 "행성을 끝내면 다음 행성 입장 레벨 +1" 에 맞춘 것이다.
+ *  측정·검증: scripts/measure-combat-balance.mjs (trajectory), tests/combat-balance.test.mjs. */
+const CH_XP = [...CH_EXP.slice(0, 9), 141.9, 318.2, 551.8, 1742, 8917, 81050, 384800, 892000, 28900000, 455000000];
 
 /** 스테이지 키 → {챕터, 구역} 파싱 */
 export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: number } {
@@ -983,8 +997,44 @@ export function questNeedByLv(lv: number): number {
  *  후반 4개 챕터(7 스바르트알프헤임 · 8 니다벨리르 · 9 헬 · 10 심층 수련장)의 4구역부터 적용
  *  (구역 1~3은 진입 완충 유지). 공격력/경험치/골드 곡선은 현행 유지 — 체력만 상향. */
 const LATE_HP_CHAPTERS: ChapterKey[] = ["dlcstargate", "dlcprisma", "dlcocean", "dlcreverse", "dlcneocity", "dlcmech", "dlcswallow", "dlcopinicia", "dlcnovel", "dlcsernium"];
-const LATE_HP_FROM_SUB = 4;
-const LATE_HP_MUL = 4; // v1.2.2 — 10은 과했다(7~10챕터 50~64타). 4로 낮춰 17~20타대.
+/* 2026-11-12 전 구간 재조정 — 구역 4에서 HP 가 한 번에 ×4 되던 절벽을 구역당 ×1.2 경사로 바꿨다.
+ *  9구역 누적은 ×4.3 으로 종전(×4)과 비슷하고, 1~3구역 → 4구역의 4배 점프만 사라진다. */
+const LATE_HP_RAMP = 1.2;
+
+/* ================= 2026-11-12 — 본편 보스 구역의 노말 실효 스탯 =================
+ *  [왜] 보스 HP 는 `base × 1.25 × (구역 배율 × 1.6) × 난이도(노말 4.5)` 로 계산돼 왔다.
+ *   디오는 "실효 19,800 · 약 105초" 로 설계됐는데(howlrstone.ts 주석) 실제로는 178,200 이었고,
+ *   그랜드 플레닛은 잡몹용 지수 배율이 그대로 곱해져 마지막 행성 보스가 약 246억 HP 였다.
+ *  [지금] 본편 진행 보스는 "노말에서 실제로 나오는 HP/ATK" 를 이 표에 직접 적는다.
+ *   spawnBoss 가 이 값에 난이도 비율(이지/하드/카오스 ÷ 노말)만 곱한다. 재림·GM 체험·탑·
+ *   공동 토벌전은 이 표를 쓰지 않는다(각자 공식 유지 — BOSS_DEFS 기본값도 그대로).
+ *  [기준] 강화 0 전사의 기본공격 타수: 영프 편 150타(Lv11) → 450타(Lv113),
+ *   그랜드 플레닛 600 → 1,500타. 전직·스킬을 쓰는 실제 유저는 대략 1~3분이다.
+ *   그랜드 플레닛 ATK 는 같은 캐릭터가 4대를 버티는 값(종전 3.2대 → 0.5대).
+ *   atk 를 비우면 기존 공식을 쓴다(영프 편은 5~7대로 이미 적정).
+ *  측정·검증: scripts/measure-combat-balance.mjs, tests/combat-balance.test.mjs. */
+export const BOSS_STAGE_STATS: Record<StageKey, { hp: number; atk?: number }> = {
+  howlrstone2x3: { hp: 19800 },
+  howlrstone5x4: { hp: 71200 },
+  howlrstone7x3: { hp: 110000 },
+  howlrstone7x5: { hp: 117000 },
+  howlrstone8x4: { hp: 143000 },
+  howlrstone10x2: { hp: 218000 },
+  howlrstone11x4: { hp: 285000 },
+  howlrstone12x4: { hp: 344000 },
+  howlrstone13x4: { hp: 413000 },
+  howlrstone14x5: { hp: 497000 },
+  dlcstargate10: { hp: 808000, atk: 678 },
+  dlcprisma10: { hp: 1040000, atk: 745 },
+  dlcocean10: { hp: 1290000, atk: 812 },
+  dlcreverse8: { hp: 1540000, atk: 858 },
+  dlcneocity4: { hp: 1800000, atk: 907 },
+  dlcmech10: { hp: 2220000, atk: 1015 },
+  dlcswallow10: { hp: 2610000, atk: 1092 },
+  dlcopinicia10: { hp: 3100000, atk: 1172 },
+  dlcnovel10: { hp: 3570000, atk: 1254 },
+  dlcsernium10: { hp: 4060000, atk: 1334 },
+};
 
 /** 구역별 성장 배율 — 적 HP/ATK/EXP/골드 (사용자 지시 #6/#9 밸런스)
  *  v1.0.19 (A-3) — 신규 스테이지(scaleMul 보유)는 전용 배율 우선, 기존 챕터는 기존 곡선 유지 */
@@ -998,7 +1048,7 @@ export function stageScale(key: StageKey, playerLv?: number): { hp: number; atk:
   /* v3.0.22 (#50) — 구역 진행 배율 상향: 구역당 HP +7.5%·ATK +6% (기존 5.5/4.5%) */
   const subMul = 1 + (sub - 1) * 0.075;
   /* vc142 (#5) — 후반 4챕터 구역 4+ HP ×10 */
-  const lateMul = LATE_HP_CHAPTERS.includes(spec.key) && sub >= LATE_HP_FROM_SUB ? LATE_HP_MUL : 1;
+  const lateMul = LATE_HP_CHAPTERS.includes(spec.key) ? LATE_HP_RAMP ** (Math.max(1, sub) - 1) : 1;
   /* ══════════════════════════════════════════════════════════════════════════
    * vc193 (버그 #4 "노탬인데 10챕터 몬스터들이 1방컷 남 (200렙기준)")
    *
@@ -1022,7 +1072,7 @@ export function stageScale(key: StageKey, playerLv?: number): { hp: number; atk:
   return {
     hp: CH_HP[i] * subMul * lateMul * overMulHp,
     atk: CH_ATK[i] * (1 + (sub - 1) * 0.06) * overMulAtk,
-    exp: CH_EXP[i] * subMul,
+    exp: CH_XP[i] * subMul,
     gold: (1 + i * 0.42) * subMul,
   };
 }
@@ -1185,7 +1235,7 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
    *  보상 exp는 게이트 달성 직후 다음 목표로 자연스럽게 이어지도록 챕터 배율 반영 */
   const gateLv = sub === 1 ? spec.lvGate.enter : sub === 4 ? spec.lvGate.mid : null;
   if (gateLv != null) {
-    const gateExp = Math.round((70 + gateLv * 6) * CH_EXP[spec.num - 2] * 1.15);
+    const gateExp = Math.round((70 + gateLv * 6) * CH_XP[spec.num - 2] * 1.15);
     quests.push({
       id: `${prefix}-lv-gate`,
       type: "level",
@@ -1292,7 +1342,7 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
       targetKeys: focusMode ? [zoneMon] : mixKeys, // v3.0.28 — 카운트·판정은 구역 스폰 몬스터 전체 합산
       targetLabel: focusMode ? main : `${main} 등 구역 몬스터`,
       reward: Math.round((55 + sub * 14) * CH_EXP[spec.num - 2] * 0.55 * G * Math.max(1, nf / 8)), // 마릿수 증가분만큼 골드 보상 동반 상향
-      expReward: Math.round((60 + sub * 14) * CH_EXP[spec.num - 2] * 1.5 * Math.max(1, nf / 8)),
+      expReward: Math.round((60 + sub * 14) * CH_XP[spec.num - 2] * 1.5 * Math.max(1, nf / 8)),
     });
   }
   if (sub === 9) {
@@ -1304,7 +1354,7 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
       desc: `${spec.title}의 심장부 — 결정의 흔적이 강하게 빛나고 있다.`,
       targetLabel: "결정의 흔적",
       reward: Math.round(140 * CH_EXP[spec.num - 2] * 0.7 * G),
-      expReward: Math.round(200 * CH_EXP[spec.num - 2]),
+      expReward: Math.round(200 * CH_XP[spec.num - 2]),
     });
   }
   if (sub === 10 && spec.boss) {
@@ -1315,7 +1365,7 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
       desc: `${spec.title}의 주인 — ${BOSS_DEFS[spec.boss].name}를 처치해라!`,
       targetLabel: BOSS_DEFS[spec.boss].name,
       reward: Math.round(320 * CH_EXP[spec.num - 2] * 0.7 * G),
-      expReward: Math.round(420 * CH_EXP[spec.num - 2]),
+      expReward: Math.round(420 * CH_XP[spec.num - 2]),
     });
     // 챕터 최종 — 다음 챕터로 나가는 차원문
     quests.push({
