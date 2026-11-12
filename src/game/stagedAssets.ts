@@ -6,7 +6,8 @@ import { assetUrl, TITLE_ASSETS, type AssetDefinition } from "./assetSelection";
 
 export type LoadProgress = { phase: string; elapsedMs: number; total: number; complete: number; active: number; failed: string[]; error?: string };
 const PHASE_LIMIT_MS = 30000;
-const FILE_LIMIT_MS = 8000;
+// 동시 24개가 대역폭을 나눠 쓰므로 큰 파일(최대 6.7MB) 하나의 제한도 넉넉히 둔다. 멈춤 감지는 PHASE_LIMIT_MS 가 맡는다.
+const FILE_LIMIT_MS = 20000;
 const FRAME_NAMES = ["idle0", "idle1", "idle2", "idle3", "walk0", "walk1", "walk2", "walk3", "walkside0", "walkside1", "walkside2", "walkside3", "walkup0", "walkup1", "walkup2", "walkup3", "atk0", "atk1", "atk2", "atk3", "atkdown0", "atkdown1", "atkdown2", "atkdown3", "atkup0", "atkup1", "atkup2", "atkup3"];
 const managers = new WeakMap<Phaser.Game, AssetManager>();
 
@@ -77,6 +78,7 @@ async function json(url: string) {
 
 type Job = { def: AssetDefinition; scene: Phaser.Scene; priority: boolean; resolve: () => void; reject: (error: Error) => void; promise: Promise<void> };
 class AssetManager {
+  static readonly MAX_PARALLEL = 24;
   readonly definitions: Map<string, AssetDefinition>;
   private jobs = new Map<string, Job>();
   private metadata = new Map<string, ReturnType<typeof json>>();
@@ -127,7 +129,10 @@ class AssetManager {
   private pump() {
     // Native Image/TextureManager is already used by loadBodyPrefix. This avoids
     // Phaser4's documented re-entrant queue stall while bounding network pressure.
-    while (!this.disposed && this.active < 6 && this.queue.length) {
+    // vc279(2.2.23): 6 → 24. 운영(HTTP/2)은 파일당 지연이 지배적이라 6개 동시로는 3,675개에
+    // 약 92초가 걸렸다(평가 실측). 같은 80개 실측: 6개 2.4초 / 16개 0.8초 / 32개 0.5초.
+    // ponytail: 더 줄이려면 현재 맵 필수분만 기다리고 나머지는 뒤에서 받는 분할 로딩.
+    while (!this.disposed && this.active < AssetManager.MAX_PARALLEL && this.queue.length) {
       const index = this.queue.findIndex(job => job.priority);
       const job = this.queue.splice(index < 0 ? 0 : index, 1)[0]; this.active++;
       void (async () => {

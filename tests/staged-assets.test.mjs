@@ -39,13 +39,14 @@ test('stage selection helper retains selected body/enemy/boss', () => {
   assert.equal(isWorldAsset({key:'sound',type:'audio',urls:[]}, scope),false);
 });
 
-test('six concurrent requests, critical priority, and shared jobs without duplicate downloads', async () => {
-  const h = harness(['a','b','c','d','e','f','background','critical']);
+test('24 concurrent requests, critical priority, and shared jobs without duplicate downloads', async () => {
+  const filler = Array.from({ length: 24 }, (_, i) => i === 0 ? 'a' : `f${i}`);
+  const h = harness([...filler,'background','critical']);
   for (const def of h.definitions) void h.manager.request(def, h.scene, false);
-  assert.equal(h.starts.length,6);
+  assert.equal(h.starts.length,24);
   const done = h.manager.ensure(h.scene, ['critical','critical'], 'world-assets');
   h.releases.get('a')(); await tick();
-  assert.equal(h.starts[6],'critical');
+  assert.equal(h.starts[24],'critical');
   h.releases.get('critical')(); await done;
   assert.equal(h.starts.filter(key => key==='critical').length,1);
   for(const release of h.releases.values()) release();
