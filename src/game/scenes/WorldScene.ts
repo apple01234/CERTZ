@@ -18,6 +18,8 @@ import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 �
 import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
 import { ACC_ANCHORS, ACC_DEFAULT_ANCHOR } from "../acc_anchors"; // v1.2.1 (#1 치장위치) — 프레임별 실루엣 앵커
 import { PART_ANCHORS, PART_FALLBACK, placePart } from "../characterParts"; // vc278 — 데이터 주도 파츠 레이어
+import { usesFramedRoom, computeFramedView, roomBoundsFromLayout, FRAME_PAD } from "../framedRoom"; // vc278 — 검은 배경에 떠 있는 방
+import { chapterPlace } from "../chapterStoryPlan"; // vc278 — 던전 계열 role 판별
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
 import { Boss } from "../entities/Boss";
@@ -279,6 +281,13 @@ export class WorldScene extends Phaser.Scene {
   private portalLabel: Phaser.GameObjects.Text | null = null;
   /* v3.0 (사용자 지시 #7) — 아이작/개미굴식 구역 레이아웃 (필드 전용, 마을·실내는 null) */
   private layout: RoomLayout | null = null;
+  /** vc278 — 검은 배경에 떠 있는 방 (던전 계열만). 사용자 지시. */
+  framedRoom = false;
+  /** vc278 — framedRoom 일 때 적용한 줌 (리사이즈·워치독 재계산용) */
+  private framedZoom = 1;
+  /** vc278 — framedRoom 이 확정한 스크롤 (다른 경로가 밀어내면 되돌린다) */
+  private framedScrollX = 0;
+  private framedScrollY = 0;
   /** 전진 차원문/보스가 놓이는 최원거리 셀 중심 (포탈 보루 폴백 위치로도 사용) */
   private portalHome = new Phaser.Math.Vector2(0, 0);
   /** 입구 셀 중심 — 플레이어 스폰/복귀 차원문 기준점 */
@@ -1665,8 +1674,14 @@ export class WorldScene extends Phaser.Scene {
   private initLighting(stageKey: StageKey) {
     /* v4.1.5 — 동적 조명: 챕터별 암전 + 플레이어 횃불 광원 (fx/Lighting.ts).
      *  암전 챕터(동굴/헬/심연 등)에서는 어둠이 깔리고 광원이 시야를 만든다.
-     *  마을/실내/야외 밝은 챕터는 오버레이 없음(광원만 가능). */
+     *  마을/실내/야외 밝은 챕터는 오버레이 없음(광원만 가능).
+     *
+     * vc278 — framedRoom 에서는 앰비언트/횃불 광원을 **켜지 않는다**.
+     *  방 밖은 순수 검정이어야 "떠 있는 방"이 성립하는데, 광원 글로우가 카메라 배경
+     *  너머로 번져 우측 여백에 회색 그라데이션(16~80)이 생겼다(픽셀 실측).
+     *  방 안은 지면 타일 자체가 밝으므로 가독성 손실은 없다. */
     this.lighting = new Lighting(this);
+    if (this.framedRoom) return;
     this.lighting.setupAmbient(parseStage(stageKey).ch, true);
     /* v4.2.0 — 구역을 지날수록 횃불 광원 축소 (스테이지마다 줄어들어 보스전 회피 난이도 상승) */
     this.lighting.setTorchStage(parseStage(stageKey).sub);
@@ -1745,17 +1760,35 @@ export class WorldScene extends Phaser.Scene {
     this.stageW = this.stageDef.width;
     this.stageH = this.stageDef.height;
 
-    /* v4.1.5 — 동적 조명: 챕터별 암전 + 플레이어 횃불 광원 (fx/Lighting.ts).
-     *  create() 최상단에서 초기화 — 이후 포탈/모닥불 등 장식 배치 경로가 광원을 등록한다. */
-    this.initLighting(stageKey);
-
     /* ---------- 바닥 (v2.0 — 10챕터 테마 테이블 / v2.2 실내 분기) ---------- */
     const theme = STAGE_THEME[stageKey] ?? STAGE_THEME.village;
     this.solidGroup = this.physics.add.staticGroup();
     this.isInterior = stageKey === "interior_inn" || stageKey === "interior_home";
     this.layout = !this.isInterior && !this.stageDef.isVillage && stageKey !== "dojang"
       ? generateRoomLayout(stageKey, this.stageW, this.stageH) : null;
-    const authoredArt = this.layout ? renderAuthoredMapLayers(this, this.layout, (img) => this.attachDecorCollision(img)) : null;
+    /* vc278 (사용자 지시 "검은 배경에 작은 맵이 있는 느낌도") — 던전 계열 role 만
+     *  방을 검정 위에 띄운다. 숲·평원 등 야외는 기존 연출(지면이 이어지는 느낌)을 유지한다.
+     *  role 판별은 chapterStoryPlan 의 정본 표를 그대로 쓴다(새 표를 만들지 않는다).
+     *
+     *  ⚠️ initLighting 보다 **먼저** 판정한다. 조명은 framedRoom 이면 앰비언트를 끄는데,
+     *  판정이 뒤에 있으면 항상 false 를 보고 광원을 켜 버린다(순서 버그). */
+    {
+      const ps = parseStage(stageKey);
+      this.framedRoom = !!this.layout && usesFramedRoom(chapterPlace(ps.ch, ps.sub));
+    }
+    /* vc278 — 방 밖 여백은 카메라 배경(#000000)만으로 충분하다.
+     *  [시도했다가 제거함] 검정 판때기를 depth -10 에 깔아 여백을 덮는 방법을 썼으나,
+     *  근본 원인(scroll 계산)을 고친 뒤 **없어도 여백이 완전 검정**임을 실측으로 확인해 지웠다
+     *  (backdrop 제거 상태: L0/112 R0/112 T0/220 B0/56 비검정 = 0, 우측 픽셀 전부 (0,0,0)).
+     *  원인이 아닌 것을 덮는 코드는 다음 사람의 진단을 흐리므로 남기지 않는다. */
+
+    /* v4.1.5 — 동적 조명: 챕터별 암전 + 플레이어 횃불 광원 (fx/Lighting.ts).
+     *  create() 최상단에서 초기화 — 이후 포탈/모닥불 등 장식 배치 경로가 광원을 등록한다. */
+    this.initLighting(stageKey);
+
+    const authoredArt = this.layout
+      ? renderAuthoredMapLayers(this, this.layout, (img) => this.attachDecorCollision(img), this.framedRoom)
+      : null;
     if (this.isInterior) {
       this.buildInterior(stageKey);
     } else if (!authoredArt) {
@@ -1875,6 +1908,14 @@ export class WorldScene extends Phaser.Scene {
 
     this.physics.world.setBounds(0, 0, this.stageW, this.stageH);
     this.cameras.main.setBounds(0, 0, this.stageW, this.stageH);
+    /* vc278 — 검은 배경에 떠 있는 방. 배경색을 순수 검정으로 바꾸고,
+     *  카메라는 방 전체가 한 화면에 들어오도록 줌·스크롤을 직접 잡는다(사용자 선택).
+     *  방 밖으로 나가는 영역은 아무것도 그리지 않으므로 카메라 배경(검정)이 그대로 보인다. */
+    if (this.framedRoom) {
+      this.cameras.main.setBackgroundColor("#000000");
+      this.cameras.main.useBounds = false;
+      this.applyFramedCamera();
+    }
     /* vc204 — 지면 경계 오버레이(오토타일).
      *  지면은 위에서 TileSprite 한 장으로 깔았다. 그대로 두면 열린 영역과 벽이
      *  만나는 경계가 표현되지 않아 "같은 무늬가 끝없이 반복"으로 보인다.
@@ -1886,7 +1927,8 @@ export class WorldScene extends Phaser.Scene {
      *  Phaser follow/clamp 줌 보정 — PC 웹(줌>1)에서 맵이 화면 x축에서 어긋나던 근본 수정.
      *  상세 원인·보정 내용은 setupCameraClampFix 주석 참조. */
     this.setupCameraClampFix();
-    if (!this.isInterior) this.cameras.main.setBackgroundColor(theme.bg);
+    /* vc278 — framedRoom 이면 위에서 이미 검정으로 고정했다. 테마색이 덮어쓰지 않게 제외. */
+    if (!this.isInterior && !this.framedRoom) this.cameras.main.setBackgroundColor(theme.bg);
 
     /* ---------- v3.0 (사용자 지시 #7) — 개미굴식 구역 레이아웃 (필드 전용) ----------
      *  스테이지 키를 시드로 셀 그리드를 굴 형태로 개방하고 나머지는 벽으로 막는다.
@@ -2535,8 +2577,13 @@ export class WorldScene extends Phaser.Scene {
   private zoomDriftSince = 0;
   /** vc204 (#2) — 진행 중인 카메라 연출(줌/팬)이 있으면 true. 줌 워치독이 끼어들지 않게 한다. */
   /** vc206 (지시 #1) — 연출이 복원 기준으로 읽는 **실제 기준 줌**.
-   *  ultLayers 가 이 값을 읽어 연출 종료 후 정확히 원래 배율로 돌아간다. */
+   *  ultLayers 가 이 값을 읽어 연출 종료 후 정확히 원래 배율로 돌아간다.
+   *
+   *  vc278 — framedRoom(검은 배경에 떠 있는 방)에서는 기준 줌이 "방 전체 맞춤"이다.
+   *   viewZoom() 을 돌려주면 카메라 워치독이 방을 화면 밖으로 밀어내 검정 여백이 사라진다
+   *   (실측: 2430×1280 방에서 줌이 2.025 로 튀어 방이 잘렸다). */
   get baseZoom(): number {
+    if (this.framedRoom && this.framedZoom > 0) return this.framedZoom;
     return this.isInterior ? Math.min(3, viewZoom() * 1.45) : viewZoom();
   }
   /** vc206 (지시 #1) — 진행 중인 카메라 연출 종료 시각(ms). 0 이면 연출 없음.
@@ -2738,6 +2785,30 @@ export class WorldScene extends Phaser.Scene {
   private applyManualCameraFollow(dt: number) {
     const cam = this.cameras?.main;
     if (!cam || !this.player?.active) return;
+    /* vc278 — 검은 배경에 떠 있는 방: 카메라는 방 전체에 고정한다(사용자 선택
+     *  "방 전체가 한 화면에 들어오게"). 여기서 캐릭터를 쫓으면 매 프레임 스크롤이
+     *  덮여 검정 여백이 사라진다.
+     *
+     *  ⚠️ 줌까지 매 프레임 다시 적용한다. create() 이후 applyCameraZoom/followOffset/
+     *   줌 워치독이 각각 zoom·scroll·followOffset 을 건드려, 한 번만 맞춰두면 값이
+     *   어긋난다(실측: framedZoom 0.552 인데 실제 카메라 zoom 0.745, scroll 931/244).
+     *   여기서 매 프레임 확정하면 다른 경로가 무엇을 하든 최종값이 옳다. */
+    if (this.framedRoom) {
+      /* vc278 — 검은 배경에 떠 있는 방: 카메라를 방에 고정한다.
+       *
+       * 매 프레임 무조건 확정한다. drift 비교만으로는 부족했다 — Phaser 내부(카메라
+       *  클램프·preRender)가 setScroll 이후 값을 다시 밀어내, 직후에 재면 "맞다"고
+       *  나오는데 실제 렌더는 어긋난다.
+       *
+       * ⚠️ `sceneCinematicPlaying` 에도 양보하지 않는다. 입장 컷씬이 대사 대기로 수 초~수십 초
+       *  지속되는데(실측: applyManualCameraFollow 114회 호출 중 applyFramedCamera 0회),
+       *  그 동안 카메라가 플레이어를 쫓아 좌측 여백이 0 이 됐다(margin 좌 0 / 우 76~112 비대칭).
+       *  컷씬의 카메라 연출은 sceneCinematic.pan 이 framedRoom 에서 이미 양보하므로
+       *  여기서 확정해도 서로 덮어쓰지 않는다.
+       *  → 방이 한 화면에 다 보이는 구도에서는 팬이 정보를 더 주지 않는다. */
+      this.applyFramedCamera();
+      return;
+    }
     if (sceneCinematicPlaying(this)) { this.camCinemaSince = 0; return; }
     /* vc204 (지시서 #2·#18) — 카메라 워치독.
      *  종전에는 camCinema 가 true 인 동안 여기서 즉시 return 했고, 그 플래그를 푸는 곳은
@@ -2850,6 +2921,50 @@ export class WorldScene extends Phaser.Scene {
    *  팬 시네마틱 중엔 camCinema로 보류. 앱(줌 1)은 shift=0이라 기존 체감과 동일. */
   private setupCameraClampFix() {
     this.cameras.main.useBounds = false;
+  }
+
+  /**
+   * vc278 — 검은 배경에 떠 있는 방: 카메라를 방 전체에 맞춘다.
+   *
+   * 사용자 지시 "이렇게 검은 배경에 작은 맵이 있는 느낌도" + 선택 "방 전체가 한 화면에 들어오게".
+   * 계산은 `framedRoom.computeFramedView`(순수 함수)가 담당하고, 여기서는 적용만 한다.
+   *
+   * 주의: 플레이어 follow 를 끊지 않으면 매 프레임 카메라가 캐릭터를 쫓아가 여백이 사라진다.
+   *  따라서 framedRoom 인 동안은 startFollow 를 쓰지 않고 고정 좌표를 유지한다.
+   */
+  applyFramedCamera(): void {
+    const cam = this.cameras.main;    /* ⚠️ cam.width/height 는 **현재 줌이 반영된** 값이 아니다(Phaser 는 뷰포트 크기를 준다).
+     *  그러나 applyCameraZoom 이 resize 시점에 setZoom 을 먼저 호출하므로, 이 함수가
+     *  두 번째로 불릴 때 zoom 이 이미 1 이 아닐 수 있다. 그 상태에서 cam.width 를 쓰면
+     *  화면 크기를 잘못 재서 줌이 2.0 까지 튄다(실측: 2430×1280 방에서 2.025).
+     *  → 줌을 1 로 되돌린 뒤 실제 뷰포트 픽셀을 재고, 그 값으로 계산한다. */
+    cam.setZoom(1);
+    const screenW = cam.width;
+    const screenH = cam.height;
+    /* vc278 — 스테이지 전체가 아니라 **개방 셀의 바운딩 박스**를 방으로 삼는다.
+     *  스테이지 크기로 맞추면 벽/빈 셀까지 포함돼 방이 화면을 넘치고 검정이 거의 안 보인다. */
+    const lay = this.layout;
+    const room = lay
+      ? roomBoundsFromLayout(lay.open, lay.cols, lay.cellW, lay.cellH, this.stageW, this.stageH)
+      : undefined;
+    const v = computeFramedView(
+      room?.w ?? this.stageW,
+      room?.h ?? this.stageH,
+      screenW, screenH, FRAME_PAD, room,
+    );
+    cam.stopFollow();
+    cam.followOffset.set(0, 0);
+    /* ⚠️ Phaser 는 **useBounds 가 켜져 있으면** scroll 을 bounds 안으로 클램프한다.
+     *  framedRoom 은 방보다 넓은 시야(검정 여백)를 보여줘야 하므로 bounds 클램프를 끈다.
+     *  create() 에서 useBounds=false 로 두었지만 setBounds(…, true) 가 다시 켜므로 여기서도 끈다.
+     *  (실측: 켜져 있으면 1.5초 뒤 scroll 이 56/-84 → 423/228 로 밀려 여백이 사라졌다.) */
+    cam.setBounds(-FRAME_PAD, -FRAME_PAD, this.stageW + FRAME_PAD * 2, this.stageH + FRAME_PAD * 2, false);
+    cam.useBounds = false;
+    cam.setZoom(v.zoom);
+    cam.setScroll(v.scrollX, v.scrollY);
+    this.framedZoom = v.zoom;
+    this.framedScrollX = v.scrollX;
+    this.framedScrollY = v.scrollY;
   }
 
   /**
@@ -3043,6 +3158,9 @@ export class WorldScene extends Phaser.Scene {
 
   private applyFollowZoomOffset() {
     const cam = this.cameras.main;
+    /* vc278 — framedRoom 은 followOffset 을 쓰지 않는다(방에 고정). 여기서 offset 을
+     *  남기면 실효 스크롤이 밀려 검정 여백이 어긋난다. */
+    if (this.framedRoom) { cam.followOffset.set(0, 0); return; }
     const z = cam.zoom || 1;
     cam.followOffset.set(
       -(cam.width * (z - 1)) / (2 * z),
@@ -3064,6 +3182,13 @@ export class WorldScene extends Phaser.Scene {
     if (!first && dh < 96 && !rotated) return; // 주소창 토글 수준 노이즈 무시
     const apply = () => {
       // v2.3 — 실내(정사각 방 832×832)는 확대 줌으로 아늑한 한 방 연출 (지시 #6)
+      /* vc278 — framedRoom 은 방 전체를 한 화면에 맞추는 전용 계산을 쓴다.
+       *  viewZoom() 을 쓰면 창 크기와 무관하게 고정돼 여백이 깨진다. */
+      if (this.framedRoom) {
+        this.applyFramedCamera();
+        this.redrawMinimap();
+        return;
+      }
       this.cameras.main.setZoom(this.isInterior ? Math.min(3, viewZoom() * 1.45) : viewZoom());
       this.applyFollowZoomOffset(); // v4.10.0 — 줌이 바뀔 때마다 follow 보정 재계산
       this.redrawMinimap();
@@ -3178,8 +3303,23 @@ export class WorldScene extends Phaser.Scene {
     const wallTint = WALLS[ch] ?? 0xffffff;
     const rng = new Phaser.Math.RandomDataGenerator([this.stageDef.key + "-walls"]);
     const openAt = (c: number, r: number) => c >= 0 && r >= 0 && c < lay.cols && r < lay.rows && lay.open[r * lay.cols + c];
-    for (let r = 0; r < lay.rows; r++) {
-      for (let c = 0; c < lay.cols; c++) {
+    /* vc278 — framedRoom 에서는 **방 바운딩 박스 안의 벽만** 그린다.
+     *  종전에는 빈 셀 전부에 벽 타일을 칠해, 개방 영역 바깥의 벽이 카메라 시야
+     *  (검정이어야 하는 여백)를 회색(16~96)으로 덮었다(픽셀 실측: 우측 margin 72/112 비검정).
+     *  방 밖은 순수 검정이어야 "떠 있는 방"이 성립한다. */
+    let boxMinC = 0, boxMaxC = lay.cols - 1, boxMinR = 0, boxMaxR = lay.rows - 1;
+    if (this.framedRoom) {
+      let minC = Infinity, maxC = -1, minR = Infinity, maxR = -1;
+      for (let i = 0; i < lay.open.length; i++) {
+        if (!lay.open[i]) continue;
+        const c = i % lay.cols, r = Math.floor(i / lay.cols);
+        if (c < minC) minC = c; if (c > maxC) maxC = c;
+        if (r < minR) minR = r; if (r > maxR) maxR = r;
+      }
+      if (maxC >= 0) { boxMinC = minC; boxMaxC = maxC; boxMinR = minR; boxMaxR = maxR; }
+    }
+    for (let r = boxMinR; r <= boxMaxR; r++) {
+      for (let c = boxMinC; c <= boxMaxC; c++) {
         const i = r * lay.cols + c;
         if (lay.open[i]) continue;
         /* vc271 — 벽 셀 좌표를 **정수로 반올림**한다.
@@ -9664,6 +9804,18 @@ export class WorldScene extends Phaser.Scene {
        *  보스가 맵 가장자리에 스폰하면 팬 목표가 맵 밖이 되어 배경(검은 여백)이 노출됐다.
        *  → 뷰 크기/줌을 반영해 목표점을 [뷰 반폭, 맵크기-뷰 반폭] 으로 클램프한다.
        *  (맵이 뷰보다 작으면 중앙 고정) */
+      /* vc278 — framedRoom 에서는 보스 인트로 팬을 **하지 않는다**.
+       *  cam.pan 은 setZoom/setScroll 을 자기 목표로 덮어써서, 팬이 도는 동안(대사가
+       *  끝날 때까지 수 초) 카메라가 방 프레이밍을 벗어나고 검정 여백이 사라진다
+       *  (실측: camCinema=true 인 동안 zoom 이 0.55 → 1.23 으로 되돌아감).
+       *  방이 한 화면에 다 보이는 연출에서는 팬이 정보를 더 주지도 않는다. */
+      if (this.framedRoom) {
+        this.camCinema = false;
+        this.bossIntroPending = false;
+        try { this.physics.world.resume(); } catch { /* 무시 */ }
+        this.applyFramedCamera();
+        return;
+      }
       const z0 = cam.zoom || 1;
       const halfW = cam.width / z0 / 2;
       const halfH = cam.height / z0 / 2;

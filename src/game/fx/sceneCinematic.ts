@@ -187,6 +187,11 @@ export class CinematicSession {
     if (!this.active) return;
     const scene = this.scene;
     const cam = scene.cameras.main;
+    /* vc278 — framedRoom 에서는 카메라 팬/줌 연출을 하지 않는다.
+     *  방 전체가 한 화면에 들어오는 연출이라 팬이 정보를 더 주지 않고, 오히려
+     *  cam.pan/zoomTo 가 setZoom·setScroll 을 자기 목표로 덮어써 검정 여백이 사라진다.
+     *  다음 단계는 즉시 진행시켜 연출 흐름 자체는 유지한다. */
+    if ((scene as { framedRoom?: boolean }).framedRoom) { next(); return; }
     const targetZoom = Math.min(6, Math.max(0.25, zoomRatio === undefined ? cam.zoom : this.zoom * zoomRatio));
     const sw = scene.stageW ?? 0;
     const sh = scene.stageH ?? 0;
@@ -264,7 +269,16 @@ export class CinematicSession {
       // Phaser 4 resetFX omits zoomEffect; its next tick would overwrite setZoom.
       cam.zoomEffect.reset();
       cam.setZoom(scene.baseZoom ?? this.originalZoom);
-      if (scene.player?.active) cam.centerOn(scene.player.x, scene.player.y);
+      /* vc278 — framedRoom(검은 배경에 떠 있는 방)에서는 카메라를 플레이어에 붙이지 않는다.
+       *  방 전체가 한 화면에 들어오는 것이 목적이므로, 연출이 끝나면 씬이 계산한
+       *  방 맞춤 카메라를 그대로 다시 적용하는 게 옳다. centerOn 은 카메라를 플레이어로
+       *  끌어당겨 좌측 여백을 0 으로 만든다(실측: 좌 margin 0, 우 76~112 비대칭). */
+      const framed = (scene as { framedRoom?: boolean; applyFramedCamera?: () => void });
+      if (framed.framedRoom && typeof framed.applyFramedCamera === "function") {
+        framed.applyFramedCamera();
+      } else if (scene.player?.active) {
+        cam.centerOn(scene.player.x, scene.player.y);
+      }
     }
     scene.camCinema = false;
     scene.dialoguing = this.originalDialoguing;

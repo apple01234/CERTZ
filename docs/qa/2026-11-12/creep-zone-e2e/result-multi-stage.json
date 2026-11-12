@@ -1,0 +1,71 @@
+{
+ "url": "http://127.0.0.1:4321",
+ "at": "2026-11-12T02:07:12.148Z",
+ "stages": [
+  {
+   "requested": "dlcocean",
+   "entered": false,
+   "why": "진입 후 stageKey 불일치 (실제 village)"
+  },
+  {
+   "requested": "r1",
+   "entered": true,
+   "ok": true,
+   "stageKey": "r1",
+   "total": 20,
+   "species": 3,
+   "counts": {
+    "wolf": 10,
+    "x2_darkhound": 6,
+    "x3_wogol": 4
+   },
+   "intra": 179,
+   "inter": 916,
+   "ratio": 5.13,
+   "spread": {
+    "wolf": 616,
+    "x2_darkhound": 65,
+    "x3_wogol": 182
+   }
+  },
+  {
+   "requested": "r2",
+   "entered": true,
+   "ok": true,
+   "stageKey": "r2",
+   "total": 20,
+   "species": 3,
+   "counts": {
+    "x2_frostfly": 9,
+    "x2_bat": 6,
+    "frostwolf": 5
+   },
+   "intra": 108,
+   "inter": 991,
+   "ratio": 9.16,
+   "spread": {
+    "x2_frostfly": 108,
+    "x2_bat": 437,
+    "frostwolf": 98
+   }
+  }
+ ],
+ "base": {
+  "ok": true,
+  "stageKey": "howlrstone1x1",
+  "total": 8,
+  "species": 2,
+  "counts": {
+   "x2_frog": 5,
+   "x2_reeffish": 3
+  },
+  "intra": 121,
+  "inter": 1165,
+  "ratio": 9.65,
+  "spread": {
+   "x2_frog": 244,
+   "x2_reeffish": 225
+  }
+ },
+ "pageErrors": []
+}

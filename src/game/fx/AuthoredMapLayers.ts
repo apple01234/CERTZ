@@ -63,8 +63,9 @@ export function renderAuthoredMapLayers(
   scene: Phaser.Scene,
   lay: RoomLayout,
   onDecor?: (image: Phaser.GameObjects.Image) => void,
+  framedRoom = false,
 ): AuthoredMapRender | null {
-  const native = renderChapterTerrain(scene, lay, onDecor);
+  const native = renderChapterTerrain(scene, lay, onDecor, framedRoom);
   if (native) return native;
   const art = lay.authored;
   if (!art) return null;
@@ -122,8 +123,14 @@ export function renderAuthoredMapLayers(
       const y1 = Math.round((r + 1) * lay.cellH);
       let runStart = -1;
       for (let c = 0; c <= lay.cols; c++) {
+        /* vc278 — framedRoom(검은 배경에 떠 있는 방)에서는 ground 도 **열린 셀에만** 칠한다.
+         *  종전에는 ground 가 모든 셀에 깔려 방이 스테이지를 꽉 채웠고, 검정 여백이
+         *  화면 밖으로 밀려나 "떠 있는" 느낌이 사라졌다(실측 zoom 0.75 인데도 좌우 검정 0).
+         *  던전 계열에서만 넘어오므로 야외 스테이지 연출은 그대로다. */
         const on = c < lay.cols
-          && (role.name === "ground" || wants(r * lay.cols + c));
+          && (role.name === "ground"
+            ? (framedRoom ? lay.open[r * lay.cols + c] : true)
+            : wants(r * lay.cols + c));
         if (on && runStart < 0) runStart = c;
         if (!on && runStart >= 0) {
           const x0 = Math.round(runStart * lay.cellW);

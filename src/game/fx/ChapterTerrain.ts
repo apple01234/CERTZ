@@ -13,8 +13,10 @@ export function preloadChapterTerrain(scene: Phaser.Scene): void {
   for (const name of Object.keys(materials)) scene.load.image(`terrain_${name}`, `chapter-terrain/${name}.png`);
 }
 
-/** Fine tiles inherit the exact authored collision cells, including their fractional world size. */
-export function chapterTerrainData(lay: RoomLayout, place: Place) {
+/** Fine tiles inherit the exact authored collision cells, including their fractional world size.
+ *  vc278 — framedRoom 이면 **열린 셀에만** 지면/경계를 칠한다(검은 배경에 떠 있는 방).
+ *  종전에는 모든 셀에 지면이 깔려 방이 스테이지를 꽉 채웠다. */
+export function chapterTerrainData(lay: RoomLayout, place: Place, framedRoom = false) {
   const detail = 4, cols = lay.cols * detail, rows = lay.rows * detail;
   const cellOf = (c: number, r: number) => Math.floor(r / detail) * lay.cols + Math.floor(c / detail);
   const open = (c: number, r: number) => c >= 0 && r >= 0 && c < cols && r < rows && lay.open[cellOf(c, r)];
@@ -50,6 +52,8 @@ export function chapterTerrainData(lay: RoomLayout, place: Place) {
     for (let c = 0; c < cols; c++) {
       const isOpen = open(c, r);
       const mat = road.has(r * cols + c) ? place.path : place.floor;
+      /* vc278 — framedRoom: 열린 셀 밖은 아무것도 그리지 않는다(-1) → 카메라 배경(검정)이 보인다. */
+      if (!isOpen && framedRoom) { g.push(-1); b.push(-1); continue; }
       g.push(isOpen ? tile(mat, c, r) : -1);
       if (isOpen) b.push(-1);
       else if (place.border === "water") b.push(materials.water.center);
@@ -64,12 +68,12 @@ export function chapterTerrainData(lay: RoomLayout, place: Place) {
 }
 
 /** Rendering only; existing WorldScene route bodies remain the sole source of collision. */
-export function renderChapterTerrain(scene: Phaser.Scene, lay: RoomLayout, onDecor?: (image: Phaser.GameObjects.Image) => void): AuthoredMapRender | null {
+export function renderChapterTerrain(scene: Phaser.Scene, lay: RoomLayout, onDecor?: (image: Phaser.GameObjects.Image) => void, framedRoom = false): AuthoredMapRender | null {
   const match = /^(howlrstone\d+)x(\d+)$/.exec(lay.authored?.stageKey ?? "")
     ?? /^(dlc[a-z]+)(\d+)$/.exec(lay.authored?.stageKey ?? "");
   const place = match ? chapterPlace(match[1], Number(match[2])) : undefined;
   if (!place || !scene.textures.exists(TERRAIN_KEY)) return null;
-  const data = chapterTerrainData(lay, place);
+  const data = chapterTerrainData(lay, place, framedRoom);
   const maps: Phaser.Tilemaps.Tilemap[] = [], layers: AuthoredMapRender["layers"] = [], images: Phaser.GameObjects.Image[] = [];
   for (const [name, grid, depth] of [["border", data.border, 0], ["floor", data.ground, 1]] as const) {
     const map = scene.make.tilemap({ data: grid, tileWidth: 64, tileHeight: 64 });

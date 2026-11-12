@@ -142,6 +142,10 @@ export class Lighting {
   /** 정적 광원 등록 (횃불/모닥불/포탈/수정 등) — ADD 글로우 + 플리커
    *  v1.0.18 — 플리커 완화 모드면 트윈 없이 고정 광원 */
   addLight(x: number, y: number, opts: LightOpts = {}) {
+    /* vc278 — framedRoom(검은 배경에 떠 있는 방)에서는 정적 광원을 만들지 않는다.
+     *  pk_light_01 은 416~512px ADD 글로우라 방 경계 밖(검정이어야 하는 여백)까지 번진다.
+     *  픽셀 실측: 우측 여백 112샘플 중 72개가 회색(16~96) — 원인 오브젝트가 이 광원이었다. */
+    if ((this.scene as { framedRoom?: boolean }).framedRoom) return null as unknown as Phaser.GameObjects.Image;
     const tint = opts.tint ?? 0xffa040;
     const scale = opts.scale ?? 0.9;
     const alpha = opts.alpha ?? 0.3;
