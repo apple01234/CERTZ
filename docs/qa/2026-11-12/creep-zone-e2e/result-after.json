@@ -1,0 +1,33 @@
+{
+ "run1": {
+  "ok": true,
+  "total": 8,
+  "species": 2,
+  "counts": {
+   "x2_frog": 5,
+   "x2_reeffish": 3
+  },
+  "centroids": {
+   "x2_frog": {
+    "x": 542,
+    "y": 747
+   },
+   "x2_reeffish": {
+    "x": 1691,
+    "y": 558
+   }
+  },
+  "intra": 121,
+  "inter": 1165,
+  "ratio": 9.65,
+  "spread": {
+   "x2_frog": 244,
+   "x2_reeffish": 225
+  }
+ },
+ "determinism": {
+  "before": 176,
+  "hash": 58690428
+ },
+ "pageErrors": []
+}

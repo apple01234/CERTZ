@@ -17,6 +17,7 @@ import { openMaskAt, patternFor } from "../autotile"; // vc204 — 4비트 이�
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
 import { ACC_ANCHORS, ACC_DEFAULT_ANCHOR } from "../acc_anchors"; // v1.2.1 (#1 치장위치) — 프레임별 실루엣 앵커
+import { PART_ANCHORS, PART_FALLBACK, placePart } from "../characterParts"; // vc278 — 데이터 주도 파츠 레이어
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
 import { Boss } from "../entities/Boss";
@@ -2069,8 +2070,20 @@ export class WorldScene extends Phaser.Scene {
       : null;
     for (let gi = 0; gi < this.stageDef.enemies.length; gi++) {
       const group = this.stageDef.enemies[gi];
-      /* 종족이 받은 구역들의 셀을 합쳐 하나의 후보 집합으로 쓴다. */
-      const zoneCells = creepZones?.[gi]?.flatMap((z) => z.cells) ?? [];
+      /* 종족이 받은 구역들의 셀을 합쳐 하나의 후보 집합으로 쓴다.
+       *
+       * vc278 — **구역 하나에 최소 4마리는 있어야** 응집으로 보인다.
+       *  종전에는 종족당 3구역을 통째로 후보 집합에 넣었다. 1-1(개구리 5 / 물고기 3)에서
+       *  물고기 3마리가 **3개 구역에 1마리씩** 흩어져 최대 반경 456px, 실측 ratio 1.07
+       *  (E2E, 목표 1.5 미달)이 나왔다. 구역은 공간적으로 인접하지만 합집합의 외곽이
+       *  넓어서 "뭉침"이 사라진다.
+       *  구역 수를 마릿수에 비례해 줄이면 같은 종족이 좁은 면적에 모인다.
+       *  (구역 배정 순서는 시작 구역 → 가장 가까운 구역이므로 앞에서 자르면 덩어리가 유지된다.) */
+      const zonesAvail = creepZones?.[gi]?.length ?? 0;
+      const takeZones = Math.max(1, Math.min(zonesAvail, Math.floor(group.count / 4)));
+      const zoneCells = creepZones?.[gi]
+        ? creepZones[gi].slice(0, takeZones).flatMap((z) => z.cells)
+        : [];
       const zone = zoneCells.length > 0 ? { cells: zoneCells } : undefined;
       for (let i = 0; i < group.count; i++) {
         /* v3.0 (#7) — 굴 레이아웃의 개방 셀 안에만 스폰 (입구 셀 회피 + 플레이어 380px 거리)
@@ -12766,24 +12779,24 @@ export class WorldScene extends Phaser.Scene {
         const bob = Math.sin(this.time.now / 320) * 1.6;
         for (const a of this.accOverlays) {
           const im = a.img;
-          let wing = false;
-          if (a.key === "acc_crown") {
-            im.setPosition(px + (this.player.flipX ? 1 : -1), ht - 2 * sy);
-          } else if (a.key === "acc_ribbon") {
-            im.setPosition(px + (this.player.flipX ? -1 : 1) * hw, ht + 4 * sy);
-          } else if (a.key === "acc_halo") {
-            im.setPosition(px, ht - 9 * sy + bob);
-          } else if (a.key === "acc_wings_devil" || a.key === "acc_wings_fairy") {
-            /* v1.3.0 (#날개방향) — 날개는 "항상 등 뒤" 고정:
-             *  ① depth는 어떤 방향이든 본체 뒤 (앞으로 튀어나오지 않음)
-             *  ② 진행 방향이 아래(정면)면 위로 −5px, 옆이면 −2px, 위(뒷모습)면 +2px — 등 쪽 유지
-             *  ③ flipX 제거 — 좌우 전환에 날개가 앞뒤로 뒤집혀 보이지 않게 (대칭 시트라 반전 무의미) */
-            const dy = back ? 2 : animKey.includes("side") ? -2 : -5;
-            im.setPosition(px, py + (an[0] + 11 + dy - 32) * sy);
-            wing = true;
-          }
-          im.setScale(wing ? sx * 1.35 : sx, wing ? sy * 1.35 : sy);
-          im.setDepth(a.key.startsWith("acc_wings") ? this.player.depth - 0.2 : this.player.depth + 0.3);
+          /* vc278 — 하드코딩 `if (a.key === ...)` 체인을 데이터 테이블 + 순수 함수로 교체.
+           *  placePart 는 vc277 분기의 계산식을 그대로 옮긴 것이라 수치가 동일하다
+           *  (tests/part-layers.test.mjs 가 legacy 참조 구현과 대조해 고정한다).
+           *  이제 장식을 추가하려면 characterParts.PART_ANCHORS 에 한 줄만 넣으면 된다. */
+          const spec = PART_ANCHORS[a.key] ?? PART_FALLBACK;
+          const pl = placePart(spec, {
+            px, py, sx, sy,
+            flipX: this.player.flipX,
+            back,
+            side: animKey.includes("side"),
+            headTopY: ht,
+            headHalfW: hw,
+            bob,
+            anchorY: an[0],
+          });
+          im.setPosition(pl.x, pl.y);
+          im.setScale(pl.scaleX, pl.scaleY);
+          im.setDepth(this.player.depth + pl.depthBias);
         }
       }
       /* v1.2.0 — 포니테일 동기화 루프 제거(아이템 폐지) */
@@ -16659,7 +16672,7 @@ export class WorldScene extends Phaser.Scene {
       /* v1.3.0 (#날개방향) — 날개류는 생성 시점부터 본체 뒤 depth로 만든다.
        *  대화 중(업데이트 조기 리턴)에 착용해도 한 프레임이라도 앞에 튀어나오지 않게
        *  (E2E에서 dialoguing 상태 depth +0.3 잔존 확인 → 근본 차단) */
-      const accDepth = accKey.startsWith("acc_wings") ? this.player.depth - 0.2 : this.player.depth + 0.3;
+      const accDepth = this.player.depth + ((PART_ANCHORS[accKey] ?? PART_FALLBACK).behind ? -0.2 : 0.3); // vc278 — 데이터 테이블
       const img = this.add.image(this.player.x, this.player.y, accTex).setDepth(accDepth);
       this.accOverlays.push({ key: accKey, img });
     }
