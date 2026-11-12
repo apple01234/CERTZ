@@ -21,6 +21,7 @@
 
 /** 세이브에 저장되는 부위 지정. **전부 optional** — 없으면 기존 동작과 100% 동일. */
 export type CharacterParts = {
+  wing?: string | null;
   hair?: string | null;
   hat?: string | null;
   cape?: string | null;
@@ -126,6 +127,19 @@ export type ResolvedPartLayer = {
   slot: PartSlot;
   spec: PartLayerSpec;
 };
+
+/**
+ * 세이브/플레이어의 착용 필드 → 런타임 뷰. 순수 함수.
+ *
+ * 저장 스키마를 두 벌로 만들지 않는다: 저장은 기존 `accessory`(장식 1개)와 `cape` 뿐이고,
+ * 이 함수가 그것을 부위로 읽어 준다. `accessory` 는 역사적으로 모자류와 날개를 함께 담아
+ * 왔으므로 키로 구분한다(날개 = `acc_wings*`, 나머지 = 모자).
+ */
+export function toCharacterParts(look: { accessory?: string | null; cape?: string | null }): CharacterParts {
+  const acc = look.accessory || null;
+  const wing = acc && acc.startsWith(PART_SLOT_ANCHOR.wing) ? acc : null;
+  return { cape: look.cape || null, wing, hat: wing ? null : acc };
+}
 
 /**
  * `parts` 를 **그리기 순서대로** 펼친다. 순수 함수.

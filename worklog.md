@@ -5833,3 +5833,17 @@ npm test 706/706, tsc EXIT 0, lint:strict EXIT 0, next build EXIT 0
 - 그랜드 플레닛 후반 구역의 단단한 종은 강화 0 기준 최대 160타(novel9)다. 더 낮추려면 `LATE_HP_RAMP` 1.2 를 내린다.
 - 하드/카오스 보스는 노말 대비 비율(×1.6 / ×4.1)을 그대로 따른다.
 - 구 9개 지역(선택 수련 원정)·재림·탑의 수치는 그대로다.
+
+## Task — 2026-11-12 (버전 유지): 망토 슬롯 승격 — 모자·날개와 동시 착용 (지시서 NEXT_AI_vc284 작업 A)
+
+- `acc_cape_crimson`/`acc_cape_royal` 은 텍스처와 부착 사양만 있고 아이템·치장 정의가 없어 **얻을 방법이 없었다.** `ITEMS`·`COSMETIC_DEFS`(slot `"cape"`)·캐시상점 진열 목록에 추가했다. 새 에셋 0.
+- 장식(`accessory`: 모자·날개)과 독립된 `cape` 슬롯을 두었다. 지시서는 "새 세이브 필드를 만들지 않는다"고 했지만, 모자와 망토를 **동시에** 끼려면 저장할 자리가 하나 더 필요해 `cape` 한 필드를 추가했다(`parts` 같은 두 번째 스키마는 만들지 않음). SaveData·복원·buildSave·emitRpgState 4곳 싱크.
+- 렌더: `onCosmeticChanged` 가 `resolvePartLayers(toCharacterParts(player))` 로 `PART_DRAW_ORDER`(뒤→앞) 순서대로 오버레이를 만든다. 같은 쪽 depth 끼리는 z(0.01 단위)로 순서를 고정한다(망토가 날개보다 뒤). 기존 `accOverlays`·`placePart` 경로 그대로 확장.
+- UI: 가방/치장 패널의 착용 표시·슬롯 라벨("망토") 추가. 착용/해제는 기존 `rpg:cosmetic` 경로.
+- 검증: `tests/part-layers.test.mjs` 4건 추가(14/14). **실제 브라우저**(next dev + Chromium)에서 왕관+망토, 날개+망토 동시 착용·해제·buildSave 반영을 확인했다 — `docs/qa/2026-11-12/parts/`. 페이지 예외 0.
+- 같은 브라우저 세션에서 기록전 보스를 직접 스폰해 HP 120,000 고정·파티 공유 꺼짐·`finishContest("failed")` 직후 보스 제거를 확인했다. 단, 튜토리얼 중인 새 캐릭터라 경기장 전환/복귀 자체는 재현하지 못했다(미검증 유지).
+
+### 못 한 것
+- `hair`/`face` 슬롯: 플레이어용 에셋이 없어 지시서대로 보류.
+- 다른 유저 화면(멀티)에서의 망토 표시는 확인하지 않았다.
+- 작업 B(지역별 로딩 실측)는 하지 않았다. 참고로 이 환경의 개발 서버 로컬 로딩은 약 3초였지만 네트워크 조건이 없어 기준선으로 쓸 수 없다.

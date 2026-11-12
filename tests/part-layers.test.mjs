@@ -181,3 +181,52 @@ test("vc278 — PART_FALLBACK 은 위치를 바꾸지 않는다", () => {
   assert.equal(p.y, contexts[0].py);
   assert.equal(p.depthBias, 0.3);
 });
+
+/* ── 망토 슬롯 승격 (지시서 NEXT_AI_vc284 작업 A) ─────────────────────────
+ * 저장은 기존 accessory(모자·날개 1개) + cape 뿐이고, toCharacterParts 가 부위로 읽는다. */
+import { readFileSync } from "node:fs";
+import { toCharacterParts } from "../src/game/characterParts.ts";
+import { COSMETIC_DEFS, ITEMS } from "../src/game/data.ts";
+
+test("toCharacterParts: accessory 를 모자/날개로 가르고 망토를 따로 둔다", () => {
+  assert.deepEqual(toCharacterParts({}), { cape: null, wing: null, hat: null });
+  assert.deepEqual(toCharacterParts({ accessory: "acc_crown", cape: "acc_cape_royal" }),
+    { cape: "acc_cape_royal", wing: null, hat: "acc_crown" });
+  assert.deepEqual(toCharacterParts({ accessory: "acc_wings_devil" }),
+    { cape: null, wing: "acc_wings_devil", hat: null });
+  // rank_crown_gold 도 모자다(날개 접두사가 아니다).
+  assert.equal(toCharacterParts({ accessory: "rank_crown_gold" }).hat, "rank_crown_gold");
+});
+
+test("모자 + 망토 동시 착용 시 망토가 먼저(뒤), 모자가 나중(앞)에 그려진다", () => {
+  const hatCape = resolvePartLayers(toCharacterParts({ accessory: "acc_halo", cape: "acc_cape_crimson" }));
+  assert.deepEqual(hatCape.map((l) => [l.slot, l.key]), [["cape", "acc_cape_crimson"], ["hat", "acc_halo"]]);
+  assert.equal(hatCape[0].spec.behind, true);
+  assert.equal(hatCape[1].spec.behind, false);
+  const wingCape = resolvePartLayers(toCharacterParts({ accessory: "acc_wings_fairy", cape: "acc_cape_royal" }));
+  assert.deepEqual(wingCape.map((l) => l.slot), ["cape", "wing"]);
+  // 장식만 낀 구 세이브는 레이어 1개 — 종전과 같은 사양을 받는다.
+  const only = resolvePartLayers(toCharacterParts({ accessory: "acc_crown" }));
+  assert.equal(only.length, 1);
+  assert.equal(only[0].spec, PART_ANCHORS.acc_crown);
+});
+
+test("망토는 상점·치장 정의가 있고 실제 그림이 있다", () => {
+  for (const k of ["acc_cape_crimson", "acc_cape_royal"]) {
+    assert.equal(COSMETIC_DEFS[k]?.slot, "cape");
+    assert.equal(ITEMS[k]?.kind, "cosmetic");
+    assert.ok(ITEMS[k].bmPrice > 0, "캐시상점 진열 자격");
+    assert.ok(readFileSync(`public/assets/${k}.webp`).length > 0);
+  }
+});
+
+test("망토 세이브 필드는 SaveData·복원·buildSave·UI 상태 4곳이 싱크다", () => {
+  const cfg = readFileSync("src/game/config.ts", "utf8");
+  const scene = readFileSync("src/game/scenes/WorldScene.ts", "utf8");
+  assert.match(cfg, /cape\?: string \| null;/);
+  assert.match(cfg, /if \(typeof d\.cape !== "string"\) d\.cape = null/);
+  assert.match(scene, /this\.player\.cape = \(savedLook\.cape && COSMETIC_DEFS\[/);
+  assert.equal((scene.match(/cape: this\.player\.cape/g) ?? []).length, 2, "emitRpgState + buildSave");
+  // 렌더는 하드코딩 분기가 아니라 부위 해석 함수를 거친다.
+  assert.match(scene, /resolvePartLayers\(toCharacterParts\(this\.player\)/);
+});

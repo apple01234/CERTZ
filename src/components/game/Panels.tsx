@@ -1963,6 +1963,7 @@ export function InventoryPanel({ rpg, onClose, initialTab = "equip" }: { rpg: Rp
       COSMETIC_DEFS[ck as CosmeticKey]?.slot === "outfit" ? (rpg.outfit === ck ? "착용" : undefined)
       : COSMETIC_DEFS[ck as CosmeticKey]?.slot === "hair" ? (rpg.hair === ck ? "착용" : undefined)
       : COSMETIC_DEFS[ck as CosmeticKey]?.slot === "acc" ? ((rpg as { accessory?: string | null }).accessory === ck ? "착용" : undefined)
+      : COSMETIC_DEFS[ck as CosmeticKey]?.slot === "cape" ? ((rpg as { cape?: string | null }).cape === ck ? "착용" : undefined)
       : (rpg.cosmetic === ck ? "착용" : undefined), // v1.1.0 — acc 슬롯 착용 표기
   }));
 
@@ -2381,8 +2382,9 @@ export function InventoryPanel({ rpg, onClose, initialTab = "equip" }: { rpg: Rp
                   const active = slot === "outfit" ? rpg.outfit === s.k
                     : slot === "hair" ? rpg.hair === s.k
                     : slot === "acc" ? (rpg as { accessory?: string | null }).accessory === s.k
+                    : slot === "cape" ? (rpg as { cape?: string | null }).cape === s.k
                     : rpg.cosmetic === s.k;
-                  const slotLabel = slot === "outfit" ? "코스튬" : slot === "hair" ? "헤어" : slot === "acc" ? "장식" : "오라";
+                  const slotLabel = slot === "outfit" ? "코스튬" : slot === "hair" ? "헤어" : slot === "acc" ? "장식" : slot === "cape" ? "망토" : "오라";
                   return (
                     <>
                       <div className="flex items-start gap-2.5">

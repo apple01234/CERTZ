@@ -17,7 +17,7 @@ import { openMaskAt, patternFor } from "../autotile"; // vc204 — 4비트 이�
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
 import { ACC_ANCHORS, ACC_DEFAULT_ANCHOR } from "../acc_anchors"; // v1.2.1 (#1 치장위치) — 프레임별 실루엣 앵커
-import { PART_ANCHORS, PART_FALLBACK, placePart } from "../characterParts"; // vc278 — 데이터 주도 파츠 레이어
+import { PART_ANCHORS, PART_FALLBACK, placePart, resolvePartLayers, toCharacterParts } from "../characterParts"; // vc278 — 데이터 주도 파츠 레이어
 import { usesFramedRoom, computeFramedView, roomBoundsFromLayout, FRAME_PAD } from "../framedRoom"; // vc278 — 검은 배경에 떠 있는 방
 import { chapterPlace } from "../chapterStoryPlan"; // vc278 — 던전 계열 role 판별
 import { Player } from "../entities/Player";
@@ -874,7 +874,7 @@ export class WorldScene extends Phaser.Scene {
   private cosWingsImg: Phaser.GameObjects.Image | null = null;
   /* v1.0.7 — 코스튬(착장)·헤어(포니테일) 오버레이 — 슬롯형 치장 (오라와 독립 착용) */
   /* v1.1.0 (#1) — 코스튬 오버레이 폐기(스프라이트 완전 교체로 전환) → 어태치 장식(왕관/리본/후광/날개) 동기화 */
-  private accOverlays: { key: string; img: Phaser.GameObjects.Image }[] = [];
+  private accOverlays: { key: string; img: Phaser.GameObjects.Image; z: number }[] = [];
   private auraPhase = 0; // v1.1.1 (#5) — 무지개/오로라/은하수 순환 위상
   private upgradeGlow: Phaser.GameObjects.Image | null = null;
   /** v3.0.5 — 스타포스 궤도성(★15)/주변 스파클(★8+)/티어 추적 */
@@ -1479,10 +1479,11 @@ export class WorldScene extends Phaser.Scene {
     this.player.applyLookTint();
     this.player.hair = (savedPlayer.hair && savedPlayer.hair in COSMETIC_DEFS ? (savedPlayer.hair as CosmeticKey) : null);
     /* v1.1.0 (#1/#21/#22) — 성별/피부/어태치 장식 복원 → 스프라이트 시트 전환(완전 교체) */
-    const savedLook = savedPlayer as { gender?: string; skinIdx?: number; accessory?: string | null; gmSkin?: boolean };
+    const savedLook = savedPlayer as { gender?: string; skinIdx?: number; accessory?: string | null; cape?: string | null; gmSkin?: boolean };
     this.player.gender = savedLook.gender === "f" ? "f" : "m";
     this.player.skinIdx = typeof savedLook.skinIdx === "number" ? Phaser.Math.Clamp(savedLook.skinIdx, 0, 5) : 2;
     this.player.accessory = (savedLook.accessory && savedLook.accessory in COSMETIC_DEFS ? (savedLook.accessory as CosmeticKey) : null);
+    this.player.cape = (savedLook.cape && COSMETIC_DEFS[savedLook.cape as CosmeticKey]?.slot === "cape" ? (savedLook.cape as CosmeticKey) : null);
     /* v1.2.0 (#7) — GM 외형 플래그 복원. 실제 렌더는 gmApproved(서버 롤 admin) 설정 후 applyBodyLook 재호출 시점 */
     this.player.gmSkin = !!savedLook.gmSkin;
     /* v1.2.0 (#1) — 포니테일 환수 플래그 복원 (buildSave 유지 필수 — 분실 시 재환생 이중 환수) */
@@ -13152,7 +13153,7 @@ export class WorldScene extends Phaser.Scene {
           });
           im.setPosition(pl.x, pl.y);
           im.setScale(pl.scaleX, pl.scaleY);
-          im.setDepth(this.player.depth + pl.depthBias);
+          im.setDepth(this.player.depth + pl.depthBias + a.z);
         }
       }
       /* v1.2.0 — 포니테일 동기화 루프 제거(아이템 폐지) */
@@ -17015,19 +17016,21 @@ export class WorldScene extends Phaser.Scene {
       a.img.destroy();
     }
     this.accOverlays = [];
-    const accKey = this.player?.accessory ?? null;
-    if (this.player && accKey) {
-      /* v1.2.1 (#1) — 생성 위치만 여기서 잡고 매 프레임 동기화는 update 루프가 담당.
-       *  후광 보브/날개 흔들림 트윈 폐기 — update가 setPosition/setAngle을 덮어써
-       *  트윈이 무의미했고(기존 버그) 오히려 위치 튐의 원인이었다.
-       *  v1.3.0 (지시 #7) — rank_crown_gold는 acc_crown 텍스처 재활용 (황금 왕관 동일 도트) */
-      const accTex = accKey === "rank_crown_gold" ? "acc_crown" : accKey;
-      /* v1.3.0 (#날개방향) — 날개류는 생성 시점부터 본체 뒤 depth로 만든다.
-       *  대화 중(업데이트 조기 리턴)에 착용해도 한 프레임이라도 앞에 튀어나오지 않게
-       *  (E2E에서 dialoguing 상태 depth +0.3 잔존 확인 → 근본 차단) */
-      const accDepth = this.player.depth + ((PART_ANCHORS[accKey] ?? PART_FALLBACK).behind ? -0.2 : 0.3); // vc278 — 데이터 테이블
-      const img = this.add.image(this.player.x, this.player.y, accTex).setDepth(accDepth);
-      this.accOverlays.push({ key: accKey, img });
+    /* 장식(모자·날개) + 망토를 부위 순서(PART_DRAW_ORDER, 뒤 → 앞)대로 만든다.
+     *  생성 위치만 여기서 잡고 매 프레임 동기화는 update 루프가 담당한다(v1.2.1).
+     *  본체 뒤/앞 depth 는 생성 시점부터 사양대로 준다 — 대화 중(업데이트 조기 리턴)에
+     *  착용해도 날개·망토가 한 프레임이라도 앞에 튀어나오지 않게(v1.3.0).
+     *  같은 쪽(뒤 또는 앞)에 여럿이면 z 로 순서를 고정한다: 망토가 날개보다 뒤. */
+    if (this.player) {
+      /* rank_crown_gold 는 acc_crown 텍스처 재활용 (v1.3.0 지시 #7) */
+      const texOf = (k: string) => (k === "rank_crown_gold" ? "acc_crown" : k);
+      const layers = resolvePartLayers(toCharacterParts(this.player), (k) => this.textures.exists(texOf(k)));
+      layers.forEach((l, idx) => {
+        const z = idx * 0.01;
+        const img = this.add.image(this.player.x, this.player.y, texOf(l.key))
+          .setDepth(this.player.depth + (l.spec.behind ? -0.2 : 0.3) + z);
+        this.accOverlays.push({ key: l.key, img, z });
+      });
     }
     /* v1.2.0 (#1) — 포니테일 렌더링 제거(아이템 폐지) — 헤어 슬롯은 신규 헤어용으로 유지 */
     const key = this.player?.cosmetic;
@@ -17832,6 +17835,7 @@ export class WorldScene extends Phaser.Scene {
       outfit: this.player.outfit,
       hair: this.player.hair,
       accessory: this.player.accessory,
+      cape: this.player.cape,
       /* v1.0.19 (B-1 외형) — 로비 생성 색조 */
       lookTint: this.player.lookTint,
       stats: { ...this.player.stats },
@@ -18163,6 +18167,7 @@ export class WorldScene extends Phaser.Scene {
       gmSkin: this.player.gmSkin, // v1.2.0 (#7) — GM 외형 플래그 (렌더는 서버 롤 admin일 때만)
       ponyRefund: this.player.ponyRefund, // v1.2.0 (#1) — 포니테일 환수 1회성 플래그
       accessory: this.player.accessory, // v1.1.0 (#1) — 어태치 장식
+      cape: this.player.cape, // 망토 슬롯
       /* v2.0 — 전직 스토리 진행 */
       jobStory: this.jobStory ? { ...this.jobStory } : null,
       pendingJobClass: this.pendingJobClass, // v3.1.0 — 시련 중 선택한 1차 클래스

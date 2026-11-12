@@ -135,6 +135,7 @@ export type ItemKey =
   /* v1.1.0 (#19/#1) — 프리미엄 완전 교체 코스튬 6종 + 어태치 장식 5종 */
   | "outfit_silver" | "outfit_crimson" | "outfit_seraph" | "outfit_abyss" | "outfit_nightmare" | "outfit_gilded"
   | "acc_crown" | "acc_ribbon" | "acc_halo" | "acc_wings_devil" | "acc_wings_fairy"
+  | "acc_cape_crimson" | "acc_cape_royal" // 망토 슬롯 (기존 텍스처 — 그동안 얻을 방법이 없었다)
   /* v1.3.0 (지시 #7) — 랭커 전용 치장 (랭킹 상점 — 서버 순위 검증 구매) */
   | "rank_aura" | "rank_crown_gold"
   /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 (완전 교체 코스튬) */
@@ -591,6 +592,8 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   acc_halo: { key: "acc_halo", kind: "cosmetic", name: "성스러운 후광", icon: "acc_halo", price: 78000, bmPrice: 30, bmOnly: true, tier: "epic", reqLv: 25 },
   acc_wings_devil: { key: "acc_wings_devil", kind: "cosmetic", name: "마왕의 날개", icon: "acc_wings_devil", price: 110000, bmPrice: 40, bmOnly: true, tier: "legend", reqLv: 45 },
   acc_wings_fairy: { key: "acc_wings_fairy", kind: "cosmetic", name: "요정의 날개", icon: "acc_wings_fairy", price: 110000, bmPrice: 40, bmOnly: true, tier: "legend", reqLv: 45 },
+  acc_cape_crimson: { key: "acc_cape_crimson", kind: "cosmetic", name: "진홍 망토", icon: "acc_cape_crimson", price: 70000, bmPrice: 26, bmOnly: true, tier: "epic", reqLv: 25 },
+  acc_cape_royal: { key: "acc_cape_royal", kind: "cosmetic", name: "왕실 망토", icon: "acc_cape_royal", price: 90000, bmPrice: 34, bmOnly: true, tier: "epic", reqLv: 25 },
   chest_silver: { key: "chest_silver", kind: "consumable", name: "은 상자", icon: "i_chest_silver", price: 20000, bmPrice: 12, bmOnly: true, sellPrice: 1200, tier: "epic" },
   chest_gold: { key: "chest_gold", kind: "consumable", name: "금 상자", icon: "i_chest_gold", price: 42000, bmPrice: 25, bmOnly: true, sellPrice: 3000, tier: "epic" },
   chest_legend: { key: "chest_legend", kind: "consumable", name: "전설 상자", icon: "i_chest_legend", price: 80000, bmPrice: 48, bmOnly: true, sellPrice: 6000, tier: "legend" },
@@ -706,6 +709,7 @@ export type CosmeticKey = "cos_dawn" | "cos_gold" | "cos_abyss" | "cos_wings" | 
   | "outfit_silver" | "outfit_crimson" | "outfit_seraph" | "outfit_abyss" | "outfit_nightmare" | "outfit_gilded"
   /* v1.1.0 (#1 장식) — 캐릭터에 고정되는 어태치 장식 (캐릭터가 움직이면 실시간 동기화) */
   | "acc_crown" | "acc_ribbon" | "acc_halo" | "acc_wings_devil" | "acc_wings_fairy"
+  | "acc_cape_crimson" | "acc_cape_royal" // 망토 슬롯 (기존 텍스처 — 그동안 얻을 방법이 없었다)
   /* v1.3.0 (지시 #7) — 랭커 전용 치장 2종 */
   | "rank_aura" | "rank_crown_gold"
   /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 */
@@ -782,7 +786,8 @@ export type CosmeticDef = {
   /* v1.0.7 — 착용 슬롯: aura(후광·기존) / outfit(코스튬 스프라이트 교체) / hair(머리카락 레이어)
    *  슬롯별 독립 착용 — 오라+코스튬+헤어 동시 착용 가능
    *  v1.1.0 — + acc(어태치 장식: 왕관/리본/후광/날개 — 캐릭터에 고정, 실시간 동기화) */
-  slot?: "aura" | "outfit" | "hair" | "acc";
+  /* 망토는 장식(acc: 모자·날개)과 **따로** 착용한다 — 모자 + 망토 동시 착용 (characterParts.ts) */
+  slot?: "aura" | "outfit" | "hair" | "acc" | "cape";
 };
 export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   cos_dawn: { key: "cos_dawn", name: "새벽빛 오라", icon: "cos_dawn", desc: "하늘빛 후광", price: 200, tint: 0x7dc0ff },
@@ -836,6 +841,8 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   acc_halo: { key: "acc_halo", name: "성스러운 후광", icon: "acc_halo", desc: "머리 위에 뜨는 금색 고리 — 성녀의 증표", price: 400, tint: 0xffe8a0, slot: "acc" },
   acc_wings_devil: { key: "acc_wings_devil", name: "마왕의 날개", icon: "acc_wings_devil", desc: "등 뒤에 펼쳐지는 진홍 박쥐 날개", price: 480, tint: 0xff5a6a, slot: "acc" },
   acc_wings_fairy: { key: "acc_wings_fairy", name: "요정의 날개", icon: "acc_wings_fairy", desc: "등 뒤에 반짝이는 하늘빛 요정 날개", price: 480, tint: 0xbaf3ff, slot: "acc" },
+  acc_cape_crimson: { key: "acc_cape_crimson", name: "진홍 망토", icon: "acc_cape_crimson", desc: "등 뒤로 늘어지는 붉은 망토 — 모자·날개와 함께 착용할 수 있다", price: 340, tint: 0xd8344a, slot: "cape" },
+  acc_cape_royal: { key: "acc_cape_royal", name: "왕실 망토", icon: "acc_cape_royal", desc: "금실로 수놓은 왕실 망토 — 모자·날개와 함께 착용할 수 있다", price: 420, tint: 0x7a5cff, slot: "cape" },
   /* v1.3.0 (지시 #7) — 랭커 전용: 오라는 Drive 팩 vfx_ring 황금 림, 왕관은 기존 왕관 어태치 재활용(황금 틴트) */
   rank_aura: { key: "rank_aura", name: "챔피언의 오라", icon: "cos_gold", desc: "랭킹 10위 안의 자만이 허락된 황금 오라 — 챔피언의 증표", price: 0, bmPrice: 30, tint: 0xffd76a, slot: "aura" },
   rank_crown_gold: { key: "rank_crown_gold", name: "랭커의 황금 왕관", icon: "acc_crown", desc: "랭킹 10위 안의 자만이 쓸 수 있는 황금 왕관 — 정점의 상징", price: 0, bmPrice: 50, tint: 0xffd76a, slot: "acc" },
@@ -1106,6 +1113,7 @@ export const BM_STOCK: ItemKey[] = [
   "outfit_valkyrie", "outfit_witch", "outfit_sylvan", "outfit_lily",
   "outfit_warlord", "outfit_paladin", "outfit_nightblade", "outfit_mariner",
   "acc_crown", "acc_ribbon", "acc_halo", "acc_wings_devil", "acc_wings_fairy",
+  "acc_cape_crimson", "acc_cape_royal",
 ];
 /** v1.0.3 (#0르쯔) — 캐시상점 진열 자격: bmPrice(에메랄드 가격)가 1 이상인 아이템만 (BmShopPanel 방어 필터용) */
 export function isCashStock(k: ItemKey): boolean {

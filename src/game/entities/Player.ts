@@ -9291,6 +9291,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (slot === "outfit") this.outfit = key as CosmeticKey;
       else if (slot === "hair") this.hair = key as CosmeticKey;
       else if (slot === "acc") this.accessory = key as CosmeticKey;
+      else if (slot === "cape") this.cape = key as CosmeticKey;
       else this.cosmetic = key as CosmeticKey;
       return true;
     }
@@ -9448,6 +9449,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (slot === "outfit") this.outfit = key as CosmeticKey;
       else if (slot === "hair") this.hair = key as CosmeticKey;
       else if (slot === "acc") this.accessory = key as CosmeticKey;
+      else if (slot === "cape") this.cape = key as CosmeticKey;
       else this.cosmetic = key as CosmeticKey;
       return true;
     }
@@ -9516,6 +9518,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (this.outfit) return this.setOutfit(null);
       if (this.hair) return this.setHair(null);
       if (this.accessory) return this.setAccessory(null);
+      if (this.cape) return this.setCape(null);
       if (this.cosmetic) {
         this.cosmetic = null;
         this.scene.onCosmeticChanged();
@@ -9528,11 +9531,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   /** v1.1.0 (#4) — 슬롯 지정 착용/해제: UI가 클릭한 아이템의 슬롯을 정확히 전달한다.
    *  해제(key=null) 시 대상 슬롯만 벗는다 — 코스튬+헤어 동시 착용 중에도 원하는 것만 해제 */
-  setCosmeticSlot(key: CosmeticKey | null, slot: "aura" | "outfit" | "hair" | "acc"): boolean {
+  setCosmeticSlot(key: CosmeticKey | null, slot: "aura" | "outfit" | "hair" | "acc" | "cape"): boolean {
     if (key && !this.cosmetics.includes(key)) return false;
     if (slot === "outfit") return this.setOutfit(key);
     if (slot === "hair") return this.setHair(key);
     if (slot === "acc") return this.setAccessory(key);
+    if (slot === "cape") return this.setCape(key);
     if (this.cosmetic === key) return false;
     this.cosmetic = key;
     this.scene.onCosmeticChanged();
@@ -9565,6 +9569,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (key && !this.cosmetics.includes(key)) return false;
     if (this.accessory === key) return false;
     this.accessory = key;
+    this.scene.onCosmeticChanged();
+    return true;
+  }
+
+  /* 망토 슬롯 — 장식(모자·날개)과 독립. 렌더는 WorldScene 이 characterParts 순서대로 그린다. */
+  cape: CosmeticKey | null = null;
+  setCape(key: CosmeticKey | null): boolean {
+    if (key && !this.cosmetics.includes(key)) return false;
+    if (this.cape === key) return false;
+    this.cape = key;
     this.scene.onCosmeticChanged();
     return true;
   }
