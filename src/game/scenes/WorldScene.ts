@@ -285,9 +285,8 @@ export class WorldScene extends Phaser.Scene {
   framedRoom = false;
   /** vc278 — framedRoom 일 때 적용한 줌 (리사이즈·워치독 재계산용) */
   private framedZoom = 1;
-  /** vc278 — framedRoom 이 확정한 스크롤 (다른 경로가 밀어내면 되돌린다) */
-  private framedScrollX = 0;
-  private framedScrollY = 0;
+  /** vc278 — 방 사각형(월드). Lighting 이 어둠 오버레이를 방 안에만 깔 때 쓴다. */
+  framedRect: { x: number; y: number; w: number; h: number } | null = null;
   /** 전진 차원문/보스가 놓이는 최원거리 셀 중심 (포탈 보루 폴백 위치로도 사용) */
   private portalHome = new Phaser.Math.Vector2(0, 0);
   /** 입구 셀 중심 — 플레이어 스폰/복귀 차원문 기준점 */
@@ -1681,7 +1680,10 @@ export class WorldScene extends Phaser.Scene {
      *  너머로 번져 우측 여백에 회색 그라데이션(16~80)이 생겼다(픽셀 실측).
      *  방 안은 지면 타일 자체가 밝으므로 가독성 손실은 없다. */
     this.lighting = new Lighting(this);
-    if (this.framedRoom) return;
+    /* vc278 — framedRoom 이어도 조명을 켠다. 어둠 오버레이는 Lighting 이 방 사각형에만
+     *  깔아 여백(순수 검정)을 지키고, 횃불 분위기는 그대로 남는다.
+     *  (한때 `if (this.framedRoom) return;` 으로 통째로 껐으나, 던전 계열이 곧 암전 챕터라
+     *   던전 정체성을 지우는 잘못된 해법이었다.) */
     this.lighting.setupAmbient(parseStage(stageKey).ch, true);
     /* v4.2.0 — 구역을 지날수록 횃불 광원 축소 (스테이지마다 줄어들어 보스전 회피 난이도 상승) */
     this.lighting.setTorchStage(parseStage(stageKey).sub);
@@ -1781,6 +1783,15 @@ export class WorldScene extends Phaser.Scene {
      *  근본 원인(scroll 계산)을 고친 뒤 **없어도 여백이 완전 검정**임을 실측으로 확인해 지웠다
      *  (backdrop 제거 상태: L0/112 R0/112 T0/220 B0/56 비검정 = 0, 우측 픽셀 전부 (0,0,0)).
      *  원인이 아닌 것을 덮는 코드는 다음 사람의 진단을 흐리므로 남기지 않는다. */
+
+    /* vc278 — 카메라를 조명보다 **먼저** 잡는다. Lighting 의 어둠 오버레이는 방 사각형을
+     *  알아야 방 안에만 깔 수 있는데(framedRect), initLighting 이 그보다 먼저 돌면
+     *  framedRect 가 아직 null 이라 화면 전체가 어두워져 검정 여백이 죽는다(순서 버그). */
+    if (this.framedRoom) {
+      this.cameras.main.setBackgroundColor("#000000");
+      this.cameras.main.useBounds = false;
+      this.applyFramedCamera();
+    }
 
     /* v4.1.5 — 동적 조명: 챕터별 암전 + 플레이어 횃불 광원 (fx/Lighting.ts).
      *  create() 최상단에서 초기화 — 이후 포탈/모닥불 등 장식 배치 경로가 광원을 등록한다. */
@@ -2963,8 +2974,10 @@ export class WorldScene extends Phaser.Scene {
     cam.setZoom(v.zoom);
     cam.setScroll(v.scrollX, v.scrollY);
     this.framedZoom = v.zoom;
-    this.framedScrollX = v.scrollX;
-    this.framedScrollY = v.scrollY;
+    /* vc278 — 조명(Lighting)이 어둠 오버레이를 방 안에만 깔도록 방 사각형을 노출한다.
+     *  오버레이는 scrollFactor 0(화면 고정)이라, 방 화면 좌표를 알려주지 않으면
+     *  화면 전체가 어두워져 검정 여백이 회색으로 죽는다. */
+    this.framedRect = v.room;
   }
 
   /**

@@ -86,12 +86,35 @@ export class Lighting {
     if (!prof) return;
     const cam = this.scene.cameras.main;
     this.ambientAlpha = prof.alpha;
-    // 어둠 오버레이 — 카메라 고정(스크롤 무관). 카메라 크기보다 넉넉히(회전/줌 대비)
-    this.overlay = this.scene.add
-      .rectangle(0, 0, cam.width + 4, cam.height + 4, prof.color, prof.alpha)
-      .setOrigin(0)
-      .setScrollFactor(0)
-      .setDepth(55);
+    /* vc278 — framedRoom(검은 배경에 떠 있는 방)에서는 어둠 오버레이를 **방 안에만** 깐다.
+     *
+     *  [왜 껐다가 되살렸나] 처음엔 framedRoom 이면 조명을 통째로 껐는데, 던전 계열이 바로
+     *  암전 챕터(cave/nidavellir/hel/abyss)라 던전의 정체성(어둠+횃불)을 지운 셈이었다.
+     *  검은 여백을 얻자고 분위기를 버리는 건 잘못된 해법이다.
+     *
+     *  [해법] 오버레이는 scrollFactor 0(화면 고정)이라 화면을 꽉 채운다. 그대로 두면
+     *  방 밖 여백까지 어둠이 깔려 "떠 있는 방"이 흐려진다. 방 사각형 크기로만 깔아
+     *  방 안에만 어둠이 지게 한다(여백은 카메라 배경 검정 그대로).
+     *  방 좌표는 씬이 계산해 넘긴다 — Lighting 이 레이아웃을 직접 알 필요는 없다. */
+    const framed = (this.scene as { framedRoom?: boolean; framedRect?: { x: number; y: number; w: number; h: number } });
+    if (framed.framedRoom && framed.framedRect) {
+      const r = framed.framedRect;
+      const z = cam.zoom || 1;
+      /* 화면 고정 오버레이를 방의 화면 사각형에 맞춘다(월드→화면: (wx-scroll)*zoom). */
+      const sx = (r.x - cam.scrollX) * z;
+      const sy = (r.y - cam.scrollY) * z;
+      this.overlay = this.scene.add
+        .rectangle(sx, sy, r.w * z, r.h * z, prof.color, prof.alpha)
+        .setOrigin(0)
+        .setScrollFactor(0)
+        .setDepth(55);
+    } else {
+      this.overlay = this.scene.add
+        .rectangle(0, 0, cam.width + 4, cam.height + 4, prof.color, prof.alpha)
+        .setOrigin(0)
+        .setScrollFactor(0)
+        .setDepth(55);
+    }
     // 플레이어 추종 광원 — 암전 챕터에서 시야 확보 (횃불을 든 사냥꾼)
     if (hasPlayer) {
       /* v1.0.2 (#니플헤임) — 챕터별 횃불 프로필: 어두운 챕터일수록 넉넉한 기본 광원 */
@@ -142,10 +165,10 @@ export class Lighting {
   /** 정적 광원 등록 (횃불/모닥불/포탈/수정 등) — ADD 글로우 + 플리커
    *  v1.0.18 — 플리커 완화 모드면 트윈 없이 고정 광원 */
   addLight(x: number, y: number, opts: LightOpts = {}) {
-    /* vc278 — framedRoom(검은 배경에 떠 있는 방)에서는 정적 광원을 만들지 않는다.
-     *  pk_light_01 은 416~512px ADD 글로우라 방 경계 밖(검정이어야 하는 여백)까지 번진다.
-     *  픽셀 실측: 우측 여백 112샘플 중 72개가 회색(16~96) — 원인 오브젝트가 이 광원이었다. */
-    if ((this.scene as { framedRoom?: boolean }).framedRoom) return null as unknown as Phaser.GameObjects.Image;
+    /* vc278 — framedRoom 에서도 정적 광원을 켠다. 처음엔 껐지만(pk_light_01 416px 글로우가
+     *  여백을 물들여서), 그러면 던전의 횃불 분위기가 사라진다. 광원은 원래 방 안 오브젝트
+     *  (횃불/모닥불)에 붙으므로 방 경계 근처에서만 살짝 새는 정도다.
+     *  여백이 실제로 오염되는지는 픽셀 측정으로 확인한다 — 추측으로 끄지 않는다. */
     const tint = opts.tint ?? 0xffa040;
     const scale = opts.scale ?? 0.9;
     const alpha = opts.alpha ?? 0.3;

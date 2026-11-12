@@ -35,8 +35,21 @@ export function usesFramedRoom(place: Place | undefined | null): boolean {
   return !!place && FRAMED_ROLES.has(place.role);
 }
 
-/** 프레이밍 여백(px) — 방 둘레에 두는 순수 검정 띠 두께. */
+/** 프레이밍 여백(px) — 방 둘레에 두는 순수 검정 띠의 **최소** 두께.
+ *  실제 여백은 화면 대비 비율(FRAME_FILL)로 정하고, 이 값은 하한으로만 쓴다. */
 export const FRAME_PAD = 96;
+
+/** 방이 화면에서 차지하는 비율 (0~1).
+ *
+ *  참조 이미지(Undertale/고전 RPG)를 재보면 방은 화면의 약 **68~78%** 를 차지하고
+ *  나머지가 검정이다. 종전에는 pad 를 96px 고정으로 두어 던전처럼 큰 방이 화면의
+ *  약 95% 를 채웠다 — "떠 있는 방"이 아니라 "검은 테두리가 있는 방"이 됐다.
+ *  비율로 잡으면 화면 크기·방 크기가 달라도 같은 인상을 유지한다. */
+export const FRAME_FILL = 0.74;
+
+/** 확대 상한 — 아주 작은 방이라도 캐릭터가 화면을 다 채우지 않게 한다.
+ *  2배를 넘으면 방이 아니라 캐릭터 초상화처럼 보인다. */
+export const MAX_ZOOM = 2;
 
 /**
  * 방(개방 셀)의 월드 사각형. 스테이지 전체가 아니라 **실제로 걸어다닐 수 있는 영역**이다.
@@ -111,17 +124,26 @@ export function computeFramedView(
   const sw = Math.max(1, screenW);
   const sh = Math.max(1, screenH);
 
-  /* 여백은 **항상** 둔다. 종전에는 "방이 화면보다 크면 생략"했는데, 던전은 개방률이
-   * 45~80% 라 방이 스테이지 대부분을 차지해 결국 화면을 꽉 채웠다(실측: 2430×1280
-   * 스테이지에서 zoom 0.81, 좌우 검정 0). 참조 이미지의 "떠 있는" 느낌은 여백이 있어야만 난다.
-   * 대가로 줌이 약 16% 더 빠지지만, 방이 화면에 들어오는 한 캐릭터는 충분히 보인다. */
-  const effectivePad = pad;
+  /* 여백을 **비율**로 잡는다.
+   *
+   *  [왜 px 고정을 버렸나] pad=96px 고정이면 화면·방 크기에 따라 방 점유율이 크게 흔들린다.
+   *  던전은 방이 2100×1024 같은 값이라 96px 여백으로는 점유율이 95% 까지 올라가
+   *  "떠 있는 방"이 아니라 "검정 테두리"가 됐다(실측). 참조 이미지들의 점유율은 68~78% 다.
+   *
+   *  [계산] 방이 화면의 FRAME_FILL 만큼 그려지도록 줌을 잡는다:
+   *    zoom = min(sw/w, sh/h) * FRAME_FILL
+   *  남는 영역이 곧 여백이므로 pad 를 따로 더하지 않는다.
+   *  `pad` 인자는 하한선으로만 쓴다 — 여백이 이보다 얇아지면 "떠 있는" 느낌이 사라진다. */
+  const fitZoom = Math.min(sw / w, sh / h) * FRAME_FILL;
+  /* 아주 작은 방은 확대 상한 — 캐릭터가 화면을 가득 채우면 방이 아니라 초상화가 된다. */
+  const zoom = Math.min(fitZoom, MAX_ZOOM);
+  /* 여백 하한 검사: 이 줌으로 방을 그렸을 때 남는 여백이 pad 보다 얇으면 줌을 낮춘다.
+   *  (방이 화면에 꽉 차는 극단에서 pad 규약이 무너지지 않게.) */
+  const padZoomCap = Math.min(sw / (w + pad * 2), sh / (h + pad * 2));
+  const finalZoom = Math.min(zoom, padZoomCap);
 
-  const viewW = w + effectivePad * 2;
-  const viewH = h + effectivePad * 2;
-  /* 화면 비율과 방 비율이 다르면 여백이 한쪽만 남는다. 그건 의도된 결과다
-   * (참조 이미지들도 방이 화면 중앙에 작게 떠 있고 위아래가 검정이다). */
-  const zoom = Math.min(sw / viewW, sh / viewH);
+  const viewW = sw / finalZoom;
+  const viewH = sh / finalZoom;
 
   /* 카메라 중앙이 **방 중앙**을 가리키게 한다 — 여백이 좌우/상하 고르게 남는다.
    *  room 이 주어지면 그 사각형의 중심을 쓴다(스테이지 원점이 아니라 실제 방 위치).
@@ -140,7 +162,7 @@ export function computeFramedView(
     scrollY: centerY - sh / 2,
     viewW,
     viewH,
-    zoom,
+    zoom: finalZoom,
     room: room ?? { x: 0, y: 0, w, h },
   };
 }

@@ -22,6 +22,8 @@ import {
   computeFramedView,
   FRAMED_ROLES,
   FRAME_PAD,
+  FRAME_FILL,
+  MAX_ZOOM,
 } from "../src/game/framedRoom.ts";
 import { chapterPlace } from "../src/game/chapterStoryPlan.ts";
 
@@ -83,13 +85,44 @@ test("vc278 — 방 주변에 검정 여백이 남는다 (화면을 꽉 채우�
 test("vc278 — 큰 방에서도 여백을 둔다 (떠 있는 느낌의 핵심)", () => {
   /* 종전에는 "방이 화면보다 크면 pad 생략"이었는데, 던전은 개방률 45~80% 라
    * 방이 스테이지 대부분을 차지해 결국 화면을 꽉 채웠다(실측 zoom 0.81, 좌우 검정 0).
-   * 참조 이미지의 "떠 있는" 느낌은 여백이 있어야만 난다 → 항상 pad 를 둔다. */
+   * 참조 이미지의 "떠 있는" 느낌은 여백이 있어야만 난다 → 항상 여백을 둔다. */
   const room = { x: 0, y: 0, w: 2430, h: 1280 };
   const v = computeFramedView(room.w, room.h, 1280, 800, FRAME_PAD, room);
   assert.ok(room.w * v.zoom < 1280, `좌우 검정이 안 보인다: ${room.w * v.zoom}`);
   assert.ok(room.h * v.zoom < 800, `상하 검정이 안 보인다: ${room.h * v.zoom}`);
   /* 방이 화면에 들어와야 한다(잘림 없음). */
   assert.ok(room.w * v.zoom <= 1280 + 0.5 && room.h * v.zoom <= 800 + 0.5);
+});
+
+test("vc278c — 방 점유율이 FRAME_FILL 에 맞는다 (참조 이미지 비율)", () => {
+  /* [왜 비율인가] pad=96px 고정이면 방·화면 크기에 따라 점유율이 흔들려
+   * 큰 던전에서 95% 까지 올라갔다 = "검정 테두리"지 "떠 있는 방"이 아니다.
+   * 참조 이미지들의 점유율은 68~78% 다. */
+  const cases = [
+    { w: 2126, h: 1024, sw: 1280, sh: 800 }, // 실제 howlrstone11x1 실측값
+    { w: 800, h: 600, sw: 1280, sh: 800 },
+    { w: 3000, h: 2000, sw: 1280, sh: 800 },
+    { w: 640, h: 480, sw: 390, sh: 844 },    // 세로 화면(모바일)
+  ];
+  for (const c of cases) {
+    const v = computeFramedView(c.w, c.h, c.sw, c.sh);
+    const fillX = (c.w * v.zoom) / c.sw;
+    const fillY = (c.h * v.zoom) / c.sh;
+    const worst = Math.max(fillX, fillY);
+    /* 더 빡빡한 축이 FRAME_FILL 에 근접한다(다른 축은 그보다 작을 수 있다). */
+    assert.ok(worst <= FRAME_FILL + 0.02, `${c.w}x${c.h}: 점유율 ${(worst * 100).toFixed(0)}% > FRAME_FILL`);
+    /* 너무 작아지면 캐릭터가 안 보인다 — 하한도 고정한다. */
+    assert.ok(worst >= 0.4, `${c.w}x${c.h}: 점유율 ${(worst * 100).toFixed(0)}% — 너무 작다`);
+  }
+});
+
+test("vc278c — FRAME_FILL 은 참조 이미지 범위(0.6~0.85) 안이다", () => {
+  assert.ok(FRAME_FILL >= 0.6 && FRAME_FILL <= 0.85, `FRAME_FILL=${FRAME_FILL} 이 참조 범위 밖`);
+});
+
+test("vc278c — 아주 작은 방은 확대 상한(MAX_ZOOM)에 걸린다", () => {
+  const v = computeFramedView(100, 80, 1280, 800);
+  assert.ok(v.zoom <= MAX_ZOOM + 1e-9, `확대 상한 초과: ${v.zoom}`);
 });
 
 test("vc278 — 카메라가 방 중앙을 비춘다 (여백이 한쪽에 몰리지 않는다)", () => {
