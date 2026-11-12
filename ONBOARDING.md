@@ -26,8 +26,12 @@
 | `GOOGLE_PLAY_PACKAGE_NAME` | 선택 | 기본 `com.sertz.myapp` |
 | `SERTZ_IAP_ENFORCE` | 선택 | `0` 이면 결제 검증 생략(개발용). **기본은 강제** |
 | `SERTZ_KEYSTORE_BASE64`<br>`SERTZ_KEYSTORE_PASSWORD`<br>`SERTZ_KEY_PASSWORD`<br>`SERTZ_KEY_ALIAS` | APK 릴리스 서명 | GitHub Secrets 에 등록돼 있음 |
+| `REA_PYTHON` | 테스트 전용 | Pillow 있는 Python 을 못 찾아 초상화·타일 검사가 실패한다 (§5 참조) |
 
 ## 2. 실행
+
+**Node 24 이상 필수** (`package.json` 의 `engines.node` = `>=24`, `.nvmrc` = `24`).
+그 아래 버전에서는 `--experimental-strip-types` 동작이 달라 테스트가 돌지 않는다.
 
 ```bash
 npm ci
@@ -76,18 +80,42 @@ APK·EXE의 **최종 정적 산출물**은 `.next-apk` 이다. Next 16.1의 `out
 ## 5. 테스트
 
 ```bash
-node --experimental-strip-types --test src/lib/__tests__/escrow.test.ts
+npm test              # 673개 전부 (tests/*.test.mjs + tests/campaign/*.test.mjs)
+npm run test:campaign # 캠페인만 (22개)
 ```
 
-현재 커버: 거래소 에스크로(`deductEscrow`, `escrowedCounts`) 7개.
-**재화 복제가 걸린 경로만 우선**했다. 프레임워크는 추가하지 않았다(`node:test`).
+**테스트를 돌리기 전에 환경 2가지를 확인한다.** 둘 중 하나가 없으면 테스트가
+"게임 결함"처럼 보이는 실패를 낸다 — 실제로는 환경 문제다.
+
+| 필요한 것 | 없으면 | 해결 |
+|---|---|---|
+| `git` 실행 파일 | `spawnSync git ENOENT` — `howlrstone`·`story-portraits-audio` 등이 통째로 실패 | `PATH` 에 git 추가 |
+| Pillow(PIL) 있는 Python | `Pillow(PIL) 가 있는 Python 을 찾지 못했다` — 초상화·타일 검사 실패 | `REA_PYTHON` 에 인터프리터 경로 지정 |
+
+`tests/python.mjs` 의 번들 경로는 `C:/Users/apple/...` 로 박혀 있어 **다른 PC 에서는 반드시 `REA_PYTHON` 을 지정**해야 한다.
+
+```powershell
+# Windows 예시
+$env:REA_PYTHON = "C:\path\to\python.exe"
+```
+
+### 실패했을 때 먼저 의심할 것
+
+경로가 `C:\C:\...` 처럼 중복되거나 `ENOENT` 가 나면 코드를 고치기 전에 **테스트 하네스의 경로 계산**을 본다.
+`new URL(import.meta.url).pathname` 은 Windows 에서 `/C:/...` 를 돌려주므로 `fileURLToPath` 를 써야 한다.
 
 ## 6. 검증 게이트
 
+작업을 마치면 아래 4개를 **전부** 통과시킨다. 핸드오프 문서가 말하는 "기준선"이 이것이다.
+
 ```bash
+npm test                          # 673/673
 npx tsc --noEmit                  # 0 오류
 npx eslint src --max-warnings 0   # CI 게이트와 동일
+npx next build --webpack          # Turbopack 은 inotify 한계로 죽는다
 ```
+
+기준선이 673이 아니면 **먼저 원인을 밝힌다.** 그 상태로 작업하면 회귀를 못 잡는다.
 
 ## 7. 서버 권위 원칙 (중요)
 

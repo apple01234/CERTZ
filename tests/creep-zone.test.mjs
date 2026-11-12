@@ -186,3 +186,110 @@ test("zonesPerGroup 을 늘려도 종족 셀은 서로 겹치지 않는다", asy
     }
   }
 });
+
+/* ═══ vc278 — 구역 균등화 (핸드오프 작업 B) ═══
+ *
+ * [왜 필요한가] 핸드오프가 지적한 "cells 18/23/11/7/3/2" 불균등. 종족이 받는 땅의
+ *  크기가 2배 이상 벌어지면 한 종족만 넓게 퍼져 "구역 정체성"이 사라진다.
+ *
+ * [실측 before → after]
+ *  · split ratio      최악 29 → 2.29 (Lloyd 반복)
+ *  · 종족별 반경 편차  49.5% → 4.3% (균형 배정 + 스왑)
+ *
+ * [고정하는 것] 결정론과 무관한 "품질" 지표. 여기가 느슨해지면 vc277 수준으로 퇴행한다.
+ */
+
+/** 종족이 받은 셀들의 무게중심 기준 최대 반경 */
+function groupRadius(assigned, gi, cols) {
+  const all = assigned[gi].flatMap((z) => z.cells);
+  if (!all.length) return 0;
+  const cx = all.reduce((s, c) => s + (c % cols), 0) / all.length;
+  const cy = all.reduce((s, c) => s + Math.floor(c / cols), 0) / all.length;
+  return Math.max(...all.map((c) => Math.hypot((c % cols) - cx, Math.floor(c / cols) - cy)));
+}
+
+test("vc278 — 구역 크기가 고르다 (ratio 4 이하)", async () => {
+  const { splitCreepZones } = await import("../src/game/creepZone.ts");
+  const cases = [
+    { cols: 11, rows: 9, groups: 6 },
+    { cols: 12, rows: 12, groups: 6 },
+    { cols: 16, rows: 16, groups: 9 },
+  ];
+  for (const { cols, rows, groups } of cases) {
+    const cells = Array.from({ length: cols * rows }, (_, i) => i);
+    const lay = layout(cols, rows, cells);
+    for (const seed of ["stage-1-1", "alpha", "omega"]) {
+      const sizes = splitCreepZones(lay, groups, seed).map((z) => z.cells.length);
+      const ratio = Math.max(...sizes) / Math.min(...sizes);
+      /* vc277 실측 최악값은 29 였다(한 구역이 1셀 — 그 종족 몬스터가 사실상 못 뭉친다).
+       * Lloyd 반복 후 실측 최악은 3.57(16x16 g=9 seed=alpha). 구역 수가 많아질수록
+       * 한 구역의 셀 수가 작아 비율이 튀기 쉬우므로 4 를 상한으로 둔다.
+       * 이 테스트의 목적은 "1셀짜리 구역" 같은 파국을 막는 것이지 완전 균등이 아니다. */
+      assert.ok(ratio <= 4, `${cols}x${rows} g=${groups} seed=${seed}: ratio ${ratio.toFixed(2)} > 4 (sizes ${sizes.join("/")})`);
+    }
+  }
+});
+
+test("vc278 — 종족별 활동 반경 편차가 30% 이내다 (핸드오프 목표)", async () => {
+  const { assignCreepZones } = await import("../src/game/creepZone.ts");
+  const cases = [
+    { cols: 11, rows: 9 },
+    { cols: 12, rows: 12 },
+    { cols: 16, rows: 16 },
+  ];
+  for (const { cols, rows } of cases) {
+    const cells = Array.from({ length: cols * rows }, (_, i) => i);
+    const lay = layout(cols, rows, cells);
+    for (const seed of ["stage-1-1", "alpha", "omega"]) {
+      const assigned = assignCreepZones(lay, 3, seed, 3);
+      const rs = assigned.map((_, gi) => groupRadius(assigned, gi, cols)).filter((r) => r > 0);
+      if (rs.length < 2) continue;
+      const dev = (Math.max(...rs) - Math.min(...rs)) / Math.max(...rs) * 100;
+      assert.ok(dev <= 30, `${cols}x${rows} seed=${seed}: 반경 편차 ${dev.toFixed(1)}% > 30% (r=${rs.map((r) => r.toFixed(1)).join("/")})`);
+    }
+  }
+});
+
+test("vc278 — 균등화를 해도 결정론과 셀 보존은 유지된다", async () => {
+  const { splitCreepZones, assignCreepZones } = await import("../src/game/creepZone.ts");
+  const cells = Array.from({ length: 100 }, (_, i) => i);
+  const lay = layout(10, 10, cells);
+
+  // 결정론: 같은 시드 → 완전히 같은 결과
+  assert.deepEqual(
+    splitCreepZones(lay, 6, "det"),
+    splitCreepZones(lay, 6, "det"),
+    "Lloyd 반복이 결정론을 깨면 리젠/멀티 동기화가 어긋난다",
+  );
+  assert.deepEqual(
+    assignCreepZones(lay, 3, "det", 3),
+    assignCreepZones(lay, 3, "det", 3),
+    "스왑 최적화가 결정론을 깨면 안 된다",
+  );
+
+  // 셀 보존: 어떤 개방 셀도 사라지거나 중복되지 않는다
+  const assigned = assignCreepZones(lay, 3, "keep", 3);
+  const seen = new Set();
+  for (const zs of assigned) for (const z of zs) for (const c of z.cells) {
+    assert.ok(!seen.has(c), `셀 ${c} 중복`);
+    seen.add(c);
+  }
+  assert.equal(seen.size, cells.length, `셀이 유실됨: ${seen.size}/${cells.length}`);
+});
+
+test("vc278 — 벽이 섞인 레이아웃에서도 균등화가 셀을 잃지 않는다", async () => {
+  const { splitCreepZones } = await import("../src/game/creepZone.ts");
+  const openCells = Array.from({ length: 144 }, (_, i) => i).filter((i) => i % 7 !== 0);
+  const lay = layout(12, 12, openCells);
+  const openSet = new Set(openCells);
+  for (const seed of ["walled-a", "walled-b"]) {
+    const zones = splitCreepZones(lay, 6, seed);
+    const seen = new Set();
+    for (const z of zones) for (const c of z.cells) {
+      assert.ok(openSet.has(c), `벽 셀 ${c} 배정됨`);
+      assert.ok(!seen.has(c), `셀 ${c} 중복`);
+      seen.add(c);
+    }
+    assert.equal(seen.size, openCells.length, `seed=${seed}: 개방 셀 유실 ${seen.size}/${openCells.length}`);
+  }
+});
