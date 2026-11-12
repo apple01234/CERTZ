@@ -554,6 +554,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private freeDashAt = 0;
   private freeDashReadyAt = 0;
   private freeDashing = false;
+  /** 현재 "attack" 상태가 기본공격인지. 스킬 진입은 false 로 덮는다(돌진 캔슬은 기본공격 후딜만). */
+  private basicAttackState = false;
+  /** 기본공격마다 +1. 캔슬된 공격의 지연 판정이 다음 행동(스킬·새 기본공격)에 끼어들지 않게 한다. */
+  private basicAttackSeq = 0;
   private dashTime = 0;
   private dashGhostAcc = 0; // v4.9.0 — 돌진 잔상 스폰 간격 누적
   private dashDir = new Phaser.Math.Vector2();
@@ -864,10 +868,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /* ---------------- 기본 공격 ----------------
    * v2.5 (지시 #3) — 계열별 기본공격: 미전직 참격 / 전사 강화 참격(2연타) / 궁수 활쏘기 / 마법사 마법탄 */
 
+  private basicAttackLive(seq: number) {
+    return this.state === "attack" && this.basicAttackState && seq === this.basicAttackSeq;
+  }
+
   private doAttack() {
     if (!this.actionAllowed("attack")) return;
     this.tutNotify("attack");
     this.state = "attack";
+    this.basicAttackState = true;
+    this.basicAttackSeq++;
     this.atkCooldown = 300;
     this.swingDone = false;
     this.slashAlt = !this.slashAlt;
@@ -971,6 +981,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   private atkSlash(dir: Phaser.Math.Vector2, aim?: Phaser.Math.Vector2) {
+    const seq = this.basicAttackSeq;
     const fireDir = aim ?? dir;
     const fam = familyOf(this.cls);
     const warrior = fam === "warrior";
@@ -1022,7 +1033,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // 베기 타이밍: 65ms 후 판정+참격 스윕 (모션 2프레임 시점)
     this.scene.time.delayedCall(65, () => {
-      if (this.state !== "attack") return;
+      if (!this.basicAttackLive(seq)) return;
       this.swingDone = true;
       /* v1.2.4 (버그 7) — "무기·방어구 착용 모습이 화면에 보이게 (아니면 기본공격 시
        *  무기마다 효과가 다르던지)" → 후자를 택했다. 착용 외형 시트를 새로 그리는 대신,
@@ -1142,7 +1153,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const isGunner = familyOf(this.cls) === "pirate";
     if (t >= 1 && !isGunner) {
       this.scene.time.delayedCall(195, () => {
-        if (this.state !== "attack") return;
+        if (!this.basicAttackLive(seq)) return;
         this.scene.spawnSlash(this.x, this.y, dir, !this.slashAlt, slashScale * 0.95, slashTint);
         this.scene.sfxSkill("spin", 1.02 + Math.random() * 0.08); // v4.3.0 — 연타 2타 (고피치 변주)
         this.checkMeleeHit(dir, reach, hitW, dmgMul * 0.8, knock * 0.8);
@@ -1150,7 +1161,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
     if (t >= 2 && !isGunner) {
       this.scene.time.delayedCall(300, () => {
-        if (this.state !== "attack") return;
+        if (!this.basicAttackLive(seq)) return;
         this.scene.spawnSlash(this.x, this.y, dir, this.slashAlt, slashScale * 0.9, slashTint);
         this.scene.sfxSkill("spin", 1.1 + Math.random() * 0.08); // v4.3.0 — 연타 3타 (최고피치 변주)
         this.checkMeleeHit(dir, reach, hitW, dmgMul * 0.7, knock * 0.6);
@@ -1185,7 +1196,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     this.scene.time.delayedCall(t >= 2 ? 360 : t >= 1 ? 260 : 200, () => {
-      if (this.state === "attack") {
+      if (this.basicAttackLive(seq)) {
         this.state = "idle";
         // v2.2 — 이동 입력이 없을 때만 정지 (입력 중이면 다음 프레임 걷기로 자연 연결)
         if (this.lastMove.lengthSq() > 0.01) return;
@@ -1201,6 +1212,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *    부채꼴 확대(차수별 0.13~0.22rad) · 연사 간격 90→60ms · 발사 머즐 플래시 ·
    *    비행 잔상(트레일) · 3발+ 동시 타격감 카메라 마이크로 셰이크 */
   private atkBow(dir: Phaser.Math.Vector2) {
+    const seq = this.basicAttackSeq;
     /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.faceAtk(dir); // v4.9.4 — 자유 조준 기준. 종전 dir.y===0 조건은 대각선에서 flip 을 강제로 false 로 눌렀다 // v1.0.16 — 좌향 네이티브 통일 (faceAtk 주석 참고)
@@ -1243,7 +1255,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     };
 
     this.scene.time.delayedCall(65, () => {
-      if (this.state !== "attack") return;
+      if (!this.basicAttackLive(seq)) return;
       this.swingDone = true;
       this.scene.sfxSkill("arrow", 0.96 + Math.random() * 0.08); // v3.0.24 — 활발사음 (검 스윙음 → 활음)
       for (let i = 0; i < shots; i++) {
@@ -1260,7 +1272,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     });
 
     this.scene.time.delayedCall(200, () => {
-      if (this.state === "attack") {
+      if (this.basicAttackLive(seq)) {
         this.state = "idle";
         if (this.lastMove.lengthSq() > 0.01) return;
         this.setVelocity(0, 0);
@@ -1272,6 +1284,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  v3.0.2 — 칼을 휘두르지 않고 시전 이펙트(마나 불꽃) + 마법 구슬 발사 (무기 정체성)
    *  v3.0.15 (#4) — "N차마다 N개" 공식 적용 (1차 1발 ~ 4차 4발) */
   private atkBolt(dir: Phaser.Math.Vector2) {
+    const seq = this.basicAttackSeq;
     /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.faceAtk(dir); // v4.9.4 — 자유 조준 기준. 종전 dir.y===0 조건은 대각선에서 flip 을 강제로 false 로 눌렀다 // v1.0.16 — 좌향 네이티브 통일
@@ -1284,7 +1297,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const shots = Math.max(1, t); // v3.0.15 (#4): N차 = N발
 
     this.scene.time.delayedCall(65, () => {
-      if (this.state !== "attack") return;
+      if (!this.basicAttackLive(seq)) return;
       this.swingDone = true;
       this.scene.sfxSkill("cast", 0.98 + Math.random() * 0.06); // v3.0.24 — 마법사 지팡이 시전음 (검 스윙음 → 마법음)
       const angle = Math.atan2(dir.y, dir.x);
@@ -1317,7 +1330,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     });
 
     this.scene.time.delayedCall(200, () => {
-      if (this.state === "attack") {
+      if (this.basicAttackLive(seq)) {
         this.state = "idle";
         if (this.lastMove.lengthSq() > 0.01) return;
         this.setVelocity(0, 0);
@@ -1331,6 +1344,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    *  회전하는 표창(24x24 픽셀 아트)이 관통 1로 날아간다.
    */
   private atkShuriken(dir: Phaser.Math.Vector2) {
+    const seq = this.basicAttackSeq;
     /* vc224 — FA 대응을 위해 원본 hero 키를 3분기로 잡아두고 playAnim 에 넘긴다 */
     const atkKey = dir.y > 0 ? "hero-atk-down" : dir.y < 0 ? "hero-atk-up" : "hero-atk";
     this.faceAtk(dir); // v4.9.4 — 자유 조준 기준. 종전 dir.y===0 조건은 대각선에서 flip 을 강제로 false 로 눌렀다 // v1.0.16 — 좌향 네이티브 통일
@@ -1339,7 +1353,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const empowered = this.nextAtkEmpowered;
     this.nextAtkEmpowered = false;
     this.scene.time.delayedCall(65, () => {
-      if (this.state !== "attack") return;
+      if (!this.basicAttackLive(seq)) return;
       this.swingDone = true;
       this.scene.sfxSkill("knife", 1.08 + Math.random() * 0.08); // v3.0.24 — 도적 표창 투척 (단검음 고자)
       const angle = Math.atan2(dir.y, dir.x);
@@ -1357,7 +1371,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     });
     this.scene.time.delayedCall(200, () => {
-      if (this.state === "attack") {
+      if (this.basicAttackLive(seq)) {
         this.state = "idle";
         if (this.lastMove.lengthSq() > 0.01) return;
         this.setVelocity(0, 0);
@@ -1642,6 +1656,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.mp -= 15;
     this.skill1Cd = this.skill1MaxEff;
     this.state = "attack";
+    this.basicAttackState = false;
     this.hitSet.clear();
     this.setVelocity(0, 0);
     this.netEmitAction("s1"); // v4.1.0
@@ -1705,6 +1720,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.mp -= 15;
     this.skill1Cd = this.skill1MaxEff;
     this.state = "attack";
+    this.basicAttackState = false;
     this.swingDone = false;
     this.lungeTime = 0;
     this.hitSet.clear();
@@ -2705,6 +2721,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // JENNY-style startup cancellation on the current PC/touch dash path.
     // Cancelling owns timer/FX cleanup; the paid MP and cooldown remain spent.
     if (this.state === "attack" && this.signatureCast?.phase === "startup") this.cancelSkillCast();
+    /* CrossCode 데모 data/players/lea.json 분석: 기본공격·투척 모두 blockData.dash=0 —
+     *  공격 직후에도 대시로 빠질 수 있다. 기본공격 후딜(200~360ms)만 캔슬하고, 남은 연타
+     *  판정은 basicAttackLive(seq) 가드로 취소된다(캔슬의 대가). */
+    if (this.state === "attack" && this.basicAttackState && !this.signatureCast) {
+      this.state = "idle";
+      this.lungeTime = 0;
+    }
     /* vc268 — 대시 중 재입력은 계속 막되(중복 이동 방지), 피격 경직(iframes) 중에는
      * 회피를 허용한다. 종전엔 state가 idle이 아니면 무조건 거부해서, 맞은 직후 0.6초 동안
      * 회피 입력이 전부 무시됐다 — 보스 연속기에 그대로 갈려 죽는 원인이었다. */
@@ -3300,6 +3323,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.mp -= 25;
     this.skill3Cd = this.skill3MaxEff;
     this.state = "attack";
+    this.basicAttackState = false;
     this.hitSet.clear();
     this.setVelocity(0, 0);
     this.netEmitAction("s3"); // v4.1.0
@@ -3915,6 +3939,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.mp -= 40;
     this.skill4Cd = this.skill4MaxEff;
     this.state = "attack";
+    this.basicAttackState = false;
     this.hitSet.clear();
     this.setVelocity(0, 0);
     this.netEmitAction("s4"); // v4.1.0

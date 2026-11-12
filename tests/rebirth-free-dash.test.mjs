@@ -7,7 +7,7 @@ import { FREE_DASH, freeDashDirection, freeDashFraction } from '../src/game/comb
 const source = readFileSync('src/game/entities/Player.ts', 'utf8');
 const ast = ts.createSourceFile('Player.ts', source, ts.ScriptTarget.Latest, true);
 const player = ast.statements.find(n => ts.isClassDeclaration(n) && n.name.text === 'Player');
-const names = new Set(['actionAllowed', 'useFreeDash', 'stopFreeDash', 'tickFreeDash']);
+const names = new Set(['actionAllowed', 'useFreeDash', 'stopFreeDash', 'tickFreeDash', 'basicAttackLive']);
 const methods = player.members.filter(n => names.has(n.name?.getText(ast))).map(n => n.getText(ast)).join('\n');
 const Subject = new Function('FREE_DASH', 'freeDashDirection', ts.transpile(`class Subject { ${methods} } return Subject;`))(FREE_DASH, freeDashDirection);
 function vector(x = 0, y = 0) { return { x, y, set(x, y) { this.x = x; this.y = y; } }; }
@@ -86,6 +86,20 @@ test('signature startup can cancel into dash without refund; other cast phases s
     assert.equal(p.mp, 35); assert.equal(p.skill1Cd, 4500);
     assert.equal(p.state, phase === 'startup' ? 'dash' : 'attack');
   }
+});
+test('basic attack recovery cancels into dash (CrossCode blockData.dash=0); skills stay locked', () => {
+  const p = subject(); p.state = 'attack'; p.basicAttackState = true; p.basicAttackSeq = 3; p.lungeTime = 90;
+  assert.equal(p.useFreeDash(), true); assert.equal(p.state, 'dash'); assert.equal(p.lungeTime, 0);
+  assert.equal(p.basicAttackLive(3), false); // 캔슬된 공격의 남은 연타는 더 이상 판정하지 않는다
+  const s = subject(); s.state = 'attack'; s.basicAttackState = false;
+  assert.equal(s.useFreeDash(), false); assert.equal(s.state, 'attack');
+  const c = subject(); c.state = 'attack'; c.basicAttackState = true; c.freeDashReadyAt = 100;
+  assert.equal(c.useFreeDash(), false); assert.equal(c.state, 'attack'); // 쿨타임 중엔 공격을 버리지 않는다
+});
+test('a stale basic attack timer cannot act during the next attack', () => {
+  const p = subject(); p.state = 'attack'; p.basicAttackState = true; p.basicAttackSeq = 4;
+  assert.equal(p.basicAttackLive(4), true); assert.equal(p.basicAttackLive(3), false);
+  p.basicAttackState = false; assert.equal(p.basicAttackLive(4), false);
 });
 test('scene dash gate and death cannot cancel a pending startup', () => {
   for (const state of ['attack', 'dead']) {
