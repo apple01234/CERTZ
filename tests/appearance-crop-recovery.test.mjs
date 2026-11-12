@@ -25,8 +25,11 @@ test("default skins retain transparent original animation frames and consistent 
         const webp = await pixels(`${src}.webp`), png = await pixels(`${src}.png`);
         assert.deepEqual(webp.data, png.data, `${src}: PNG/WebP pixels must match`);
         const box = bounds(webp.data, webp.info.width, webp.info.height);
-        const occupancy = box.count / ((box.right - box.left) * (box.last - box.first));
-        assert.ok(occupancy < 0.85, `${src}: opaque rectangular matte returned`);
+        /* 2026-11-12 — 유저 지시로 기본 피부(2번)를 다른 피부와 같은 치비 그림으로 되돌렸다.
+         * 치비는 몸이 작고 꽉 차서 "자기 경계 상자 점유율"로는 불투명 배경판과 구별되지 않는다.
+         * 배경판(58×56 ≈ 캔버스의 53%)은 캔버스 전체 대비 점유율로 잡는다. */
+        const occupancy = box.count / (webp.info.width * webp.info.height);
+        assert.ok(occupancy < 0.3, `${src}: opaque rectangular matte returned`);
       }
     }
     const front = await pixels(`/assets/ch${gender}2_idle0.webp`);

@@ -72,19 +72,25 @@ test('기본 남캐/여캐 시트가 NPC 규격으로 존재한다', () => {
   }
 });
 
-test('캐릭터가 npcbody 급 해상도로 그려져 있다', () => {
-  /* 26×42(ch 계열) 이하로 되돌아가면 저해상도 회귀 */
+test('기본 피부(2번)는 다른 피부와 같은 치비 그림이다', () => {
+  /* 2026-11-12 유저 지시 — "기본 캐릭터를 다른 피부색 캐릭터들처럼".
+   *  종전 검사는 키 큰 그림(높이 50px 이상)을 강제했다. 이제 2번은 1번·3번과 **같은 실루엣**이고
+   *  피부색만 그 사이 톤이다. 키 큰 원본은 public/assets/legacy/default-tall/ 에 보존돼 있다. */
   const out = execFileSync(pythonBin(), ['-c', `
 from PIL import Image
-for g in ("chm2","chf2"):
-    bb = Image.open(f"public/assets/{g}_idle0.webp").convert("RGBA").getbbox()
-    print(g, bb[2]-bb[0], bb[3]-bb[1])
+for g in ("chm","chf"):
+    a = Image.open(f"public/assets/{g}1_idle0.webp").convert("RGBA")
+    b = Image.open(f"public/assets/{g}2_idle0.webp").convert("RGBA")
+    c = Image.open(f"public/assets/{g}3_idle0.webp").convert("RGBA")
+    print(g, int(a.split()[3].tobytes() == b.split()[3].tobytes()), int(a.tobytes() != b.tobytes()), int(c.tobytes() != b.tobytes()))
 `], { cwd: ROOT, encoding: 'utf8' }).trim();
   for (const line of out.split('\n')) {
-    const [g, w, h] = line.trim().split(/\s+/);
-    assert.ok(Number(h) >= 50, `${g} 높이 ${h}px < 50 — 저해상도로 회귀`);
-    assert.ok(Number(w) >= 22, `${g} 폭 ${w}px < 22 — 저해상도로 회귀`);
+    const [g, sameAlpha, differs1, differs3] = line.trim().split(/\s+/);
+    assert.equal(sameAlpha, '1', `${g}2 실루엣이 ${g}1 과 다르다`);
+    assert.equal(differs1, '1', `${g}2 가 ${g}1 과 완전히 같다(피부 선택지 중복)`);
+    assert.equal(differs3, '1', `${g}2 가 ${g}3 과 완전히 같다(피부 선택지 중복)`);
   }
+  assert.ok(fs.existsSync(path.join(ASSETS, 'legacy/default-tall/chm2_idle0.webp')), '키 큰 원본 보존');
 });
 
 test('여캐 실루엣이 남캐와 다르다 (색 없이 구별 가능)', () => {
