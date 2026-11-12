@@ -190,3 +190,15 @@ export function ult5bHoldOf(key: string | null | undefined, fam?: string | null)
   const v = (key && ULT5B_HOLD_MS[key]) || (fam && ULT5B_HOLD_MS[fam]) || 12000;
   return Math.max(ULT5B_MIN, Math.min(ULT5B_MAX, v));
 }
+
+/* ═══ 2026-11-12 — 1차 궁극기 직업 간 총 피해 보정 (240 지시서 121·126) ═══
+ * 위 #9 규칙의 목표는 "한 번의 극딜 총량이 직업 간에 비슷"인데, 실제 브라우저 실측(공격력 25,
+ * 고정 표적 1마리, 치명타 끔 — docs/qa/2026-11-12/ult-waves)에서 4차 10종의 총 피해는
+ *   거리 60px : 439 ~ 16,788   /   거리 150px : 439 ~ 16,788 (중앙값 약 1,800)
+ * 이었다. 대부분 직업은 표적 거리에 따라 2배 안팎으로 흔들려 정밀 보정의 근거가 못 되지만,
+ * 두 거리 모두에서 같은 값으로 벗어난 둘은 구조적 격차다:
+ *   deadeye 16,788 (화살 100여 발이 전부 확정 치명으로 한 표적에 꽂힌다) → ×0.25 = 약 4,200 (여전히 최상위)
+ *   seaking    439 (직접 타격 4회뿐)                                      → ×3.0  = 약 1,300
+ * ponytail: 나머지 8종과 skylord(회오리가 고정 표적을 지나쳐 측정 불가)는 손대지 않았다.
+ *  다수 표적·이동 표적까지 재는 측정 장치가 생기면 이 표를 전 직업으로 넓힌다. */
+export const ULT5_BUDGET_SCALE: Record<string, number> = { deadeye: 0.25, seaking: 3.0 };

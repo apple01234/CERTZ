@@ -22,7 +22,7 @@ import { ModStack, ModOp } from "../combat/modStack"; // vc276 — 배율 스택
 import { sweptHitsTarget } from "../collision/sweep";
 import { bodyFramesReady, loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드
 import { resolveBodyPrefix } from "../characterAppearance";
-import { ult5HoldOf, ult5bHoldOf, ultBurstMultOf } from "../ultHold"; // v1.4.41 (#3) — 궁극기 시전 시간 · 지시 #9 — 극딜 배율
+import { ult5HoldOf, ult5bHoldOf, ultBurstMultOf, ULT5_BUDGET_SCALE } from "../ultHold"; // v1.4.41 (#3) — 궁극기 시전 시간 · 지시 #9 — 극딜 배율
 import { playUltCinematic } from "../fx/UltCinematic"; // v1.4.41 (#13) — 궁극기 시네마틱 연출
 import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUltIntroSig, spawnTierFlair, spawnUltFlourish, spawnSkillImpact, spawnClassAccent, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처 · vc147 — 계열별 지면 시그니처 · vc238 — 직업별 악센트
 import { DEATH_SLASH_CFG, runDeathSlashCinematic } from "../fx/DeathSlash"; // vc153 — 도적 제2궁극기 「사(死)의 일섬」 3D 시네마틱
@@ -58,6 +58,8 @@ import { notice } from "../fx/Notice";
  *  높이를 맞추는 배율 42/36 = 1.1667 → 1.17.
  *  폭 기준(26/18=1.44)을 쓰면 세로가 넘쳐 머리가 잘리므로 **높이 기준**을 쓴다. */
 const FA_DISPLAY_SCALE = 1.17;
+/** 골드 상점 성장의 책이 비례하는 최고 레벨 (그 위로는 Lv100 요구치의 60% 고정) */
+export const GOLD_BOOK_LEVEL_CAP = 100;
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   declare scene: WorldScene;
@@ -4457,11 +4459,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const wavePlan = planUltWaves(ult5HoldOf(key5, familyOf(this.cls)));
     const wavePool = createWavePool(wavePlan.at.length);
     this.ultPool = wavePool; // WorldScene.notePlayerHit 이 적중 때마다 적립한다
+    const budgetScale = ULT5_BUDGET_SCALE[key5] ?? 1; // 직업 간 총 피해 보정 (ultHold.ts)
     const rd = (m: number, forceCrit = false) => {
       const prev = this.ultSlot;
       this.ultSlot = 1;
       try {
-        const r = this.rollDamage(m, true, forceCrit);
+        const r = this.rollDamage(m * budgetScale, true, forceCrit);
         return { dmg: wavePool.reduce(r.dmg), crit: r.crit };
       } finally {
         this.ultSlot = prev;
@@ -8738,7 +8741,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return { ok: true, exp: Math.max(1, need) };
     }
     const pct = key === "exp_book_m" ? 1.5 : 0.6;
-    const exp = Math.round(this.expNext() * pct);
+    /* 2026-11-12 — 골드로 사는 고급 성장의 책(26,000G 고정가)은 Lv100 요구치까지만 비례한다.
+     *  레벨 요구치는 지수로 오르는데 가격은 고정이라, 후반에는 골드가 곧 레벨이었다
+     *  (그랜드 플레닛 한 행성의 골드로 수십 레벨). 에메랄드 책(태풍·극한)은 그대로다. */
+    const need = key === "exp_book_s" ? expToNext(Math.min(this.lv, GOLD_BOOK_LEVEL_CAP)) : this.expNext();
+    const exp = Math.round(need * pct);
     this.gainExp(exp);
     return { ok: true, exp };
   }

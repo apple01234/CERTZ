@@ -891,6 +891,12 @@ const CH_EXP = [0.7, 2.3, 7.2, 23.1, 74.0, 237.0, 758.3, 2426.4, 24000.0, 75000.
  *  1레벨이 올랐다. 새 값은 "행성을 끝내면 다음 행성 입장 레벨 +1" 에 맞춘 것이다.
  *  측정·검증: scripts/measure-combat-balance.mjs (trajectory), tests/combat-balance.test.mjs. */
 const CH_XP = [...CH_EXP.slice(0, 9), 141.9, 318.2, 551.8, 1742, 8917, 81050, 384800, 892000, 28900000, 455000000];
+/* 2026-11-12 — 퀘스트 **골드** 전용 계수.
+ *  종전엔 골드 보상식도 CH_EXP 를 곱해, 그랜드 플레닛 퀘스트 골드가 행성당 25억 ~ 111조였다
+ *  (같은 행성의 몬스터 골드는 약 100만 — 3,500배 ~ 6,500만 배). 골드 상점의 성장의 책과 겹치면
+ *  레벨을 골드로 무한히 살 수 있었다. 인덱스 9~18 을 "행성 퀘스트 골드 ≈ 행성 몬스터 골드" 수준으로 낮춘다
+ *  (영프 편의 퀘스트/몬스터 골드 비 0.2~6 과 같은 자릿수). 인덱스 0~8(구 지역)은 종전 값 그대로. */
+const CH_QGOLD = [...CH_EXP.slice(0, 9), 6.7, 7.7, 8.6, 9.3, 10, 10.8, 11.6, 12.5, 13.5, 14.5];
 
 /** 스테이지 키 → {챕터, 구역} 파싱 */
 export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: number } {
@@ -1341,7 +1347,7 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
       targetKey: zoneMon, // v3.0.2 — 하위 호환(어시스트·히스테리시스 참조): 구역 최다 종
       targetKeys: focusMode ? [zoneMon] : mixKeys, // v3.0.28 — 카운트·판정은 구역 스폰 몬스터 전체 합산
       targetLabel: focusMode ? main : `${main} 등 구역 몬스터`,
-      reward: Math.round((55 + sub * 14) * CH_EXP[spec.num - 2] * 0.55 * G * Math.max(1, nf / 8)), // 마릿수 증가분만큼 골드 보상 동반 상향
+      reward: Math.round((55 + sub * 14) * CH_QGOLD[spec.num - 2] * 0.55 * G * Math.max(1, nf / 8)), // 마릿수 증가분만큼 골드 보상 동반 상향
       expReward: Math.round((60 + sub * 14) * CH_XP[spec.num - 2] * 1.5 * Math.max(1, nf / 8)),
     });
   }
@@ -1353,7 +1359,7 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
       title: "마지막 결정의 흔적",
       desc: `${spec.title}의 심장부 — 결정의 흔적이 강하게 빛나고 있다.`,
       targetLabel: "결정의 흔적",
-      reward: Math.round(140 * CH_EXP[spec.num - 2] * 0.7 * G),
+      reward: Math.round(140 * CH_QGOLD[spec.num - 2] * 0.7 * G),
       expReward: Math.round(200 * CH_XP[spec.num - 2]),
     });
   }
@@ -1364,7 +1370,7 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
       title: BOSS_DEFS[spec.boss].name,
       desc: `${spec.title}의 주인 — ${BOSS_DEFS[spec.boss].name}를 처치해라!`,
       targetLabel: BOSS_DEFS[spec.boss].name,
-      reward: Math.round(320 * CH_EXP[spec.num - 2] * 0.7 * G),
+      reward: Math.round(320 * CH_QGOLD[spec.num - 2] * 0.7 * G),
       expReward: Math.round(420 * CH_XP[spec.num - 2]),
     });
     // 챕터 최종 — 다음 챕터로 나가는 차원문

@@ -488,7 +488,7 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   /* v4.0.0 — 바르가 업데이트 아이템 */
   exp_book: { key: "exp_book", kind: "consumable", name: "경험치 책", icon: "i_exp_book", price: 5000, bmPrice: 3, bmOnly: true, sellPrice: 800, tier: "rare" },
   /* v1.2.0 (#15 경험치책 3종 — 메이플 성장책 오마주 · v1.2.1 비약→책):
-   *  고급=현재 레벨 필요 EXP의 60% · 태풍=150%(1.5레벨어치) · 극한=즉시 +1레벨(200 미만).
+   *  고급=현재 레벨 필요 EXP의 60%(Lv100 요구치 상한 — 2026-11-12) · 태풍=150%(1.5레벨어치) · 극한=즉시 +1레벨(200 미만).
    *  극한은 환생 요구 레벨(120~200)을 함부로 넘지 않게 200 미만에서만 사용 가능. */
   /* v1.2.1 (#5 비약→책) — 유저 지시로 아이템명 변경 (비약→책) */
   exp_book_s: { key: "exp_book_s", kind: "consumable", name: "고급 성장의 책", icon: "i_exp_book_s", price: 26000, bmPrice: 5, bmOnly: false, sellPrice: 4000, tier: "epic" },

@@ -62,3 +62,27 @@ test('성장 궤적: 정상 플레이가 장별 게이트 밴드를 따라간다
   const last = t[t.length - 1];
   assert.ok(last.exitLv >= last.gateMid && last.exitLv <= 295, `마지막 행성 종료 Lv${last.exitLv} (만렙 299 미만)`);
 });
+
+test('그랜드 플레닛 퀘스트 골드가 몬스터 골드와 같은 자릿수다', async () => {
+  /* 재조정 전: 행성당 퀘스트 골드 25억 ~ 111조 vs 몬스터 골드 약 100만 (CH_EXP 를 골드식에도 곱했다). */
+  const { STAGES, ENEMIES, stageScale } = await import('../src/game/stages.ts');
+  const { chapters } = await import('../scripts/measure-combat-balance.mjs');
+  for (const c of chapters().filter(c => c.name.startsWith('dlc'))) {
+    let quest = 0, mob = 0;
+    for (const k of c.keys) {
+      const d = STAGES[k];
+      quest += (d.quests ?? []).reduce((t, q) => t + (q.reward ?? 0), 0);
+      const kills = Math.max(d.enemies.reduce((t, g) => t + g.count, 0), (d.quests ?? []).filter(q => q.type === 'hunt').reduce((t, q) => t + (q.need ?? 0), 0));
+      const avg = d.enemies.length ? d.enemies.reduce((t, g) => t + (ENEMIES[g.key].gold[0] + ENEMIES[g.key].gold[1]) / 2, 0) / d.enemies.length : 0;
+      mob += kills * avg * stageScale(k, 0).gold;
+    }
+    assert.ok(quest / mob > 0.1 && quest / mob < 3, `${c.name}: 퀘스트 골드 ${Math.round(quest)} / 몬스터 골드 ${Math.round(mob)}`);
+  }
+});
+
+test('골드 상점 성장의 책은 Lv100 요구치까지만 비례한다', async () => {
+  const fs = await import('node:fs');
+  const src = fs.readFileSync('src/game/entities/Player.ts', 'utf8');
+  assert.match(src, /GOLD_BOOK_LEVEL_CAP = 100/);
+  assert.match(src, /key === "exp_book_s" \? expToNext\(Math\.min\(this\.lv, GOLD_BOOK_LEVEL_CAP\)\)/);
+});

@@ -1,0 +1,62 @@
+[
+ {
+  "cls": "warbringer",
+  "total150": 2971,
+  "hits": 49,
+  "afterScale": 2971
+ },
+ {
+  "cls": "crusader",
+  "total150": 2011,
+  "hits": 37,
+  "afterScale": 2011
+ },
+ {
+  "cls": "deadeye",
+  "total150": 16788,
+  "hits": 125,
+  "afterScale": 4296
+ },
+ {
+  "cls": "skylord",
+  "total150": 324,
+  "hits": 25,
+  "afterScale": 324
+ },
+ {
+  "cls": "arclord",
+  "total150": 1545,
+  "hits": 43,
+  "afterScale": 1545
+ },
+ {
+  "cls": "eternal",
+  "total150": 2619,
+  "hits": 44,
+  "afterScale": 2619
+ },
+ {
+  "cls": "shadowlord",
+  "total150": 873,
+  "hits": 40,
+  "afterScale": 873
+ },
+ {
+  "cls": "blademaster",
+  "total150": 2743,
+  "hits": 77,
+  "afterScale": 2743
+ },
+ {
+  "cls": "seaking",
+  "total150": 439,
+  "hits": 26,
+  "afterScale": 1048
+ },
+ {
+  "cls": "dreadnought",
+  "total150": 1161,
+  "hits": 39,
+  "afterScale": 1161
+ }
+]
