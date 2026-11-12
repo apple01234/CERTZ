@@ -108,7 +108,7 @@ export function AuthPanel() {
 
   const submit = async () => {
     if (busy) return;
-    /* vc284 (리뷰 지적) — 버튼 disabled 만으로는 부족하다.
+    /* vc283 후속 (리뷰 지적) — 버튼 disabled 만으로는 부족하다.
      *  비밀번호 input 의 Enter 핸들러가 submit() 을 직접 호출하므로 그 경로가 뚫린다.
      *  여기서 한 번 더 막아 규칙이 클라 안에서도 실제로 강제되게 한다. */
     if (mode === "signup" && nick.length > 0 && !nameCheck.nick.ok) {

@@ -9787,7 +9787,7 @@ export class WorldScene extends Phaser.Scene {
   /** v4.6.0 — GM 전 보스 체험: 스토리 스펙 보스를 퀘스트/포탈 판정과 분리해 즉시 스폰.
    *  스탯 산식은 스토리판(spawnBoss)과 동일 — 체험 목적에 맞게 재림판(×5/×2.2) 미적용.
    *  격파 처리는 재림 경로(replayBossActive)를 재사용 — 스토리 진행/포탈 개방 영향 0. */
-  private spawnGmBoss(bossKey: string) {
+  private spawnGmBoss(bossKey: string, contest = false) {
     if (!this.player || this.boss || this.isInterior) return;
     const base = BOSS_DEFS[bossKey as BossKey];
     if (!base) return;
@@ -9809,16 +9809,19 @@ export class WorldScene extends Phaser.Scene {
     const by = this.portalHome.y - 10;
     audio.sfx.roar();
     this.doShake(260, 0.008);
-    this.showBanner(`GM 체험 — ${def.name} 출현!`);
+    this.showBanner(contest ? `기록전 — ${def.name} 출현!` : `GM 체험 — ${def.name} 출현!`);
     this.boss = new Boss(this, bx, by, def, "normal");
     this.spawnBossRunic(bx, by, false);
     this.applyBossPostFX(false);
     this.physics.add.collider(this.boss, this.solidGroup);
-    this.setupBossShare(); // vc143 (#4) — GM 체험 보스도 파티 체력 공유
+    /* vc283 후속 — 기록전은 1인 독립 판: 파티 체력 공유를 켜지 않는다(파티원 딜 합산·
+     *  비호스트의 HP 권한 상실로 기록·타격 집계가 왜곡된다). 조우 컷신도 생략 —
+     *  서버 타이머가 이미 돌고 있어 처음 보는 참가자만 시간을 잃는다. */
+    if (!contest) this.setupBossShare(); // vc143 (#4) — GM 체험 보스도 파티 체력 공유
     this.spawnBossExitNpc(bx, by); // vc143 (#10) — 퇴장 관리인
     EventBus.emit("boss:show", { name: `[GM] ${def.name}`, hp: this.boss.hp, maxHp: this.boss.maxHp });
     audio.playStageBGM(this.stageDef.key, true);
-    this.bossIntroCinematic(bx, by, def.introDialogue);
+    if (!contest) this.bossIntroCinematic(bx, by, def.introDialogue);
   }
 
   /** v3.0.10 — 보스 조우 시네마틱: 물리 정지 + 카메라 팬(보스) + 인트로 대사 + 카메라 복귀
@@ -10164,6 +10167,21 @@ export class WorldScene extends Phaser.Scene {
       this.towerOnKill(true);
       return;
     }
+    /* vc283 후속 — 기록전 처치: GM 체험 보상(골드·경험치·에메랄드)·일일/레이드/패스 집계를
+     *  전부 건너뛴다. 기록전의 결과는 서버 제출 하나뿐이다. */
+    if (this.stageDef.key === "contest") {
+      this.replayBossActive = false;
+      this.doShake(400, 0.01);
+      if (this.boss?.active) this.spawnBurstAt(this.boss.x, this.boss.y, 30, def?.orbTint ?? 0x9d7aff);
+      EventBus.emit("reward:show", {
+        title: `기록전 처치 완료 — ${def?.name ?? "보스"}`,
+        lines: [
+          { text: "기록을 서버에 제출했어요", color: "#7de8ff" },
+          { text: "선생님 검토 후 공식 순위에 올라가요", color: "#ffd76a" },
+        ] satisfies RewardPopupState["lines"],
+      });
+      return;
+    }
     /* v1.0.8 — ⑨ 주간 보스 레이드: 요일 보스 처치 시 심연 코인 +3 (드롭 2배는 스토리 경로 하단) */
     const raidToday = weeklyRaidBoss();
     const isRaidBoss = def?.key === raidToday;
@@ -10388,7 +10406,11 @@ export class WorldScene extends Phaser.Scene {
      *   · 골드: 보유의 3% 감소(최대 50,000G까지만 — 고레벨 유저 과도한 손실 방지)
      *   · 마을/실내 사망은 면제 (안전 지대에서 죽는 경우는 사실상 자살뿐)
      *  아이템은 잃지 않는다 — 장비 손실은 모바일 RPG에서 이탈 요인이 크다. */
-    const safeZone = this.stageDef.isVillage || this.isInterior;
+    /* vc283 후속 — 기록전 사망: 즉시 실패 보고 + 보스 정리(부활 흐름이 마을로 옮긴다).
+     *  경품 경쟁 한 판에 경험치·골드 패널티를 물리지 않는다. */
+    const inContest = this.stageDef.key === "contest";
+    if (inContest && this.contestRun) this.finishContest("failed", true);
+    const safeZone = this.stageDef.isVillage || this.isInterior || inContest;
     if (!safeZone && this.player) {
       const p = this.player;
       const expLoss = Math.min(p.exp, Math.round(p.expNext() * 0.05));
@@ -12354,6 +12376,7 @@ export class WorldScene extends Phaser.Scene {
       unlisten("rpg:toon", onToonToggle); // vc142 — 툰 셰이딩 토글
       unlisten("fx:changed", onFxChanged as never); // vc145 — 셰이더 강도 슬라이더 실시간 재적용
       unlisten("trade:nearby", this.onTradeNearby as never); // vc142 — 1:1 거래
+      unlisten("contest:start", this.onContestStart as never); // vc283 후속 — 씬 재시작마다 리스너가 쌓이던 누수
       unlisten("rpg:tradeInvite", this.onTradeInvite as never);
       unlisten("rpg:tradeAct", this.onTradeAct as never);
       tradeCancel(true);
@@ -12476,6 +12499,18 @@ export class WorldScene extends Phaser.Scene {
     this.time.delayedCall(delay, () => { if (!this.transitioning) this.startTransition(back, { delay: 300 }); });
   }
 
+  /** vc283 후속 — 살아 있는 보스를 연출 없이 즉시 치운다(중도 이탈·기록전 종료 공통). */
+  private removeBossNow() {
+    this.despawnBossExitNpc();
+    if (this.boss) {
+      try { this.boss.destroyPool(); } catch { /* 이미 정리됨 */ }
+      this.boss.destroy();
+      this.boss = null;
+    }
+    this.clearBossPostFX();
+    EventBus.emit("boss:hide");
+  }
+
   private spawnContestBoss(bossHp: number) {
     /* 이미 보스전이면 중복 스폰하지 않는다.
      * (this.boss 를 직접 조건에 쓰면 TS 가 이후 never 로 좁혀 필드 접근이 막힌다.) */
@@ -12490,7 +12525,7 @@ export class WorldScene extends Phaser.Scene {
     if (!BOSS_DEFS.guardian) return;
     this.bossDiff = "normal";
     this.bossDiffPending = false;
-    this.spawnGmBoss("guardian");
+    this.spawnGmBoss("guardian", true);
     /* spawnBoss/spawnGmBoss 는 this.boss 를 채우지만 TS 는 그 부수효과를 모른다 — 지역 변수로 받는다. */
     const b: Boss | null = this.boss;
     if (!b) return;
@@ -12517,7 +12552,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** 기록전 결과 보고. 성공/실패 모두 서버가 최종 판정한다. */
-  private finishContest(outcome: "defeated" | "failed" | "abandoned") {
+  private finishContest(outcome: "defeated" | "failed" | "abandoned", stay = false) {
     const run = this.contestRun;
     if (!run) return;
     this.contestRun = null;
@@ -12533,7 +12568,14 @@ export class WorldScene extends Phaser.Scene {
         bossHp: outcome === "defeated" ? 0 : remaining,
         damage: dealt, hits: Math.max(1, run.hits), combatMs,
       }),
-    ).catch(() => { /* 네트워크 실패 — 서버가 만료로 처리한다 */ });
+    ).catch(() => { /* 재전송까지 실패 — bossContest 가 contest:submitFailed 로 알린다 */ });
+    /* vc283 후속 — 처치가 아니면 살아 있는 보스를 먼저 치운다. startTransition 은 보스전 중
+     *  이동을 막으므로, 보스를 남기면 시간 초과·포기 뒤 경기장에 갇혔다. */
+    if (outcome !== "defeated") {
+      this.removeBossNow();
+      this.showBanner(outcome === "failed" ? "기록전 종료 — 제한 시간 안에 처치하지 못했어요" : "기록전을 포기했어요");
+    }
+    if (stay) return; // 사망 — 부활 흐름이 구역을 옮긴다
     /* 판이 끝났으면 경기장에 머무를 이유가 없다 — 입장 전 구역으로 돌려보낸다.
      * (복귀 포탈을 직접 타지 않아도 되게, 보스 처리 연출 뒤 천천히 이동) */
     this.scheduleContestReturn(outcome === "defeated" ? 4200 : 2200); // 처치 슬로우모션(1.2s) + 배너 여유
@@ -15953,17 +15995,10 @@ export class WorldScene extends Phaser.Scene {
 
   /** 중도 이탈 확정 — 보스 정리 후 복귀 구역으로 전환 (공동토벌전은 입장 전 구역) */
   private leaveBossBattle() {
-    this.despawnBossExitNpc();
     /* vc282 — 기록전 중도 이탈 보고 (순위 제외). 보스를 지우기 전에 호출해야
      *  finishContest 가 잔여 HP/피해를 실제 판에서 읽는다. */
     if (this.stageDef.key === "contest" && this.contestRun) this.finishContest("abandoned");
-    if (this.boss) {
-      try { this.boss.destroyPool(); } catch { /* 이미 정리됨 */ }
-      this.boss.destroy();
-      this.boss = null;
-    }
-    this.clearBossPostFX();
-    EventBus.emit("boss:hide");
+    this.removeBossNow();
     const key = this.stageDef.key;
     const prev: StageKey =
       key === "praid" ? (STAGES[this.praidFrom] ? this.praidFrom : "village")

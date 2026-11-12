@@ -461,7 +461,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return fifthFormDef(this.cls, "z") ?? null;
   }
 
-  /* vc284 (리뷰 Minor) — `fifthZParam` 헬퍼 제거.
+  /* vc283 후속 (리뷰 Minor) — `fifthZParam` 헬퍼 제거.
    *  정의만 있고 호출이 0곳이었다(각 형태 분기가 `f5.params.x ?? 기본값` 을 인라인으로 읽는다).
    *  tsc/eslint 는 private 미사용을 잡지 않아 조용히 남아 있었다. */
 

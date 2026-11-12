@@ -65,7 +65,7 @@ test('classDef 가 4차 경계를 정확히 보고한다', () => {
   assert.equal(classDef(null), null);
 });
 
-/* ═══ vc284 (리뷰 지적) — 환생 직후 경로를 고정한다 ═══
+/* ═══ vc283 후속 (리뷰 지적) — 환생 직후 경로를 고정한다 ═══
  *
  * [리뷰 지적] 환생하면 `resetClass()` 가 cls=null 로 만들고 곧바로 tier-1 클래스를
  *  부여한다(WorldScene.ts:8442-8443). 그래서 이전에 랭킹에 있던 캐릭터도

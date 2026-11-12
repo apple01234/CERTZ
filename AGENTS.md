@@ -25,6 +25,7 @@
 - APK 빌드는 `JAVA_HOME=/home/z/jdk` (세션 리셋 시 툴체인 재구축 선행).
 - 버전 싱크 6곳: android/app/build.gradle, server.js, next.config.ts, public/apk-guide.html, download/APK_다운로드_안내.txt, src/components/game/Overlays.tsx 배지.
 - 마감 후 worklog.md에 Task 섹션 append.
+- 빌드(APK/EXE/웹 프로덕션 빌드)는 **유저가 하라고 할 때만** 한다. 커밋·푸시는 계속한다. main 푸시 자동 빌드(android-build/exe-build)는 꺼 두었고 수동 실행만 남아 있다. 빌드를 안 하는 동안에는 버전 6곳도 올리지 않는다(없는 설치 파일을 가리키게 된다). (2026-11-12 유저 지시)
 
 ## 게으름 관련 예외 (게으르면 안 되는 것)
 

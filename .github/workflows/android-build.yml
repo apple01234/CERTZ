@@ -14,17 +14,8 @@ on:
         description: "릴리스 업로드 태그 (비우면 v{versionName} 자동 — 예: v1.0.13)"
         required: false
         default: ""
-  push:
-    branches: [main]
-    paths:
-      - "android/**"
-      - ".github/workflows/android-build.yml"
-      # vc232 — 게임 코드가 바뀌면 APK 도 다시 나와야 한다. 종전엔 android/** 만
-      # 걸려 있어 src/ 수정만 푸시하면 APK 가 갱신되지 않았다(수동 트리거 의존).
-      - "src/**"
-      - "public/**"
-      - "package.json"
-      - "next.config.ts"
+  # vc283 후속 — 유저 지시(2026-11-12): "빌드는 내가 하라고 할 때만". main 푸시 자동 빌드를 끄고
+  #  수동 실행(workflow_dispatch)만 남긴다. 다시 켜려면 여기에 push.paths 를 되살린다.
 
 permissions:
   contents: write

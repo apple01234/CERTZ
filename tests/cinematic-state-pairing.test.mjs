@@ -22,7 +22,7 @@ const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm,
  * [과거 결함] vc283 1차 구현은 cleanup() 안에서만 active:false 를 발신했다.
  *  그런데 cleanup 에 닿는 길은 next()/skip 두 가지뿐이라, 프롤로그가 떠 있는 채
  *  씬이 내려가면(exitToMenu·재시작·강제 종료) active:true 가 미해제로 남았다.
- *  vc284 에서 events.once("shutdown", ...) 을 추가해 고쳤다.
+ *  vc283 후속 에서 events.once("shutdown", ...) 을 추가해 고쳤다.
  *
  * 이 테스트는 그 계약이 되돌려지지 않게 고정한다.
  */

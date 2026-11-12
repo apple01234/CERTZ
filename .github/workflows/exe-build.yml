@@ -9,19 +9,8 @@ name: EXE Build (SERTZ)
 #    내장 서버가 정적 서빙 + /api/* 는 Vercel 프록시(main.js 참조)
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "electron/**"
-      - ".github/workflows/exe-build.yml"
-      # vc232 — 게임 코드가 바뀌면 EXE 도 다시 나와야 한다.
-      # 종전엔 electron/** 만 걸려 있어 src/ 수정만 푸시하면 EXE 가 갱신되지 않고
-      # 이전 버전(vc216) 설치본이 최신인 것처럼 남아 있었다.
-      - "src/**"
-      - "public/**"
-      - "package.json"
-      - "next.config.ts"
-      - "android/app/build.gradle"
+  # vc283 후속 — 유저 지시(2026-11-12): "빌드는 내가 하라고 할 때만". main 푸시 자동 빌드를 끄고
+  #  수동 실행(workflow_dispatch)만 남긴다. 다시 켜려면 여기에 push.paths 를 되살린다.
 
 permissions:
   contents: write

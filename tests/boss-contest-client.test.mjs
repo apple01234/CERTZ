@@ -35,7 +35,7 @@ test('기록전은 기존 보스 파이프라인을 재사용하고 서버 계�
   const m = /private spawnContestBoss\(bossHp: number\)\s*\{([\s\S]*?)\n  \}\n\n  \/\*\*/.exec(scene);
   assert.ok(m, 'spawnContestBoss 구현이 있어야 한다');
   const body = m[1];
-  assert.match(body, /this\.spawnGmBoss\("guardian"\)/,
+  assert.match(body, /this\.spawnGmBoss\("guardian", true\)/,
     '기존 스폰 파이프라인을 재사용하되 계약 보스(guardian)를 지정해야 한다');
   assert.doesNotMatch(body.replace(/\/\*[\s\S]*?\*\//g, ''), /this\.spawnBoss\(true\)/,
     '현재 지역 보스를 그대로 쓰면 서버 계약과 어긋난다');

@@ -120,3 +120,22 @@ export function contestAction(store: BossContestStore, actor: ContestActor, b: R
   demand(!a.awardedAt, '이미 지급 처리된 경품이에요', 409);
   a.awardNote = textField(b.note, 120); a.awardedAt = now; a.awardedBy = actor.id; return {};
 }
+
+/** vc283 후속 — 결과 제출 재전송(순수 함수 — 클라이언트 bossContest.ts 가 쓴다).
+ *  응답 없는 실패(네트워크·타임아웃, status 없음)와 5xx 만 재전송하고 4xx 거절은 즉시 던진다.
+ *  끊긴 요청이 실제로는 접수돼 재전송이 409 로 돌아오면 null(이미 접수됨)을 돌려준다. */
+export async function submitWithRetry<T>(send: () => Promise<T>, waits: readonly number[],
+  sleep: (ms: number) => Promise<unknown> = ms => new Promise(r => setTimeout(r, ms))): Promise<T | null> {
+  let failure: unknown, unanswered = false;
+  for (const wait of waits) {
+    if (wait) await sleep(wait);
+    try { return await send(); } catch (e) {
+      failure = e;
+      const status = (e as { status?: unknown }).status;
+      if (typeof status !== 'number') { unanswered = true; continue; }
+      if (status === 409 && unanswered) return null;
+      if (status < 500) break;
+    }
+  }
+  throw failure;
+}
