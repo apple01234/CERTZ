@@ -1,0 +1,112 @@
+[
+ {
+  "cls": "warbringer",
+  "hits": 50,
+  "directHits": 27,
+  "directDmg": 2964,
+  "directLastMs": 7033,
+  "waveHits": 23,
+  "waveDmg": 539,
+  "lastHitMs": 23566,
+  "wave/direct%": 18
+ },
+ {
+  "cls": "crusader",
+  "hits": 31,
+  "directHits": 8,
+  "directDmg": 991,
+  "directLastMs": 2517,
+  "waveHits": 23,
+  "waveDmg": 430,
+  "lastHitMs": 23466,
+  "wave/direct%": 43
+ },
+ {
+  "cls": "deadeye",
+  "hits": 125,
+  "directHits": 102,
+  "directDmg": 16788,
+  "directLastMs": 3600,
+  "waveHits": 23,
+  "waveDmg": 447,
+  "lastHitMs": 21549,
+  "wave/direct%": 3
+ },
+ {
+  "cls": "skylord",
+  "hits": 1,
+  "directHits": 0,
+  "directDmg": 0,
+  "directLastMs": null,
+  "waveHits": 1,
+  "waveDmg": 188,
+  "lastHitMs": 2283,
+  "wave/direct%": null
+ },
+ {
+  "cls": "arclord",
+  "hits": 41,
+  "directHits": 7,
+  "directDmg": 1132,
+  "directLastMs": 2817,
+  "waveHits": 34,
+  "waveDmg": 657,
+  "lastHitMs": 25699,
+  "wave/direct%": 58
+ },
+ {
+  "cls": "eternal",
+  "hits": 38,
+  "directHits": 14,
+  "directDmg": 1197,
+  "directLastMs": 2800,
+  "waveHits": 24,
+  "waveDmg": 427,
+  "lastHitMs": 25632,
+  "wave/direct%": 36
+ },
+ {
+  "cls": "shadowlord",
+  "hits": 44,
+  "directHits": 21,
+  "directDmg": 997,
+  "directLastMs": 6933,
+  "waveHits": 23,
+  "waveDmg": 447,
+  "lastHitMs": 21483,
+  "wave/direct%": 45
+ },
+ {
+  "cls": "blademaster",
+  "hits": 77,
+  "directHits": 54,
+  "directDmg": 2744,
+  "directLastMs": 3483,
+  "waveHits": 23,
+  "waveDmg": 447,
+  "lastHitMs": 21499,
+  "wave/direct%": 16
+ },
+ {
+  "cls": "seaking",
+  "hits": 27,
+  "directHits": 4,
+  "directDmg": 439,
+  "directLastMs": 2433,
+  "waveHits": 23,
+  "waveDmg": 394,
+  "lastHitMs": 27366,
+  "wave/direct%": 90
+ },
+ {
+  "cls": "dreadnought",
+  "hits": 34,
+  "directHits": 3,
+  "directDmg": 614,
+  "directLastMs": 1733,
+  "waveHits": 31,
+  "waveDmg": 552,
+  "lastHitMs": 29532,
+  "wave/direct%": 90
+ }
+]
