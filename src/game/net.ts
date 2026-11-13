@@ -485,11 +485,34 @@ export function netAnnounceBoss(name: string, stage: string) {
 }
 
 /** 씬에서 등록 — 반환된 off 함수로 씬 종료 시 정리 */
+/* 2026-11-13 — 서버(multiplayer/index.js)는 방 단위로 두 가지를 보낸다.
+ *  "players" = 전체 스냅샷(각 항목에 짧은 번호 n), "pd" = 0.1초 틱 동안 바뀐 좌표 묶음
+ *  { m: [[n, x, y, flags]], l: [n] } (flags bit0 = flip, bit1 = moving — multiplayer/packets.js).
+ *  여기서 스냅샷 표 위에 묶음을 덮어 종전과 같은 목록으로 되돌리므로 WorldScene 은 바뀌지 않는다.
+ *  MQTT 경로는 "pd" 를 보내지 않아 종전과 동일하다. */
+export type PlayerDelta = { m?: [number, number, number, number][]; l?: number[] };
+export function applyPlayerDelta(roster: Map<number, NetPlayer & { n?: number }>, pkt: PlayerDelta): NetPlayer[] {
+  for (const [n, x, y, f] of pkt.m ?? []) {
+    const p = roster.get(n);
+    if (p) { p.x = x; p.y = y; p.flip = (f & 1) !== 0; p.moving = (f & 2) !== 0; }
+  }
+  for (const n of pkt.l ?? []) roster.delete(n);
+  return [...roster.values()];
+}
+
 export function netOnPlayers(cb: (list: NetPlayer[]) => void): () => void {
   const s = netConnect();
   if (!s) return () => {};
-  s.on("players", cb);
-  return () => s.off("players", cb);
+  const roster = new Map<number, NetPlayer & { n?: number }>();
+  const onList = (list: (NetPlayer & { n?: number })[]) => {
+    roster.clear();
+    for (const p of list) if (typeof p.n === "number") roster.set(p.n, { ...p });
+    cb(list);
+  };
+  const onDelta = (pkt: PlayerDelta) => cb(applyPlayerDelta(roster, pkt));
+  s.on("players", onList);
+  s.on("pd", onDelta);
+  return () => { s.off("players", onList); s.off("pd", onDelta); };
 }
 
 export function netOnChat(cb: (m: NetChatMsg) => void): () => void {

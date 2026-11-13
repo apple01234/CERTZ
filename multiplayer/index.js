@@ -13,6 +13,9 @@
 const { Server } = require("socket.io");
 /* v1.4.8 (#4 보안) — 소켓 gm 플래그 서버 검증 (계정 세션 토큰 → admin 롤 판정) */
 const { isVerifiedAdmin } = require("../accounts");
+const { ROOM_CAP, TICK_MS, SNAPSHOT_MS, DEFAULT_STAGE } = require("./config");
+const { createRoomDirectory } = require("./rooms");
+const { metaOf, moveRow, deltaPacket } = require("./packets");
 
 function attachMultiplayer(httpServer) {
   const io = new Server(httpServer, {
@@ -26,36 +29,71 @@ function attachMultiplayer(httpServer) {
   const players = new Map();
   let chatLog = [];
 
-  const playerList = () =>
-    [...players.entries()].map(([id, p]) => ({ id, ...p }));
+  /* ---------- 2026-11-13 방 나누기 + 틱 묶음 전송 ----------
+   *  [종전] 좌표가 올 때마다(최소 90ms 간격) 접속자 **한 명씩** 같은 구역 전원의 전체 정보를
+   *   emit 했다. 한 구역 N명이면 틱당 N번 직렬화 · N×N 항목 전송, 바뀌지 않은 사람까지 매번 보냈다.
+   *  [지금]
+   *   ① 방 나누기(rooms.js) — 구역마다 ROOM_CAP(50)명짜리 방. 전송은 같은 방 안에서만 일어난다.
+   *   ② 틱 묶음(TICK_MS=100ms) — "state" 수신 시 바로 보내지 않고 그 방의 dirty 집합에 표시만 한다.
+   *      틱마다 방 하나당 **한 번** io.to(방).emit("pd", 바뀐 좌표만) — 직렬화도 방당 1회다.
+   *      0.1초 안에 같은 사람이 좌표를 여러 번 보내도 마지막 값 하나만 나간다.
+   *   ③ 스냅샷(packets.js metaOf) — 이름·레벨·직업은 입장/변경 때와 SNAPSHOT_MS 마다만 방 단위로 보낸다.
+   *  사람이 아무도 안 움직이는 방은 틱에 아무것도 보내지 않는다. */
+  const rooms = createRoomDirectory(ROOM_CAP);
+  let shortSeq = 0; // 묶음 패킷용 짧은 번호 (소켓 id 20자 대신)
+  /** 방 키 → 이번 틱에 좌표가 바뀐 소켓 id */
+  const dirty = new Map();
+  /** 방 키 → 이번 틱에 나간 사람의 짧은 번호 */
+  const left = new Map();
+  /** 이번 틱에 전체 스냅샷을 다시 보낼 방 */
+  const needSnapshot = new Set();
 
-  let lastBroadcast = 0;
-  let broadcastTimer = null;
-  function broadcastPlayers(force = false) {
-    const now = Date.now();
-    if (!force && now - lastBroadcast < 90) {
-      if (!broadcastTimer) {
-        broadcastTimer = setTimeout(() => {
-          broadcastTimer = null;
-          broadcastPlayers(true);
-        }, 90);
-      }
-      return;
+  const bucket = (map, key) => { if (!map.has(key)) map.set(key, map === dirty ? new Set() : []); return map.get(key); };
+
+  function roomSnapshot(key) {
+    const list = [];
+    for (const id of rooms.members(key)) {
+      const p = players.get(id);
+      if (p) list.push(metaOf(id, p));
     }
-    lastBroadcast = now;
-    /* v2.0 AOI — 스테이지별로 그룹핑해 같은 구역 플레이어에게만 전송 (페이로드 절감) */
-    const byStage = new Map();
-    for (const [id, p] of players) {
-      const key = p.stage || "village";
-      if (!byStage.has(key)) byStage.set(key, []);
-      byStage.get(key).push({ id, ...p });
-    }
-    for (const [id, sock] of io.of("/").sockets) {
-      const me = players.get(id);
-      const list = byStage.get(me?.stage || "village") || [];
-      sock.emit("players", list);
-    }
+    return list;
   }
+
+  /** 소켓을 구역의 방에 넣는다(파티원이 있는 방 우선). 방이 바뀌면 socket.io room 도 옮긴다. */
+  function placeInRoom(sock, stage) {
+    const prefer = [];
+    for (const pt of parties.values()) if (pt.members.has(sock.id)) prefer.push(...pt.members);
+    const { key, prev, moved } = rooms.assign(sock.id, stage || DEFAULT_STAGE, prefer);
+    if (moved) {
+      if (prev) { sock.leave(prev); bucket(left, prev).push(players.get(sock.id)?.n); dirty.get(prev)?.delete(sock.id); }
+      sock.join(key);
+    }
+    needSnapshot.add(key);
+  }
+
+  function leaveRoom(sockId, n) {
+    const prev = rooms.leave(sockId);
+    if (!prev) return;
+    dirty.get(prev)?.delete(sockId);
+    if (n != null) bucket(left, prev).push(n);
+  }
+
+  function flushTick() {
+    for (const key of needSnapshot) {
+      io.to(key).emit("players", roomSnapshot(key));
+      dirty.delete(key); // 스냅샷에 최신 좌표가 들어 있다
+    }
+    for (const key of new Set([...dirty.keys(), ...left.keys()])) {
+      const rows = [];
+      if (!needSnapshot.has(key)) for (const id of dirty.get(key) ?? []) { const p = players.get(id); if (p) rows.push(moveRow(p)); }
+      const pkt = deltaPacket(rows, needSnapshot.has(key) ? [] : (left.get(key) ?? []).filter((n) => n != null));
+      if (pkt) io.to(key).emit("pd", pkt);
+    }
+    needSnapshot.clear();
+    dirty.clear();
+    left.clear();
+  }
+  const tick = setInterval(flushTick, TICK_MS);
 
   function sysChat(text) {
     const msg = { id: "sys", name: "", text: String(text).slice(0, 120), sys: true, t: Date.now() };
@@ -115,7 +153,9 @@ function attachMultiplayer(httpServer) {
 
     sock.on("join", (p = {}) => {
       const known = players.has(sock.id);
+      const n = known ? players.get(sock.id).n : ++shortSeq;
       players.set(sock.id, {
+        n,
         name: String(p.name || "이름없음").slice(0, 8),
         lv: Math.max(1, Number(p.lv) || 1),
         cls: typeof p.cls === "string" ? p.cls : null,
@@ -130,7 +170,7 @@ function attachMultiplayer(httpServer) {
         gm: isVerifiedAdmin(p.token),
         t: Date.now(),
       });
-      broadcastPlayers(true);
+      placeInRoom(sock, players.get(sock.id).stage);
       // v3.0.2 — 접속 공지는 소켓당 최초 1회만 (맵 이동마다 join으로 구역 AOI를 갱신하므로
       // 매번 "접속했습니다"가 도배되던 버그 수정)
       if (!known) sysChat(`${players.get(sock.id).name} 님이 접속했습니다`);
@@ -161,6 +201,7 @@ function attachMultiplayer(httpServer) {
     sock.on("state", (s = {}) => {
       const p = players.get(sock.id);
       if (!p) return;
+      const before = [Math.round(p.x), Math.round(p.y), p.flip, p.moving, p.lv, p.cls, p.stage];
       if (Number.isFinite(s.x)) p.x = Number(s.x);
       if (Number.isFinite(s.y)) p.y = Number(s.y);
       p.flip = !!s.flip;
@@ -168,7 +209,12 @@ function attachMultiplayer(httpServer) {
       if (Number.isFinite(s.lv)) p.lv = Math.max(1, Math.min(999, Number(s.lv))); // v1.0.2 — 비정상 레벨 표시 차단
       if (s.cls === null || typeof s.cls === "string") p.cls = s.cls;
       if (typeof s.stage === "string") p.stage = s.stage.slice(0, 24);
-      broadcastPlayers();
+      /* 바뀐 것만 다음 틱에 보낸다 — 구역 변경은 방 이동, 레벨·직업은 스냅샷, 좌표는 묶음 */
+      if (p.stage !== before[6]) { placeInRoom(sock, p.stage); return; }
+      const key = rooms.roomOf(sock.id);
+      if (!key) return;
+      if (p.lv !== before[4] || p.cls !== before[5]) needSnapshot.add(key);
+      else if (Math.round(p.x) !== before[0] || Math.round(p.y) !== before[1] || p.flip !== before[2] || p.moving !== before[3]) bucket(dirty, key).add(sock.id);
     });
 
     /* v1.0.2 (#보안) — 채팅 도배 레이트리밋 (소켓별 8통/5초) */
@@ -200,18 +246,17 @@ function attachMultiplayer(httpServer) {
         flip: !!raw.flip,
         cls: typeof raw.cls === "string" ? raw.cls.slice(0, 16) : null,
       };
-      for (const [otherId, other] of io.of("/").sockets) {
-        if (otherId === sock.id) continue;
-        const op = players.get(otherId);
-        if (op && (op.stage || "village") === (p.stage || "village")) other.emit("act", payload);
-      }
+      /* 같은 방(AOI)에만, 보낸 사람 제외 — 종전엔 전체 소켓을 돌며 구역을 비교했다 */
+      const key = rooms.roomOf(sock.id);
+      if (key) sock.to(key).emit("act", payload);
     });
 
     sock.on("job", (cls) => {
       const p = players.get(sock.id);
       if (!p || typeof cls !== "string") return;
       p.cls = cls;
-      broadcastPlayers(true);
+      const key = rooms.roomOf(sock.id);
+      if (key) needSnapshot.add(key);
       const names = {
         warrior: "전사", ranger: "궁수", mage: "마법사",
         berserker: "버서커", guardian: "가디언",
@@ -350,6 +395,7 @@ function attachMultiplayer(httpServer) {
     sock.on("disconnect", () => {
       const p = players.get(sock.id);
       if (p) sysChat(`${p.name} 님이 접속을 종료했습니다`);
+      leaveRoom(sock.id, p?.n);
       players.delete(sock.id);
       for (const pt of parties.values()) {
         if (!pt.members.has(sock.id)) continue;
@@ -360,7 +406,6 @@ function attachMultiplayer(httpServer) {
           broadcastParty(pt.id);
         }
       }
-      broadcastPlayers(true);
     });
   });
 
@@ -369,12 +414,12 @@ function attachMultiplayer(httpServer) {
    *  friends 목록도 같은 주기로 전파 (친구 온라인 표시용) */
   const heartbeat = setInterval(() => {
     if (players.size === 0) return;
-    broadcastPlayers(true);
+    for (const key of rooms.keys()) needSnapshot.add(key); // 방 단위 전체 스냅샷 (다음 틱에 1회씩)
     io.emit("friends", friendsPayload());
     for (const party of parties.values()) broadcastParty(party.id);
   }, 2000);
 
-  return { io, heartbeat };
+  return { io, heartbeat, tick };
 }
 
 module.exports = { attachMultiplayer };

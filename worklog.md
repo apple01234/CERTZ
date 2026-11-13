@@ -6015,3 +6015,18 @@ npm test 706/706, tsc EXIT 0, lint:strict EXIT 0, next build EXIT 0
 - 검증: `tests/chat-send-gate.test.mjs`(수정 전 실패·수정 후 통과), 전체 784/784, tsc·eslint 통과.
   브라우저(개발 서버, `/api/chat` 가짜 응답으로 가로챔 — 운영 채팅방에 쓰지 않음): Enter → 입력 → Enter 로 POST 1건, 화면 목록에 표시, 페이지 오류 0.
 - 미검증: 운영 서버 실제 전송, EXE/APK(진행 중인 vc285 빌드에는 이 수정이 없다).
+
+## Task — 2026-11-13 (버전 유지 2.2.27/vc285): 멀티플레이 Node 서버 최적화 (틱 묶음 · 50명 방 · 패킷 경량화)
+
+- 유저 지시(영상 프롬프트 + 선택 "1번: 우리 Node 서버에 적용"). 대상은 socket.io 서버 `multiplayer/index.js` — 게임 서버를 직접 띄우거나 EXE 내장 서버로 접속할 때 쓰는 경로다.
+  **웹(Vercel)·APK 기본 경로(공개 MQTT 릴레이 `mpMqtt.ts`)는 이 서버를 거치지 않아 이번 변경의 영향이 없다.**
+- `multiplayer/config.js`: 방 정원 50 · 틱 100ms · 스냅샷 2초 (환경변수 `SERTZ_ROOM_CAP`/`SERTZ_TICK_MS`/`SERTZ_SNAPSHOT_MS` 로 덮어쓰기).
+- `multiplayer/rooms.js`: 구역마다 50명짜리 방(`구역#번호`). 낮은 번호 빈자리부터 채우고, 파티원이 있는 방 우선, 다 차면 새 방.
+- `multiplayer/packets.js`: 스냅샷 `players`(표시 정보, 짧은 번호 n 포함, stage·t·기본값 제외)와 묶음 `pd`(`{ m: [[n,x,y,flags]], l: [n] }`) 분리.
+- `multiplayer/index.js`: 좌표 수신 시 즉시 전송하지 않고 방별 dirty 표시 → 100ms 틱에 방당 1회 `io.to(방).emit`. 공격 연출(act)도 방 단위 전송. 종전 `broadcastPlayers`(접속자마다 구역 전원 전체 정보 emit) 제거.
+- `src/game/net.ts`: `netOnPlayers` 가 스냅샷 표 위에 `pd` 를 덮어 종전과 같은 목록을 콜백에 넘긴다(`applyPlayerDelta`). WorldScene 무변경.
+- 실측(`scripts/qa/measure-multiplayer-load.mjs`, 로컬 서버에 실제 socket.io 접속, 한 구역 전원이 0.1초마다 이동, 3초):
+  50명 4,440KB/s → 483KB/s · 120명 19,432KB/s → 1,064KB/s. 메시지 수는 비슷하다(550→483, 1,000→1,160/초 — 종전에도 90ms 스로틀이 있었다). 줄어든 건 메시지 크기다.
+  120명일 때 한 클라이언트가 보는 인원은 120 → 50(같은 방). 두 버전 모두 표시 좌표가 보낸 값과 일치.
+- 테스트 `tests/multiplayer-batching.test.mjs` 8건. 전체 통과, tsc·eslint 통과.
+- 미검증: 실제 게임 화면에서 이 서버로 접속한 플레이(브라우저 2창), 운영 환경 부하. 방 합치기(인원이 줄었을 때)는 넣지 않았다. 구버전 클라이언트는 `pd` 를 모르므로 2초 스냅샷으로만 위치가 갱신된다(끊겨 보임) — 서버와 클라이언트를 함께 배포해야 한다.
