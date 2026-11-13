@@ -6005,3 +6005,13 @@ npm test 706/706, tsc EXIT 0, lint:strict EXIT 0, next build EXIT 0
 - DoT(출혈 등)는 예산 밖이다(공격력의 1%대/초라 총량 영향은 작다).
 - 궁극기 타격 식별은 "등록한 값과 같은 피해"다. 시전 중 다른 공격이 우연히 같은 값이면 그 한 대가 예산 인출로 바뀐다.
 - 다수 표적·이동 표적·실제 보스전·컷씬 제거의 브라우저 확인·모바일은 미검증.
+
+## Task — 2026-11-13 (버전 유지 2.2.27/vc285): 채팅 전송 안 됨 수정
+
+- 유저 보고 "채팅안됨". 운영 `/api/chat` GET 은 200(오늘 00:35 메시지 존재) — 서버는 정상.
+- 원인: `7fabb43`(2026-11-10 튜토리얼 개편)부터 `chat:send` 가 입력 게이트의 "menu" 로 분류돼 `canPlayerAction` 을 거쳤다.
+  이 검사는 `chatFocused`(채팅 입력창 포커스)면 false 인데, Enter 전송 순간엔 항상 포커스가 있으므로 **모든 채팅이 POST 전에 버려졌다**.
+- 수정: `WorldScene.setupInput` 의 menu 분류에서 `chat:send` 제거(키 입력 차단용 chatFocused 게이트는 유지).
+- 검증: `tests/chat-send-gate.test.mjs`(수정 전 실패·수정 후 통과), 전체 784/784, tsc·eslint 통과.
+  브라우저(개발 서버, `/api/chat` 가짜 응답으로 가로챔 — 운영 채팅방에 쓰지 않음): Enter → 입력 → Enter 로 POST 1건, 화면 목록에 표시, 페이지 오류 0.
+- 미검증: 운영 서버 실제 전송, EXE/APK(진행 중인 vc285 빌드에는 이 수정이 없다).

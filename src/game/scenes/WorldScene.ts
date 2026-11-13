@@ -10534,7 +10534,9 @@ export class WorldScene extends Phaser.Scene {
       if (event === "rpg:autoUpgradeStop" || event === "featTut:close") return "close";
       if (["rpg:equip", "rpg:unequip", "rpg:use", "rpg:useItem", "rpg:lockItem", "rpg:sortInv", "rpg:quickpot"].includes(event)) return "inv";
       if (event === "rpg:questAccept" || event === "rpg:questTrack") return "quest";
-      return /^(rpg:|job:|friend:goto|chat:send|featTut:replayReq)/.test(event) ? "menu" : null;
+      /* 2026-11-13 — chat:send 는 게이트에서 뺀다. 전송 순간엔 입력창에 포커스가 있어
+       *  chatFocused 때문에 canPlayerAction 이 항상 false → 모든 채팅이 버려졌다("채팅안됨"). */
+      return /^(rpg:|job:|friend:goto|featTut:replayReq)/.test(event) ? "menu" : null;
     };
     const listen = (event: string, original: InputListener) => {
       const wrapped: InputListener = (...args) => {
