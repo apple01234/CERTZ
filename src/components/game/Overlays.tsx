@@ -9,6 +9,7 @@ import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0
 import { resolveApiBase } from "@/game/server"; // v1.4.20 — 멀티서버 분리
 import { loadKeyMap, loadMoveScheme, keyLabel } from "@/game/keymap"; // v1.0.17 — 조작 안내줄이 키맵·스킨을 따라가도록
 import { validateName, isNameValid, NAME_MAX } from "@/game/playerName"; // vc272 — 이름 검증 단일 출처
+import { TitlePoster } from "./TitlePoster"; // 시작 화면 움직이는 포스터
 /* v1.0.16 (F8) — 종전엔 `import pkg from "../../../package.json"`으로 버전을 읽었는데,
  *  번들러가 JSON 전체를 인라인해 의존성 목록·npm 스크립트까지 게임 번들에 실렸다(청크 3.08MB 실측).
  *  next.config.ts가 package.json의 version만 NEXT_PUBLIC_APP_VERSION으로 주입한다 —
@@ -73,31 +74,25 @@ export function TitleScreen() {
   }, []);
 
   return (
-    /* v1.0.19 (A-1/A-2) — 타이틀도 스크롤 가능하게: 저높이(가로 폰)에서 버튼/크레딧이 잘리던 것 수정.
+    <>
+    {/* 움직이는 포스터 배경 — 종전 Phaser 타이틀의 나무 배경을 대체(TitleScene 은 이제 BGM·이벤트만 담당).
+     *  .tp 는 pointer-events:none 이라 아래 스크롤 오버레이(z-40)의 클릭에 영향이 없다. */}
+    <TitlePoster />
+    {/* v1.0.19 (A-1/A-2) — 타이틀도 스크롤 가능하게: 저높이(가로 폰)에서 버튼/크레딧이 잘리던 것 수정.
      *  컨테이너 overflow-y-auto + 내부 min-h-full flex — 내용이 짧으면 중앙정렬 유지, 길면 스크롤
-     *  v1.0.20 — AI스러운 텍스트 로고 → 게임 타이틀 로고타입(금 잉곽+왕관 문장+양피지 부제) 재디자인 */
+     *  타이틀 로고는 포스터(TitlePoster)의 이미지 레이어가 그린다 — 여기서는 스크린리더용 제목만 둔다. */}
     <div className="title-screen sertz-scroll absolute inset-0 z-40 overflow-y-auto">
       <div className="title-screen-inner flex min-h-full flex-col items-center bg-transparent px-4 pb-5 pt-16">
-        <div className="mb-1 text-center">
-          {/* 왕관 문장 — 픽셀 게임 타이틀 장식 */}
-          <div aria-hidden className="mx-auto mb-1 flex items-center justify-center gap-2">
-            <span className="h-0.5 w-10 bg-gradient-to-r from-transparent to-[#e8c064]" />
-            <span className="text-[13px] leading-none text-[#ffd98a] [text-shadow:0_2px_0_#3a2508]">✦</span>
-            <span className="h-0.5 w-10 bg-gradient-to-l from-transparent to-[#e8c064]" />
-          </div>
-          <h1 className="text-5xl font-black tracking-[0.14em] text-[#ffe49a] [text-shadow:0_2px_0_#9a6410,0_4px_0_#6b4a1c,0_6px_0_#3a2508,0_10px_18px_rgba(0,0,0,0.9)] sm:text-7xl">
-            SERTZ
-          </h1>
-          {/* 부제목 없음 (유저 지시) — 본제목 SERTZ 만. 버전 배지도 부제 취급이라 함께 제거. */}
-        </div>
+        <h1 className="sr-only">하루는 웨폰마스터가 되었다.</h1>
 
+      <div className="title-menu">
       {/* v1.0.17 — 구버전 APK 사용자 필수 안내: 최신 수정(화살 방향 등)은 재설치 후에만 적용됨 */}
       {update && (
         <a
           href={update.guide}
           target="_blank"
           rel="noopener noreferrer"
-          className="game-btn-danger mt-3 block w-[min(92vw,520px)] px-4 py-2.5 text-center"
+          className="game-btn-danger block w-full px-4 py-2.5 text-center"
         >
           <p className="text-[13px] font-black sm:text-sm">
             새 버전 v{update.latest} 설치 필요 — 여기 눌러 APK 재설치
@@ -108,7 +103,7 @@ export function TitleScreen() {
         </a>
       )}
 
-       <div className="title-actions mt-7 flex w-full max-w-80 flex-col gap-3">
+       <div className="title-actions flex w-full flex-col gap-3">
         {/* v1.0.18 — 시작/이어하기 모두 로비(캐릭터 선택·생성)로 진입 (메이플 메인메뉴 흐름) */}
         <button
           onClick={() => EventBus.emit("lobby:open")}
@@ -150,12 +145,13 @@ export function TitleScreen() {
            <span className="sr-only"> (새 창)</span>
         </a>
       </div>
+      </div>
 
       {/* v1.0.3 (#글자짤림) — inset-x-0 추가: absolute 컨테이너가 내용 폭만큼 늘어나
        *  max-w-[92%]가 무효가 되고 크레딧이 화면 밖으로 잘리던 버그
        *  v1.0.19 (A-1) — absolute → flow(mt-auto): 스크롤 컨테이너에서 absolute bottom이
        *  첫 화면 하단에 고정되어 콘텐츠와 겹치던 문제 수정 — 내용이 짧으면 하단, 길면 흐름 따름 */}
-       <div className="mt-auto flex w-full max-w-xl flex-col items-center gap-1 pb-1 pt-8">
+       <div className="title-footer mt-auto flex flex-col items-center gap-1 pb-1 pt-8">
          <details className="game-chip w-full px-3 text-xs text-[#e5d5b1]">
            <summary className="flex min-h-11 cursor-pointer items-center justify-center font-bold">플레이 안내</summary>
            <div className="space-y-2 border-t border-[#9c8051]/50 py-3 text-left leading-loose">
@@ -187,6 +183,7 @@ export function TitleScreen() {
       </div>
       </div>
     </div>
+    </>
   );
 }
 
