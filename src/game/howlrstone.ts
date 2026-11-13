@@ -300,9 +300,11 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { key: "swampbeast", count: 3 }, { key: "x3_goblin", count: 3 },
       { key: "x2_rat", count: 3 }, { key: "minion", count: 3 }],
     main: "x2_reeffish",
+    /* ── 1장 비트 — 정본 1.txt (하루). 종전엔 5.txt의 스칼렛+책 장면이 들어와
+     *  장소("절벽의 약속")·인트로와 어긋났다. 정본 우선순위(1.txt > 5.txt)에 맞춘다. ── */
     beats: [
-      { sub: 2, dialogue: "howlBook", quest: { id: "hw1", type: "collect", title: "웨폰마스터를 위한 정리서", desc: "왕립도서관에서 머리 위로 툭 떨어진 책 — 웨폰마스터가 되는 세 가지 경우가 적혀 있다. 페이지를 모아라.", targetLabel: "정리서의 페이지", reward: Math.round(2600 * G), expReward: 93 } },
-      { sub: 3, dialogue: "howlLetter", quest: { id: "hw2", type: "hunt", title: "석양이 바다를 집어 삼키는 꿈", desc: "아덴하르 총리는 기계 오작동이라 했지만 카르텔 국왕은 아니라고 했다. 해변을 어지럽힌 잔당을 소탕해라.", need: 10, targetKey: "x2_reeffish", targetLabel: "해변의 잔당", reward: Math.round(2900 * G), expReward: 93 } }
+      { sub: 2, dialogue: "howlBook", quest: { id: "hw1", type: "reach", title: "벼랑 끝에서", desc: "무리가 하루를 절벽으로 몰았다. 디오가 밀어붙인 그 순간, 라일락이 손을 잡아 끌어올렸다. 절벽 끝까지 올라가 그녀를 만나라.", targetLabel: "절벽 끝", reward: Math.round(2600 * G), expReward: 93 } },
+      { sub: 3, dialogue: "howlLetter", quest: { id: "hw2", type: "hunt", title: "펜던트가 지켜 준 수련", desc: "펜던트를 받은 뒤로 무리가 하루를 함부로 대하지 않았다. 수련을 방해하는 자들을 정리하고 기사단에 갈 힘을 만들라.", need: 10, targetKey: "x2_reeffish", targetLabel: "수련을 방해하는 무리", reward: Math.round(2900 * G), expReward: 93 } }
     ],
     repeat: {need: 28, gold: Math.round(210 * G), exp: 210, title: "[반복] 해변 순찰", desc: "석양으로 물든 바다 — 해안선을 계속 지켜야 한다."},
     lvGate: {enter: 1, mid: 5},
@@ -347,14 +349,13 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { key: "swampbeast", count: 3 }, { key: "x3_goblin", count: 3 },
       { key: "x2_rat", count: 3 }, { key: "minion", count: 3 }],
     main: "x2_reeffish",
+    /* ── 3장 비트 — 정본 2.txt:35-45 (칼리야 도착 · 도깨비 · 도사 리엘의 수련) ──
+     *  vc286 — 종전엔 5.txt 3화의 "이동석·크라켄 먹물·해롤드 호위대"가 들어와 있었다.
+     *  그 사건들은 정본 배치상 5장(남부의 해전, 2.txt:59-71) 소재이므로 그쪽으로 옮겼다. */
     beats: [
-      { sub: 2, dialogue: "", quest: { id: "hw4", type: "collect", title: "[사연] 제2의 성으로 가는 이동석", desc: "카르텔의 명령 — 폭풍지역을 넘어 제2의 성으로. 에벤트왕국으로 갈 수 있는 이동석을 찾아라.", targetLabel: "이동석의 좌표", reward: Math.round(3300 * G), expReward: 354 } },
-      { sub: 3, dialogue: "", quest: { id: "hw5", type: "collect", title: "[기믹] 크라켄의 먹물", desc: "저주받은 바다의 힘, 크라켄이 모든 것을 부수고 다녔다. 바다에 흩어진 크라켄의 먹물을 거둬 고대의 힘을 끊어라.", targetLabel: "크라켄의 먹물", reward: Math.round(3800 * G), expReward: 354 } },
-      /* vc263c (버그 #2) — 종전엔 sub4 에 boss/reach 퀘스트가 있었으나, 실제 보스 스테이지는
-       *  sub5(stages:5)다. 그 결과 sub4 에서 엉뚱한 보스(guardian 폴백)가 스폰되고
-       *  sub5 는 보스 없이 진행 불가 = "크라켄 퀘스트 완료 못함" 신고의 직접 원인.
-       *  보스·차원문 퀘스트는 이제 생성기가 보스 스테이지에 자동 주입하므로 여기서는 제거한다. */
-      { sub: 4, dialogue: "", quest: { id: "hw5b", type: "hunt", title: "해롤드의 호위대", desc: "먹물의 근원을 끊기 직전 — 크라켄으로 변한 해롤드를 지키는 호위대를 베어 길을 열어라.", need: 12, targetKey: "swampbeast", targetLabel: "해롤드의 호위", reward: Math.round(4200 * G), expReward: 354 } }
+      { sub: 2, dialogue: "howlDokkaebi", quest: { id: "hw4", type: "hunt", title: "도깨비의 약탈", desc: "칼리야까지 걸어간 하루는 탈진해 언덕에 쓰러졌다. 도깨비들이 가진 것을 빼앗으려 덤벼들었다. 리엘이 올 때까지 버텨라.", need: 10, targetKey: "x3_chort", targetLabel: "도깨비 무리", reward: Math.round(3300 * G), expReward: 354 } },
+      { sub: 3, dialogue: "howlRiel", quest: { id: "hw5", type: "hunt", title: "검을 쥔 손", desc: "리엘은 하루가 가진 검이 보통 검이 아니라고 말했다. 검과 웨폰마스터의 관계를 확인하는 동안, 주막을 노리는 자들을 물리쳐라.", need: 8, targetKey: "x2_rat", targetLabel: "주막을 노리는 자", reward: Math.round(3600 * G), expReward: 354 } },
+      { sub: 4, dialogue: "", quest: { id: "hw5b", type: "hunt", title: "카피와 순환", desc: "리엘의 지도로 수련을 거듭해 카피와 순환을 쓸 수 있게 되었다. 순환을 익히는 동안 몰려든 자들을 상대하라.", need: 12, targetKey: "x3_chort", targetLabel: "수련 상대", reward: Math.round(3900 * G), expReward: 354 } },
     ],
     repeat: {need: 28, gold: Math.round(210 * G), exp: 210, title: "[반복] 해변 순찰", desc: "석양으로 물든 바다 — 해안선을 계속 지켜야 한다."},
     lvGate: {enter: 15, mid: 18},
@@ -399,9 +400,12 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { key: "wraith", count: 3 }, { key: "x3_necromancer", count: 3 },
       { key: "x2_bat", count: 3 }, { key: "x3_maskedorc", count: 3 }],
     main: "x3_imp",
+    /* ── 5장 비트 — 정본 2.txt:59-71 (3일 뒤 남부 침공 · 벨리카의 번개 · 일섬 각성) ──
+     *  vc286 — 종전엔 3장(칼리야) 소재인 도깨비·연합 결성 퀘스트가 들어와 있었다.
+     *  도깨비는 3장으로 옮겼고, 이 장은 남부 해전 사건으로 채운다. */
     beats: [
-      { sub: 2, dialogue: "howlDokkaebi", quest: { id: "hw7", type: "hunt", title: "도깨비의 협박", desc: "가는 도중 도깨비가 나와 가진 것을 탈하려고 협박했다. 부채 소리와 함께 분신이 도깨비를 물리쳤다.", need: 10, targetKey: "x3_chort", targetLabel: "도깨비 무리", reward: Math.round(3300 * G), expReward: 12582 } },
-      { sub: 3, dialogue: "howlAlliance", quest: { id: "hw8", type: "collect", title: "라일락 연합", desc: "화해와 연합이 필요하다고 생각한 두 왕국이 라일락 연합을 만들었다. 모든 나라의 이름을 적어라.", targetLabel: "연합 서명", reward: Math.round(3500 * G), expReward: 12582 } }
+      { sub: 2, dialogue: "howlSouthWar", quest: { id: "hw7", type: "hunt", title: "남부 방어선", desc: "스칼렛이 각 왕국에 사흘 뒤 남부를 침공하겠다 선포했다. 결전의 아침, 나팔이 울렸다. 방어선을 무너뜨리려는 선봉을 막아라.", need: 10, targetKey: "swampbeast", targetLabel: "남부 선봉", reward: Math.round(3300 * G), expReward: 12582 } },
+      { sub: 3, dialogue: "howlBolt", quest: { id: "hw8", type: "hunt", title: "벨리카의 번개를 복사하다", desc: "하루가 벨리카의 번개 원소를 복사하고 일섬에 성공하며 각성했다. 각성의 틈을 노리는 자들을 쓸어라.", need: 12, targetKey: "x3_imp", targetLabel: "각성의 틈을 노리는 자", reward: Math.round(3500 * G), expReward: 12582 } },
     ],
     repeat: {need: 30, gold: Math.round(230 * G), exp: 230, title: "[반복] 연합 순찰", desc: "라일락 연합의 임무 — 각 왕국을 계속 오가야 한다."},
     lvGate: {enter: 27, mid: 31},
@@ -496,8 +500,11 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { key: "x2_darkhound", count: 3 }, { key: "x3_bigzombie", count: 3 },
       { key: "x3_wogol", count: 3 }, { key: "x3_orcshaman", count: 3 }],
     main: "x3_orcwarrior",
+    /* ── 9장 비트 — 정본 2.txt:144-156 (연합 재집결 · 아리와 페르온 · 결계 파괴 작전) ──
+     *  vc286 — 종전엔 비트가 비어 있어 이 장에서 서사 사건이 하나도 진행되지 않았다. */
     beats: [
-
+      { sub: 2, dialogue: "howlUnited", quest: { id: "hw15b", type: "hunt", title: "부상자 치료 천막", desc: "연합은 당장 에델리오나로 가고 싶었지만 부상자가 많아 움직이지 못했다. 치료 천막을 노리는 자들을 막아라.", need: 10, targetKey: "x3_bigzombie", targetLabel: "천막을 노리는 자", reward: Math.round(4400 * G), expReward: 19020 } },
+      { sub: 3, dialogue: "howlGateBreak", quest: { id: "hw15c", type: "hunt", title: "결계를 여는 길", desc: "도사가 반란군에 결계 파괴를 부탁했고, 반란군이 성 내부 진입에 성공했다. 결계가 걷히는 동안 성채 외곽을 정리하라.", need: 12, targetKey: "x3_wogol", targetLabel: "성채 외곽의 수비병", reward: Math.round(4600 * G), expReward: 19020 } },
     ],
     repeat: {need: 32, gold: Math.round(260 * G), exp: 260, title: "[반복] 군단장 전선", desc: "각 왕국에 배치된 군단장들 — 계속 부대를 소모시켜라."},
     lvGate: {enter: 57, mid: 62},
