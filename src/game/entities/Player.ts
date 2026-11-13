@@ -22,7 +22,7 @@ import { ModStack, ModOp } from "../combat/modStack"; // vc276 — 배율 스택
 import { sweptHitsTarget } from "../collision/sweep";
 import { bodyFramesReady, loadBodyPrefix } from "../textures"; // v1.5.0 — 게임 중 미로드 외형 동적 로드
 import { resolveBodyPrefix } from "../characterAppearance";
-import { ult5HoldOf, ult5bHoldOf, ultBurstMultOf, ULT5_BUDGET_SCALE } from "../ultHold"; // v1.4.41 (#3) — 궁극기 시전 시간 · 지시 #9 — 극딜 배율
+import { ult5HoldOf, ult5bHoldOf, ultBurstMultOf } from "../ultHold"; // v1.4.41 (#3) — 궁극기 시전 시간 · 지시 #9 — 극딜 배율
 import { playUltCinematic } from "../fx/UltCinematic"; // v1.4.41 (#13) — 궁극기 시네마틱 연출
 import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUltIntroSig, spawnTierFlair, spawnUltFlourish, spawnSkillImpact, spawnClassAccent, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처 · vc147 — 계열별 지면 시그니처 · vc238 — 직업별 악센트
 import { DEATH_SLASH_CFG, runDeathSlashCinematic } from "../fx/DeathSlash"; // vc153 — 도적 제2궁극기 「사(死)의 일섬」 3D 시네마틱
@@ -40,7 +40,7 @@ import { memoCooldowns, restoreCooldowns } from "../cooldownMemo"; // v1.0.15 (�
 /* vc209 (#ponytail ①) — 데미지 배율 순수함수 (테스트 25케이스가 경계값 고정) */
 import { damageMultiplier } from "../combat/damageModel";
 import { copiedReactionElement, signatureZones, signatureZoneContains, startSignatureCast, STARTER_SIGNATURE, weaponMasterProfileOf, type SignatureCast, type WeaponMasterProfile } from "../weaponMasterProfiles";
-import { planUltWaves, createWavePool, type WavePool } from "../combat/ultWaves"; // vc278 — 궁극기 지속 타격
+import { planUltWaves, createUltBudget, ULT_BUDGET_MULT, type UltBudget } from "../combat/ultWaves"; // 궁극기 고정 예산 + 지속 타격
 import { WeaponMasterCombat } from "../fx/WeaponMasterCombat";
 import { skillMasteryProgress, type SkillMastery } from "../skillMastery";
 import { notice } from "../fx/Notice";
@@ -4454,18 +4454,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     //  이후 일반 스킬 전부가 ×3 배율(FIFTH1_MULT)로 오염됐다.
     //  rollDamage 는 순수 계산이 아니므로(내부에서 상태 조회·이벤트 발생)
     //  예외 가능성을 배제할 수 없다.
-    /* 지속 타격(wave) 계획과 피해 풀 — 직접 타격이 굴린 피해의 일부를 떼어 wave 가 지급한다
-     *  (총 피해 불변). 상세는 combat/ultWaves.ts createWavePool. */
-    const wavePlan = planUltWaves(ult5HoldOf(key5, familyOf(this.cls)));
-    const wavePool = createWavePool(wavePlan.at.length);
-    this.ultPool = wavePool; // WorldScene.notePlayerHit 이 적중 때마다 적립한다
-    const budgetScale = ULT5_BUDGET_SCALE[key5] ?? 1; // 직업 간 총 피해 보정 (ultHold.ts)
+    /* 2026-11-13 궁극기 개편 — 표적당 고정 예산. case 의 타격은 예산에서 꺼내 쓰고 나머지는
+     *  시전 시간 전체에 깔린 wave 가 지급한다(직업 무관 총량 동일). combat/ultWaves.ts 참고. */
+    const budget = this.startUltBudget(1, ult5HoldOf(key5, familyOf(this.cls)), hex);
+    /* 장판 틱(dps×0.5)도 예산에서 꺼낸다 — 장판을 까는 직업만 총 피해가 늘지 않게. */
+    const field = (cfg: Parameters<typeof this.scene.spawnField>[0]) => {
+      if (cfg.dps > 0) budget.tag(Math.max(1, Math.round(cfg.dps * 0.5)));
+      return this.scene.spawnField(cfg);
+    };
     const rd = (m: number, forceCrit = false) => {
       const prev = this.ultSlot;
       this.ultSlot = 1;
       try {
-        const r = this.rollDamage(m * budgetScale, true, forceCrit);
-        return { dmg: wavePool.reduce(r.dmg), crit: r.crit };
+        const r = this.rollDamage(m, true, forceCrit);
+        return { dmg: budget.tag(r.dmg), crit: r.crit };
       } finally {
         this.ultSlot = prev;
       }
@@ -4506,38 +4508,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       .setStrokeStyle(3, hex, 0.95).setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
     this.scene.tweens.add({ targets: ring, scale: 3.4, alpha: 0, duration: 700, ease: "Cubic.out", onComplete: () => ring.destroy() });
     this.scene.spawnBurstAt(this.x, this.y, 34, hex);
-
-    /* vc278 — 지속 타격(wave). 시전 22~30초인데 타격이 0~1.3초에 끝나 공백이 21~29초였다.
-     *  시전 시간 전체에 피해를 편다. 기존 case 분기(직업별 고유 연출·배율)는 그대로 둔다.
-     *  2026-11-12 — wave 는 새 피해를 굴리지 않는다. 직접 타격에서 떼어 둔 풀(wavePool)을
-     *  나눠 지급하므로 궁극기 총 피해가 늘지 않고, 마지막 wave 가 종결(가장 큰 지급)이다. */
-    {
-      const n = wavePlan.at.length;
-      for (let wi = 0; wi < n; wi++) {
-        this.scene.time.delayedCall(wavePlan.at[wi], () => {
-          const last = wi === n - 1;
-          if (this.state === "dead") { if (this.ultPool === wavePool) this.ultPool = null; return; }
-          const targets = this.getAllTargetsIn(360);
-          const each = targets.length ? Math.round(wavePool.payout(wi, true) / targets.length) : wavePool.payout(wi, false);
-          if (last && this.ultPool === wavePool) this.ultPool = null;
-          if (each > 0) {
-            wavePool.paying(() => {
-              for (const e of targets) {
-                const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
-                e.takeDamage(each, away, 380, false);
-              }
-            });
-          }
-          /* 타격 지점마다 작은 연출 — 큰 연출은 case 가 담당한다. 마지막 한 번만 종결답게 키운다. */
-          try {
-            const finale = last && n > 1;
-            this.scene.spawnBurstAt(this.x, this.y, finale ? 40 : 18, hex);
-            this.scene.impactFX.shake(finale ? 220 : 60, finale ? 0.012 : 0.004);
-            if (finale && each > 0) this.scene.spawnShockwave(this.x, this.y, hex, 2.2, 480, 0.55);
-          } catch { /* 연출 실패가 판정을 막지 않는다 */ }
-        });
-      }
-    }
 
     switch (key5) {
       /* 워브링어 — 천멸극: 참격 9연속 + 광역 출혈 + 분노의 대붕괴 종결일격 */
@@ -4820,7 +4790,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.driveFx?.gvShock(this.x, this.y, 0x8ab0ff, 2.6, 860);
           this.scene.driveFx?.gvFlash(this.x, this.y, 0xffffff, 2.2);
           this.scene.driveFx?.gvSpecks(this.x, this.y, 0xcfe0ff, 18, 300);
-          this.scene.spawnField({
+          field({
             x: this.x, y: this.y, radius: 250, dur: 6000,
             dps: Math.max(18, Math.round(this.atkTotal * 1.7)),
             kind: "light", owner: "player",
@@ -4851,7 +4821,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.applyStatusTo(this.getAllTargetsIn(340), { stunMs: 2600 });        this.scene.driveFx?.gvStarry(this.x, this.y, 2.6, 3400);
         this.scene.driveFx?.gvEnergyWeb(this.x, this.y, 0xb0a0ff, 2.2, 1600);
         /* 시간 정지 — 전장의 적 전원 4.5초 기절 + 시간 필드 */
-        this.scene.spawnField({
+        field({
           x: this.x, y: this.y + 10, radius: 460, dur: 2600,
           dps: 0, kind: "time", owner: "player",
         });
@@ -4933,7 +4903,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.time.delayedCall(260 + marks.length * 160 + 100 + c * 200, () => {
             if (this.state === "dead") return;
             const t = this.nearestTargets(1, 700)[0];
-            if (t) this.scene.fireShadowClone(t, 0x8a4aff, 3.4);
+            if (t) { budget.tag(Math.round(this.atkTotal * 3.4)); this.scene.fireShadowClone(t, 0x8a4aff, 3.4); }
           });
         }
         /* 종결 — 심연 뉴클리어 */
@@ -5252,7 +5222,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x + dir.x * 260, this.y, 0x4fd2e8, 300);
           this.scene.spawnBurstAt(this.x + dir.x * 260, this.y, 64, 0x8ae6ff);
-          this.scene.spawnField({
+          field({
             x: this.x + dir.x * 260, y: this.y, radius: 260, dur: 5000,
             dps: Math.max(18, Math.round(this.atkTotal * 1.5)),
             kind: "light", owner: "player",
@@ -5320,7 +5290,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnPillar(this.x, this.y, 0xffa040, 340);
           this.scene.spawnBurstAt(this.x, this.y, 82, 0xffcf90);
           this.scene.spawnShockwave(this.x, this.y, 0xffe0b0, 4.2, 420, 3.2);
-          this.scene.spawnField({
+          field({
             x: this.x, y: this.y, radius: 300, dur: 4500,
             dps: Math.max(20, Math.round(this.atkTotal * 1.6)),
             kind: "fire", owner: "player",
@@ -5408,7 +5378,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               tex: "x2_arrow", blend: "add", rot: true,
             });
           }
-          this.scene.spawnField({
+          field({
             x: this.x, y: this.y, radius: 210, dur: 8000,
             dps: Math.max(14, Math.round(this.atkTotal * 1.3)),
             kind: "fire", owner: "player",
@@ -5447,7 +5417,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xffffff, 300);
           this.scene.spawnBurstAt(this.x, this.y, 80, hex);
-          this.scene.spawnField({
+          field({
             x: this.x, y: this.y, radius: 240, dur: 6000,
             dps: Math.max(18, Math.round(this.atkTotal * 1.6)),
             kind: "light", owner: "player",
@@ -5524,7 +5494,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (this.state === "dead") return;
             this.scene.spawnPillar(this.x, this.y, 0x5ab8ff, 260);
             this.scene.spawnBurstAt(this.x, this.y, 70, 0x8ad0ff);
-            this.scene.spawnField({
+            field({
               x: this.x, y: this.y, radius: 250, dur: 6000,
               dps: Math.max(16, Math.round(this.atkTotal * 1.4)),
               kind: "light", owner: "player",
@@ -5922,7 +5892,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.impactFX.shake(420, 0.016);
           this.scene.spawnPillar(this.x, this.y, 0xffe080, 400);
           this.scene.sfxSkill("superhit", 0.8);
-          const bonus = Math.max(1, Math.round(accum * 0.5));
+          const bonus = budget.tag(Math.max(1, Math.round(accum * 0.5)));
           for (const e of this.getAllTargetsIn(600)) {
             if (!e.active) continue;
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -6239,7 +6209,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       x: this.x, y: this.y, hex: this.clsHex(), cls: this.cls,
       slot: 1,
       aimAngle: this.aimDirFree().angle(),
-      roll: (mul) => this.rollDamage(mul, false),
+      roll: (mul) => { const r = this.rollDamage(mul, false); this.ultPool?.tag(r.dmg); return r; },
       hitAt: (bx, by, d, crit, reach, geometry) => {
         /* vc206 (지시 #4 "궁극기 이펙트에 히트박스 없음(즉, 공격안됨)")
          *  종전엔 getAllTargetsIn(220) — **플레이어 위치 고정** 반경 220px 로 후보를 모은 뒤
@@ -6299,13 +6269,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const info = SKILL5B_INFO[key5];
 
     /* vc147 (#18) — 제2궁극기 피해 ×500% (FIFTH2_MULT) — 1차(rd×300%)와 동일 메커니즘 */
+    const budget = this.startUltBudget(2, ult5bHoldOf(key5, familyOf(this.cls)), hex); // 2026-11-13 — 1차와 같은 고정 예산
+    /* 장판 틱(dps×0.5)도 예산에서 꺼낸다 — 장판을 까는 직업만 총 피해가 늘지 않게. */
+    const field = (cfg: Parameters<typeof this.scene.spawnField>[0]) => {
+      if (cfg.dps > 0) budget.tag(Math.max(1, Math.round(cfg.dps * 0.5)));
+      return this.scene.spawnField(cfg);
+    };
     // vc195 — 위 useSkill5 와 동일한 이유로 try/finally 복원.
     //  제2궁극기는 ×5(FIFTH2_MULT)라 오염 시 피해가 더 크게 튄다.
     const rd = (m: number, forceCrit = false) => {
       const prev = this.ultSlot;
       this.ultSlot = 2;
       try {
-        return this.rollDamage(m, true, forceCrit);
+        const r = this.rollDamage(m, true, forceCrit);
+        return { dmg: budget.tag(r.dmg), crit: r.crit };
       } finally {
         this.ultSlot = prev;
       }
@@ -6364,7 +6341,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnSlash(this.x + dir.x * 30, this.y + dir.y * 30, dir, i % 2 === 0, 3.6, hex);
             this.scene.spawnCrack(this.x, this.y);
             this.scene.spawnBurstAt(this.x, this.y, 30, 0xff8a4a);
-            this.scene.spawnField({ x: this.x, y: this.y, radius: 110, dur: 2600, dps: Math.max(16, Math.round(this.atkTotal * 0.9)), kind: "fire", owner: "player" });
+            field({ x: this.x, y: this.y, radius: 110, dur: 2600, dps: Math.max(16, Math.round(this.atkTotal * 0.9)), kind: "fire", owner: "player" });
             this.scene.impactFX.shake(140, 0.012);
             this.scene.sfxSkill("bigsword", 0.82 + (i % 3) * 0.07);
             for (const e of this.getAllTargetsIn(260)) {
@@ -6403,7 +6380,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "crusader": {
         this.iframes = Math.max(this.iframes, 8000); // 성역 무적 — "천국의 문" 개방 8초
         this.scene.spawnPurifyRing(this.x, this.y, 420, 0xffe9a0);
-        this.scene.spawnField({ x: this.x, y: this.y, radius: 230, dur: 8000, dps: Math.max(14, Math.round(this.atkTotal * 1.1)), kind: "light", owner: "player", heal: true, selfHealPerTick: Math.max(4, Math.round(this.maxHp * 0.01)) });
+        field({ x: this.x, y: this.y, radius: 230, dur: 8000, dps: Math.max(14, Math.round(this.atkTotal * 1.1)), kind: "light", owner: "player", heal: true, selfHealPerTick: Math.max(4, Math.round(this.maxHp * 0.01)) });
         this.scene.spawnPickupText(this.x, this.y - 70, "천국의 문이 열린다 — 8초 무적 성역!", "#ffe9a0");
         for (let i = 0; i < 12; i++) {
           this.scene.time.delayedCall(300 + i * 640, () => {
@@ -6456,7 +6433,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
        *  ADD 블렌드)를 쏘고 5연발마다 머즐 플래시 — 발사 라인이 눈에 보인다. */
       case "deadeye": {
         const struck = new Set<Enemy | Boss>();
-        this.scene.spawnField({ x: this.x, y: this.y + 10, radius: 480, dur: 1200, dps: 0, kind: "time", owner: "player" });
+        field({ x: this.x, y: this.y + 10, radius: 480, dur: 1200, dps: 0, kind: "time", owner: "player" });
         for (const e of this.getAllTargetsIn(480)) (e as Enemy).applyStun?.(2600);
         for (let i = 0; i < 100; i++) {
           this.scene.time.delayedCall(260 + i * 26, () => {
@@ -6551,7 +6528,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           const cy = t ? t.y : this.y;
           const { dmg, crit } = rd(5.6);
           this.scene.fireCyclone({ x: cx, y: cy, angle: 0, speed: 0, dmg, crit, hex, pull: 320, radius: 220, life: 3200, scale: 4.2 });
-          this.scene.spawnField({ x: cx, y: cy, radius: 260, dur: 6000, dps: Math.max(20, Math.round(this.atkTotal * 1.6)), kind: "light", owner: "player" });
+          field({ x: cx, y: cy, radius: 260, dur: 6000, dps: Math.max(20, Math.round(this.atkTotal * 1.6)), kind: "light", owner: "player" });
           spawnRingPop(this.scene, cx, cy, "vf_ring", 0xaed8ff, 5.6, 860);
           this.scene.cameras.main.flash(180, 200, 230, 255);
           this.scene.impactFX.shake(500, 0.024);
@@ -6606,7 +6583,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.driveFx?.gvShock(this.x, this.y, 0x8ab0ff, 3.0, 900);
           this.scene.driveFx?.gvStreaks(this.x, this.y, 0xaec6ff, 2.6);
           this.scene.driveFx?.gvSpecks(this.x, this.y, 0xcfe0ff, 20, 340);
-          this.scene.spawnField({ x: this.x, y: this.y, radius: 270, dur: 8000, dps: Math.max(22, Math.round(this.atkTotal * 1.9)), kind: "light", owner: "player" });
+          field({ x: this.x, y: this.y, radius: 270, dur: 8000, dps: Math.max(22, Math.round(this.atkTotal * 1.9)), kind: "light", owner: "player" });
           this.scene.cameras.main.flash(220, 220, 200, 255);
           this.scene.impactFX.shake(560, 0.026);
           this.scene.sfxSkill("manaburst", 0.66);
@@ -6626,7 +6603,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "eternal": {
         this.scene.driveFx?.gvStarry(this.x, this.y, 2.8, 3200);
         this.scene.driveFx?.gvEnergyWeb(this.x, this.y, 0xb0a0ff, 2.4, 1500);
-        this.scene.spawnField({ x: this.x, y: this.y + 10, radius: 470, dur: 2600, dps: 0, kind: "time", owner: "player" });
+        field({ x: this.x, y: this.y + 10, radius: 470, dur: 2600, dps: 0, kind: "time", owner: "player" });
         for (const e of this.getAllTargetsIn(470)) (e as Enemy).applyStun?.(4200);
         this.scene.spawnPickupText(this.x, this.y - 66, "시간이 거스르기 시작한다...", "#d8ccff");
         /* 시간 역행 — 상처를 되돌린다 */
@@ -6660,7 +6637,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
            *    · 새 적이 스폰되면 → 배열이 늘어 **원래 대상이 아닌 적까지 맞는다**
            *  대상 수와 목록을 루프 밖에서 한 번만 확정한다. */
           const reproTargets = finaleTargets(this.x, this.y, 620);
-          const share = Math.max(1, Math.round(reenact / Math.max(1, reproTargets.length)));
+          const share = budget.tag(Math.max(1, Math.round(reenact / Math.max(1, reproTargets.length))));
           for (const e of reproTargets) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             /* 재현 배분 — 로그 합을 전 대상에 균등 분배(단일 보스에겐 전액) */
@@ -6673,13 +6650,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
       /* 섀도우로드 — 심연전격: 그림자 왕국 성역(분신 6기 10초) + 연속 참수 + 심연 처형 */
       case "shadowlord": {
-        this.scene.spawnField({ x: this.x, y: this.y, radius: 250, dur: 10000, dps: Math.max(16, Math.round(this.atkTotal * 1.2)), kind: "light", owner: "player" });
+        field({ x: this.x, y: this.y, radius: 250, dur: 10000, dps: Math.max(16, Math.round(this.atkTotal * 1.2)), kind: "light", owner: "player" });
         this.scene.driveFx?.gvVoidSpike(this.x, this.y, 0xc090ff, 2.0); this.scene.driveFx?.gvSkull(this.x, this.y, 0xc090ff, 1.6); /* vc149 #14 마법진→gv 심연(도적) */
         for (let c = 0; c < 6; c++) {
           this.scene.time.delayedCall(300 + c * 480, () => {
             if (this.state === "dead") return;
             const t = this.nearestTargets(1, 760)[0];
-            if (t) this.scene.fireShadowClone(t, 0x8a4aff, 3.6);
+            if (t) { budget.tag(Math.round(this.atkTotal * 3.6)); this.scene.fireShadowClone(t, 0x8a4aff, 3.6); }
           });
         }
         const marks = this.nearestTargets(10, 800);
@@ -6908,7 +6885,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           .setDepth(6).setBlendMode(Phaser.BlendModes.ADD);
         this.scene.tweens.add({ targets: flood, alpha: 0.10, duration: 6000, ease: "Quad.easeIn" });
         /* 감속·수압 필드 */
-        this.scene.spawnField({
+        field({
           x: this.x, y: this.y, radius: 320, dur: 6000,
           dps: Math.max(22, Math.round(this.atkTotal * 1.8)),
           kind: "light", owner: "player", slow: true,
@@ -7014,7 +6991,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnPillar(wx0, wy0, 0xffa040, 420);
             this.scene.spawnBurstAt(wx0, wy0, 110, 0xffcf90);
             this.scene.spawnShockwave(wx0, wy0, 0xffe0b0, 6.4, 780, 0.85);
-            this.scene.spawnField({
+            field({
               x: wx0, y: wy0, radius: 340, dur: 5000,
               dps: Math.max(24, Math.round(this.atkTotal * 2.0)),
               kind: "fire", owner: "player",
@@ -7109,7 +7086,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               tex: "x2_arrow", blend: "add", rot: true,
             });
           }
-          this.scene.spawnField({ x: this.x, y: this.y, radius: 240, dur: 9000, dps: Math.max(18, Math.round(this.atkTotal * 1.5)), kind: "fire", owner: "player" });
+          field({ x: this.x, y: this.y, radius: 240, dur: 9000, dps: Math.max(18, Math.round(this.atkTotal * 1.5)), kind: "fire", owner: "player" });
           spawnRingPop(this.scene, this.x, this.y, "vf_ring", 0xffd76a, 5.0, 780);
           this.scene.cameras.main.flash(150, 255, 220, 140);
           this.scene.impactFX.shake(280, 0.014);
@@ -7124,7 +7101,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const bx = this.x;
         const by = this.y;
         this.scene.driveFx?.gvVoidSpike(bx, by, 0xb06aff, 2.2); this.scene.driveFx?.gvAura(bx, by, 0xb06aff, 2600, 1.9); /* vc149 #14 마법진→gv 만검 거점(도적) */
-        this.scene.spawnField({ x: bx, y: by, radius: 260, dur: 5200, dps: Math.max(20, Math.round(this.atkTotal * 1.5)), kind: "light", owner: "player" });
+        field({ x: bx, y: by, radius: 260, dur: 5200, dps: Math.max(20, Math.round(this.atkTotal * 1.5)), kind: "light", owner: "player" });
         /* 끌어당김 — 220ms마다 주위 적을 균열 중심으로 끌고 와 피해 */
         for (let i = 0; i < 22; i++) {
           this.scene.time.delayedCall(320 + i * 220, () => {
@@ -7216,7 +7193,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnPillar(this.x, this.y, 0xffc08a, 320);
           this.scene.spawnBurstAt(this.x, this.y, 90, 0xffa86a);
           this.scene.spawnCrack(this.x, this.y);
-          this.scene.spawnField({ x: this.x, y: this.y, radius: 280, dur: 8000, dps: Math.max(24, Math.round(this.atkTotal * 2.0)), kind: "fire", owner: "player" });
+          field({ x: this.x, y: this.y, radius: 280, dur: 8000, dps: Math.max(24, Math.round(this.atkTotal * 2.0)), kind: "fire", owner: "player" });
           this.scene.cameras.main.flash(230, 255, 210, 150);
           this.scene.impactFX.shake(600, 0.028);
           this.scene.sfxSkill("superhit", 0.7);
@@ -7248,11 +7225,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             for (const e of this.getAllTargetsIn(560)) {
               if (!e.active) continue;
               const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
-              const { dmg, crit } = this.rollDamage(DEATH_SLASH_CFG.instantMult, true, true);
+              const { dmg, crit } = rd(DEATH_SLASH_CFG.instantMult, true);
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 560, crit); // 하드히트 — 넉백 560
               /* 출혈 — 25% ATK / 1초 간격 × 5초 (필드 0.5초 틱 × 절반치 = 초당 25%와 동일 총량) */
-              this.scene.spawnField({
+              field({
                 x: e.x, y: e.y, radius: 62,
                 dur: DEATH_SLASH_CFG.bleedTicks * DEATH_SLASH_CFG.bleedIntervalMs,
                 dps: Math.max(6, Math.round(atk * DEATH_SLASH_CFG.bleedMult)),
@@ -8137,7 +8114,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (this.state === "dead") return;
       const fam = familyOf(this.cls);
       const kind = fam === "warrior" ? "fire" : fam === "mage" ? "time" : fam === "thief" ? "poison" : "light";
-      this.scene.spawnField({
+      field({
         x: residueX, y: residueY, radius: 240, dur: 30000,
         dps: Math.max(12, Math.round(this.atkTotal * 0.55)), kind, owner: "player",
         geometry: residuePlan ? { plan: residuePlan, angle: residueAngle } : undefined,
@@ -9619,8 +9596,60 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return true;
   }
 
-  /** 진행 중인 1차 궁극기의 wave 피해 풀 (없으면 null) — combat/ultWaves.ts */
-  ultPool: WavePool | null = null;
+  /** 진행 중인 1차·2차 궁극기의 표적당 피해 예산 (없으면 null) — combat/ultWaves.ts */
+  ultPool: UltBudget<Enemy | Boss> | null = null;
+  ultPool2: UltBudget<Enemy | Boss> | null = null;
+
+  /** 궁극기 한 번의 표적당 총 피해 — 직업·시전 시간과 무관하다(치명타는 기대값으로 포함). */
+  private ultBudgetOf(slot: 1 | 2): number {
+    const m = damageMultiplier({
+      mult: ULT_BUDGET_MULT, isSkill: true, clsSkillMult: 1 /* 직업 스킬 배율(0.95~1.42)도 뺀다 — 총량 동일 */, isFifth: this.isFifth,
+      sTier: this.sTier, ultSlot: slot, ultBurst: 1,
+      rage: this.selfAtkBuff ? this.selfAtkBuff.mult : 1, rebirthDmgMult: this.rebirthDmgMult, runSkillPct: this.runBuffs.skillPct,
+    });
+    const critAvg = 1 + (Math.min(this.critRate, 100) / 100) * (this.critDmg - 1);
+    return Math.max(1, Math.round(this.atkTotal * m * critAvg));
+  }
+
+  /** 예산을 만들고 시전 시간 전체에 wave 를 예약한다. 마지막 wave 가 남은 예산 전액(종결). */
+  private startUltBudget(slot: 1 | 2, holdMs: number, hex: number): UltBudget<Enemy | Boss> {
+    const plan = planUltWaves(holdMs);
+    const n = plan.at.length;
+    const budget = createUltBudget<Enemy | Boss>(n, this.ultBudgetOf(slot));
+    const release = () => {
+      if (slot === 1 && this.ultPool === budget) this.ultPool = null;
+      if (slot === 2 && this.ultPool2 === budget) this.ultPool2 = null;
+    };
+    if (slot === 1) this.ultPool = budget; else this.ultPool2 = budget;
+    /* 종결 뒤에도 잠시 붙잡아 둔다 — 늦게 도착한 투사체가 예산 밖 피해(굴린 값 그대로)를 넣지 못하게. */
+    this.scene.time.delayedCall(holdMs + 15000, release);
+    for (let wi = 0; wi < n; wi++) {
+      this.scene.time.delayedCall(plan.at[wi], () => {
+        const last = wi === n - 1;
+        if (this.state === "dead") { release(); return; }
+        const targets = new Set<Enemy | Boss>([...budget.targets(), ...this.getAllTargetsIn(420)]);
+        let paid = false;
+        budget.paying(() => {
+          for (const e of targets) {
+            if (!e.active) continue;
+            const amount = budget.payout(wi, e);
+            if (amount <= 0) continue;
+            paid = true;
+            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
+            e.takeDamage(amount, away, last ? 380 : 0, last);
+          }
+        });
+        /* 큰 연출은 case 가 담당한다. 마지막 한 번만 종결답게 키운다. */
+        try {
+          const finale = last && n > 1;
+          this.scene.spawnBurstAt(this.x, this.y, finale ? 40 : 18, hex);
+          this.scene.impactFX.shake(finale ? 220 : 60, finale ? 0.012 : 0.004);
+          if (finale && paid) this.scene.spawnShockwave(this.x, this.y, hex, 2.2, 480, 0.55);
+        } catch { /* 연출 실패가 판정을 막지 않는다 */ }
+      });
+    }
+    return budget;
+  }
 
   /* 망토 슬롯 — 장식(모자·날개)과 독립. 렌더는 WorldScene 이 characterParts 순서대로 그린다. */
   cape: CosmeticKey | null = null;

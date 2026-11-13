@@ -1018,6 +1018,8 @@ const LATE_HP_RAMP = 1.2;
  *   그랜드 플레닛 600 → 1,500타. 전직·스킬을 쓰는 실제 유저는 대략 1~3분이다.
  *   그랜드 플레닛 ATK 는 같은 캐릭터가 4대를 버티는 값(종전 3.2대 → 0.5대).
  *   atk 를 비우면 기존 공식을 쓴다(영프 편은 5~7대로 이미 적정).
+ *  [2026-11-13 유저 "몇몇 후반 보스가 어려움"] 그랜드 플레닛 보스를 영프 편과 같은 6대로 맞추고
+ *   (종전 4대) HP 를 20% 낮췄다(480~1,200타).
  *  측정·검증: scripts/measure-combat-balance.mjs, tests/combat-balance.test.mjs. */
 export const BOSS_STAGE_STATS: Record<StageKey, { hp: number; atk?: number }> = {
   howlrstone2x3: { hp: 19800 },
@@ -1030,16 +1032,16 @@ export const BOSS_STAGE_STATS: Record<StageKey, { hp: number; atk?: number }> = 
   howlrstone12x4: { hp: 344000 },
   howlrstone13x4: { hp: 413000 },
   howlrstone14x5: { hp: 497000 },
-  dlcstargate10: { hp: 808000, atk: 678 },
-  dlcprisma10: { hp: 1040000, atk: 745 },
-  dlcocean10: { hp: 1290000, atk: 812 },
-  dlcreverse8: { hp: 1540000, atk: 858 },
-  dlcneocity4: { hp: 1800000, atk: 907 },
-  dlcmech10: { hp: 2220000, atk: 1015 },
-  dlcswallow10: { hp: 2610000, atk: 1092 },
-  dlcopinicia10: { hp: 3100000, atk: 1172 },
-  dlcnovel10: { hp: 3570000, atk: 1254 },
-  dlcsernium10: { hp: 4060000, atk: 1334 },
+  dlcstargate10: { hp: 646000, atk: 453 },
+  dlcprisma10: { hp: 832000, atk: 497 },
+  dlcocean10: { hp: 1032000, atk: 540 },
+  dlcreverse8: { hp: 1232000, atk: 571 },
+  dlcneocity4: { hp: 1440000, atk: 602 },
+  dlcmech10: { hp: 1776000, atk: 673 },
+  dlcswallow10: { hp: 2088000, atk: 724 },
+  dlcopinicia10: { hp: 2480000, atk: 776 },
+  dlcnovel10: { hp: 2856000, atk: 830 },
+  dlcsernium10: { hp: 3248000, atk: 882 },
 };
 
 /** 구역별 성장 배율 — 적 HP/ATK/EXP/골드 (사용자 지시 #6/#9 밸런스)

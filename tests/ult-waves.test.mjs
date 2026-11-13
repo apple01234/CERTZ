@@ -76,67 +76,69 @@ test("강도는 뒤로 갈수록 강해진다 (고조)", () => {
   }
 });
 
-/* ── 2026-11-12 — 총 피해 예산 정규화 (240 지시서 121·122) ── */
-import { createWavePool, waveWeight, WAVE_SHARE, WAVE_FINALE_SHARE } from "../src/game/combat/ultWaves.ts";
+/* ═══ 2026-11-13 — 궁극기 개편: 표적당 고정 예산 ═══ */
+import { createUltBudget, waveWeight, DIRECT_SHARE, WAVE_FINALE_SHARE } from "../src/game/combat/ultWaves.ts";
+import { readFileSync } from "node:fs";
 
-/** 직접 타격 rolled 를 각각 times 번 적중시키고 n 번의 wave 를 전부 지급받는다. */
-function runCast(n, rolled, times = 1) {
-  const pool = createWavePool(n);
-  let direct = 0;
-  for (const d of rolled) { const out = pool.reduce(d); for (let k = 0; k < times; k++) { direct += out; pool.credit(out); } }
-  const paid = Array.from({ length: n }, (_, i) => pool.payout(i, true));
-  return { direct, paid, waves: paid.reduce((a, b) => a + b, 0), full: rolled.reduce((a, b) => a + b, 0) * times };
+/** 직접 타격 hits 회(전부 첫 wave 전) + wave n 회를 한 표적에 넣고 받은 총 피해를 돌려준다. */
+function castTotal(n, budget, hits, hitDmg = 777) {
+  const pool = createUltBudget(n, budget), t = {};
+  let total = 0, direct = 0;
+  for (let i = 0; i < hits; i++) { const d = pool.draw(t, pool.tag(hitDmg)); total += d; direct += d; }
+  const pays = [];
+  for (let i = 0; i < n; i++) pool.paying(() => { const d = pool.payout(i, t); pays.push(d); total += d; });
+  return { total, direct, pays };
 }
 
-test("wave 풀은 총 피해를 보존한다 (직접 타격에서 줄인 만큼만 지급)", () => {
-  const r = runCast(23, [228, 228, 228, 648, 74, 74, 74]);
-  assert.ok(Math.abs(r.direct + r.waves - r.full) <= 4, `직접 ${r.direct} + wave ${r.waves} vs ${r.full}`);
-  assert.ok(Math.abs(r.waves / r.full - WAVE_SHARE) < 0.01, `wave 몫 ${(r.waves / r.full).toFixed(3)}`);
+test("타수가 4든 125든 표적당 총 피해는 예산과 같다 (직업 간 38배 격차 회귀 방지)", () => {
+  for (const hits of [0, 4, 26, 49, 125, 400]) {
+    const { total } = castTotal(20, 100000, hits);
+    assert.ok(Math.abs(total - 100000) <= hits + 1, `타수 ${hits}: ${total}`);
+  }
 });
 
-test("한 번 굴린 값이 여러 번 적중해도 보존된다 (deadeye 실측 82% 회귀 방지)", () => {
-  const r = runCast(23, Array(50).fill(160), 2);
-  assert.ok(Math.abs((r.direct + r.waves) / r.full - 1) < 0.005, `${((r.direct + r.waves) / r.full).toFixed(3)}`);
+test("시전 시간(wave 수)이 달라도 총 피해는 같다", () => {
+  for (const n of [1, 5, 12, 24]) {
+    const { total } = castTotal(n, 50000, 30);
+    assert.ok(Math.abs(total - 50000) <= 31, `wave ${n}: ${total}`);
+  }
 });
 
-test("마지막 wave 가 종결이다 — 풀의 FINALE_SHARE 를 가져간다", () => {
-  const r = runCast(23, [100000]);
-  assert.equal(Math.max(...r.paid), r.paid[22]);
-  assert.ok(Math.abs(r.paid[22] / r.waves - WAVE_FINALE_SHARE) < 0.01, `${(r.paid[22] / r.waves).toFixed(3)}`);
-  assert.ok(waveWeight(22, 23) > waveWeight(21, 23) * 5);
+test("직접 타격은 굴린 값과 무관하게 예산의 DIRECT_SHARE 를 넘지 못한다", () => {
+  const a = castTotal(10, 80000, 200, 1), b = castTotal(10, 80000, 200, 9e9);
+  assert.equal(a.direct, b.direct);
+  assert.ok(a.direct <= 80000 * DIRECT_SHARE + 200, `${a.direct}`);
 });
 
-test("표적이 없던 wave 의 몫은 다음 wave 로 이월된다", () => {
-  const a = createWavePool(4), b = createWavePool(4);
-  for (const p of [a, b]) p.credit(p.reduce(10000));
-  let sa = 0, sb = 0;
-  for (let i = 0; i < 4; i++) sa += a.payout(i, true);
-  for (let i = 0; i < 4; i++) sb += b.payout(i, i >= 2); // 앞의 두 번은 표적 없음
-  assert.equal(sa, sb, "이월 후 총 지급액이 같다");
+test("마지막 wave 가 종결이다 — wave 지급분 중 가장 크다", () => {
+  const { pays } = castTotal(12, 60000, 10);
+  assert.equal(Math.max(...pays), pays.at(-1));
+  assert.ok(Math.abs(waveWeight(11, 12) / Array.from({ length: 12 }, (_, i) => waveWeight(i, 12)).reduce((x, y) => x + y) - WAVE_FINALE_SHARE) < 1e-9);
 });
 
-test("풀과 무관한 타격·wave 자기 지급은 적립되지 않는다", () => {
-  const pool = createWavePool(3);
-  const out = pool.reduce(1000);
-  pool.credit(123);                     // 시전 중의 기본공격 등
-  pool.paying(() => pool.credit(out));  // wave 지급 타격이 같은 값이어도
-  assert.equal(pool.payout(0, true) + pool.payout(1, true) + pool.payout(2, true), 0);
+test("등록되지 않은 타격과 wave 자기 지급은 예산을 건드리지 않는다", () => {
+  const pool = createUltBudget(3, 9000), t = {};
+  assert.equal(pool.draw(t, 1234), 1234);
+  pool.tag(500);
+  pool.paying(() => assert.equal(pool.draw(t, 500), 500));
+  assert.deepEqual(pool.targets(), []);
 });
 
-test("남은 wave 가 없으면 직접 타격을 줄이지 않는다 (지급할 곳 없는 피해 소실 방지)", () => {
-  const pool = createWavePool(2);
-  pool.payout(0, true); pool.payout(1, true);
-  assert.equal(pool.reduce(500), 500);
-  assert.equal(createWavePool(0).reduce(500), 500);
+test("늦게 들어온 표적은 남은 wave 몫만 받는다", () => {
+  const pool = createUltBudget(10, 10000), a = {}, b = {};
+  let ta = 0, tb = 0;
+  for (let i = 0; i < 10; i++) pool.paying(() => { ta += pool.payout(i, a); if (i >= 9) tb += pool.payout(i, b); });
+  assert.equal(ta, 10000);
+  assert.ok(tb < 10000 * 0.5 && tb > 0, `${tb}`);
 });
 
-test("useSkill5 는 wave 에서 새 피해를 굴리지 않는다", async () => {
-  const { readFileSync } = await import("node:fs");
-  const src = readFileSync("src/game/entities/Player.ts", "utf8");
-  const i = src.indexOf("const n = wavePlan.at.length;");
-  assert.ok(i > -1);
-  const block = src.slice(i, src.indexOf("switch (key5) {", i));
-  assert.doesNotMatch(block, /rd\(|rollDamage\(/, "wave 는 풀 지급만 한다");
-  assert.match(src, /dmg: wavePool\.reduce\(r\.dmg\)/, "직접 타격은 줄여서 넣는다");
-  assert.match(readFileSync("src/game/scenes/WorldScene.ts", "utf8"), /ultPool\?\.credit\(dmg\)/, "적중 시 적립");
+test("1차·2차 궁극기 모두 예산을 쓰고, 적은 피해를 받기 전에 예산을 거친다", () => {
+  const player = readFileSync(new URL("../src/game/entities/Player.ts", import.meta.url), "utf8");
+  assert.equal(player.match(/this\.startUltBudget\(/g)?.length, 2);
+  assert.match(player, /startUltBudget\(1, ult5HoldOf/);
+  assert.match(player, /startUltBudget\(2, ult5bHoldOf/);
+  for (const f of ["Enemy", "Boss"]) {
+    const src = readFileSync(new URL(`../src/game/entities/${f}.ts`, import.meta.url), "utf8");
+    assert.match(src, /dmg = this\.scene\.notePlayerHit\?\.\(dmg, this\) \?\? dmg/);
+  }
 });

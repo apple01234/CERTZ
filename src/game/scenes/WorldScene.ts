@@ -2804,7 +2804,12 @@ export class WorldScene extends Phaser.Scene {
       : stageIntroOf(parsed.ch, parsed.sub);
     const seenKey = isChapterIntro ? parsed.ch : stageIntroSeenKey(parsed.ch, parsed.sub);
     if (!spec?.shots.length || (spec.once !== false && this.cutsceneSeen.includes(seenKey))) return false;
-    const shots = resolveChapterIntroShots(spec, {
+    /* 2026-11-13 (유저 지시 "맵 보여주는 컷씬 빼기") — 대사 없이 맵만 훑는 컷은 재생하지 않는다.
+     *  대사가 달린 컷만 남기고 카메라는 플레이어에 둔다(팬·줌 없음). 남는 컷이 없으면 false 를
+     *  돌려 호출부의 기존 폴백(챕터 카드 + 구역 인트로 대사)이 그 구역을 맡는다. */
+    const talk = spec.shots.filter((s) => s.dialogue).map((s) => ({ ...s, focus: "player" as const, zoom: undefined, panMs: 120 }));
+    if (!talk.length) return false;
+    const shots = resolveChapterIntroShots({ ...spec, shots: talk }, {
       width: this.stageW, height: this.stageH, entry: this.entryHome, feature: this.portalHome, player: this.player,
     }).map((shot) => {
       const who = shot.dialogue ? cutsceneCharacter(DIALOGUES[shot.dialogue]?.speaker) : undefined;
@@ -10394,10 +10399,16 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  notePlayerHit(dmg: number) {
-    if (!Number.isFinite(dmg)) return;
-    this.player?.ultPool?.credit(dmg); // 궁극기 직접 타격이 실제로 들어간 만큼 wave 풀에 적립
+  /** 적이 플레이어 피해를 받기 직전에 부른다. 궁극기 타격이면 예산 인출액으로 바뀐 값을 돌려준다. */
+  notePlayerHit(dmg: number, target?: Enemy | Boss): number {
+    if (!Number.isFinite(dmg)) return dmg;
+    const p = this.player;
+    if (target && p) {
+      const a = p.ultPool ? p.ultPool.draw(target, dmg) : dmg;
+      dmg = a !== dmg || !p.ultPool2 ? a : p.ultPool2.draw(target, dmg);
+    }
     if (dmg > this.statBestHit) this.statBestHit = Math.round(dmg);
+    return dmg;
   }
 
   onPlayerDead() {

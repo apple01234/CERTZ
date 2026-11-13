@@ -1,6 +1,6 @@
 {
   "name": "nextjs_tailwind_shadcn_ts",
-  "version": "2.2.26",
+  "version": "2.2.27",
   "private": true,
   "scripts": {
     "dev": "node server.js 2>&1 | tee dev.log",

@@ -196,6 +196,8 @@ const targets=Array.from({length:snapshots?3:count},(_,id)=>({id,active:true,ali
      *  프로덕션 구현(Player.ts:3523)과 동일한 의미. */
     getAllTargetsIn(radius){return targets.filter(t=>t.active&&Math.hypot(t.x-this.x,t.y-this.y)<=radius);},
     targetsAround(x,y,radius){const found=targets.filter(t=>t.active&&(returnAll||Math.hypot(t.x-x,t.y-y)<=radius));if(now===contract.at)finalCandidates.push(...found.map(t=>t.id));return found;},
+    /* 2026-11-13 — 표적당 예산은 tests/ult-waves.test.mjs 가 고정한다. 여기선 판정 형태만 본다. */
+    startUltBudget(){return {tag:d=>d};},
     rollDamage(m,skill,forceCrit=false){assert.equal(this.ultSlot,2,'slot multiplier context');assert.equal(skill,true);rolls.push({at:now,m,forceCrit});return {dmg:m*500,crit:forceCrit};}});
   // Earlier attacks run normally; targets are placed independently immediately
   // before the real final callback. Rotation uses translated world coordinates.

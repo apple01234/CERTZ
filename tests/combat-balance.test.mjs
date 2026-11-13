@@ -23,9 +23,9 @@ test('본편 보스: 노말 전투 길이가 목표 밴드 안이다', () => {
   assert.ok(bosses.length >= 20, '영프 10 + 그랜드 플레닛 10 보스');
   for (const r of bosses) {
     assert.ok(BOSS_STAGE_STATS[r.key], `${r.key}: 본편 보스는 실효 스탯 표에 있어야 한다`);
-    const [lo, hi] = r.key.startsWith('dlc') ? [500, 1600] : [120, 500];
+    const [lo, hi] = r.key.startsWith('dlc') ? [450, 1300] : [120, 500];
     assert.ok(r.bossHtk >= lo && r.bossHtk <= hi, `${r.key}: 기본공격 ${r.bossHtk}타 (목표 ${lo}~${hi})`);
-    assert.ok(r.bossHitsToDie >= 3.5, `${r.key}: 보스에게 ${r.bossHitsToDie}대에 죽는다 (3.5대 이상)`);
+    assert.ok(r.bossHitsToDie >= 5, `${r.key}: 보스에게 ${r.bossHitsToDie}대에 죽는다 (5대 이상)`);
   }
   // 표의 키는 전부 실제 보스 구역이어야 한다(오타 방지).
   for (const k of Object.keys(BOSS_STAGE_STATS)) assert.ok(STAGES[k]?.boss, `${k} 는 보스 구역이 아니다`);
