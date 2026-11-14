@@ -6092,3 +6092,16 @@ npm test 706/706, tsc EXIT 0, lint:strict EXIT 0, next build EXIT 0
 
 - 유저 지시 "스토리 쳐 바꾸지마 (이름 등등)" → 직전 커밋 1f8e5d0(보스·콘텐츠명 교체, 이현→리엘, 장→화, 칼리야 병기, 아이린·데스크니스 문장 추가, 태을선인 초상 키 등)을 전부 되돌렸다. 이름·대사는 1fbd2ff 상태.
 - 되돌린 범위에 보스 의뢰문 조사 수정(objJosa)과 새 테스트 canon-visible-names 도 포함된다. 전체 802/802.
+
+## Task — 2026-11-14 (버전 유지, 빌드 없음, 세이브 스키마 2→3): 옛 '9개의 바다' 잔재 제거
+
+- 유저 지시 "9개의 바다 잔재 전부 없애" + 범위 답 "내부 코드까지 전부". 동시에 "스토리 쳐 바꾸지마" — 영프 정본 스토리 문구·인물 이름은 건드리지 않았다(해롤드 해전의 '해역' 등 유지).
+- **식별자**: `howlrstone`→`lilacworld`(파일·키·상수), 대사 키 `howl*`→`lw*`, 옛 보스 키 nidhog·surt·fenrir·skoll·hati·gram·abudditos·vord·jorm·nagr → blackwyrm·flamegiant·greedwolf·twinwolf·twinmate·warden·doomwyrm·riftwarden·unionserpent·angelknight, 테마 키 alfheim·muspelheim·niflheim·nidavellir·hel → fairyglade·emberland·frostland·forgehall·duskrealm, helhound→duskhound, valkyrie/valk→wingmaiden, dish_yggfeast→dish_unionfeast. 파일 323개 이름 변경(보스 시트·초상·아이콘·BGM·타일). forest/kingdom/cave/abyss 는 일반 단어라 키로 유지.
+- **화면**: 보스 이름(탐식의 흑룡·화염의 거인·탐욕의 늑대·교만의 쌍랑·혈안의 문지기·종언의 마룡·재림의 파수꾼·연합을 삼키는 뱀·재림의 천사기사), 쿠소디아 장비·피규어 → 왕국, '세계수'를 '심층 수련장'으로 기계 치환해 깨진 문장 5곳, 없는 '숲의 신전' 안내 퀘스트 → 실제 목적지(라일락과 만난 절벽 1-1), UI '해역' → '지역', 헬 하운드 → 황혼 하운드. 의뢰문 조사 objJosa.
+- **죽은 데이터 삭제**: 옛 9지역 걷는 대사(stageDialogue 18블록), 이어하기 라벨 옛 지명, 쓰이지 않던 옛 화자 초상 5개. 주석·스크립트·배포 안내문(APK 안내·CREDITS·CHANGELOG)의 옛 고유명도 교체. README 문장 삭제.
+- **세이브 이관**: `src/game/legacyKeys.ts` — v3 이전 세이브의 문자열 값·객체 키를 새 키로(플레이어 이름·친구 이름 제외). `migrateSave` 첫 단계, `resolveStage` 도 옛 스테이지 키 해석. 저장 버전 2→3: 구버전 클라이언트(APK)가 새 세이브를 받아 모르는 키를 버리고 덮어쓰는 것을 서버 버전 검사로 막는다.
+- **거래소 서버**(accounts/index.js): 옛 보스 드롭 6종 키를 새 키로 읽는 LEGACY_ITEM.
+- 옛 키는 legacyKeys.ts·accounts LEGACY_ITEM·테스트 금지어 목록·docs/worklog(역사)에만 남는다.
+- 테스트: `tests/nine-seas-removed.test.mjs` 신규(재유입·파일명·세이브 이관·조사), 세이브 버전 하드코딩 테스트 2개를 현재 버전 기준으로. 전체 807/807, tsc·eslint 통과.
+- 브라우저(개발 서버): 영프 1-1·14-5, DLC 2곳, 재림 5·10·15, GM 보스 6종 — 새 보스 이름·그림 키·BGM 재생 확인, 에셋 404 0건, 페이지 오류 0건.
+- 미검증·주의: 옛 세이브 실제 브라우저 로드(단위 테스트로 대체), 서로 다른 버전 사이 멀티플레이(스테이지 키가 달라 같은 맵으로 안 보일 수 있음), 서버 배포. 앱 업데이트 전 APK 사용자는 새 세이브를 클라우드에서 받을 수 없다는 안내가 뜬다(의도).
