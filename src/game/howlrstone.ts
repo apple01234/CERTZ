@@ -4,7 +4,7 @@ import { CHAPTER_STORY_PLAN } from "./chapterStoryPlan";
  *
  * 왜 별도 모듈인가
  * ----------------
- * `stages.ts` 의 `CHAPTERS`(본편 9챕터 + 그랜드 플래닛 DLC 10챕터)는
+ * `stages.ts` 의 `CHAPTERS`(본편 9챕터 + 그랜드 플레닛 DLC 10챕터)는
  * `tests/story-portraits-audio.test.mjs` 가 "기존 챕터/인덱스/대사/밸런스 보존"으로
  * **불변식**을 걸어 둔 계약이다. 영프 편은 그 배열에 끼워 넣지 않고
  * **별도 배열 + 전용 밸런스 곡선(scaleMul)** 으로 덧붙인다.
@@ -286,7 +286,7 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
    * ══════════════════════════════════════════════════════════════════════ */
   {
     key: "howlrstone1",
-    title: "영프 1장 — 전설의 시작",
+    title: "영프 1화 — 전설의 시작",
     subtitle: "왕립도서관 · 「웨폰마스터를 위한 정리서」 · 스칼렛의 왕조 탈환",
     episodes: "1화",
     stages: 4,
@@ -312,7 +312,7 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
   },
   {
     key: "howlrstone2",
-    title: "영프 2장 — 어둠이 커지기 시작했을 때",
+    title: "영프 2화 — 어둠이 커지기 시작했을 때",
     subtitle: "에스테반 왕국 · 아덴하르 총리 · 에벤트왕국의 서신",
     episodes: "2화",
     stages: 4,
@@ -335,7 +335,7 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
   },
   {
     key: "howlrstone3",
-    title: "영프 3장 — 시작된 전쟁",
+    title: "영프 3화 — 시작된 전쟁",
     subtitle: "상어전함 · 바다의 군단장 해롤드 · 크라켄",
     episodes: "3화",
     stages: 5,
@@ -363,7 +363,7 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
   },
   {
     key: "howlrstone4",
-    title: "영프 4장 — 석양으로 물든 바다",
+    title: "영프 4화 — 석양으로 물든 바다",
     subtitle: "에벤트 왕국 · 아리스텔라(아리) · 에벤트이안(리안)",
     episodes: "4화",
     stages: 4,
@@ -386,8 +386,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
   },
   {
     key: "howlrstone5",
-    title: "영프 5장 — 협상 그리고 연합",
-    subtitle: "조선시대 왕국 · 카시엘로아(시엘) · 라일락 연합 결성",
+    title: "영프 5화 — 협상 그리고 연합",
+    subtitle: "칼리야(조선시대 왕국) · 카시엘로아(시엘) · 라일락 연합 결성",
     episodes: "5화",
     stages: 4,
     intro: "chapterIntroHowlrstone5",
@@ -413,7 +413,7 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
   },
   {
     key: "howlrstone6",
-    title: "영프 6장 — 초월자",
+    title: "영프 6화 — 초월자",
     subtitle: "생명의 초월자 루시페르(루시) · 인피니트보석의 자아",
     episodes: "6화",
     stages: 4,
@@ -437,8 +437,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
   },
   {
     key: "howlrstone7",
-    title: "영프 7장 — 군단장들과의 전투",
-    subtitle: "해롤드 · 베로니카·딘 · 엔젤릭 영프·거대 골렘",
+    title: "영프 7화 — 군단장들과의 전투",
+    subtitle: "해롤드 · 베로니카·딘·아이린 · 엔젤릭 영프·거대 골렘",
     episodes: "7화",
     stages: 5,
     intro: "chapterIntroHowlrstone7",
@@ -453,7 +453,7 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
     main: "x3_orcwarrior",
     beats: [
       { sub: 2, dialogue: "howlGolem", quest: { id: "hw11", type: "hunt", title: "엔젤릭 영프와 거대한 골렘", desc: "근위대장이 더 이상 막기 어려운 것 같았다 — 엔젤릭 영프와 거대한 골렘이 있었기 때문이다. 골렘을 무너뜨려라.", need: 10, targetKey: "x3_ogre", targetLabel: "거대한 골렘", reward: Math.round(3400 * G), expReward: 12355 } },
-      { sub: 3, dialogue: "howlRiande", quest: { id: "hw12", type: "hunt", title: "\"3분뒤에 보시죠\"", desc: "리안이 차크람을 던지고 이현이 도술을 사용했다. 2대2 교전에서 베로니카의 부하들을 쓸어라.", need: 8, targetKey: "x3_wogol", targetLabel: "베로니카의 부하", reward: Math.round(3800 * G), expReward: 12355 } },
+      { sub: 3, dialogue: "howlRiande", quest: { id: "hw12", type: "hunt", title: "\"3분뒤에 보시죠\"", desc: "리안이 차크람을 던지고 리엘이 도술을 사용했다. 2대2 교전에서 베로니카의 부하들을 쓸어라.", need: 8, targetKey: "x3_wogol", targetLabel: "베로니카의 부하", reward: Math.round(3800 * G), expReward: 12355 } },
       { sub: 4, dialogue: "howlSwords", quest: { id: "hw13", type: "hunt", title: "두 전사의 격전", desc: "서로의 검이 맞댈수록 천둥과 땅이 갈라졌다. 검은 드래곤의 잔재를 베어라.", need: 8, targetKey: "x2_darkhound", targetLabel: "검은 드래곤의 잔재", reward: Math.round(4200 * G), expReward: 12355 } }
     ],
     repeat: {need: 32, gold: Math.round(260 * G), exp: 260, title: "[반복] 군단장 전선", desc: "각 왕국에 배치된 군단장들 — 계속 부대를 소모시켜라."},
@@ -462,7 +462,7 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
   },
   {
     key: "howlrstone8",
-    title: "영프 8장 — 두 전사의 격전",
+    title: "영프 8화 — 두 전사의 격전",
     subtitle: "페르온(다크엑스칼리버) vs 아리(솔라플래임이그니션소드)",
     episodes: "8화",
     stages: 5,
@@ -486,7 +486,7 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
   },
   {
     key: "howlrstone9",
-    title: "영프 9장 — 과거의 향기는 라일락 꽃밭보다 진하다",
+    title: "영프 9화 — 과거의 향기는 라일락 꽃밭보다 진하다",
     subtitle: "라일락의 희생 · 페르온의 합류",
     episodes: "9화",
     stages: 4,
@@ -512,7 +512,7 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
   },
   {
     key: "howlrstone10",
-    title: "영프 10장 — 어둠의 성채",
+    title: "영프 10화 — 어둠의 성채",
     subtitle: "4개의 문(물·바람·번개·불) · 스칼렛 환영 4체",
     episodes: "10화",
     stages: 5,
@@ -543,7 +543,7 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
   },
   {
     key: "howlrstone11",
-    title: "영프 11장 — 어둠의 왕좌",
+    title: "영프 11화 — 어둠의 왕좌",
     subtitle: "빛의 아이온 · 어둠의 알다바오트",
     episodes: "11화",
     stages: 4,
@@ -567,7 +567,7 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
   },
   {
     key: "howlrstone12",
-    title: "영프 12장 — 운명",
+    title: "영프 12화 — 운명",
     subtitle: "저주 표식 · 제르와 란의 장벽",
     episodes: "12화",
     stages: 4,
@@ -592,7 +592,7 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
   },
   {
     key: "howlrstone13",
-    title: "영프 13장 — 최후의 일격",
+    title: "영프 13화 — 최후의 일격",
     subtitle: "태양의 표식 각성 · 스칼렛 격파",
     episodes: "13화",
     stages: 4,
@@ -608,7 +608,7 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
     main: "helhound",
     beats: [
       { sub: 2, dialogue: "howlSunMark", quest: { id: "hw22", type: "collect", title: "태양의 표식", desc: "보석이 깨지면서 태양의 표식이 검에 새겨졌다. 라일락 월드에 있는 모든 자의 염원을 모아라.", targetLabel: "라일락의 염원", reward: Math.round(4200 * G), expReward: 419529 } },
-      { sub: 3, dialogue: "howlEndTime", quest: { id: "hw23", type: "hunt", title: "THE END TIME", desc: "\"내가 이것만으로 끝날것이라고 생각하는거야?\" — 라일락월드의 반을 삼킨 어둠을 밀어내라.", need: 10, targetKey: "helhound", targetLabel: "삼켜진 자들", reward: Math.round(4800 * G), expReward: 419529 } }
+      { sub: 3, dialogue: "howlEndTime", quest: { id: "hw23", type: "hunt", title: "THE END TIME", desc: "\"내가 이것만으로 끝날것이라고 생각하는거야?\" — 라일락 월드의 반을 삼킨 어둠을 밀어내라.", need: 10, targetKey: "helhound", targetLabel: "삼켜진 자들", reward: Math.round(4800 * G), expReward: 419529 } }
     ],
     repeat: {need: 36, gold: Math.round(340 * G), exp: 340, title: "[반복] 왕좌 수복", desc: "어둠의 왕좌가 무너졌다 — 남은 잔재를 계속 정화하자."},
     lvGate: {enter: 95, mid: 101},
@@ -616,7 +616,7 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
   },
   {
     key: "howlrstone14",
-    title: "영프 14장 — THE END TIME",
+    title: "영프 14화 — THE END TIME",
     subtitle: "어둠의 완전체 · 시간의 초월자",
     episodes: "14화",
     stages: 5,
@@ -640,7 +640,7 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
   },
   {
     key: "howlrstone15",
-    title: "영프 15장 — New Beginning Not the End",
+    title: "영프 15화 — New Beginning Not the End",
     subtitle: "세계 복구 · 라일락 연합 · 선발대 결성",
     episodes: "15화",
     stages: 4,
@@ -655,7 +655,7 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
       { key: "x3_wogol", count: 3 }, { key: "minion", count: 3 }],
     main: "helhound",
     beats: [
-      { sub: 2, dialogue: "howlSerniumCall", quest: { id: "hw26", type: "collect", title: "[사연] 세르니움에서 온 연락", desc: "그랜드 플래닛에 있는 세르니움에서 에벤트왕국에 연락이 왔다. 파견 선발대를 준비하라.", targetLabel: "선발대 편성표", reward: Math.round(6600 * G), expReward: 16687047 } },
+      { sub: 2, dialogue: "howlSerniumCall", quest: { id: "hw26", type: "collect", title: "[사연] 세르니움에서 온 연락", desc: "그랜드 플레닛에 있는 세르니움에서 에벤트왕국에 연락이 왔다. 파견 선발대를 준비하라.", targetLabel: "선발대 편성표", reward: Math.round(6600 * G), expReward: 16687047 } },
       { sub: 3, dialogue: "", quest: { id: "hw27", type: "hunt", title: "[기믹] 남은 어둠", desc: "보석의 힘과 각자의 힘, 무수히 많은 시간과 추억들은 완전히 리셋되지 않았다. 남은 어둠을 걷어라.", need: 8, targetKey: "x3_wogol", targetLabel: "남은 어둠", reward: Math.round(7400 * G), expReward: 16687047 } }
     ],
     repeat: {need: 36, gold: Math.round(340 * G), exp: 340, title: "[반복] 왕좌 수복", desc: "어둠의 왕좌가 무너졌다 — 남은 잔재를 계속 정화하자."},

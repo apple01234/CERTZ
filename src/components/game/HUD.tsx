@@ -398,7 +398,7 @@ export function HUD({
           </button>
           <button
             onClick={onOpenContent}
-            aria-label={isLocked("content") ? `콘텐츠 — Lv${lockLv("content")}에 열립니다` : "콘텐츠 열기 (심연의 탑/일일 시련/제작/심연 상점/환생)"}
+            aria-label={isLocked("content") ? `콘텐츠 — Lv${lockLv("content")}에 열립니다` : "콘텐츠 열기 (무한의 탑/일일 시련/제작/심연 상점/환생)"}
             className={`game-chip pointer-events-auto relative flex h-9 w-9 items-center justify-center active:scale-95 ${isLocked("content") ? "text-white/40" : "text-[#d0b0ff]"}`}
           >
             <GameIcon name="boss" size={18} dim={isLocked("content")} />

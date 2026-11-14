@@ -283,7 +283,7 @@ export type SaveData = {
   fifth2Step?: number;
   fifth2Count?: number;
   fifth2Done?: boolean;
-  /* ----- v4.0.0 바르가 업데이트 (균열 수비전·수집형 성장) ----- */
+  /* ----- v4.0.0 원정 업데이트 (균열 수비전·수집형 성장) ----- */
   /** 피규어 도감 (보유 키 목록 — 보유만으로 보너스) */
   figures?: string[];
   /** 피규어 조각 (중복 가챠/업적 보상 — 성좌·배지·스킨 교환 재화) */

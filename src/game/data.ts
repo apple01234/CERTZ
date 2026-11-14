@@ -150,7 +150,7 @@ export type ItemKey =
   | "buff_king"
   /* v3.0.15 (#13) — eert 큐브 (메이플 큐브 시스템 — 잠재옵션 리롤) */
   | "eert_cube"
-  /* v4.0.0 — 바르가 업데이트 */
+  /* v4.0.0 — 원정 업데이트 */
   | "exp_book"
   | "exp_book_s" | "exp_book_m" | "exp_book_l" // v1.2.0 (#15) — 경험치 책 3종
   | "tier_cube"
@@ -432,20 +432,20 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
    *  보스별 1종, 100% 드롭. 상점 에픽 대비 확실히 강한 수치. */
   bd_guardian: { key: "bd_guardian", kind: "accessory", name: "수호자의 문장", icon: "i_bd_guardian", price: 0, tier: "legend", maxHp: 90, crit: 5, slot: "ring", tradeLock: true, bossDrop: "심연의 수호자 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_behemoth: { key: "bd_behemoth", kind: "accessory", name: "침몰의 심장", icon: "i_bd_behemoth", price: 0, tier: "legend", maxHp: 120, def: 2, slot: "pendant", tradeLock: true, bossDrop: "침몰의 선장 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_nidhog: { key: "bd_nidhog", kind: "accessory", name: "탐식의 비늘", icon: "i_bd_nidhog", price: 0, tier: "legend", crit: 8, maxHp: 60, slot: "ring", tradeLock: true, bossDrop: "니드호그 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_surt: { key: "bd_surt", kind: "accessory", name: "화염 정령의 인장", icon: "i_bd_surt", price: 0, tier: "legend", crit: 10, slot: "pendant", tradeLock: true, bossDrop: "수르트 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_fenrir: { key: "bd_fenrir", kind: "accessory", name: "탐욕의 속니", icon: "i_bd_fenrir", price: 0, tier: "legend", crit: 12, maxHp: 50, slot: "ring", tradeLock: true, bossDrop: "펜리르 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_skoll: { key: "bd_skoll", kind: "accessory", name: "교만의 쌍랑 귀걸이", icon: "i_bd_skoll", price: 0, tier: "legend", crit: 8, maxHp: 80, slot: "pendant", tradeLock: true, bossDrop: "스콜&하티 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_gram: { key: "bd_gram", kind: "accessory", name: "대지의 핵", icon: "i_bd_gram", price: 0, tier: "legend", maxHp: 150, def: 3, slot: "ring", tradeLock: true, bossDrop: "가름 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_nidhog: { key: "bd_nidhog", kind: "accessory", name: "탐식의 비늘", icon: "i_bd_nidhog", price: 0, tier: "legend", crit: 8, maxHp: 60, slot: "ring", tradeLock: true, bossDrop: "탐식의 흑룡 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_surt: { key: "bd_surt", kind: "accessory", name: "화염 정령의 인장", icon: "i_bd_surt", price: 0, tier: "legend", crit: 10, slot: "pendant", tradeLock: true, bossDrop: "화염의 거인 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_fenrir: { key: "bd_fenrir", kind: "accessory", name: "탐욕의 속니", icon: "i_bd_fenrir", price: 0, tier: "legend", crit: 12, maxHp: 50, slot: "ring", tradeLock: true, bossDrop: "탐욕의 늑대 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_skoll: { key: "bd_skoll", kind: "accessory", name: "교만의 쌍랑 귀걸이", icon: "i_bd_skoll", price: 0, tier: "legend", crit: 8, maxHp: 80, slot: "pendant", tradeLock: true, bossDrop: "교만의 쌍랑 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_gram: { key: "bd_gram", kind: "accessory", name: "대지의 핵", icon: "i_bd_gram", price: 0, tier: "legend", maxHp: 150, def: 3, slot: "ring", tradeLock: true, bossDrop: "혈안의 문지기 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_abysslord: { key: "bd_abysslord", kind: "accessory", name: "심연의 군주의 관", icon: "i_bd_abysslord", price: 0, tier: "legend", crit: 14, maxHp: 100, slot: "pendant", tradeLock: true, bossDrop: "심연의 군주 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_abudditos: { key: "bd_abudditos", kind: "accessory", name: "마룡의 계약서", icon: "i_bd_abudditos", price: 0, tier: "legend", crit: 18, maxHp: 130, slot: "pendant", tradeLock: true, bossDrop: "아부디토스 드롭 — 최고 보스 전리품 · 거래소 예정" },
+  bd_abudditos: { key: "bd_abudditos", kind: "accessory", name: "마룡의 계약서", icon: "i_bd_abudditos", price: 0, tier: "legend", crit: 18, maxHp: 130, slot: "pendant", tradeLock: true, bossDrop: "종언의 마룡 드롭 — 최고 보스 전리품 · 거래소 예정" },
   /* v1.0.15 (재림 전리품) — 재림 지역 보스 3종 전용 드롭.
    *  수치는 기존 9종의 강함 계층(스콜 8/80 → 아부디토스 18/130)을 이어받아 배치:
    *  vord(HP 42000) < jorm(60000) < nagr(95000) 순으로 강화. 슬롯은 ring/pendant 교차로
    *  기존 유물과 세트를 맞출 때 선택지가 생기게 했다. 아이콘은 기존 i_bd_* 재활용(신규 에셋 0). */
-  bd_vord: { key: "bd_vord", kind: "accessory", name: "파수꾼의 지진핵", icon: "i_bd_guardian", price: 0, tier: "legend", def: 4, maxHp: 160, slot: "ring", tradeLock: true, bossDrop: "재림의 파수꾼 베오르드 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_vord: { key: "bd_vord", kind: "accessory", name: "파수꾼의 지진핵", icon: "i_bd_guardian", price: 0, tier: "legend", def: 4, maxHp: 160, slot: "ring", tradeLock: true, bossDrop: "재림의 파수꾼 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_jorm: { key: "bd_jorm", kind: "accessory", name: "연합의 독니", icon: "i_bd_nidhog", price: 0, tier: "legend", crit: 16, atk: 12, slot: "ring", tradeLock: true, bossDrop: "탐식의 뱀 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_nagr: { key: "bd_nagr", kind: "accessory", name: "종언의 천사인장", icon: "i_bd_abudditos", price: 0, tier: "legend", crit: 20, maxHp: 150, def: 3, slot: "pendant", tradeLock: true, bossDrop: "나그라파르 드롭 — 재림 최종 전리품 · 거래소 예정" },
+  bd_nagr: { key: "bd_nagr", kind: "accessory", name: "종언의 천사인장", icon: "i_bd_abudditos", price: 0, tier: "legend", crit: 20, maxHp: 150, def: 3, slot: "pendant", tradeLock: true, bossDrop: "재림의 천사기사 드롭 — 재림 최종 전리품 · 거래소 예정" },
   /* ================= v1.0.2 (#GM아이템) — 관리자 전용 테스트 장비 =================
    *  일반 유저는 어떤 경로로도 획득 불가 (상품 목록/드롭 테이블 미포함 + gmOnly 거래 차단).
    *  지급은 GM 패널(서버 롤 검증 통과자)에서만. tradeLock으로 골드 판매도 차단. */
@@ -486,7 +486,7 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
    *  BM(에메랄드)로만 구매 가능 + 골드 판매가 5000G (아주 비싼 가격).
    *  장비 행의 [eert] 버튼으로 사용하며 1회 사용마다 1개 소모. */
   eert_cube: { key: "eert_cube", kind: "consumable", name: "eert 큐브", icon: "item_eert_cube", price: 12000, bmPrice: 8, bmOnly: true, sellPrice: 5000, tier: "epic" },
-  /* v4.0.0 — 바르가 업데이트 아이템 */
+  /* v4.0.0 — 원정 업데이트 아이템 */
   exp_book: { key: "exp_book", kind: "consumable", name: "경험치 책", icon: "i_exp_book", price: 5000, bmPrice: 3, bmOnly: true, sellPrice: 800, tier: "rare" },
   /* v1.2.0 (#15 경험치책 3종 — 메이플 성장책 오마주 · v1.2.1 비약→책):
    *  고급=현재 레벨 필요 EXP의 60%(Lv100 요구치 상한 — 2026-11-12) · 태풍=150%(1.5레벨어치) · 극한=즉시 +1레벨(200 미만).
@@ -583,7 +583,7 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   /* v1.1.0 (#19) — 프리미엄 완전 교체 코스튬 6종 (캐시상점 — 고가 고퀄 도트) */
   outfit_silver: { key: "outfit_silver", kind: "cosmetic", name: "은월의 검희", icon: "cost_silver_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
   outfit_crimson: { key: "outfit_crimson", kind: "cosmetic", name: "진홍의 마녀", icon: "cost_crimson_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
-  outfit_seraph: { key: "outfit_seraph", kind: "cosmetic", name: "성녀 세라피나", icon: "cost_seraph_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
+  outfit_seraph: { key: "outfit_seraph", kind: "cosmetic", name: "성녀의 예복", icon: "cost_seraph_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
   outfit_abyss: { key: "outfit_abyss", kind: "cosmetic", name: "심해의 가곡", icon: "cost_abyss_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
   outfit_nightmare: { key: "outfit_nightmare", kind: "cosmetic", name: "나이트메어 기사", icon: "cost_nightmare_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
   outfit_gilded: { key: "outfit_gilded", kind: "cosmetic", name: "황금 백작", icon: "cost_gilded_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
@@ -832,7 +832,7 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   /* v1.1.0 (#19) — 프리미엄 완전 교체 코스튬 6종 (서브컬처 도트) */
   outfit_silver: { key: "outfit_silver", name: "은월의 검희", icon: "cost_silver_idle0", desc: "은발에 얼음빛 검의 무희 — 설원을 걷는 귀갑 (남녀형)", price: 560, tint: 0xcfe4ff, slot: "outfit" },
   outfit_crimson: { key: "outfit_crimson", name: "진홍의 마녀", icon: "cost_crimson_idle0", desc: "적발의 마녀 — 심연의 마술을 다루는 자 (남녀형)", price: 560, tint: 0xff6a8a, slot: "outfit" },
-  outfit_seraph: { key: "outfit_seraph", name: "성녀 세라피나", icon: "cost_seraph_idle0", desc: "금발의 성녀 — 연합의 가호를 받는 기도사 (남녀형)", price: 560, tint: 0xffe8b0, slot: "outfit" },
+  outfit_seraph: { key: "outfit_seraph", name: "성녀의 예복", icon: "cost_seraph_idle0", desc: "금발의 성녀 — 연합의 가호를 받는 기도사 (남녀형)", price: 560, tint: 0xffe8b0, slot: "outfit" },
   outfit_abyss: { key: "outfit_abyss", name: "심해의 가곡", icon: "cost_abyss_idle0", desc: "청록 머리칼의 심해 술사 — 파도의 노래 (남녀형)", price: 560, tint: 0x5ad8d0, slot: "outfit" },
   outfit_nightmare: { key: "outfit_nightmare", name: "나이트메어 기사", icon: "cost_nightmare_idle0", desc: "백발의 암흑기사 — 악몽을 두르는 검은 갑주 (남녀형)", price: 560, tint: 0xbe78ff, slot: "outfit" },
   outfit_gilded: { key: "outfit_gilded", name: "황금 백작", icon: "cost_gilded_idle0", desc: "황금빛 귀족 — 부와 권력을 몸에 두른 자 (남녀형)", price: 560, tint: 0xffd06a, slot: "outfit" },
@@ -1023,7 +1023,7 @@ export const TRADE_PRICES: Record<string, number> = {
   bd_abudditos: 30, // 아부디토스 (최종 보스 — 텍스처 키 bd_abudditos 유지)
   /* v1.0.15 (재림 전리품) — 재림 지역 보스 3종: 기존 9종 최고가(30) 위로 계단식 배치.
    *  보스 HP 계층(42000 / 60000 / 95000)에 맞춰 36 / 42 / 52. */
-  bd_vord: 36,      // 재림의 파수꾼 베오르드 (재림 r5)
+  bd_vord: 36,      // 재림의 파수꾼 (재림 r5)
   bd_jorm: 42,      // 요르문간드 (재림 r10)
   bd_nagr: 52,      // 나그라파르 (재림 r15 — 재림 지역 최종)
 };
@@ -1664,7 +1664,7 @@ export type DialogueDef = { speaker: string; /** v1.0.2 (#초상화) — portrai
 /* ================= 스토리 대사 (v3.0.10 본게임 세계관 확정판) =================
  *  잠뜰 이전 서사 라인을 본게임 고유 세계관으로 통합·증축:
  *  연합 기록관과 다섯 왕국 — 연합의 가지로 빚은 룬 펜던트 속 정령 안내인,
- *  뿌리에서 깨어난 종언의 마룡 아부디토스, 흩어진 일곱 세계의 결정. */
+ *  뿌리에서 깨어난 종언의 마룡, 흩어진 일곱 세계의 결정. */
 
 export const DIALOGUES: Record<string, DialogueDef> = {
   /* vc251 — 수련 원정 9지역 삭제로 필드 정보 NPC 대사(fieldNpc_*)도 제거했다. */
@@ -1848,7 +1848,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
   },
 
   /* ══════════════════════════════════════════════════════════════════════════
-   * vc231 — 영프 편(하울르스톤: 영준 프린세스) 챕터 인트로 5종
+   * vc231 — 영프 편(라일락 월드: 영준 프린세스) 챕터 인트로 5종
    *  기획서 1기 15화 원문. 화자(스칼렛·아리·루시·도사)의 실제 대사는 원문 문장을 그대로 쓴다.
    * ══════════════════════════════════════════════════════════════════════════ */
   /* ── 1장: 절벽의 약속 — 정본 1.txt:4-34 (하루 · 라일락 · 펜던트) ──
@@ -1858,7 +1858,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     speaker: "라일락 연합의 기록자",
     lines: [
       "「태어난 곳도, 부모도, 살아갈 이유도 모르는 고아, 하루. 이웃집 부부가 그를 길렀기에 귀족가 아이들의 놀림거리가 되기 일쑤였습니다.」",
-      "「무리의 대장이자 귀족가의 막내인 디오가 하루를 밀었습니다. 하루는 간신히 절벽 끝을 붙잡았습니다.」",
+      "「무리의 대장이자 데스크니스 가문의 막내인 디오가 하루를 밀었습니다. 하루는 간신히 절벽 끝을 붙잡았습니다.」",
       "「그때 누군가 그의 손을 잡아 끌어올렸습니다. 연보라색 머리와 눈동자를 지닌 여자 — 라일락.」",
       "「그녀는 펜던트를 건네며 말했습니다. '이 펜던트가 너를 지켜 줄 거야. 기사단에 정식으로 들어와서 돌려줘.'」",
     ],
@@ -1919,8 +1919,9 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     speaker: "라일락 연합의 기록자",
     lines: [
       "「군단장들이 한꺼번에 움직였습니다. 해롤드, 베로니카, 딘 — 셋이 동시에요.」",
+      "「뱀파이어의 여왕 아이린도 베로니카·딘과 함께 죽은자들의 무덤에서 움직이고 있습니다.」",
       "「엔젤릭 영프와 거대 골렘이 근위대장을 붙잡고 있습니다. 혼자 버티고 계십니다.」",
-      "「리안 왕자와 이현 도사가 지원을 갑니다. 3분만 버티라고 하십니다.」",
+      "「리안 왕자와 리엘 도사가 지원을 갑니다. 3분만 버티라고 하십니다.」",
       "{name}, 군단장 전선을 뚫어야 어둠의 성채로 갈 수 있다.",
     ],
   },
@@ -1991,9 +1992,9 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     speaker: "라일락 연합의 기록자",
     lines: [
       "「세계가 되돌아왔습니다. 하지만 보석의 힘과 시간, 추억은 완전히 리셋되지 않았습니다.」",
-      "「영프왕국은 스칼렛왕국과 거의 통합됐고, 에스텔라왕국은 재건에 힘쓰고 있습니다.」",
+      "「영프왕국은 스칼렛왕국과 거의 통합됐고, 에스테반왕국은 재건에 힘쓰고 있습니다.」",
       "「그리고 — 세르니움에서 에벤트왕국에 연락이 왔습니다. 선발대를 준비하라고.」",
-      "{name}, 다음은 그랜드 플래닛이다. 이제 영프 마을에서 그곳으로 갈 수 있다.",
+      "{name}, 다음은 그랜드 플레닛이다. 이제 영프 마을에서 그곳으로 갈 수 있다.",
     ],
   },
 
@@ -2040,7 +2041,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     speaker: "어둠의 군주 스칼렛",
     lines: [
       "\"내가 이것만으로 끝날것이라고 생각하는거야?\"",
-      "스칼렛은 어둠의 완전체가 되어 라일락월드에 반을 삼켰다.",
+      "스칼렛은 어둠의 완전체가 되어 라일락 월드에 반을 삼켰다.",
       "\"너같은 도사가 신급에 초월자를 막을 수 있을거라고 생각하나?\"",
       "하지만 — 시간의 초월자가 모든 사람의 염원을 총알에 담아 정확하게 헤드샷을 하였다.",
     ],
@@ -2053,9 +2054,9 @@ export const DIALOGUES: Record<string, DialogueDef> = {
       "스칼렛이 파괴한 모든 것들이 돌아왔다. 하지만 완전히 리셋되지 않은 것들도 있었다 —",
       "보석의 힘과 각자의 힘, 그리고 무수히 많은 시간과 추억들.",
       "전쟁이 끝나고 각 왕국에는 큰 변화가 있었다. 가장 중요한 것은 라일락 연합의 탄생이었다.",
-      "영프왕국은 스칼렛왕국과 거의 통합이 되었고, 에스텔라왕국은 재건에 힘쓰고 있다.",
-      "그리고 — 그랜드 플래닛에 있는 세르니움에서 에벤트왕국에 연락이 왔다. 선발대를 준비하라고.",
-      "{name}, 다음은 그랜드 플래닛이다. 이제 영프 마을에서 그곳으로 갈 수 있다.",
+      "영프왕국은 스칼렛왕국과 거의 통합이 되었고, 에스테반왕국은 재건에 힘쓰고 있다.",
+      "그리고 — 그랜드 플레닛에 있는 세르니움에서 에벤트왕국에 연락이 왔다. 선발대를 준비하라고.",
+      "{name}, 다음은 그랜드 플레닛이다. 이제 영프 마을에서 그곳으로 갈 수 있다.",
     ],
   },
 };
@@ -2065,7 +2066,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
 /* vc149 (#23) — NPC 말투 개편: 챕터당 3→6줄 확장(반복감 제거) + 사람 냄새 나는 구어체.
  *  안내인(반말·장난기), 시스템 안내문이 아니라 "동행이 떠드는" 느낌으로 정리했다. */
 const WALK_AMBIENT: Record<ChapterKey, string[]> = {
-  /* vc186b DLC — 세계 구원 이후 그랜드플래닛 (기획서 2기) */
+  /* vc186b DLC — 세계 구원 이후 그랜드 플레닛 (기획서 2기) */
   dlcstargate: [
     "별모양 행성이 발밑에서 꿈틀거린다. 이건 땅이 아니라… 살아 있는 무언가다.",
     "저기 장미가 하나 피어 있어. 행성 전체가 저 한 송이에서 힘을 받고 있다더군.",
@@ -2158,7 +2159,7 @@ const WALK_AMBIENT: Record<ChapterKey, string[]> = {
   ],
   howlrstone5: [
     "도깨비가 길을 막았어. 부채 소리와 함께 분신이 나타나 쓸어버렸어 — 도사래.",
-    "조선시대 왕국의 영주 카시엘로아, 다들 시엘이라고 불러.",
+    "칼리야(조선시대 왕국)의 영주 카시엘로아, 다들 시엘이라고 불러.",
     "통신석과 이동석을 놓고 연합을 맺었어.",
     "라일락 연합이 만들어졌어. 다섯 왕국이 처음으로 같은 편이 됐어.",
   ],
@@ -2170,7 +2171,7 @@ const WALK_AMBIENT: Record<ChapterKey, string[]> = {
   ],
   howlrstone7: [
     "엔젤릭 영프와 거대한 골렘 — 근위대장이 혼자 버티고 있었어.",
-    "리안의 차크람과 이현의 도술. '3분뒤에 보시죠'라니, 참 멋있는 말이야.",
+    "리안의 차크람과 리엘의 도술. '3분뒤에 보시죠'라니, 참 멋있는 말이야.",
     "군단장들이 한꺼번에 움직였어. 해롤드, 베로니카, 딘.",
     "베로니카는 주술사, 딘은 흑마법사 — 둘이 붙으면 골치 아파.",
     "{name}, 이번엔 물러설 곳도 없어.",
@@ -2222,10 +2223,10 @@ const WALK_AMBIENT: Record<ChapterKey, string[]> = {
   ],
   howlrstone15: [
     "세계가 되돌아왔어. 하지만 보석의 힘과 시간과 추억은 완전히 리셋되지 않았어.",
-    "영프왕국은 스칼렛왕국과 거의 통합됐고, 에스텔라왕국은 재건 중이야.",
+    "영프왕국은 스칼렛왕국과 거의 통합됐고, 에스테반왕국은 재건 중이야.",
     "라일락 연합의 탄생 — 다섯 왕국이 처음으로 하나가 됐어.",
     "세르니움에서 연락이 왔어. 선발대를 준비하라고.",
-    "{name}, 다음은 그랜드 플래닛이다. 이제 영프 마을에서 그곳으로 갈 수 있다.",
+    "{name}, 다음은 그랜드 플레닛이다. 이제 영프 마을에서 그곳으로 갈 수 있다.",
   ],
 };
 
@@ -2791,7 +2792,7 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
    *
    *  종전엔 DLC 10챕터가 이 표에 없어서 vSpec 이 undefined 가 되고,
    *  마을 빌드가 1기 기본값(주민/마을 아이 + 초록 잔디 + 집 3채)으로 폴백했다.
-   *  그래서 그랜드플래닛 행성에 가도 라일락 월드 마을과 똑같이 보였다.
+   *  그래서 그랜드 플레닛 행성에 가도 라일락 월드 마을과 똑같이 보였다.
    *
    *  행성별로 houseTint(건물 색조)와 주민 2인(이름·스프라이트·대사키)을 분리한다.
    *  대사는 아래 VLG 표에 vlgDlc* 키로 등록한다.
@@ -3207,7 +3208,7 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
     speaker: "스칼렛",
     lines: [
       "\"내가 이것만으로 끝날것이라고 생각하는거야?\"",
-      "라일락월드의 반을 삼킨 어둠이 밀려왔다.",
+      "라일락 월드의 반을 삼킨 어둠이 밀려왔다.",
     ],
   },
   /* ── 14장: THE END TIME (14화) ── */
@@ -3229,7 +3230,7 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
   howlSerniumCall: {
     speaker: "라일락 연합의 기록자",
     lines: [
-      "그랜드 플래닛에 있는 세르니움에서 에벤트왕국에 연락이 왔다.",
+      "그랜드 플레닛에 있는 세르니움에서 에벤트왕국에 연락이 왔다.",
       "파견 선발대를 준비하라고. 다음 여정은 그랜드 플레닛에서 이어진다.",
     ],
   },

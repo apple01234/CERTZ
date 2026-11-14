@@ -852,7 +852,7 @@ export function BmShopPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => vo
               </div>
             ))}
             <div className="mt-2 rounded-md bg-white/[0.03] px-2 py-1.5">
-              <p className="text-[10px] font-black text-white/75">피규어 가챠 (혜택 — 바르가 원정대)</p>
+              <p className="text-[10px] font-black text-white/75">피규어 가챠 (혜택 — 차원 원정대)</p>
               {([0, 1, 2, 3] as const).map((g) => (
                 <p key={g} className="flex justify-between text-[9px] leading-snug text-white/55">
                   <span>{FIGURE_GRADE_META[g].name}</span>
@@ -2904,7 +2904,7 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
           >
             AP +50
           </button>
-          {/* vc186b — 운영자 DLC 임시 해금 (세계 구원 없이 그랜드플래닛 게이트 개방) */}
+          {/* vc186b — 운영자 DLC 임시 해금 (세계 구원 없이 그랜드 플레닛 게이트 개방) */}
           <button
             onClick={() => EventBus.emit("rpg:gm", { type: "dlc" })}
             className="rounded-lg border border-violet-300/40 bg-violet-400/10 px-2 py-2 text-[11px] font-black text-violet-200 hover:bg-violet-400/20 active:scale-95"
@@ -2919,7 +2919,7 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
           </button>
           {/* vc236 (지시 #4) — 영프 DLC 해금. 본편 cleared 만 세우는 위 버튼과 달리
               영프 엔딩 플래그(youngPrincessCleared)까지 세워 "영프를 본 것"으로 만든다.
-              영프 진입은 cleared, 그랜드플래닛 게이트는 youngPrincessCleared 로 갈리므로
+              영프 진입은 cleared, 그랜드 플레닛 게이트는 youngPrincessCleared 로 갈리므로
               두 플래그를 함께 다뤄야 막다른 길이 생기지 않는다. */}
           <button
             onClick={() => EventBus.emit("rpg:gm", { type: "youngprincess" })}
@@ -2975,14 +2975,14 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
           5차 전직 부여 시 전 스킬 ·극 강화 + 세부 직업 고유 궁극기(S) 즉시 해금. 무릉도장은 90초 동안 허수아비에게 누적 피해를 기록하는 훈련장입니다 (최고 기록 저장).
         </p>
 
-        {/* v4.0.0 — 바르가 콘텐츠 입구 */}
-        <p className="mb-1 mt-3 text-[11px] font-bold text-white/50">바르가 콘텐츠 (v4.0.0)</p>
+        {/* v4.0.0 — 원정 콘텐츠 입구 */}
+        <p className="mb-1 mt-3 text-[11px] font-bold text-white/50">원정 콘텐츠 (v4.0.0)</p>
         <div className="grid grid-cols-2 gap-1.5">
           <button
             onClick={() => EventBus.emit("rpg:gm", { type: "gate" })}
             className="rounded-lg border border-violet-300/50 bg-gradient-to-br from-violet-400/20 to-fuchsia-500/10 px-2 py-2 text-[11px] font-black text-violet-100 hover:from-violet-400/30 active:scale-95"
           >
-            🚪 바르가 수비전 입장
+            🚪 균열 수비전 입장
           </button>
           <button
             onClick={() => EventBus.emit("rpg:gm", { type: "closet" })}
@@ -3004,7 +3004,7 @@ export function GmPanel({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <p className="mt-1.5 rounded-lg border border-violet-300/20 bg-violet-400/5 px-2.5 py-1.5 text-[10px] leading-relaxed text-violet-200/70">
-          바르가 수비전 = 웨이브 디펜스 (매일 3회) · 균열 던전 = 60초 파밍 (매일 2회). GM 무료 뽑기는 10분마다 1회. 혜택 패널에서 출석부·일일 퀘스트·쿠폰을 확인하세요.
+          균열 수비전 = 웨이브 디펜스 (매일 3회) · 균열 던전 = 60초 파밍 (매일 2회). GM 무료 뽑기는 10분마다 1회. 혜택 패널에서 출석부·일일 퀘스트·쿠폰을 확인하세요.
         </p>
 
         {/* v4.6.0 — 전 보스 체험: 9챕터 보스를 스토리 스펙 그대로 즉시 체험 */}
@@ -3315,7 +3315,7 @@ export function PassPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
           <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-black/50">
             <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-200 transition-[width]" style={{ width: `${Math.min(100, (p.lvXp / PASS_LV_XP) * 100)}%` }} />
           </div>
-          <p className="mt-1 text-[9px] text-white/55">XP 획득: 토벌 +1 · 보스 +30 · 일일 퀘스트 수령 +40 · 바르가 수비전(게이트) 웨이브×2 · 시즌 미션 수령</p>
+          <p className="mt-1 text-[9px] text-white/55">XP 획득: 토벌 +1 · 보스 +30 · 일일 퀘스트 수령 +40 · 균열 수비전(게이트) 웨이브×2 · 시즌 미션 수령</p>
         </div>
 
         {/* v1.0.1 — 시즌 미션 (일일/주간 리텐션 보드 — 수령 시 패스 XP) */}
@@ -3990,7 +3990,7 @@ export function GamePanels({
   if (panel === "collection") return <CollectionPanel rpg={rpg} onClose={onClose} />; // v3.0.16 — 몬스터 컬렉션
   if (panel === "quest") return <QuestLogPanel questLog={questLog} rpg={rpg} onClose={onClose} />;
   if (panel === "boss") return <BossReplayPanel rpg={rpg} onClose={onClose} />; // v3.0.25 — 보스 재도전 전용 창 (퀘스트창과 분리)
-  if (panel === "isekai") return <IsekaiPanel rpg={rpg} onClose={onClose} />; // v4.0.0 — 바르가 원정대 (피규어/배지/룬/성좌/업적/랭킹)
+  if (panel === "isekai") return <IsekaiPanel rpg={rpg} onClose={onClose} />; // v4.0.0 — 차원 원정대 (피규어/배지/룬/성좌/업적/랭킹)
   if (panel === "benefit") return <BenefitPanel rpg={rpg} onClose={onClose} />; // v4.0.0 — 혜택 (출석부/일일 퀘스트/쿠폰)
   if (panel === "pass") return <PassPanel rpg={rpg} onClose={onClose} />; // v4.5.0 — 시즌 패스 (배틀패스)
   if (panel === "content") return <ContentPanel rpg={rpg} onClose={onClose} />; // v1.0.8 — 무한 콘텐츠 허브
@@ -4108,7 +4108,7 @@ function GuidePanel({ onClose }: { onClose: () => void }) {
 
 /* =====================================================================
  * v1.0.8 — 무한 콘텐츠 허브 (5탭)
- *  ① 심연의 탑 (무한 층수) · ② 심층 균열 (무한 티어) · ③ 일일 시련 (수정자 던전)
+ *  ① 무한의 탑 (무한 층수) · ② 심층 균열 (무한 티어) · ③ 일일 시련 (수정자 던전)
  *  ④ 연금 제작대 · ⑤ 심연 상점 · ⑥ 환생 + 펫 육성 — 총 10종 신규 무한 콘텐츠의 진입 허브
  * ===================================================================== */
 type ContentTab = "tower" | "trial" | "craft" | "abyss" | "rebirth" | "park" | "dojang"; // vc147 (#17) — "rank" 제거 (독립 랭킹창과 중복)
@@ -4142,7 +4142,7 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
   const trial = todayTrial();
   const trialCleared = inf.trialDone === (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })();
   const TABS: { id: ContentTab; label: string; on: string }[] = [
-    { id: "tower", label: "심연의 탑", on: "bg-purple-400 text-slate-900" },
+    { id: "tower", label: "무한의 탑", on: "bg-purple-400 text-slate-900" },
     { id: "trial", label: "시련·균열", on: "bg-rose-400 text-slate-900" },
     { id: "park", label: "파크", on: "bg-emerald-400 text-slate-900" },
     { id: "dojang", label: "훈련장", on: "bg-orange-400 text-slate-900" },
@@ -4188,7 +4188,7 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
         {tab === "tower" && (
           <div>
             <div className="mb-2 rounded-lg border border-purple-300/40 bg-purple-400/10 px-2.5 py-2">
-              <p className="text-[11px] font-black text-purple-100">심연의 탑 — 무한 층수 등반</p>
+              <p className="text-[11px] font-black text-purple-100">무한의 탑 — 무한 층수 등반</p>
               <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">층을 오를수록 적이 강해지고 보상도 커진다. 10층마다 보스가 막고(심층 10층마다 몬스터 ×2!), 10층마다 에메랄드 +3. 층 클리어마다 심연 코인 획득!</p>
             </div>
             <div className="mb-2 grid grid-cols-2 gap-1.5 text-center">
@@ -4438,10 +4438,10 @@ export function ContentPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => v
 type RankTabKind = "level" | "power" | "content";
 
 const CONTENT_RANK_MODES: [RankMode, string][] = [
-  ["gate", "바르가 수비전"],
+  ["gate", "균열 수비전"],
   ["closet", "균열 던전"],
   ["dojang", "무릉도장"],
-  ["tower", "심연의 탑"],
+  ["tower", "무한의 탑"],
 ];
 
 function RankListRows({ rows, metric }: { rows: RankRow[]; metric: "lv" | "power" }) {
@@ -4558,7 +4558,7 @@ function KingdomRankTab() {
     <div>
       <div className="mb-2 rounded-lg border border-yellow-300/40 bg-yellow-400/10 px-2.5 py-2">
         <p className="text-[11px] font-black text-yellow-100">왕국 랭킹 — 전설의 명예</p>
-        <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">환생 · 심연의 탑 기록 · 레벨 순으로 명예의 전당이 결정된다. 계정 패널에서 클라우드 백업(3분 자동)이 켜져 있으면 자동 등록!</p>
+        <p className="mt-0.5 text-[10px] leading-relaxed text-white/60">환생 · 무한의 탑 기록 · 레벨 순으로 명예의 전당이 결정된다. 계정 패널에서 클라우드 백업(3분 자동)이 켜져 있으면 자동 등록!</p>
         {/* vc283 (지시 #24) — 등록 조건을 화면에 명시한다.
          *  종전엔 아무 조건도 없어 1레벨 캐릭터도 집계됐다. 이제 서버(rankListFor)가
          *  4차 전직 미만을 걸러내므로, 조건을 모르면 "왜 내가 안 보이지"가 된다. */}
@@ -6376,7 +6376,7 @@ function KeymapPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
-/* ================= v4.0.0 — 바르가 원정대 (피규어/배지/룬/성좌/업적/랭킹) =================
+/* ================= v4.0.0 — 차원 원정대 (피규어/배지/룬/성좌/업적/랭킹) =================
  *  바르가 수집형 성장 시스템 통합 패널 */
 import {
   FIGURES, FIGURE_GRADE_META, BADGES, BADGE_MAP, RUNE_KINDS, RUNE_META, RUNE_SYNTH_COST, RUNE_MAX_TIER,
@@ -6418,11 +6418,11 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
     <div className="pointer-events-auto fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-[2px]" onPointerDown={onClose}>
       <div className="max-h-[min(88svh,640px)] w-[min(94vw,500px)] overflow-y-auto game-panel p-3.5 shadow-2xl sm:p-4" onPointerDown={(e) => e.stopPropagation()}>
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-sm font-black text-purple-200">바르가 원정대</p>
+          <p className="text-sm font-black text-purple-200">차원 원정대</p>
           <div className="flex items-center gap-1.5">
             <span className="rounded border border-amber-300/40 bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-black text-amber-200">조각 {shards}</span>
             <span className="rounded border border-sky-300/40 bg-sky-400/10 px-1.5 py-0.5 text-[10px] font-black text-sky-200">뽑기권 {tickets}</span>
-            <button onClick={onClose} aria-label="바르가 원정대 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>
+            <button onClick={onClose} aria-label="차원 원정대 닫기" className="flex h-7 w-7 items-center justify-center rounded-md border border-white/20 bg-black/40 text-white/80 hover:bg-black/70">✕</button>
           </div>
         </div>
 
@@ -6486,7 +6486,7 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
                 );
               })}
             </div>
-            <p className="mt-2 text-[10px] text-white/55">뽑기권 획득: 출석부 · 일일 퀘스트 · 바르가 수비전 정산 · GM 무료 뽑기(10분)</p>
+            <p className="mt-2 text-[10px] text-white/55">뽑기권 획득: 출석부 · 일일 퀘스트 · 균열 수비전 정산 · GM 무료 뽑기(10분)</p>
           </div>
         )}
 
@@ -6527,8 +6527,8 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
           <div>
             <p className="mb-2 text-[11px] font-bold text-white/60">룬 슬롯 4개 — 같은 룬 {RUNE_SYNTH_COST}개를 합성하면 상위 티어</p>
             {/* v1.0.14 피드백#12 — 룬 획득 경로를 "게이트 웨이브"라는 낯선 이름 대신
-             *  실제 콘텐츠명(바르가 수비전) + 실제 입장 위치(혜택 패널 티켓 카드)로 정확히 안내 */}
-            <p className="mb-2 text-[10px] leading-relaxed text-white/55">룬 획득: 바르가 수비전 웨이브 클리어 드롭(확률) · 조각 상점 교환(하단) — 수비전 입장은 혜택(🎁) 패널의 티켓 카드에서!</p>
+             *  실제 콘텐츠명(균열 수비전) + 실제 입장 위치(혜택 패널 티켓 카드)로 정확히 안내 */}
+            <p className="mb-2 text-[10px] leading-relaxed text-white/55">룬 획득: 균열 수비전 웨이브 클리어 드롭(확률) · 조각 상점 교환(하단) — 수비전 입장은 혜택(🎁) 패널의 티켓 카드에서!</p>
             <div className="mb-2 grid grid-cols-4 gap-1.5">
               {[0, 1, 2, 3].map((s) => {
                 const k = ik?.runeSlots?.[s] ?? null;
@@ -6554,7 +6554,7 @@ function IsekaiPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) {
                   <span className="text-base">{RUNE_META[kind].icon}</span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] font-black" style={{ color: RUNE_META[kind].color }}>{RUNE_META[kind].name} <span className="text-white/55">({RUNE_META[kind].stat === "atk" ? "공격" : RUNE_META[kind].stat === "def" ? "방어" : RUNE_META[kind].stat === "crit" ? "크리" : "HP"})</span></p>
-                    <p className="truncate text-[9px] text-white/55">{tiers.length ? tiers.map((x) => `T${x.t}×${x.n}`).join(" · ") : "보유 없음 — 바르가 수비전 웨이브 드롭(확률) · 조각 상점(하단)"}</p>
+                    <p className="truncate text-[9px] text-white/55">{tiers.length ? tiers.map((x) => `T${x.t}×${x.n}`).join(" · ") : "보유 없음 — 균열 수비전 웨이브 드롭(확률) · 조각 상점(하단)"}</p>
                   </div>
                   <button onClick={() => EventBus.emit("rpg:isekai", { action: "runeSynth", key: kind })} className={`rounded-lg border px-2 py-1 text-[10px] font-black active:scale-95 ${canSynth ? "border-purple-300/60 bg-purple-400/20 text-purple-100" : "border-white/10 bg-white/[0.03] text-white/55"}`}>합성</button>
                   <button onClick={() => EventBus.emit("rpg:isekai", { action: "runeEquip", key: kind + "#" + (tiers.length ? Math.max(...tiers.filter((x) => x.n > 0).map((x) => x.t)) : 1), slot: (ik?.runeSlots ?? [null, null, null, null]).indexOf(null) >= 0 ? (ik?.runeSlots ?? []).indexOf(null) : 0 })} className="rounded-lg border border-white/15 bg-white/[0.05] px-2 py-1 text-[10px] font-black text-white/80 active:scale-95">장착</button>
@@ -6749,7 +6749,7 @@ function RankTab({ ik }: { ik: NonNullable<RpgState["isekai"]> | undefined }) {
   return (
     <div>
       <div className="mb-2 grid grid-cols-3 gap-1">
-        {([["gate", "바르가 수비전"], ["closet", "균열 던전"], ["dojang", "무릉도장"], ["tower", "심연의 탑"]] as [RankMode, string][]).map(([k, label], idx) => (
+        {([["gate", "균열 수비전"], ["closet", "균열 던전"], ["dojang", "무릉도장"], ["tower", "무한의 탑"]] as [RankMode, string][]).map(([k, label], idx) => (
           <button key={k} onClick={() => setMode(k)} className={`rounded-lg border px-1 py-1.5 text-[10px] font-black ${mode === k ? "border-sky-300/60 bg-sky-400/20 text-sky-100" : "border-white/10 bg-white/[0.03] text-white/50"}`}>
             {/* vc291 — 모드마다 Gigapack rank 심볼(S/A/B/C)을 16px 로 재생.
              *  활성 탭에서만 루프시켜 동시 애니메이션 수를 1개로 묶는다(모바일 발열).
@@ -6825,7 +6825,7 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
     /* v1.0.7 — 파밍/보스 일일 퀘스트 2종 확장 (3종 → 5종) */
     { id: "farm", name: "오늘의 파밍", desc: "필드 아이템 드롭 40개 수집", goal: 40, prog: farms, reward: "뽑기권 1 + 골드 8,000" },
     { id: "boss", name: "보스 사냥", desc: "보스 1마리 처치 (재림/카오스 포함)", goal: 1, prog: bosses, reward: "골드 20,000 + 에메랄드 3" },
-    { id: "gate", name: "게이트 방어", desc: "바르가 수비전 1회 입장", goal: 1, prog: gateRuns, reward: "뽑기권 1 + 골드 5,000" },
+    { id: "gate", name: "게이트 방어", desc: "균열 수비전 1회 입장", goal: 1, prog: gateRuns, reward: "뽑기권 1 + 골드 5,000" },
     { id: "closet", name: "균열 던전", desc: "균열 던전 1회 입장", goal: 1, prog: closetRuns, reward: "뽑기권 1 + 에메랄드 2" },
   ];
   return (
@@ -6904,19 +6904,19 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
 
         {/* 티켓 현황 + 콘텐츠 입구 — v1.0.1 재충전 버튼 추가
          *  v1.0.14 피드백#12 — 진입로 수리: "게이트 웨이브 보상으로 룬을 얻을 수 있다는데 게이트 웨이브가 어디있음??"
-         *  → 바르가 수비전(게이트 웨이브) 콘텐츠는 실존(WorldScene buildGate/spawnGateWave — 웨이브 클리어시
+         *  → 균열 수비전(게이트 웨이브) 콘텐츠는 실존(WorldScene buildGate/spawnGateWave — 웨이브 클리어시
          *    40% 확률로 룬 T1 드롭)하는데 일반 유저용 입장 버튼이 없었었다(GM 패널 전용).
          *  티켓 카드에 [입장] 버튼을 추가해 유일하게 연결된 enterGate()/enterCloset() 경로(rpg:gm gate/closet —
          *  씬이 티켓 소모·중복 입장 방지까지 자체 검증)를 그대로 열어준다. WorldScene 수정 없는 UI-only 수리. */}
         <div className="mb-2.5 grid grid-cols-2 gap-1.5">
           <div className="rounded-lg border border-violet-300/30 bg-violet-400/10 px-2 py-1.5 text-center">
-            <p className="text-[9px] font-bold text-white/50">바르가 수비전 티켓</p>
+            <p className="text-[9px] font-bold text-white/50">균열 수비전 티켓</p>
             <p className="text-sm font-black text-violet-200">{ik?.tickets?.gate ?? 0}/3 남음</p>
             <div className="mt-1 flex gap-1">
               <button
                 disabled={(ik?.tickets?.gate ?? 0) <= 0}
                 onClick={() => EventBus.emit("rpg:gm", { type: "gate" })}
-                title={(ik?.tickets?.gate ?? 0) <= 0 ? "오늘 티켓 소진 — 재충전하거나 내일 다시!" : "바르가 수비전(웨이브 디펜스) 입장 — 웨이브 클리어마다 룬 드롭 기회!"}
+                title={(ik?.tickets?.gate ?? 0) <= 0 ? "오늘 티켓 소진 — 재충전하거나 내일 다시!" : "균열 수비전(웨이브 디펜스) 입장 — 웨이브 클리어마다 룬 드롭 기회!"}
                 className={`flex-1 rounded-md px-1.5 py-1 text-[10px] font-black active:scale-95 ${(ik?.tickets?.gate ?? 0) <= 0 ? "cursor-not-allowed bg-white/[0.06] text-white/55" : "bg-violet-400 text-slate-900 hover:bg-violet-300"}`}
               >
                 🚪 입장
@@ -6970,7 +6970,7 @@ function BenefitPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void }) 
           </div>
         </div>
         <div className="mb-2.5 grid grid-cols-3 gap-1.5">
-          <button onClick={() => EventBus.emit("ui:panel", { panel: "isekai" })} className="rounded-lg border border-purple-300/50 bg-purple-400/15 px-2 py-2 text-[11px] font-black text-purple-100 hover:bg-purple-400/25 active:scale-95">바르가 원정대 열기</button>
+          <button onClick={() => EventBus.emit("ui:panel", { panel: "isekai" })} className="rounded-lg border border-purple-300/50 bg-purple-400/15 px-2 py-2 text-[11px] font-black text-purple-100 hover:bg-purple-400/25 active:scale-95">차원 원정대 열기</button>
           {/* vc291b — 보스 러시 진입 버튼.
            *  vc291 커밋이 패널·세이브·해금·정산을 다 넣었는데 **여는 버튼을 빠뜨려**
            *  게임에서 도달할 수 없는 상태였다(grep 'panel: "bossrush"' → 0건).
