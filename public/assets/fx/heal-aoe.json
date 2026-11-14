@@ -1,0 +1,1975 @@
+{
+ "frames": [
+  {
+   "filename": "heal-aoe 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 1",
+   "frame": {
+    "x": 256,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 2",
+   "frame": {
+    "x": 512,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 3",
+   "frame": {
+    "x": 768,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 4",
+   "frame": {
+    "x": 1024,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 5",
+   "frame": {
+    "x": 1280,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 6",
+   "frame": {
+    "x": 1536,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 7",
+   "frame": {
+    "x": 0,
+    "y": 136,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 8",
+   "frame": {
+    "x": 256,
+    "y": 136,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 9",
+   "frame": {
+    "x": 512,
+    "y": 136,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 10",
+   "frame": {
+    "x": 768,
+    "y": 136,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 11",
+   "frame": {
+    "x": 1024,
+    "y": 136,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 12",
+   "frame": {
+    "x": 1280,
+    "y": 136,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 13",
+   "frame": {
+    "x": 1536,
+    "y": 136,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 14",
+   "frame": {
+    "x": 0,
+    "y": 272,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 15",
+   "frame": {
+    "x": 256,
+    "y": 272,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 16",
+   "frame": {
+    "x": 512,
+    "y": 272,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 17",
+   "frame": {
+    "x": 768,
+    "y": 272,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 18",
+   "frame": {
+    "x": 1024,
+    "y": 272,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 19",
+   "frame": {
+    "x": 1280,
+    "y": 272,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 20",
+   "frame": {
+    "x": 1536,
+    "y": 272,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 21",
+   "frame": {
+    "x": 0,
+    "y": 408,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 22",
+   "frame": {
+    "x": 256,
+    "y": 408,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 23",
+   "frame": {
+    "x": 512,
+    "y": 408,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 24",
+   "frame": {
+    "x": 768,
+    "y": 408,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 25",
+   "frame": {
+    "x": 1024,
+    "y": 408,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 26",
+   "frame": {
+    "x": 1280,
+    "y": 408,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 27",
+   "frame": {
+    "x": 1536,
+    "y": 408,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 28",
+   "frame": {
+    "x": 0,
+    "y": 544,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 29",
+   "frame": {
+    "x": 256,
+    "y": 544,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 30",
+   "frame": {
+    "x": 512,
+    "y": 544,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 31",
+   "frame": {
+    "x": 768,
+    "y": 544,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 32",
+   "frame": {
+    "x": 1024,
+    "y": 544,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 33",
+   "frame": {
+    "x": 1280,
+    "y": 544,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 34",
+   "frame": {
+    "x": 1536,
+    "y": 544,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 35",
+   "frame": {
+    "x": 0,
+    "y": 680,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 36",
+   "frame": {
+    "x": 256,
+    "y": 680,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 37",
+   "frame": {
+    "x": 512,
+    "y": 680,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 38",
+   "frame": {
+    "x": 768,
+    "y": 680,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 39",
+   "frame": {
+    "x": 1024,
+    "y": 680,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 40",
+   "frame": {
+    "x": 1280,
+    "y": 680,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 41",
+   "frame": {
+    "x": 1536,
+    "y": 680,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 42",
+   "frame": {
+    "x": 0,
+    "y": 816,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 43",
+   "frame": {
+    "x": 256,
+    "y": 816,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 44",
+   "frame": {
+    "x": 512,
+    "y": 816,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 45",
+   "frame": {
+    "x": 768,
+    "y": 816,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 46",
+   "frame": {
+    "x": 1024,
+    "y": 816,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 47",
+   "frame": {
+    "x": 1280,
+    "y": 816,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 48",
+   "frame": {
+    "x": 1536,
+    "y": 816,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 49",
+   "frame": {
+    "x": 0,
+    "y": 952,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 50",
+   "frame": {
+    "x": 256,
+    "y": 952,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 51",
+   "frame": {
+    "x": 512,
+    "y": 952,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 52",
+   "frame": {
+    "x": 768,
+    "y": 952,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 53",
+   "frame": {
+    "x": 1024,
+    "y": 952,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 54",
+   "frame": {
+    "x": 1280,
+    "y": 952,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 55",
+   "frame": {
+    "x": 1536,
+    "y": 952,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 56",
+   "frame": {
+    "x": 0,
+    "y": 1088,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 57",
+   "frame": {
+    "x": 256,
+    "y": 1088,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 58",
+   "frame": {
+    "x": 512,
+    "y": 1088,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 59",
+   "frame": {
+    "x": 768,
+    "y": 1088,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 60",
+   "frame": {
+    "x": 1024,
+    "y": 1088,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 61",
+   "frame": {
+    "x": 1280,
+    "y": 1088,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 62",
+   "frame": {
+    "x": 1536,
+    "y": 1088,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 63",
+   "frame": {
+    "x": 0,
+    "y": 1224,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 64",
+   "frame": {
+    "x": 256,
+    "y": 1224,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 65",
+   "frame": {
+    "x": 512,
+    "y": 1224,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 66",
+   "frame": {
+    "x": 768,
+    "y": 1224,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 67",
+   "frame": {
+    "x": 1024,
+    "y": 1224,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 68",
+   "frame": {
+    "x": 1280,
+    "y": 1224,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 69",
+   "frame": {
+    "x": 1536,
+    "y": 1224,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 70",
+   "frame": {
+    "x": 0,
+    "y": 1360,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 71",
+   "frame": {
+    "x": 256,
+    "y": 1360,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 72",
+   "frame": {
+    "x": 512,
+    "y": 1360,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 73",
+   "frame": {
+    "x": 768,
+    "y": 1360,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 74",
+   "frame": {
+    "x": 1024,
+    "y": 1360,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 75",
+   "frame": {
+    "x": 1280,
+    "y": 1360,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 76",
+   "frame": {
+    "x": 1536,
+    "y": 1360,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 77",
+   "frame": {
+    "x": 0,
+    "y": 1496,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 78",
+   "frame": {
+    "x": 256,
+    "y": 1496,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 79",
+   "frame": {
+    "x": 512,
+    "y": 1496,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 80",
+   "frame": {
+    "x": 768,
+    "y": 1496,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 81",
+   "frame": {
+    "x": 1024,
+    "y": 1496,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 82",
+   "frame": {
+    "x": 1280,
+    "y": 1496,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 83",
+   "frame": {
+    "x": 1536,
+    "y": 1496,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 84",
+   "frame": {
+    "x": 0,
+    "y": 1632,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 85",
+   "frame": {
+    "x": 256,
+    "y": 1632,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 86",
+   "frame": {
+    "x": 512,
+    "y": 1632,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heal-aoe 87",
+   "frame": {
+    "x": 768,
+    "y": 1632,
+    "w": 256,
+    "h": 136
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 256,
+    "h": 136
+   },
+   "sourceSize": {
+    "w": 256,
+    "h": 136
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "heal-aoe.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1792,
+   "h": 1768
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "heal-aoe",
+    "from": 0,
+    "to": 87,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "holy/heal-aoe",
+   "name": "Healing ring",
+   "fps": 30,
+   "loop": false,
+   "frames": 88,
+   "frameSize": [
+    256,
+    136
+   ],
+   "pivot": [
+    128,
+    104
+   ],
+   "columns": 7
+  }
+ }
+}

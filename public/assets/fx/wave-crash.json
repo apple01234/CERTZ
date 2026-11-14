@@ -1,0 +1,2173 @@
+{
+ "frames": [
+  {
+   "filename": "wave-crash 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 1",
+   "frame": {
+    "x": 224,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 2",
+   "frame": {
+    "x": 448,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 3",
+   "frame": {
+    "x": 672,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 4",
+   "frame": {
+    "x": 896,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 5",
+   "frame": {
+    "x": 1120,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 6",
+   "frame": {
+    "x": 1344,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 7",
+   "frame": {
+    "x": 0,
+    "y": 104,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 8",
+   "frame": {
+    "x": 224,
+    "y": 104,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 9",
+   "frame": {
+    "x": 448,
+    "y": 104,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 10",
+   "frame": {
+    "x": 672,
+    "y": 104,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 11",
+   "frame": {
+    "x": 896,
+    "y": 104,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 12",
+   "frame": {
+    "x": 1120,
+    "y": 104,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 13",
+   "frame": {
+    "x": 1344,
+    "y": 104,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 14",
+   "frame": {
+    "x": 0,
+    "y": 208,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 15",
+   "frame": {
+    "x": 224,
+    "y": 208,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 16",
+   "frame": {
+    "x": 448,
+    "y": 208,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 17",
+   "frame": {
+    "x": 672,
+    "y": 208,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 18",
+   "frame": {
+    "x": 896,
+    "y": 208,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 19",
+   "frame": {
+    "x": 1120,
+    "y": 208,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 20",
+   "frame": {
+    "x": 1344,
+    "y": 208,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 21",
+   "frame": {
+    "x": 0,
+    "y": 312,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 22",
+   "frame": {
+    "x": 224,
+    "y": 312,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 23",
+   "frame": {
+    "x": 448,
+    "y": 312,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 24",
+   "frame": {
+    "x": 672,
+    "y": 312,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 25",
+   "frame": {
+    "x": 896,
+    "y": 312,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 26",
+   "frame": {
+    "x": 1120,
+    "y": 312,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 27",
+   "frame": {
+    "x": 1344,
+    "y": 312,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 28",
+   "frame": {
+    "x": 0,
+    "y": 416,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 29",
+   "frame": {
+    "x": 224,
+    "y": 416,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 30",
+   "frame": {
+    "x": 448,
+    "y": 416,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 31",
+   "frame": {
+    "x": 672,
+    "y": 416,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 32",
+   "frame": {
+    "x": 896,
+    "y": 416,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 33",
+   "frame": {
+    "x": 1120,
+    "y": 416,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 34",
+   "frame": {
+    "x": 1344,
+    "y": 416,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 35",
+   "frame": {
+    "x": 0,
+    "y": 520,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 36",
+   "frame": {
+    "x": 224,
+    "y": 520,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 37",
+   "frame": {
+    "x": 448,
+    "y": 520,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 38",
+   "frame": {
+    "x": 672,
+    "y": 520,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 39",
+   "frame": {
+    "x": 896,
+    "y": 520,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 40",
+   "frame": {
+    "x": 1120,
+    "y": 520,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 41",
+   "frame": {
+    "x": 1344,
+    "y": 520,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 42",
+   "frame": {
+    "x": 0,
+    "y": 624,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 43",
+   "frame": {
+    "x": 224,
+    "y": 624,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 44",
+   "frame": {
+    "x": 448,
+    "y": 624,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 45",
+   "frame": {
+    "x": 672,
+    "y": 624,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 46",
+   "frame": {
+    "x": 896,
+    "y": 624,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 47",
+   "frame": {
+    "x": 1120,
+    "y": 624,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 48",
+   "frame": {
+    "x": 1344,
+    "y": 624,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 49",
+   "frame": {
+    "x": 0,
+    "y": 728,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 50",
+   "frame": {
+    "x": 224,
+    "y": 728,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 51",
+   "frame": {
+    "x": 448,
+    "y": 728,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 52",
+   "frame": {
+    "x": 672,
+    "y": 728,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 53",
+   "frame": {
+    "x": 896,
+    "y": 728,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 54",
+   "frame": {
+    "x": 1120,
+    "y": 728,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 55",
+   "frame": {
+    "x": 1344,
+    "y": 728,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 56",
+   "frame": {
+    "x": 0,
+    "y": 832,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 57",
+   "frame": {
+    "x": 224,
+    "y": 832,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 58",
+   "frame": {
+    "x": 448,
+    "y": 832,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 59",
+   "frame": {
+    "x": 672,
+    "y": 832,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 60",
+   "frame": {
+    "x": 896,
+    "y": 832,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 61",
+   "frame": {
+    "x": 1120,
+    "y": 832,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 62",
+   "frame": {
+    "x": 1344,
+    "y": 832,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 63",
+   "frame": {
+    "x": 0,
+    "y": 936,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 64",
+   "frame": {
+    "x": 224,
+    "y": 936,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 65",
+   "frame": {
+    "x": 448,
+    "y": 936,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 66",
+   "frame": {
+    "x": 672,
+    "y": 936,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 67",
+   "frame": {
+    "x": 896,
+    "y": 936,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 68",
+   "frame": {
+    "x": 1120,
+    "y": 936,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 69",
+   "frame": {
+    "x": 1344,
+    "y": 936,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 70",
+   "frame": {
+    "x": 0,
+    "y": 1040,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 71",
+   "frame": {
+    "x": 224,
+    "y": 1040,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 72",
+   "frame": {
+    "x": 448,
+    "y": 1040,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 73",
+   "frame": {
+    "x": 672,
+    "y": 1040,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 74",
+   "frame": {
+    "x": 896,
+    "y": 1040,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 75",
+   "frame": {
+    "x": 1120,
+    "y": 1040,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 76",
+   "frame": {
+    "x": 1344,
+    "y": 1040,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 77",
+   "frame": {
+    "x": 0,
+    "y": 1144,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 78",
+   "frame": {
+    "x": 224,
+    "y": 1144,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 79",
+   "frame": {
+    "x": 448,
+    "y": 1144,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 80",
+   "frame": {
+    "x": 672,
+    "y": 1144,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 81",
+   "frame": {
+    "x": 896,
+    "y": 1144,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 82",
+   "frame": {
+    "x": 1120,
+    "y": 1144,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 83",
+   "frame": {
+    "x": 1344,
+    "y": 1144,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 84",
+   "frame": {
+    "x": 0,
+    "y": 1248,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 85",
+   "frame": {
+    "x": 224,
+    "y": 1248,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 86",
+   "frame": {
+    "x": 448,
+    "y": 1248,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 87",
+   "frame": {
+    "x": 672,
+    "y": 1248,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 88",
+   "frame": {
+    "x": 896,
+    "y": 1248,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 89",
+   "frame": {
+    "x": 1120,
+    "y": 1248,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 90",
+   "frame": {
+    "x": 1344,
+    "y": 1248,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 91",
+   "frame": {
+    "x": 0,
+    "y": 1352,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 92",
+   "frame": {
+    "x": 224,
+    "y": 1352,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 93",
+   "frame": {
+    "x": 448,
+    "y": 1352,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 94",
+   "frame": {
+    "x": 672,
+    "y": 1352,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 95",
+   "frame": {
+    "x": 896,
+    "y": 1352,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "wave-crash 96",
+   "frame": {
+    "x": 1120,
+    "y": 1352,
+    "w": 224,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 224,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 224,
+    "h": 104
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "wave-crash.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1568,
+   "h": 1456
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "wave-crash",
+    "from": 0,
+    "to": 96,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "water/wave-crash",
+   "name": "Wave crash",
+   "fps": 30,
+   "loop": false,
+   "frames": 97,
+   "frameSize": [
+    224,
+    104
+   ],
+   "pivot": [
+    112,
+    86
+   ],
+   "columns": 7
+  }
+ }
+}

@@ -116,13 +116,14 @@ const finalContracts = {
    *  종전 좌표는 9개 중 7개가 outside 가 inside 보다 가까워서("범위 밖"이 범위 안)
    *  계약이 성립하지 않았다. 사거리는 Player.useSkill5b 의 각 직업 case 에서
    *  getAllTargetsIn / targetsAround / nearestTargets 인자를 직접 읽어 적었다. */
-  warbringer:  { at:2590, mul:12,   push:680, inside:[350,0],  outside:[1200,0] }, // r=260
+  /* 2026-11-14 — warbringer·deadeye·arclord·shadowlord 2차 궁극기 교체(계열 폴백과 이름 중복 해소). 새 기술 값으로 고정. */
+  warbringer:  { at:2660, mul:12,   push:680, inside:[350,0],  outside:[1200,0] }, // 6연 진각 300+i*360, 종결 +200
   crusader:    { at:8130, mul:8.4,  push:640, inside:[440,0],  outside:[1200,0] }, // r=320
-  deadeye:     { at:3000, mul:3.2,  push:480, inside:[500,0],  outside:[1200,0], crit:true }, // r=480
+  deadeye:     { at:2800, mul:6,    push:480, inside:[500,0],  outside:[1200,0], crit:true }, // 표식 4연 저격 500+r*520, 종결 +220
   skylord:     { at:5000, mul:7.2,  push:600, inside:[360,0],  outside:[1200,0] }, // nearest 820/900
-  arclord:     { at:2080, mul:11,   push:660, inside:[560,0],  outside:[1200,0] }, // r=300
+  arclord:     { at:2580, mul:11,   push:660, inside:[560,0],  outside:[1200,0] }, // 낙뢰 8회 300+i*260, 종결 +200
   eternal:     { at:1400, damage:2400, push:640, inside:[240,0], outside:[1200,0], crit:true }, // r=470
-  shadowlord:  { at:2220, mul:9.6,  push:620, inside:[230,-140], outside:[1200,0] },
+  shadowlord:  { at:2960, mul:9.6,  push:620, inside:[230,-140], outside:[1200,0] }, // 칼날 10회 300+i*240, 종결 +260 (달 중심 = 시전 시 최근접 적)
   /* vc235 — 2차 「절멸의 체인 쾌검」은 7초 지속(CHAIN_TOTAL=7000) 후 종결이다.
    *  종전 at:2785 는 1차 「무한 검무」(총 ~2.7초) 기준이라 2차의 참격을
    *  전부 "계약 이전" 으로 밀어내고 있었다. 종결 뒤로 옮긴다. */
@@ -142,7 +143,7 @@ class Vector {
 }
 function capturePlayer(cls, { angle=0, lite=false, outside=false, ratio=1, log=1200, dead=false, snapshots=false, returnAll=false, count=2, positions:customPositions, lateTarget=false, methodSource=secondSkill }={}) {
   const contract=finalContracts[cls];
-  let now=0, serial=0, targetCursor=0;
+  let now=0, serial=0;
   const repeatEvents = []; // vc235 — addEvent 반복 타이머 추적
   const aim=angle;
   const timers=[], hits=[], rolls=[], cyclones=[], fields=[], finalCandidates=[];
@@ -181,14 +182,14 @@ const targets=Array.from({length:snapshots?3:count},(_,id)=>({id,active:true,ali
     resolveSkill5Of:k=>k,SKILL5B_INFO:Object.fromEntries(classes.map(k=>[k,{name:k}])),familyOf:family,
     ult5bHoldOf:()=>10000,ult5HoldOf:()=>10000,finaleTargetOrder:order,ultimateFinalePlan:plan,
     cine3d:()=>({play:noop}),runUltFinale:api.runUltFinale,
-    ...Object.fromEntries(['spawnUltIntroSig','spawnPentacle','playUltLayers','playUltCinematic','spawnRingPop','spawnFlarePop'].map(k=>[k,noop])),
+    ...Object.fromEntries(['spawnUltIntroSig','spawnPentacle','playUltLayers','playUltCinematic','spawnRingPop','spawnFlarePop','playUltFx'].map(k=>[k,noop])),
     Math:Object.assign(Object.create(Math),{random:()=>0.5})};
   const Player=vm.runInNewContext(methodSource+';ExtractedPlayer;',context);
   const actor=Object.assign(new Player(),{scene,cls,x:100,y:200,state:'idle',skill5bUnlocked:true,skill5bCd:0,skill5bMax:120000,
-    mp:1000,maxMp:1000,hp:500,maxHp:1000,iframes:0,atkTotal:100,ultSlot:0,hitSet:new Set(),recentDmgLog:[{t:0,v:log}],awayScratch:new Vector(),
+    mp:1000,maxMp:1000,hp:500,maxHp:1000,iframes:0,atkTotal:100,ultSlot:0,hitSet:new Set(),recentDmgLog:[{t:0,v:log}],awayScratch:new Vector(),facing:new Vector(1,0),
     setVelocity:noop,netEmitAction:noop,clsHex:()=>0xffffff,ultKeyFor3D:()=>cls,recalcSpeed:noop,
     setPosition(x,y){this.x=x;this.y=y;return this;},aimDirFree:()=>new Vector(Math.cos(aim),Math.sin(aim)),
-    nearestTargets(n){const active=targets.filter(t=>t.active);return cls==='deadeye'?[active[targetCursor++%active.length]]:active.slice(0,n);},
+    nearestTargets(n){const active=targets.filter(t=>t.active);return active.slice(0,n);},
     /* vc235 — getAllTargetsIn 은 **최종 판정**이다. returnAll 로 반경을 무시하면
      *  "범위 밖 대상은 맞지 않는다"는 이 테스트의 핵심 계약이 통째로 무너진다
      *  (blademaster·dreadnought 가 계속 실패한 원인). returnAll 은 후보 수집
@@ -277,12 +278,12 @@ assert.deepEqual(playerFailures,[],'Player slot2 runtime narrowphase failures: '
 // Primary attacks are independent historical contracts, not taken from the new
 // helper. Two stationary targets are available until the final-placement step.
 const primaryContracts = {
-  warbringer:[[5,280,430,4.2,2,420]],
+  warbringer:[[6,300,360,3.0,2,220]],
   crusader:[[12,300,640,3.6,2,460]],
-  deadeye:[[100,260,26,1.15,1,60,true]],
+  deadeye:[[4,500,520,2.4,2,120]],
   skylord:[[12,260,200,2.2,1,null],[10,2660,220,3.8,1,440]],
-  arclord:[[5,300,320,4.4,2,460]],
-  eternal:[],shadowlord:[[2,300,170,3.9,1,320]],
+  arclord:[[8,300,260,3.0,2,160]],
+  eternal:[],shadowlord:[[10,300,240,2.2,2,200]],
   /* vc235 — useSkill5b 의 blademaster 는 **2차 「절멸의 체인 쾌검」**이다
    *  (1차 「무한 검무」 CUTS=50 과 완전히 다른 스킬).
    *  실측: 120ms 틱마다 3연 참격. 첫 틱(120ms)만 2연 — 사슬 전개(500ms)가
@@ -358,10 +359,11 @@ for(const cls of classes){
   assert.deepEqual(JSON.parse(JSON.stringify(residue.geometry)),{plan:JSON.parse(JSON.stringify(plan(cls,2))),angle:0},`${cls}: residue uses the slot2 plan`);
   assert.deepEqual([residue.at,residue.x,residue.y,residue.dps,residue.dur],[1500,100,200,55,30000],`${cls}: residue timing/origin/dps/duration preserved`);
 }
+/* 2026-11-14 — 새 아크로드 2차(천둥 사슬)는 MP 를 태우지 않는다(1차 「아르카나 오버로드」와 겹치던 부분 제거). */
 for(const cls of ['arclord'])for(const ratio of [0,0.5,1]) {
   const trace=capturePlayer(cls,{ratio,outside:true});
-  assert.equal(trace.hits.find(h=>h.at===finalContracts[cls].at).dmg,(7.5+3.5*ratio)*500,'arclord: MP-dependent final preserved');
-  assert.equal(trace.actor.mp,0,'arclord: MP still consumed');
+  assert.equal(trace.hits.find(h=>h.at===finalContracts[cls].at).dmg,11*500,'arclord: final no longer depends on MP');
+  assert.equal(trace.actor.mp,1000*ratio,'arclord: MP left untouched');
 }
 for(const log of [0,1200]) {
   const trace=capturePlayer('eternal',{log,outside:true});
@@ -377,7 +379,7 @@ for(const cls of ['deadeye','seaking']) {
   const trace=capturePlayer(cls,{snapshots:true,lateTarget:true});
   assert.deepEqual(trace.hits.filter(h=>h.at===finalContracts[cls].at).map(h=>h.id),[1,2],`${cls}: live historical snapshot only`);
 }
-assert.equal(capturePlayer('deadeye',{count:15}).hits.filter(h=>h.at===3000).length,12,'deadeye: existing 12-target cap');
+assert.equal(capturePlayer('deadeye',{count:15}).hits.filter(h=>h.at===finalContracts.deadeye.at).length,8,'deadeye: 표식 최대 8기');
 /* vc235 — 종전엔 1차 「무한 검무」의 2785ms 종결에서 두 빔 교차가
  *  1회만 판정되는지 봤다. useSkill5b 는 2차 「절멸의 체인 쾌검」이라
  *  종결 시각·구조가 다르다. 교차 판정 단일성은 2차에서도 유효하므로

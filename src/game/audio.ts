@@ -350,21 +350,37 @@ const STAGE_BGM: Record<string, [string, string, string]> = {
    *  6장 이후가 전부 폴백(bgm_forest_1)으로 떨어졌다.
    *  이제 **챕터당 1곡**을 원문 화의 정서에 맞춰 배정한다(4~5스테이지는
    *  같은 곡을 쓰되, 구간 슬롯 3칸을 그대로 채워 챕터 안에서도 변화를 준다). */
-  howlrstone1:  ["bgm_hw1_1", "bgm_hw1_2", "bgm_hw1_3"],   // 왕립도서관 — 잔잔한 도입
-  howlrstone2:  ["bgm_hw1_2", "bgm_hw2_1", "bgm_hw1_3"],   // 어둠이 커지다 — 긴장
-  howlrstone3:  ["bgm_hw3_1", "bgm_hw3_2", "bgm_hw3_3"],   // 시작된 전쟁 — 격전
-  howlrstone4:  ["bgm_hw2_1", "bgm_hw2_2", "bgm_hw1_1"],   // 석양의 바다 — 서정
-  howlrstone5:  ["bgm_hw2_2", "bgm_hw2_3", "bgm_hw1_2"],   // 협상과 연합 — 희망
-  howlrstone6:  ["bgm_hw4_1", "bgm_hw4_2", "bgm_hw4_3"],   // 초월자 — 신비·압도
-  howlrstone7:  ["bgm_hw3_2", "bgm_hw3_3", "bgm_hw3_1"],   // 군단장 전투 — 격전
-  howlrstone8:  ["bgm_hw3_3", "bgm_hw5_1", "bgm_hw3_2"],   // 두 전사의 격전 — 최고조
-  howlrstone9:  ["bgm_hw2_3", "bgm_hw1_1", "bgm_hw2_2"],   // 라일락의 희생 — 애상
-  howlrstone10: ["bgm_hw4_2", "bgm_hw4_3", "bgm_hw4_1"],   // 어둠의 성채 — 공포
-  howlrstone11: ["bgm_hw4_3", "bgm_hw5_2", "bgm_hw4_1"],   // 어둠의 왕좌 — 장엄
-  howlrstone12: ["bgm_hw5_2", "bgm_hw4_2", "bgm_hw5_3"],   // 운명 — 비장
-  howlrstone13: ["bgm_hw5_1", "bgm_hw5_3", "bgm_hw5_2"],   // 최후의 일격 — 결전
-  howlrstone14: ["bgm_hw5_3", "bgm_hw5_1", "bgm_hw3_3"],   // THE END TIME — 종말
-  howlrstone15: ["bgm_hw1_1", "bgm_hw2_3", "bgm_hw2_1"],   // New Beginning — 회복
+  /* 2026-11-14 (유저 신고 "겹치는 음악 많은 버그") — 영프 챕터마다 **필드곡 1곡 전용**.
+   *  종전엔 5구역 챕터의 4구역이 다른 챕터의 곡(구간 2칸)을 빌려 써서 3·7·8·10·14장 곡이 옆 챕터와 겹쳤고,
+   *  15장은 1장과 같은 곡이었다. 각 장의 1~3구역 곡(무드 선별)은 그대로 두고 15장만 쓰이지 않던 hw1_3 로 바꾼다. */
+  howlrstone1:  ["bgm_hw1_1", "bgm_hw1_1", "bgm_hw1_1"],   // 왕립도서관 — 잔잔한 도입
+  howlrstone2:  ["bgm_hw1_2", "bgm_hw1_2", "bgm_hw1_2"],   // 어둠이 커지다 — 긴장
+  howlrstone3:  ["bgm_hw3_1", "bgm_hw3_1", "bgm_hw3_1"],   // 시작된 전쟁 — 격전
+  howlrstone4:  ["bgm_hw2_1", "bgm_hw2_1", "bgm_hw2_1"],   // 석양의 바다 — 서정
+  howlrstone5:  ["bgm_hw2_2", "bgm_hw2_2", "bgm_hw2_2"],   // 협상과 연합 — 희망
+  howlrstone6:  ["bgm_hw4_1", "bgm_hw4_1", "bgm_hw4_1"],   // 초월자 — 신비·압도
+  howlrstone7:  ["bgm_hw3_2", "bgm_hw3_2", "bgm_hw3_2"],   // 군단장 전투 — 격전
+  howlrstone8:  ["bgm_hw3_3", "bgm_hw3_3", "bgm_hw3_3"],   // 두 전사의 격전 — 최고조
+  howlrstone9:  ["bgm_hw2_3", "bgm_hw2_3", "bgm_hw2_3"],   // 라일락의 희생 — 애상
+  howlrstone10: ["bgm_hw4_2", "bgm_hw4_2", "bgm_hw4_2"],   // 어둠의 성채 — 공포
+  howlrstone11: ["bgm_hw4_3", "bgm_hw4_3", "bgm_hw4_3"],   // 어둠의 왕좌 — 장엄
+  howlrstone12: ["bgm_hw5_2", "bgm_hw5_2", "bgm_hw5_2"],   // 운명 — 비장
+  howlrstone13: ["bgm_hw5_1", "bgm_hw5_1", "bgm_hw5_1"],   // 최후의 일격 — 결전
+  howlrstone14: ["bgm_hw5_3", "bgm_hw5_3", "bgm_hw5_3"],   // THE END TIME — 종말
+  howlrstone15: ["bgm_hw1_3", "bgm_hw1_3", "bgm_hw1_3"],   // New Beginning — 회복
+  /* 2026-11-14 — 그랜드 플래닛(DLC) 10챕터 전용 필드곡. 종전엔 HUNT_THEME_OF 로 옛 챕터 곡을 빌려
+   *  프리즈마·노벨·세르니움 30구역이 같은 3곡, 스타게이트·메크, 네오시티·오피니시아가 같은 곡이었다.
+   *  쓰이지 않던 옛 곡(포레스트·무스펠·니플·동굴 물소리)을 나눠 챕터끼리 필드곡이 겹치지 않게 한다. */
+  dlcstargate: ["bgm_nidavellir_1", "bgm_nidavellir_2", "bgm_nidavellir_3"],
+  dlcmech:     ["bgm_muspelheim_1", "bgm_muspelheim_2", "bgm_muspelheim_3"],
+  dlcprisma:   ["bgm_alfheim_1", "bgm_alfheim_2", "bgm_alfheim_3"],
+  dlcnovel:    ["bgm_forest_1", "bgm_forest_2", "bgm_forest_3"],
+  dlcsernium:  ["bgm_niflheim_1", "bgm_niflheim_2", "bgm_niflheim_3"],
+  dlcneocity:  ["bgm_kingdom_1", "bgm_kingdom_2", "bgm_kingdom_3"],
+  dlcopinicia: ["bgm_cave_water", "bgm_cave_water", "bgm_cave_water"], // 남은 곡이 1곡뿐 — 챕터 전체 1곡
+  dlcocean:    ["bgm_abyss_1", "bgm_abyss_2", "bgm_abyss_3"],
+  dlcreverse:  ["bgm_cave_1", "bgm_cave_2", "bgm_cave_3"],
+  dlcswallow:  ["bgm_hel_1", "bgm_hel_2", "bgm_hel_3"],
   
 };
 /** 챕터 대표곡(폴백·목록용) — 구간 배정의 첫 곡 */
@@ -384,8 +400,12 @@ const VILLAGE_TRACKS = ["bgm_village_forest", "bgm_village_kingdom", "bgm_villag
 const VILLAGE_OF: Record<string, string> = {
   /* v1.1.1 — 마을도 챕터 정서를 따른다(지적 2번). 화산 촌락은 대장간 톤, 설원 마을은
    *  차가운 톤, 어둠 요정 마을은 연금술 톤, 저승 마을은 lo-fi 톤 — 밝은 마을곡 금지. */
-  village: "bgm_village_village",
+  /* 2026-11-14 — bgm_village_village 는 영프 1장 필드곡(bgm_hw1_1)과 **같은 파일**이다. 시작 마을은 거점곡으로. */
+  village: "bgm_village_forest",
   forest: "bgm_village_forest",
+  /* 2026-11-14 — DLC 마을: 쓰이지 않던 무스펠·니플 마을곡을 메크·노벨에 준다(마을곡 8곡 / 10마을 — 2쌍은 공유). */
+  dlcmech: "bgm_village_muspelheim",
+  dlcnovel: "bgm_village_niflheim",
   kingdom: "bgm_village_kingdom",
   alfheim: "bgm_village_alfheim",
   muspelheim: "bgm_village_muspelheim",
@@ -427,12 +447,19 @@ const BOSS_OF: Record<string, string> = {
   nidavellir: "bgm_nidavellir_boss",
   hel: "bgm_hel_boss",
   abyss: "bgm_abyss_boss",
+  /* 2026-11-14 — DLC 보스곡: 쓰이지 않던 무스펠·포레스트 보스곡을 메크·노벨에, 세르니움은 니플 보스곡.
+   *  리버스는 동굴 보스곡(=영프 6장 필드곡 파일) 대신 헬 보스곡. 보스곡 8곡 / 10챕터 — 2쌍은 공유. */
+  dlcmech: "bgm_muspelheim_boss",
+  dlcnovel: "bgm_forest_boss",
+  dlcsernium: "bgm_niflheim_boss",
+  dlcreverse: "bgm_hel_boss",
   /* vc232 (#7) — 영프 편 보스곡. 본편 해당 챕터 보스곡과 겹치지 않게 교차 배정.
    *  (보스곡은 챕터당 1곡뿐이라 신규 생성 전까지는 교차 배정으로 중복을 피한다) */
   /* vc235 — 15챕터 보스곡. 보스가 있는 장(3·7·8·10·14)은 전용곡,
    *  없는 장도 구역 4~5에서 전투가 이어지므로 인접 곡을 배정해 폴백을 없앤다. */
-  howlrstone1: "bgm_cave_boss",
-  howlrstone2: "bgm_cave_boss",
+  /* 2026-11-14 — bgm_cave_boss 는 영프 6장 필드곡(bgm_hw4_1)과 **같은 파일**이라 보스곡으로 쓰지 않는다. */
+  howlrstone1: "bgm_forest_boss",
+  howlrstone2: "bgm_forest_boss",
   howlrstone3: "bgm_kingdom_boss",
   howlrstone4: "bgm_kingdom_boss",
   howlrstone5: "bgm_nidavellir_boss",
@@ -469,7 +496,7 @@ function bossTrackOfCh(ch: string, zone: number): string {
   /* vc235 — 영프(hw*)는 전용 보스곡을 아직 만들지 않아 챕터 정서의 본편 보스곡을
    *  빌려온다. BOSS_OF 에 howlrstone 키가 없으므로 아래 ?? 가 그 역할을 한다.
    *  (일반 구역은 STAGE_BGM 의 bgm_hw* 를 쓰므로 폴백이 아니다) */
-  return BOSS_OF[HUNT_THEME_OF[ch] ?? ch] ?? BOSS_TRACKS[0];
+  return BOSS_OF[ch] ?? BOSS_OF[HUNT_THEME_OF[ch] ?? ch] ?? BOSS_TRACKS[0];
 }
 /** 챕터 일반 구역 폴백 (미지의 챕터 키) */
 const FALLBACK_TRACKS = [CHAPTER_THEME.forest];
@@ -521,9 +548,10 @@ export function stageTrack(stage: string): string {
   if (hwSpec) {
     return zone >= hwSpec.stages ? bossTrackOfCh(ch, zone) : (STAGE_BGM[ch]?.[zoneSlot(zone)] ?? bossTrackOfCh(ch, zone));
   }
-  if (zone === 10) return bossTrackOfCh(ch, zone); // 보스 구역 — 챕터 전용 전투곡
-  if (zone <= 0) return VILLAGE_OF[ch] ?? VILLAGE_TRACKS[Math.max(0, chIndexOf(ch)) % VILLAGE_TRACKS.length];
-  const slots = STAGE_BGM[ch];
+  /* 2026-11-14 — 챕터 자기 배정(STAGE_BGM/VILLAGE_OF/BOSS_OF 의 DLC 키)이 있으면 그것을, 없으면 HUNT_THEME_OF 로 빌린 곡. */
+  if (zone === 10) return bossTrackOfCh(parsed.ch, zone); // 보스 구역 — 챕터 전용 전투곡
+  if (zone <= 0) return VILLAGE_OF[parsed.ch] ?? VILLAGE_OF[ch] ?? VILLAGE_TRACKS[Math.max(0, chIndexOf(ch)) % VILLAGE_TRACKS.length];
+  const slots = STAGE_BGM[parsed.ch] ?? STAGE_BGM[ch];
   if (slots) return slots[zoneSlot(zone)];
   return CHAPTER_THEME[ch] ?? FALLBACK_TRACKS[0];
 }

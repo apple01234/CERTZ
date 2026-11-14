@@ -1,0 +1,699 @@
+{
+ "frames": [
+  {
+   "filename": "water-jet 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 1",
+   "frame": {
+    "x": 188,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 2",
+   "frame": {
+    "x": 376,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 3",
+   "frame": {
+    "x": 564,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 4",
+   "frame": {
+    "x": 0,
+    "y": 80,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 5",
+   "frame": {
+    "x": 188,
+    "y": 80,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 6",
+   "frame": {
+    "x": 376,
+    "y": 80,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 7",
+   "frame": {
+    "x": 564,
+    "y": 80,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 8",
+   "frame": {
+    "x": 0,
+    "y": 160,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 9",
+   "frame": {
+    "x": 188,
+    "y": 160,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 10",
+   "frame": {
+    "x": 376,
+    "y": 160,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 11",
+   "frame": {
+    "x": 564,
+    "y": 160,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 12",
+   "frame": {
+    "x": 0,
+    "y": 240,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 13",
+   "frame": {
+    "x": 188,
+    "y": 240,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 14",
+   "frame": {
+    "x": 376,
+    "y": 240,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 15",
+   "frame": {
+    "x": 564,
+    "y": 240,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 16",
+   "frame": {
+    "x": 0,
+    "y": 320,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 17",
+   "frame": {
+    "x": 188,
+    "y": 320,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 18",
+   "frame": {
+    "x": 376,
+    "y": 320,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 19",
+   "frame": {
+    "x": 564,
+    "y": 320,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 20",
+   "frame": {
+    "x": 0,
+    "y": 400,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 21",
+   "frame": {
+    "x": 188,
+    "y": 400,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 22",
+   "frame": {
+    "x": 376,
+    "y": 400,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 23",
+   "frame": {
+    "x": 564,
+    "y": 400,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 24",
+   "frame": {
+    "x": 0,
+    "y": 480,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 25",
+   "frame": {
+    "x": 188,
+    "y": 480,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 26",
+   "frame": {
+    "x": 376,
+    "y": 480,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 27",
+   "frame": {
+    "x": 564,
+    "y": 480,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 28",
+   "frame": {
+    "x": 0,
+    "y": 560,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "water-jet 29",
+   "frame": {
+    "x": 188,
+    "y": 560,
+    "w": 188,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 188,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 188,
+    "h": 80
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "water-jet.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 752,
+   "h": 640
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "water-jet",
+    "from": 0,
+    "to": 29,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "water/water-jet",
+   "name": "Water jet",
+   "fps": 30,
+   "loop": true,
+   "frames": 30,
+   "frameSize": [
+    188,
+    80
+   ],
+   "pivot": [
+    14,
+    32
+   ],
+   "columns": 4
+  }
+ }
+}

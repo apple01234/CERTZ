@@ -6,7 +6,9 @@ import { authoredRoomLayout } from '../src/game/authoredLayouts.ts';
 import { chapterTerrainData } from '../src/game/fx/ChapterTerrain.ts';
 import { STAGES, BOSS_DEFS } from '../src/game/stages.ts';
 import { STORY_ATTACKS, storyPattern, hazardContains } from '../src/game/entities/storyBossPatterns.ts';
-import { canonBossOf } from '../src/game/entities/bossDesign.ts';
+import { canonBossOf, BOSS_RECORD_ALIASES } from '../src/game/entities/bossDesign.ts';
+/* textures.ts 는 Phaser 를 불러와 노드에서 import 할 수 없다 — 보스 아틀라스 표(tex → 파일)만 소스에서 읽는다. */
+const BOSS_ATLAS = Object.fromEntries([...fs.readFileSync(new URL('../src/game/textures.ts', import.meta.url), 'utf8').matchAll(/^  (boss\w*):\s*\{ key: "atl_\w+",\s*file: "([\w.]+)"/gm)].map(m => [m[1], m[2]]));
 import { telegraphMs, recoveryMs } from '../src/game/entities/bossPhases.ts';
 const read = p => JSON.parse(fs.readFileSync(new URL('../' + p, import.meta.url)));
 const terrain = read('public/assets/chapter-terrain/manifest.json');
@@ -68,6 +70,8 @@ test('all active canonical boss visuals and changing attack/cast frames ship off
   assert.equal(cast.characters.length, 31); assert.equal(combat.bosses.length, 13);
   for (const boss of Object.values(BOSS_DEFS)) {
     const design = canonBossOf(boss.key); if (!design) continue;
+    /* 2026-11-14 — 전투기록 보스 12종은 자기 전용 아틀라스 그림을 쓴다(스토리 보스와 겹침 해소). 패턴은 기록을 따른다. */
+    if (BOSS_RECORD_ALIASES[boss.key]) { assert.ok(BOSS_ATLAS[boss.tex] && fs.existsSync(new URL(`../public/assets/${BOSS_ATLAS[boss.tex]}`, import.meta.url)), `${boss.key}: ${boss.tex} 전용 아틀라스 없음`); assert.ok(boss.patterns.p1.includes(boss.sig)); continue; }
     assert.equal(boss.tex, design.visual);
     assert.ok(boss.patterns.p1.includes(boss.sig));
     for (const visual of [design.visual, ...design.phases.flatMap(p => p.visual ? [p.visual] : [])]) {
