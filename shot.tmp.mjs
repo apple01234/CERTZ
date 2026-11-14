@@ -10,8 +10,8 @@ await p.getByRole("button", { name: "모험가로 생성!" }).click({ timeout: 3
 await p.getByRole("button", { name: "이 캐릭터로 시작" }).click({ timeout: 30000 });
 await p.waitForFunction(() => window.__SERTZ_SCENE__?.player, { timeout: 90000 });
 await p.evaluate(() => { const s=window.__SERTZ_SCENE__; for(const o of [...s.children.list]) if(o.text==="건너뛰기") o.emit("pointerdown"); s.tutorialDone=true; s.tutStep=-1; });
-await p.evaluate(() => window.__SERTZ_SCENE__.startTransition("howlrstone1x2"));
-await p.waitForFunction(() => { const s=window.__SERTZ_SCENE__; return s?.stageDef?.key==="howlrstone1x2" && !s.transitioning; }, { timeout: 60000 });
+await p.evaluate(() => window.__SERTZ_SCENE__.startTransition("lilacworld1x2"));
+await p.waitForFunction(() => { const s=window.__SERTZ_SCENE__; return s?.stageDef?.key==="lilacworld1x2" && !s.transitioning; }, { timeout: 60000 });
 await p.waitForTimeout(3000);
 await p.screenshot({ path: "/root/.hermes/cache/scratch/tile-before.png" });
 // 적 1마리만 실제로 죽인다 (과도한 데미지 금지 — 실제 전투와 같은 값)

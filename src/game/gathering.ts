@@ -38,22 +38,22 @@ export type GatherDef = {
 
 export const GATHER_DEFS: GatherDef[] = [
   /* 약초 — 요리의 기본 */
-  { key: "herb_sun", name: "햇살풀", zones: ["forest", "kingdom", "alfheim"], respawn: 25000, yield: [1, 2], desc: "양지에서 자라는 노란 약초. 은은한 단맛.", color: "#fde68a" },
-  { key: "herb_frost", name: "서리꽃", zones: ["niflheim", "cave"], respawn: 30000, yield: [1, 2], desc: "얼음 틈에서 피는 꽃. 만지면 차갑다.", color: "#a5f3fc" },
-  { key: "herb_ember", name: "불씨잎", zones: ["muspelheim"], respawn: 30000, yield: [1, 2], desc: "불에 타지 않는 잎. 씹으면 매콤하다.", color: "#fca5a5" },
-  { key: "herb_shadow", name: "그늘버섯", zones: ["hel", "abyss", "nidavellir"], respawn: 35000, yield: [1, 2], desc: "빛이 없는 곳에서만 자란다. 향이 강하다.", color: "#c4b5fd" },
+  { key: "herb_sun", name: "햇살풀", zones: ["forest", "kingdom", "fairyglade"], respawn: 25000, yield: [1, 2], desc: "양지에서 자라는 노란 약초. 은은한 단맛.", color: "#fde68a" },
+  { key: "herb_frost", name: "서리꽃", zones: ["frostland", "cave"], respawn: 30000, yield: [1, 2], desc: "얼음 틈에서 피는 꽃. 만지면 차갑다.", color: "#a5f3fc" },
+  { key: "herb_ember", name: "불씨잎", zones: ["emberland"], respawn: 30000, yield: [1, 2], desc: "불에 타지 않는 잎. 씹으면 매콤하다.", color: "#fca5a5" },
+  { key: "herb_shadow", name: "그늘버섯", zones: ["duskrealm", "abyss", "forgehall"], respawn: 35000, yield: [1, 2], desc: "빛이 없는 곳에서만 자란다. 향이 강하다.", color: "#c4b5fd" },
 
   /* 광물 — 제작/강화와 연결 */
   { key: "ore_iron", name: "철광석", zones: ["forest", "kingdom", "cave"], respawn: 40000, yield: [1, 2], desc: "흔한 광석. 대장간에서 쓰인다.", color: "#d4d4d8" },
-  { key: "ore_crystal", name: "수정조각", zones: ["alfheim", "cave"], respawn: 50000, yield: [1, 1], desc: "빛을 굴절시키는 조각. 장신구 재료.", color: "#93c5fd" },
-  { key: "ore_rune", name: "룬원석", zones: ["nidavellir"], respawn: 60000, yield: [1, 1], desc: "룬이 새겨진 원석. 난쟁이들의 보물.", color: "#fbbf24" },
-  { key: "ore_abyss", name: "심연결정", zones: ["hel", "abyss"], respawn: 70000, yield: [1, 1], desc: "심연의 기운이 응축된 결정. 만지면 손이 저리다.", color: "#a78bfa" },
+  { key: "ore_crystal", name: "수정조각", zones: ["fairyglade", "cave"], respawn: 50000, yield: [1, 1], desc: "빛을 굴절시키는 조각. 장신구 재료.", color: "#93c5fd" },
+  { key: "ore_rune", name: "룬원석", zones: ["forgehall"], respawn: 60000, yield: [1, 1], desc: "룬이 새겨진 원석. 난쟁이들의 보물.", color: "#fbbf24" },
+  { key: "ore_abyss", name: "심연결정", zones: ["duskrealm", "abyss"], respawn: 70000, yield: [1, 1], desc: "심연의 기운이 응축된 결정. 만지면 손이 저리다.", color: "#a78bfa" },
 
   /* 부재료 */
   { key: "mush_red", name: "붉은버섯", zones: ["forest", "cave"], respawn: 28000, yield: [2, 3], desc: "독은 없지만 맛이 강하다. 요리의 감초.", color: "#f87171" },
-  { key: "mush_blue", name: "푸른버섯", zones: ["alfheim", "niflheim"], respawn: 32000, yield: [2, 3], desc: "시원한 향이 난다. 생으로도 먹을 수 있다.", color: "#60a5fa" },
-  { key: "salt_rock", name: "소금바위", zones: ["muspelheim", "kingdom"], respawn: 45000, yield: [2, 3], desc: "깨면 소금이 나온다. 어떤 요리에나 맞는다.", color: "#e5e7eb" },
-  { key: "honey_drop", name: "벌꿀방울", zones: ["forest", "alfheim"], respawn: 55000, yield: [1, 2], desc: "야생벌이 남긴 방울. 달콤함의 정점.", color: "#fcd34d" },
+  { key: "mush_blue", name: "푸른버섯", zones: ["fairyglade", "frostland"], respawn: 32000, yield: [2, 3], desc: "시원한 향이 난다. 생으로도 먹을 수 있다.", color: "#60a5fa" },
+  { key: "salt_rock", name: "소금바위", zones: ["emberland", "kingdom"], respawn: 45000, yield: [2, 3], desc: "깨면 소금이 나온다. 어떤 요리에나 맞는다.", color: "#e5e7eb" },
+  { key: "honey_drop", name: "벌꿀방울", zones: ["forest", "fairyglade"], respawn: 55000, yield: [1, 2], desc: "야생벌이 남긴 방울. 달콤함의 정점.", color: "#fcd34d" },
 ];
 
 export const GATHER_BY_KEY: Record<GatherKey, GatherDef> = Object.fromEntries(
@@ -106,7 +106,7 @@ export const COOK_RECIPES: RecipeDef[] = [
   /* ── 최고급 (전설 재료) ── */
   { key: "dish_voidstew", name: "공허 스튜", need: [{ item: "mush_blue", n: 2 }, { item: "herb_shadow", n: 2 }, { item: "ore_abyss", n: 1 }], buff: "atk", power: 0.40, duration: 180_000, desc: "공격력 +40% · 180초" },
   { key: "dish_aurorafeast", name: "오로라 만찬", need: [{ item: "herb_frost", n: 3 }, { item: "honey_drop", n: 1 }, { item: "ore_crystal", n: 2 }], buff: "crit", power: 18, duration: 180_000, desc: "치명타 +18% · 180초" },
-  { key: "dish_yggfeast", name: "연합 만찬", need: [{ item: "ore_abyss", n: 2 }, { item: "herb_shadow", n: 2 }, { item: "honey_drop", n: 2 }], buff: "exp", power: 0.60, duration: 200_000, desc: "경험치 +60% · 200초" },
+  { key: "dish_unionfeast", name: "연합 만찬", need: [{ item: "ore_abyss", n: 2 }, { item: "herb_shadow", n: 2 }, { item: "honey_drop", n: 2 }], buff: "exp", power: 0.60, duration: 200_000, desc: "경험치 +60% · 200초" },
 ];
 
 export const COOK_BY_KEY: Record<string, RecipeDef> = Object.fromEntries(COOK_RECIPES.map((r) => [r.key, r]));

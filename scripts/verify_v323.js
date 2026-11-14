@@ -140,7 +140,7 @@ ok("S17b 대형 트랙(>133s) 0개 — PCM 크래시 프로파일", fullCntOver 
     /* 구역별 고정 배치 실측 — 같은 구역 재요청 시 같은 곡, 다른 구역은 다른 곡 */
     const mapping = await page.evaluate(() => {
       const b = (window).__SERTZ_DEBUG__.bgm;
-      const keys = ["village", "forest1", "forest3", "forest10", "kingdom2", "alfheim4", "niflheim7", "cave5", "muspelheim3", "nidavellir6", "hel8", "abyss9", "forestv", "abyssv", "interior_home"];
+      const keys = ["village", "forest1", "forest3", "forest10", "kingdom2", "fairyglade4", "frostland7", "cave5", "emberland3", "forgehall6", "duskrealm8", "abyss9", "forestv", "abyssv", "interior_home"];
       const m = {};
       for (const k of keys) m[k] = b.stageTrack(k);
       return m;
@@ -154,10 +154,10 @@ ok("S17b 대형 트랙(>133s) 0개 — PCM 크래시 프로파일", fullCntOver 
     ok("R8 실내는 마을곡 고정", mapping.interior_home === "bgm_village4", mapping.interior_home);
 
     /* 실제 구역 진입 → 해당 구역 고정곡 재생 (제스처 후 상태 유지 확인) */
-    await page.evaluate(() => (window).__SERTZ_DEBUG__.bgm.playStageBGM("niflheim7"));
+    await page.evaluate(() => (window).__SERTZ_DEBUG__.bgm.playStageBGM("frostland7"));
     await page.waitForTimeout(700);
     const st3 = await page.evaluate(() => (window).__SERTZ_DEBUG__.bgm.bgmDebugState());
-    ok("R9 niflheim7 → snow 풀 고정곡 교체·재생", st3.track === mapping.niflheim7, `${st3.track} playing=${st3.playing}`);
+    ok("R9 frostland7 → snow 풀 고정곡 교체·재생", st3.track === mapping.frostland7, `${st3.track} playing=${st3.playing}`);
 
     ok("R10 pageerror 0", errors.length === 0, errors.slice(0, 2).join(" | "));
   } catch (e) {

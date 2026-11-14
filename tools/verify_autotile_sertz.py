@@ -79,8 +79,8 @@ def main():
     print(f"{'stage':16s} {'격자':>8s} {'열림':>6s} {'내부(15)':>8s} {'경계(<15)':>9s} {'오버레이%':>9s}")
     print("-" * 66)
     allmask = Counter()
-    for key, w, h in [('forest1', 2400, 1350), ('muspelheim1', 2200, 1250),
-                      ('niflheim1', 2100, 1200), ('abyss1', 2300, 1250),
+    for key, w, h in [('forest1', 2400, 1350), ('emberland1', 2200, 1250),
+                      ('frostland1', 2100, 1200), ('abyss1', 2300, 1250),
                       ('village', 1800, 1050)]:
         grid, cols, rows = make_layout(key, w, h)
         cnt = Counter()

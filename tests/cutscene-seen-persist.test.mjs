@@ -11,7 +11,7 @@ import { buildSeenList, isCutsceneSeenKey } from '../src/game/cutsceneSeen.ts';
 test('컷신 키와 일반 대사 키를 구분한다', () => {
   assert.equal(isCutsceneSeenKey('lilacCut_rea1_lilac00'), true);
   assert.equal(isCutsceneSeenKey('chapter1_intro'), true);
-  assert.equal(isCutsceneSeenKey('stageIntro_howlrstone1_2'), true);
+  assert.equal(isCutsceneSeenKey('stageIntro_lilacworld1_2'), true);
   assert.equal(isCutsceneSeenKey('village_npc_lin'), false);
 });
 

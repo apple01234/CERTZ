@@ -1,8 +1,8 @@
 /**
  * e2e_vc142.js — 보스 디자인 교체 검증:
- *  ① 유저 아틀라스 6종 교체 적용 (boss/boss3/skoll/hati/fenrir + jorm 신설) — 프레임 기하 실측
+ *  ① 유저 아틀라스 6종 교체 적용 (boss/boss3/twinwolf/twinmate/greedwolf + unionserpent 신설) — 프레임 기하 실측
  *  ② 10종 LINEAR 필터 + hero NEAREST 대조
- *  ③ 애니 등록 실측 (skoll/hati 4프레임·jorm 3프레임 idle + jorm sp3 부재)
+ *  ③ 애니 등록 실측 (twinwolf/twinmate 4프레임·unionserpent 3프레임 idle + unionserpent sp3 부재)
  *  ④ 10종 인게임 렌더 + 스크린샷
  *  ⑤ 초상화 6종 HTTP 200
  */
@@ -13,13 +13,13 @@ const EXPECT = {
   atl_boss:       [304, 269, 7, 84],
   atl_boss2:      [330, 212, 7, 84],
   atl_boss3:      [303, 248, 7, 84],
-  atl_boss_nidhog:[226, 232, 7, 84],
-  atl_boss_surt:  [330, 224, 7, 84],
-  atl_boss_fenrir:[303, 227, 7, 84],
-  atl_boss_skoll: [303, 257, 7, 84],
-  atl_boss_nagr:  [286, 240, 6, 72],
-  atl_boss_hati:  [304, 257, 7, 84],
-  atl_boss_jorm:  [304, 201, 6, 72],
+  atl_boss_blackwyrm:[226, 232, 7, 84],
+  atl_boss_flamegiant:  [330, 224, 7, 84],
+  atl_boss_greedwolf:[303, 227, 7, 84],
+  atl_boss_twinwolf: [303, 257, 7, 84],
+  atl_boss_angelknight:  [286, 240, 6, 72],
+  atl_boss_twinmate:  [304, 257, 7, 84],
+  atl_boss_unionserpent:  [304, 201, 6, 72],
 };
 const KEYS = Object.keys(EXPECT);
 
@@ -75,7 +75,7 @@ const KEYS = Object.keys(EXPECT);
     out.__hero = hero && hero.source && hero.source[0] ? hero.source[0].scaleMode : null;
     return out;
   }, KEYS);
-  ok("보스 아틀라스 10종 LINEAR(0) — jorm 포함", !!filters && KEYS.every((k) => filters[k] === 0), JSON.stringify(filters));
+  ok("보스 아틀라스 10종 LINEAR(0) — unionserpent 포함", !!filters && KEYS.every((k) => filters[k] === 0), JSON.stringify(filters));
   ok("대조군 hero_idle0 NEAREST(1) 유지", filters && filters.__hero === 1, `hero=${filters && filters.__hero}`);
 
   /* ── 3) 프레임 기하 실측 ── */
@@ -105,15 +105,15 @@ const KEYS = Object.keys(EXPECT);
     const get = (k) => { const an = a.get(k); return an ? { frames: an.frames.length, rate: an.frameRate } : null; };
     return {
       bossIdle: get("boss-idle"),
-      skollIdle: get("boss_skoll-idle"), hatiIdle: get("boss_hati-idle"),
-      jormIdle: get("boss_jorm-idle"), jormSp3: get("boss_jorm-sp3"), jormDie: get("boss_jorm-die"),
+      twinwolfIdle: get("boss_twinwolf-idle"), twinmateIdle: get("boss_twinmate-idle"),
+      unionserpentIdle: get("boss_unionserpent-idle"), unionserpentSp3: get("boss_unionserpent-sp3"), unionserpentDie: get("boss_unionserpent-die"),
     };
   });
   ok("boss-idle 8프레임", anims && anims.bossIdle && anims.bossIdle.frames === 8, JSON.stringify(anims && anims.bossIdle));
-  ok("skoll-idle 4프레임(쌍랑 시트 절반)", anims && anims.skollIdle && anims.skollIdle.frames === 4, JSON.stringify(anims && anims.skollIdle));
-  ok("hati-idle 4프레임", anims && anims.hatiIdle && anims.hatiIdle.frames === 4, JSON.stringify(anims && anims.hatiIdle));
-  ok("jorm-idle 3프레임 + die 6프레임", anims && anims.jormIdle && anims.jormIdle.frames === 3 && anims.jormDie && anims.jormDie.frames === 6, JSON.stringify({ idle: anims && anims.jormIdle, die: anims && anims.jormDie }));
-  ok("jorm sp3 부재(6행 시트)", anims && anims.jormSp3 === null, JSON.stringify(anims && anims.jormSp3));
+  ok("twinwolf-idle 4프레임(쌍랑 시트 절반)", anims && anims.twinwolfIdle && anims.twinwolfIdle.frames === 4, JSON.stringify(anims && anims.twinwolfIdle));
+  ok("twinmate-idle 4프레임", anims && anims.twinmateIdle && anims.twinmateIdle.frames === 4, JSON.stringify(anims && anims.twinmateIdle));
+  ok("unionserpent-idle 3프레임 + die 6프레임", anims && anims.unionserpentIdle && anims.unionserpentIdle.frames === 3 && anims.unionserpentDie && anims.unionserpentDie.frames === 6, JSON.stringify({ idle: anims && anims.unionserpentIdle, die: anims && anims.unionserpentDie }));
+  ok("unionserpent sp3 부재(6행 시트)", anims && anims.unionserpentSp3 === null, JSON.stringify(anims && anims.unionserpentSp3));
   ok("12FPS 등록", anims && anims.bossIdle && anims.bossIdle.rate === 12, `rate=${anims && anims.bossIdle && anims.bossIdle.rate}`);
 
   /* ── 5) 10종 인게임 렌더 + 스크린샷 ── */
@@ -147,7 +147,7 @@ const KEYS = Object.keys(EXPECT);
   ok("10종 인게임 렌더(displayWidth 200~360급)", rendered.every((r) => r && r.vis && r.w >= 200 && r.w <= 360), JSON.stringify(rendered));
 
   /* ── 6) 초상화 6종 HTTP 200 ── */
-  const ports = ["boss", "boss3", "boss_skoll", "boss_hati", "boss_fenrir", "boss_jorm"];
+  const ports = ["boss", "boss3", "boss_twinwolf", "boss_twinmate", "boss_greedwolf", "boss_unionserpent"];
   let portOk = 0;
   for (const t of ports) {
     const r = await p.request.get(`${base}/assets/bossport_${t}.webp`);

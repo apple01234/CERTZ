@@ -33,7 +33,7 @@ const { chromium } = require("playwright");
   console.log("PRE:", JSON.stringify(pre));
   const res = await p.evaluate(() => {
     const sc = window.__SERTZ__.game.scene.getScene("world");
-    sc.monsterKills["boss_vord"] = 1;
+    sc.monsterKills["boss_riftwarden"] = 1;
     window.__SERTZ_EB__.emit("rpg:bossReplay", { ch: "r5", lv: "easy" });
     return { transitioning: sc.transitioning, dialoguing: sc.dialoguing };
   });

@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-vc148 (#보스그리드) — 레거시 드래곤/가름 보스 3종 HD 아틀라스 재슬라이싱
+vc148 (#보스그리드) — 레거시 드래곤/혈안의 문지기 보스 3종 HD 아틀라스 재슬라이싱
   유저 제보: "너가 보스 그리드를 이상하게 짤랐잖아" — vc137 잔재 3종
-  (boss_abudditos/boss_vord/boss_gram)이 이질 아트 혼합(컬러 전방+흑룡 실루엣 특수기/
+  (boss_doomwyrm/boss_riftwarden/boss_warden)이 이질 아트 혼합(컬러 전방+흑룡 실루엣 특수기/
   보라 악마+붉은 늑대) + 프레임 잘림 상태였다.
   → bsw_ HD 원본 시트에서 유저 뷰어 격자(실측 확정) 그대로 재슬라이싱:
-    · bsw_abudditos / bsw_vord : 1540×1029 = 8열×7행 (열 192.5 · 행 147 실측 정합)
-    · bsw_gram                 : 1224×1288 = 6열×7행 (열 204 · 행 184)
+    · bsw_doomwyrm / bsw_riftwarden : 1540×1029 = 8열×7행 (열 192.5 · 행 147 실측 정합)
+    · bsw_warden                 : 1224×1288 = 6열×7행 (열 204 · 행 184)
     · BSW 행순서 [idle,walk,atk,death,sp1,sp2,sp3] → 게임순 [idle,walk,atk,sp1,sp2,sp3,die]
-  출력: public/assets/atl_boss_{abudditos,vord,gram}.webp + bossport_*.webp + manifest
+  출력: public/assets/atl_boss_{doomwyrm,riftwarden,warden}.webp + bossport_*.webp + manifest
   (AI 생성 0 — 유저 업로드 원본 크롭만)
 """
 from PIL import Image, ImageFilter
@@ -117,15 +117,15 @@ def hd_boss(name, src_path, x0s, y0s, cw, ch, desc):
     print(f"[HD] {name}: {fw}x{fh} · {len(cells)}행 {counts} · {kb:.0f}KB · ×{scale:.2f} · {desc}")
 
 # 격자 실측값 — 유저 뷰어 격자와 동일 (컨텐츠 스팬 전수 대조로 검증 완료)
-hd_boss("atl_boss_abudditos", f"{BASE}/assets_src/boss_sheets/bsw_abudditos.webp",
+hd_boss("atl_boss_doomwyrm", f"{BASE}/assets_src/boss_sheets/bsw_doomwyrm.webp",
         [0, 192, 385, 577, 770, 962, 1155, 1347], [round(147 * i) for i in range(7)], 192, 147,
-        "마룡 아부디토스 — 흑룡 8열×7행 (vc148 그리드 재슬라이싱)")
-hd_boss("atl_boss_vord", f"{BASE}/assets_src/boss_sheets/bsw_vord.webp",
+        "마룡 종언의 마룡 — 흑룡 8열×7행 (vc148 그리드 재슬라이싱)")
+hd_boss("atl_boss_riftwarden", f"{BASE}/assets_src/boss_sheets/bsw_riftwarden.webp",
         [0, 192, 385, 577, 770, 962, 1155, 1347], [round(147 * i) for i in range(7)], 192, 147,
-        "베오르드 — 흑룡 8열×7행 (vc148 그리드 재슬라이싱)")
-hd_boss("atl_boss_gram", f"{BASE}/assets_src/boss_sheets/bsw_gram.webp",
+        "재림의 파수꾼 — 흑룡 8열×7행 (vc148 그리드 재슬라이싱)")
+hd_boss("atl_boss_warden", f"{BASE}/assets_src/boss_sheets/bsw_warden.webp",
         [round(204 * i) for i in range(6)], [round(184 * i) for i in range(7)], 204, 184,
-        "가름 — 지옥견 늑대 6열×7행 (vc148 그리드 재슬라이싱)")
+        "혈안의 문지기 — 지옥견 늑대 6열×7행 (vc148 그리드 재슬라이싱)")
 
 json.dump(manifest, open(MANIFEST, "w"), ensure_ascii=False, indent=1)
 print("manifest updated")

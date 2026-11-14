@@ -96,13 +96,13 @@
 - bgm_field4.ogg — 「Journey To Ascend」 (원본 130초 캡+페이드아웃)
 - bgm_field5.ogg — 「Darkling」 (원본 130초 캡+페이드아웃)
 
-**알프헤임 (신비)**
-- bgm_alfheim1.ogg — 「Equatorial Complex
+**요정 숲 (신비)**
+- bgm_fairyglade1.ogg — 「Equatorial Complex
 」 (원본 130초 캡+페이드아웃)
-- bgm_alfheim2.ogg — 「Dreamy Flashback」 (원본 127초)
-- bgm_alfheim3.ogg — 「The Other Side of the Door」 (원본 130초 캡+페이드아웃)
-- bgm_alfheim4.ogg — 「Magic Forest」 (원본 130초 캡+페이드아웃)
-- bgm_alfheim5.ogg — 「Soaring」 (원본 130초 캡+페이드아웃)
+- bgm_fairyglade2.ogg — 「Dreamy Flashback」 (원본 127초)
+- bgm_fairyglade3.ogg — 「The Other Side of the Door」 (원본 130초 캡+페이드아웃)
+- bgm_fairyglade4.ogg — 「Magic Forest」 (원본 130초 캡+페이드아웃)
+- bgm_fairyglade5.ogg — 「Soaring」 (원본 130초 캡+페이드아웃)
 
 **동굴/니달벨리르 (어두운 던전)**
 - bgm_cave1.ogg — 「Chee Zee Caves V2」 (원본 130초 캡+페이드아웃)
@@ -111,14 +111,14 @@
 - bgm_cave4.ogg — 「Scissors」 (원본 130초 캡+페이드아웃)
 - bgm_cave5.ogg — 「Secrets of the Schoolyard」 (원본 130초 캡+페이드아웃)
 
-**니플헤임 (차가운 설원)**
+**설원 (차가운 설원)**
 - bgm_snow1.ogg — 「Frost Waltz」 (원본 130초 캡+페이드아웃)
 - bgm_snow2.ogg — 「Frost Waltz (Alternate)」 (원본 130초 캡+페이드아웃)
 - bgm_snow3.ogg — 「Ice Demon」 (원본 130초 캡+페이드아웃)
 - bgm_snow4.ogg — 「Northern Glade」 (원본 130초 캡+페이드아웃)
 - bgm_snow5.ogg — 「Night Vigil」 (원본 130초 캡+페이드아웃)
 
-**무스펠하임/헬/심연 (사악함)**
+**화산/명계/심연 (사악함)**
 - bgm_abyss1.ogg — 「SCP-x1x (Gateway to Hell)」 (원본 130초 캡+페이드아웃)
 - bgm_abyss2.ogg — 「SCP-x2x (Unseen Presence)」 (원본 130초 캡+페이드아웃)
 - bgm_abyss3.ogg — 「River Fire」 (원본 130초 캡+페이드아웃)
@@ -193,7 +193,7 @@
 - Warped Shooting Fx (Anokolisa) — 투사체 bolt/charged + 히트 플립북 3종/pulse/spark: /assets/vfx2_*
 - Cartoon FX Remaster (Jeong Seung Hyun/CFXR) — electric/hit triangle/explosion/blood: /assets/vfx2_*
 - Serene Village Revamped (Cainos) — 잔디/흙길 타일·집 2종·나무·바위
-- Free Cursed Land (aamatniekss? — itch.io) — 저주 땅 지면(magma/hel 변형)
+- Free Cursed Land (aamatniekss? — itch.io) — 저주 땅 지면(magma/duskrealm 변형)
 - RF Catacombs (ansimuz/Lunarian?) — 던전 바닥/벽돌(cave/stone/abyss/x2_bricks)
 - 각 팩 라이선스 원문은 upload/ 내 라이선스 파일 참조
 
@@ -211,7 +211,7 @@
   와그(늑대 6종 파생 duotone)/록 골렘(골렘 5종 파생)/미노타우르스/바실리스크/
   드래곤/코카트리스/램프리만더/자이언트 앤트/라이컨스로프/괴수 등)
   파생 변형: 하단 앵커 스쿼시 idle/run 애님 합성 + 휘도 기반 duotone 테마색
-  (frost/ember/hel/dark/rune/ice/gold/surt/fenrir/gram/abyss/nidhog)
+  (frost/ember/duskrealm/dark/rune/ice/gold/flamegiant/greedwolf/warden/abyss/blackwyrm)
   ⚠ 라이선스: 영리/비영리 사용 가능(단 NFT·블록체인·AI/ML 프로젝트 제외),
   수정 가능, 재판매/재배포 금지 — 원문: upload/extracted/32rogues-0.5.0/32rogues/LICENSE.txt
 
@@ -364,45 +364,45 @@ ghostIce_48x32(3동작×6프레임), wraith 21프레임 HD(150×159) 등 35종.
 
 **BGM (41)**
 - bgm_abyss_boss.ogg
-- bgm_alfheim_boss.ogg
+- bgm_fairyglade_boss.ogg
 - bgm_cave_boss.ogg
 - bgm_cave_water.ogg
 - bgm_forest_1.ogg
 - bgm_forest_2.ogg
 - bgm_forest_3.ogg
 - bgm_forest_boss.ogg
-- bgm_hel_1.ogg
-- bgm_hel_2.ogg
-- bgm_hel_3.ogg
-- bgm_hel_boss.ogg
+- bgm_duskrealm_1.ogg
+- bgm_duskrealm_2.ogg
+- bgm_duskrealm_3.ogg
+- bgm_duskrealm_boss.ogg
 - bgm_interior_home.ogg
 - bgm_interior_inn.ogg
 - bgm_kingdom_1.ogg
 - bgm_kingdom_2.ogg
 - bgm_kingdom_3.ogg
 - bgm_kingdom_boss.ogg
-- bgm_muspelheim_1.ogg
-- bgm_muspelheim_2.ogg
-- bgm_muspelheim_3.ogg
-- bgm_muspelheim_boss.ogg
-- bgm_nidavellir_1.ogg
-- bgm_nidavellir_2.ogg
-- bgm_nidavellir_3.ogg
-- bgm_nidavellir_boss.ogg
-- bgm_niflheim_1.ogg
-- bgm_niflheim_2.ogg
-- bgm_niflheim_3.ogg
-- bgm_niflheim_boss.ogg
+- bgm_emberland_1.ogg
+- bgm_emberland_2.ogg
+- bgm_emberland_3.ogg
+- bgm_emberland_boss.ogg
+- bgm_forgehall_1.ogg
+- bgm_forgehall_2.ogg
+- bgm_forgehall_3.ogg
+- bgm_forgehall_boss.ogg
+- bgm_frostland_1.ogg
+- bgm_frostland_2.ogg
+- bgm_frostland_3.ogg
+- bgm_frostland_boss.ogg
 - bgm_title.ogg
 - bgm_village_abyss.ogg
-- bgm_village_alfheim.ogg
+- bgm_village_fairyglade.ogg
 - bgm_village_cave.ogg
 - bgm_village_forest.ogg
-- bgm_village_hel.ogg
+- bgm_village_duskrealm.ogg
 - bgm_village_kingdom.ogg
-- bgm_village_muspelheim.ogg
-- bgm_village_nidavellir.ogg
-- bgm_village_niflheim.ogg
+- bgm_village_emberland.ogg
+- bgm_village_forgehall.ogg
+- bgm_village_frostland.ogg
 - bgm_village_village.ogg
 
 **효과음·스킬음 (32)**
@@ -442,7 +442,7 @@ ghostIce_48x32(3동작×6프레임), wraith 21프레임 HD(150×159) 등 35종.
 ### 영프 편 전용 BGM (15) — AI 생성 명시
 - License: AI 생성물 (상업 배포 전 라이선스 재검토 필요)
 - Source: 어항 앞에 마우스
-- Used for: 영프 편(하울르스톤) 전용 15곡 — vc232 #7 에서 `ai_song` 노이즈 필터 통과곡을 무드별 선별
+- Used for: 영프 편(영프) 전용 15곡 — vc232 #7 에서 `ai_song` 노이즈 필터 통과곡을 무드별 선별
 
 **주의**: 이 15곡은 AI 로 생성된 뒤 필터링한 곡이다.
 프로젝트 철칙은 *"게임 아트를 AI 로 생성하지 않는다"* 이며, **음악은 그 범위 밖으로 두기로 결정**했다
@@ -470,7 +470,7 @@ ghostIce_48x32(3동작×6프레임), wraith 21프레임 HD(150×159) 등 35종.
 
 - `bgm_cave1` → `bgm_cave_1` · `bgm_cave2` → `bgm_cave_2` · `bgm_cave3` → `bgm_cave_3`
 - `bgm_abyss1` → `bgm_abyss_1` · `bgm_abyss2` → `bgm_abyss_2` · `bgm_abyss3` → `bgm_abyss_3`
-- `bgm_alfheim1` → `bgm_alfheim_1` · `bgm_alfheim2` → `bgm_alfheim_2` · `bgm_alfheim3` → `bgm_alfheim_3`
+- `bgm_fairyglade1` → `bgm_fairyglade_1` · `bgm_fairyglade2` → `bgm_fairyglade_2` · `bgm_fairyglade3` → `bgm_fairyglade_3`
 ---
 
 ## vc288 — 보스 스프라이트 출처
@@ -480,7 +480,7 @@ ghostIce_48x32(3동작×6프레임), wraith 21프레임 HD(150×159) 등 35종.
 > 대체한 외부 제작 팩**이다(AI 생성 보스 13종 중 11종이 프레임 하단에서 아트가
 > 수평으로 잘려 있어 교체했다 — 근거: `docs/BOSS_SPRITE_PLAN.md`).
 >
-> 파일 1개가 여러 보스에 재사용된다(예: `boss_dragon.png` → 니드호그·요르문간드·아부디토스).
+> 파일 1개가 여러 보스에 재사용된다(예: `boss_dragon.png` → 탐식의 흑룡·연합을 삼키는 뱀·종언의 마룡).
 > 전송량을 줄이려는 의도적 공유이며, 각 보스의 `tex` 키는 별도다.
 
 | 파일 | 원본 | 라이선스 | 프레임 |

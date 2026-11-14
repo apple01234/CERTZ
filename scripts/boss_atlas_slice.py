@@ -19,15 +19,15 @@ PREVIEW_DIR = "/home/z/my-project/scripts/atlas_preview"
 os.makedirs(PREVIEW_DIR, exist_ok=True)
 
 SHEETS = [
-    ("atl_boss_nidhog", (0, 0), "니드호그=알프헤임 수목룡"),
-    ("atl_boss_fenrir", (0, 1), "펜리르=설원 백랑(빙결)"),
-    ("atl_boss_hati",   (0, 2), "하티=스콜 트윈(화염)"),
+    ("atl_boss_blackwyrm", (0, 0), "탐식의 흑룡=요정 숲 수목룡"),
+    ("atl_boss_greedwolf", (0, 1), "탐욕의 늑대=설원 백랑(빙결)"),
+    ("atl_boss_twinmate",   (0, 2), "화염 늑대=얼음 늑대 트윈(화염)"),
     ("atl_boss2",       (1, 0), "베히모스=미드가르드 해적선"),
-    ("atl_boss_surt",   (1, 1), "수르트=무스펠 용암골렘"),
-    ("atl_boss_skoll",  (1, 2), "스콜=얼음 봉황"),
-    ("atl_boss3",       (2, 0), "심연의 군주=헬 악마"),
-    ("atl_boss_nagr",   (2, 1), "발할라 천사기사"),
-    ("atl_boss",        (2, 2), "심연의 수호자=스바르트 흑마수"),
+    ("atl_boss_flamegiant",   (1, 1), "화염의 거인=화산 용암골렘"),
+    ("atl_boss_twinwolf",  (1, 2), "얼음 늑대=얼음 봉황"),
+    ("atl_boss3",       (2, 0), "심연의 군주=명계 악마"),
+    ("atl_boss_angelknight",   (2, 1), "천상 천사기사"),
+    ("atl_boss",        (2, 2), "심연의 수호자=어둠 동굴 흑마수"),
 ]
 XBANDS = [(15, 522), (567, 1072), (1121, 1623)]
 YBANDS = [(11, 328), (352, 676), (695, 949)]

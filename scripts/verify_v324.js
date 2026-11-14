@@ -195,8 +195,8 @@ ok("S30 풀버전(>131s) 다수 + 130s 캡본 0개", fullCnt >= 30 && capCnt ===
     ok("R3 디코드 캡 노출(decodedMax=3)", st.decodedMax === 3);
 
     /* 구역 진입 — 지연 로딩 재생 (미프리로드 트랙, 배치표 기대값은 stageTrack으로 동일 산출) */
-    const expectTrack = await page.evaluate(() => (window).__SERTZ_DEBUG__.bgm.stageTrack("niflheim7"));
-    await page.evaluate(() => (window).__SERTZ_DEBUG__.bgm.playStageBGM("niflheim7"));
+    const expectTrack = await page.evaluate(() => (window).__SERTZ_DEBUG__.bgm.stageTrack("frostland7"));
+    await page.evaluate(() => (window).__SERTZ_DEBUG__.bgm.playStageBGM("frostland7"));
     await page.waitForFunction(
       (t) => (window).__SERTZ_DEBUG__.bgm.bgmDebugState().playing === true &&
         (window).__SERTZ_DEBUG__.bgm.bgmDebugState().track === t,
@@ -204,10 +204,10 @@ ok("S30 풀버전(>131s) 다수 + 130s 캡본 0개", fullCnt >= 30 && capCnt ===
       { timeout: 30000 }
     );
     const st2 = await page.evaluate(() => (window).__SERTZ_DEBUG__.bgm.bgmDebugState());
-    ok("R4 미로드 트랙 지연 로딩→재생(niflheim7→배치표 트랙)", st2.track === expectTrack && st2.playing === true, `${st2.track} playing=${st2.playing}`);
+    ok("R4 미로드 트랙 지연 로딩→재생(frostland7→배치표 트랙)", st2.track === expectTrack && st2.playing === true, `${st2.track} playing=${st2.playing}`);
 
     /* LRU 캡 — 여러 구역 순회해도 디코드 캐시 3개 이하 */
-    for (const zone of ["forest3", "alfheim5", "muspelheim3", "hel8", "cave2"]) {
+    for (const zone of ["forest3", "fairyglade5", "emberland3", "duskrealm8", "cave2"]) {
       await page.evaluate((z) => (window).__SERTZ_DEBUG__.bgm.playStageBGM(z), zone);
       await page.waitForTimeout(2200); // 트랙별 디코드 시간 확보
     }
@@ -228,7 +228,7 @@ ok("S30 풀버전(>131s) 다수 + 130s 캡본 0개", fullCnt >= 30 && capCnt ===
     /* 구역→트랙 결정론적 배치 (v3.0.23 회귀 확인) */
     const mapping = await page.evaluate(() => {
       const b = (window).__SERTZ_DEBUG__.bgm;
-      const keys = ["village", "forest1", "forest10", "kingdom2", "niflheim7", "cave5", "muspelheim3", "hel8", "abyss9", "forestv", "interior_home"];
+      const keys = ["village", "forest1", "forest10", "kingdom2", "frostland7", "cave5", "emberland3", "duskrealm8", "abyss9", "forestv", "interior_home"];
       const m = {};
       for (const k of keys) m[k] = b.stageTrack(k);
       return m;

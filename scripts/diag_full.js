@@ -27,7 +27,7 @@ const { chromium } = require("playwright");
   console.log("PRE:", JSON.stringify(pre));
   await p.evaluate(() => {
     const sc = window.__SERTZ__.game.scene.getScene("world");
-    sc.monsterKills["boss_vord"] = 1;
+    sc.monsterKills["boss_riftwarden"] = 1;
     window.__SERTZ_EB__.emit("rpg:bossReplay", { ch: "r5", lv: "easy" });
     console.log("DBG transitioning after emit:", sc.transitioning);
   });

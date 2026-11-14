@@ -3,8 +3,8 @@ import { STAGES } from "../src/game/stages";
 
 const targets = [
   "village", "forest1", "forest4", "forest10",
-  "kingdom1", "kingdom4", "alfheim1", "muspelheim1",
-  "niflheim1", "cave1", "nidavellir1", "hel1", "abyss1", "abyss10",
+  "kingdom1", "kingdom4", "fairyglade1", "emberland1",
+  "frostland1", "cave1", "forgehall1", "duskrealm1", "abyss1", "abyss10",
 ];
 for (const k of targets) {
   const s = STAGES[k];
@@ -16,7 +16,7 @@ for (const k of targets) {
 let missing = 0;
 for (const [k, s] of Object.entries(STAGES)) {
   if (k === "village" || k.startsWith("interior")) continue;
-  const m = /^(forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss)(\d+)$/.exec(k);
+  const m = /^(forest|kingdom|fairyglade|emberland|frostland|cave|forgehall|duskrealm|abyss)(\d+)$/.exec(k);
   if (!m) continue;
   const sub = parseInt(m[2], 10);
   const hasLevel = s.quests.some((q) => q.type === "level");

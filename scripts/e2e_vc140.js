@@ -9,12 +9,12 @@ const EXPECT = {
   atl_boss:       [268, 234, 6, 72],
   atl_boss2:      [330, 212, 7, 84],
   atl_boss3:      [286, 234, 6, 72],
-  atl_boss_nidhog:[226, 232, 7, 84],
-  atl_boss_surt:  [330, 224, 7, 84],
-  atl_boss_fenrir:[304, 274, 7, 84],
-  atl_boss_skoll: [274, 234, 7, 84],
-  atl_boss_nagr:  [286, 240, 6, 72],
-  atl_boss_hati:  [280, 258, 7, 84],
+  atl_boss_blackwyrm:[226, 232, 7, 84],
+  atl_boss_flamegiant:  [330, 224, 7, 84],
+  atl_boss_greedwolf:[304, 274, 7, 84],
+  atl_boss_twinwolf: [274, 234, 7, 84],
+  atl_boss_angelknight:  [286, 240, 6, 72],
+  atl_boss_twinmate:  [280, 258, 7, 84],
 };
 const KEYS = Object.keys(EXPECT);
 

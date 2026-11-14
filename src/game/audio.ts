@@ -1,6 +1,6 @@
 ﻿import type Phaser from "phaser";
 /* vc235 — 영프 편 15챕터 스펙(보스 구역 판정용). 순환 import 없이 값만 읽는다. */
-import { HOWLRSTONE_CHAPTERS } from "./howlrstone";
+import { LILACWORLD_CHAPTERS } from "./lilacworld";
 
 /**
  * 외부 오디오 에셋 재생 (public/assets/audio/)
@@ -176,16 +176,16 @@ function play(key: string, vol: number, rate = 1) {
   }, 1600);
 }
 
-export type BGMKind = "field" | "boss" | "title" | "village" | "alfheim" | "cave" | "snow" | "abyss";
+export type BGMKind = "field" | "boss" | "title" | "village" | "fairyglade" | "cave" | "snow" | "abyss";
 
 /* v1.1.1 — kind 기반 대표곡 (타이틀·훅용). 실제 구역 재생은 stageTrack 담당 */
 const THEME_TRACKS: Record<BGMKind, string> = {
   title: "bgm_title",
   village: "bgm_village_village",
   field: "bgm_forest_1",
-  alfheim: "bgm_alfheim_1",
+  fairyglade: "bgm_fairyglade_1",
   cave: "bgm_cave_1",
-  snow: "bgm_niflheim_1",
+  snow: "bgm_frostland_1",
   abyss: "bgm_abyss_1",
   boss: "bgm_forest_boss",
 };
@@ -193,27 +193,27 @@ const THEME_TRACKS: Record<BGMKind, string> = {
 /* v1.1.1 — 자산 목록(E2E 훅·프리로드 참조). 구역별 실제 곡은 STAGE_BGM/VILLAGE_OF/BOSS_OF. */
 export const BGM_PLAYLISTS: Record<BGMKind, string[]> = {
   title: ["bgm_title", "bgm_title2"],
-  village: ["bgm_village_village", "bgm_village_forest", "bgm_village_kingdom", "bgm_village_alfheim",
-            "bgm_village_muspelheim", "bgm_village_niflheim", "bgm_village_cave",
-            "bgm_village_nidavellir", "bgm_village_hel", "bgm_village_abyss"],
+  village: ["bgm_village_village", "bgm_village_forest", "bgm_village_kingdom", "bgm_village_fairyglade",
+            "bgm_village_emberland", "bgm_village_frostland", "bgm_village_cave",
+            "bgm_village_forgehall", "bgm_village_duskrealm", "bgm_village_abyss"],
   field: ["bgm_forest_1", "bgm_forest_2", "bgm_forest_3", "bgm_kingdom_1", "bgm_kingdom_2", "bgm_kingdom_3",
-          "bgm_alfheim_1", "bgm_alfheim_2", "bgm_alfheim_3", "bgm_muspelheim_1", "bgm_muspelheim_2", "bgm_muspelheim_3",
-          "bgm_niflheim_1", "bgm_niflheim_2", "bgm_niflheim_3", "bgm_cave_1", "bgm_cave_2", "bgm_cave_3",
-          "bgm_nidavellir_1", "bgm_nidavellir_2", "bgm_nidavellir_3", "bgm_hel_1", "bgm_hel_2", "bgm_hel_3",
+          "bgm_fairyglade_1", "bgm_fairyglade_2", "bgm_fairyglade_3", "bgm_emberland_1", "bgm_emberland_2", "bgm_emberland_3",
+          "bgm_frostland_1", "bgm_frostland_2", "bgm_frostland_3", "bgm_cave_1", "bgm_cave_2", "bgm_cave_3",
+          "bgm_forgehall_1", "bgm_forgehall_2", "bgm_forgehall_3", "bgm_duskrealm_1", "bgm_duskrealm_2", "bgm_duskrealm_3",
           "bgm_abyss_1", "bgm_abyss_2", "bgm_abyss_3",
-          /* vc232 (#7) — 영프 편(하울르스톤) 전용 15곡. 본편과 곡이 겹치지 않게
+          /* vc232 (#7) — 영프 편(영프) 전용 15곡. 본편과 곡이 겹치지 않게
            *  ai_song 의 노이즈 필터 통과 곡에서 무드별로 선별했다. */
           "bgm_hw1_1", "bgm_hw1_2", "bgm_hw1_3",
           "bgm_hw2_1", "bgm_hw2_2", "bgm_hw2_3",
           "bgm_hw3_1", "bgm_hw3_2", "bgm_hw3_3",
           "bgm_hw4_1", "bgm_hw4_2", "bgm_hw4_3",
           "bgm_hw5_1", "bgm_hw5_2", "bgm_hw5_3"],
-  alfheim: ["bgm_alfheim_1", "bgm_alfheim_2", "bgm_alfheim_3"],
+  fairyglade: ["bgm_fairyglade_1", "bgm_fairyglade_2", "bgm_fairyglade_3"],
   cave: ["bgm_cave_1", "bgm_cave_2", "bgm_cave_3", "bgm_cave_water"],
-  snow: ["bgm_niflheim_1", "bgm_niflheim_2", "bgm_niflheim_3"],
-  abyss: ["bgm_hel_1", "bgm_hel_2", "bgm_hel_3", "bgm_abyss_1", "bgm_abyss_2", "bgm_abyss_3"],
-  boss: ["bgm_forest_boss", "bgm_kingdom_boss", "bgm_alfheim_boss", "bgm_muspelheim_boss",
-         "bgm_niflheim_boss", "bgm_cave_boss", "bgm_nidavellir_boss", "bgm_hel_boss", "bgm_abyss_boss"],
+  snow: ["bgm_frostland_1", "bgm_frostland_2", "bgm_frostland_3"],
+  abyss: ["bgm_duskrealm_1", "bgm_duskrealm_2", "bgm_duskrealm_3", "bgm_abyss_1", "bgm_abyss_2", "bgm_abyss_3"],
+  boss: ["bgm_forest_boss", "bgm_kingdom_boss", "bgm_fairyglade_boss", "bgm_emberland_boss",
+         "bgm_frostland_boss", "bgm_cave_boss", "bgm_forgehall_boss", "bgm_duskrealm_boss", "bgm_abyss_boss"],
 };
 
 
@@ -226,10 +226,10 @@ const BGM_GAIN_DB: Record<string, number> = {
   bgm_abyss_2: 1.012,   // +0.1dB ← RMS -16.6dB
   bgm_abyss_3: 0.735,   // -2.7dB ← RMS -13.8dB
   bgm_abyss_boss: 0.679,   // -3.4dB ← RMS -13.1dB
-  bgm_alfheim_1: 0.769,   // -2.3dB ← RMS -14.2dB
-  bgm_alfheim_2: 0.757,   // -2.4dB ← RMS -14.1dB
-  bgm_alfheim_3: 1.12,   // +1.0dB ← RMS -17.5dB
-  bgm_alfheim_boss: 0.803,   // -1.9dB ← RMS -14.6dB
+  bgm_fairyglade_1: 0.769,   // -2.3dB ← RMS -14.2dB
+  bgm_fairyglade_2: 0.757,   // -2.4dB ← RMS -14.1dB
+  bgm_fairyglade_3: 1.12,   // +1.0dB ← RMS -17.5dB
+  bgm_fairyglade_boss: 0.803,   // -1.9dB ← RMS -14.6dB
   bgm_battle: 0.912,   // -0.8dB ← RMS -15.7dB
   bgm_cave_1: 1.061,   // +0.5dB ← RMS -17.0dB
   bgm_cave_2: 0.631,   // -4.0dB ← RMS -12.1dB
@@ -240,10 +240,10 @@ const BGM_GAIN_DB: Record<string, number> = {
   bgm_forest_2: 0.815,   // -1.8dB ← RMS -14.7dB
   bgm_forest_3: 0.744,   // -2.6dB ← RMS -13.9dB
   bgm_forest_boss: 0.803,   // -1.9dB ← RMS -14.6dB
-  bgm_hel_1: 0.685,   // -3.3dB ← RMS -13.2dB
-  bgm_hel_2: 0.781,   // -2.1dB ← RMS -14.4dB
-  bgm_hel_3: 0.654,   // -3.7dB ← RMS -12.8dB
-  bgm_hel_boss: 0.875,   // -1.2dB ← RMS -15.3dB
+  bgm_duskrealm_1: 0.685,   // -3.3dB ← RMS -13.2dB
+  bgm_duskrealm_2: 0.781,   // -2.1dB ← RMS -14.4dB
+  bgm_duskrealm_3: 0.654,   // -3.7dB ← RMS -12.8dB
+  bgm_duskrealm_boss: 0.875,   // -1.2dB ← RMS -15.3dB
   bgm_interior_home: 0.815,   // -1.8dB ← RMS -14.7dB
   bgm_interior_inn: 0.871,   // -1.2dB ← RMS -15.3dB
   bgm_kingdom_1: 0.82,
@@ -268,30 +268,30 @@ const BGM_GAIN_DB: Record<string, number> = {
   bgm_kingdom_boss: 0.67,   // -3.5dB ← RMS -13.0dB
   bgm_kitchen: 0.813,   // -1.8dB ← RMS -14.7dB
   bgm_lobby: 0.977,   // -0.2dB ← RMS -16.3dB
-  bgm_muspelheim_1: 0.781,   // -2.1dB ← RMS -14.4dB
-  bgm_muspelheim_2: 0.631,   // -4.0dB ← RMS -12.4dB
-  bgm_muspelheim_3: 1.012,   // +0.1dB ← RMS -16.6dB
-  bgm_muspelheim_boss: 0.679,   // -3.4dB ← RMS -13.1dB
-  bgm_nidavellir_1: 0.631,   // -4.0dB ← RMS -11.3dB
-  bgm_nidavellir_2: 0.66,   // -3.6dB ← RMS -12.9dB
-  bgm_nidavellir_3: 1.012,   // +0.1dB ← RMS -16.6dB
-  bgm_nidavellir_boss: 0.803,   // -1.9dB ← RMS -14.6dB
-  bgm_niflheim_1: 0.818,   // -1.7dB ← RMS -14.8dB
-  bgm_niflheim_2: 0.631,   // -4.0dB ← RMS -11.8dB
-  bgm_niflheim_3: 0.81,   // -1.8dB ← RMS -14.7dB
-  bgm_niflheim_boss: 0.803,   // -1.9dB ← RMS -14.6dB
+  bgm_emberland_1: 0.781,   // -2.1dB ← RMS -14.4dB
+  bgm_emberland_2: 0.631,   // -4.0dB ← RMS -12.4dB
+  bgm_emberland_3: 1.012,   // +0.1dB ← RMS -16.6dB
+  bgm_emberland_boss: 0.679,   // -3.4dB ← RMS -13.1dB
+  bgm_forgehall_1: 0.631,   // -4.0dB ← RMS -11.3dB
+  bgm_forgehall_2: 0.66,   // -3.6dB ← RMS -12.9dB
+  bgm_forgehall_3: 1.012,   // +0.1dB ← RMS -16.6dB
+  bgm_forgehall_boss: 0.803,   // -1.9dB ← RMS -14.6dB
+  bgm_frostland_1: 0.818,   // -1.7dB ← RMS -14.8dB
+  bgm_frostland_2: 0.631,   // -4.0dB ← RMS -11.8dB
+  bgm_frostland_3: 0.81,   // -1.8dB ← RMS -14.7dB
+  bgm_frostland_boss: 0.803,   // -1.9dB ← RMS -14.6dB
   bgm_shop: 1.0,   // +0.0dB ← RMS -16.5dB
   bgm_title: 0.758,   // -2.4dB ← RMS -14.1dB
   bgm_title2: 0.901,   // -0.9dB ← RMS -15.6dB
   bgm_village_abyss: 0.848,   // -1.4dB ← RMS -15.1dB
-  bgm_village_alfheim: 0.77,   // -2.3dB ← RMS -14.2dB
+  bgm_village_fairyglade: 0.77,   // -2.3dB ← RMS -14.2dB
   bgm_village_cave: 0.912,   // -0.8dB ← RMS -15.7dB
   bgm_village_forest: 0.957,   // -0.4dB ← RMS -16.1dB
-  bgm_village_hel: 0.961,   // -0.3dB ← RMS -16.2dB
+  bgm_village_duskrealm: 0.961,   // -0.3dB ← RMS -16.2dB
   bgm_village_kingdom: 0.785,   // -2.1dB ← RMS -14.4dB
-  bgm_village_muspelheim: 0.631,   // -4.0dB ← RMS -11.5dB
-  bgm_village_nidavellir: 0.631,   // -4.0dB ← RMS -11.6dB
-  bgm_village_niflheim: 0.785,   // -2.1dB ← RMS -14.4dB
+  bgm_village_emberland: 0.631,   // -4.0dB ← RMS -11.5dB
+  bgm_village_forgehall: 0.631,   // -4.0dB ← RMS -11.6dB
+  bgm_village_frostland: 0.785,   // -2.1dB ← RMS -14.4dB
   bgm_village_village: 0.727,   // -2.8dB ← RMS -13.7dB
 };
 /** 곡별 정규화 게인 (표에 없으면 1.0 — 신규 곡은 보정 없이 원음) */
@@ -311,12 +311,12 @@ export const BGM_PRELOAD_TRACKS: string[] = ["bgm_title"];
  *  마을(Xv)·보스 구역(10)·보스 조우 오버라이드는 장소 정체성 곡으로 유지 —
  *  챕터당 전환은 "필드→마을→보스" 2회 수준으로 감소.
  *  풀 배열은 자산 목록(E2E 훅) 참조용으로 유지. */
-const CHAPTER_ORDER = ["forest", "kingdom", "alfheim", "muspelheim", "niflheim", "cave", "nidavellir", "hel", "abyss"] as const;
+const CHAPTER_ORDER = ["forest", "kingdom", "fairyglade", "emberland", "frostland", "cave", "forgehall", "duskrealm", "abyss"] as const;
 
 /* ================= v1.1.1 (#스테이지BGM) — 3스테이지마다 교체 =================
  *  유저 지적 2건을 구조로 고친다:
  *   "어두운 마을들에 왜 밝은 분위기의 BGM을 씀?" → 챕터 '정서'를 먼저 정하고 그 정서의
- *     곡만 쓴다. 어두운 챕터(니플헤임·스바르트·니다벨리르·헬·뿌리)에는 느리고 어두운 풀
+ *     곡만 쓴다. 어두운 챕터(설원·어둠 동굴·대장간 광산·명계·뿌리)에는 느리고 어두운 풀
  *     (underwater/cyber/lofi/investigation/alchemist/forge)만 배정하고 밝은 풀
  *     (lobby/electro/casino/circus/aero/morning/kitchen)은 절대 쓰지 않는다.
  *   "10스테이지 중 3스테이지마다 브금이 바뀌어야지" → 구역 1~3 / 4~6 / 7~9 를 서로 다른
@@ -326,17 +326,17 @@ const STAGE_BGM: Record<string, [string, string, string]> = {
   /* 챕터: [구역1~3, 구역4~6, 구역7~9] */
   forest: ["bgm_forest_1", "bgm_forest_2", "bgm_forest_3"],
   kingdom: ["bgm_kingdom_1", "bgm_kingdom_2", "bgm_kingdom_3"],
-  alfheim: ["bgm_alfheim_1", "bgm_alfheim_2", "bgm_alfheim_3"],
-  muspelheim: ["bgm_muspelheim_1", "bgm_muspelheim_2", "bgm_muspelheim_3"],
-  niflheim: ["bgm_niflheim_1", "bgm_niflheim_2", "bgm_niflheim_3"],
+  fairyglade: ["bgm_fairyglade_1", "bgm_fairyglade_2", "bgm_fairyglade_3"],
+  emberland: ["bgm_emberland_1", "bgm_emberland_2", "bgm_emberland_3"],
+  frostland: ["bgm_frostland_1", "bgm_frostland_2", "bgm_frostland_3"],
   cave: ["bgm_cave_1", "bgm_cave_2", "bgm_cave_3"],
-  nidavellir: ["bgm_nidavellir_1", "bgm_nidavellir_2", "bgm_nidavellir_3"],
-  hel: ["bgm_hel_1", "bgm_hel_2", "bgm_hel_3"],
+  forgehall: ["bgm_forgehall_1", "bgm_forgehall_2", "bgm_forgehall_3"],
+  duskrealm: ["bgm_duskrealm_1", "bgm_duskrealm_2", "bgm_duskrealm_3"],
   abyss: ["bgm_abyss_1", "bgm_abyss_2", "bgm_abyss_3"],
-  /* vc232 (#7 "중복되는 노래 없도록") — 영프 편(하울르스톤) 전용 슬롯.
+  /* vc232 (#7 "중복되는 노래 없도록") — 영프 편(영프) 전용 슬롯.
    *
-   *  [문제] 종전엔 HUNT_THEME_OF 가 영프 5챕터를 본편 챕터 5개(kingdom/alfheim/
-   *   muspelheim/abyss/hel)로 그대로 매핑했다. 그 결과 영프를 하면 본편에서
+   *  [문제] 종전엔 HUNT_THEME_OF 가 영프 5챕터를 본편 챕터 5개(kingdom/fairyglade/
+   *   emberland/abyss/duskrealm)로 그대로 매핑했다. 그 결과 영프를 하면 본편에서
    *   들은 곡이 **그대로** 다시 나왔다 — 보유 트랙이 27개(9챕터×3구간)뿐이라
    *   같은 구간을 쓰면 반드시 겹치는 구조였다.
    *
@@ -353,168 +353,168 @@ const STAGE_BGM: Record<string, [string, string, string]> = {
   /* 2026-11-14 (유저 신고 "겹치는 음악 많은 버그") — 영프 챕터마다 **필드곡 1곡 전용**.
    *  종전엔 5구역 챕터의 4구역이 다른 챕터의 곡(구간 2칸)을 빌려 써서 3·7·8·10·14장 곡이 옆 챕터와 겹쳤고,
    *  15장은 1장과 같은 곡이었다. 각 장의 1~3구역 곡(무드 선별)은 그대로 두고 15장만 쓰이지 않던 hw1_3 로 바꾼다. */
-  howlrstone1:  ["bgm_hw1_1", "bgm_hw1_1", "bgm_hw1_1"],   // 왕립도서관 — 잔잔한 도입
-  howlrstone2:  ["bgm_hw1_2", "bgm_hw1_2", "bgm_hw1_2"],   // 어둠이 커지다 — 긴장
-  howlrstone3:  ["bgm_hw3_1", "bgm_hw3_1", "bgm_hw3_1"],   // 시작된 전쟁 — 격전
-  howlrstone4:  ["bgm_hw2_1", "bgm_hw2_1", "bgm_hw2_1"],   // 석양의 바다 — 서정
-  howlrstone5:  ["bgm_hw2_2", "bgm_hw2_2", "bgm_hw2_2"],   // 협상과 연합 — 희망
-  howlrstone6:  ["bgm_hw4_1", "bgm_hw4_1", "bgm_hw4_1"],   // 초월자 — 신비·압도
-  howlrstone7:  ["bgm_hw3_2", "bgm_hw3_2", "bgm_hw3_2"],   // 군단장 전투 — 격전
-  howlrstone8:  ["bgm_hw3_3", "bgm_hw3_3", "bgm_hw3_3"],   // 두 전사의 격전 — 최고조
-  howlrstone9:  ["bgm_hw2_3", "bgm_hw2_3", "bgm_hw2_3"],   // 라일락의 희생 — 애상
-  howlrstone10: ["bgm_hw4_2", "bgm_hw4_2", "bgm_hw4_2"],   // 어둠의 성채 — 공포
-  howlrstone11: ["bgm_hw4_3", "bgm_hw4_3", "bgm_hw4_3"],   // 어둠의 왕좌 — 장엄
-  howlrstone12: ["bgm_hw5_2", "bgm_hw5_2", "bgm_hw5_2"],   // 운명 — 비장
-  howlrstone13: ["bgm_hw5_1", "bgm_hw5_1", "bgm_hw5_1"],   // 최후의 일격 — 결전
-  howlrstone14: ["bgm_hw5_3", "bgm_hw5_3", "bgm_hw5_3"],   // THE END TIME — 종말
-  howlrstone15: ["bgm_hw1_3", "bgm_hw1_3", "bgm_hw1_3"],   // New Beginning — 회복
+  lilacworld1:  ["bgm_hw1_1", "bgm_hw1_1", "bgm_hw1_1"],   // 왕립도서관 — 잔잔한 도입
+  lilacworld2:  ["bgm_hw1_2", "bgm_hw1_2", "bgm_hw1_2"],   // 어둠이 커지다 — 긴장
+  lilacworld3:  ["bgm_hw3_1", "bgm_hw3_1", "bgm_hw3_1"],   // 시작된 전쟁 — 격전
+  lilacworld4:  ["bgm_hw2_1", "bgm_hw2_1", "bgm_hw2_1"],   // 석양의 바다 — 서정
+  lilacworld5:  ["bgm_hw2_2", "bgm_hw2_2", "bgm_hw2_2"],   // 협상과 연합 — 희망
+  lilacworld6:  ["bgm_hw4_1", "bgm_hw4_1", "bgm_hw4_1"],   // 초월자 — 신비·압도
+  lilacworld7:  ["bgm_hw3_2", "bgm_hw3_2", "bgm_hw3_2"],   // 군단장 전투 — 격전
+  lilacworld8:  ["bgm_hw3_3", "bgm_hw3_3", "bgm_hw3_3"],   // 두 전사의 격전 — 최고조
+  lilacworld9:  ["bgm_hw2_3", "bgm_hw2_3", "bgm_hw2_3"],   // 라일락의 희생 — 애상
+  lilacworld10: ["bgm_hw4_2", "bgm_hw4_2", "bgm_hw4_2"],   // 어둠의 성채 — 공포
+  lilacworld11: ["bgm_hw4_3", "bgm_hw4_3", "bgm_hw4_3"],   // 어둠의 왕좌 — 장엄
+  lilacworld12: ["bgm_hw5_2", "bgm_hw5_2", "bgm_hw5_2"],   // 운명 — 비장
+  lilacworld13: ["bgm_hw5_1", "bgm_hw5_1", "bgm_hw5_1"],   // 최후의 일격 — 결전
+  lilacworld14: ["bgm_hw5_3", "bgm_hw5_3", "bgm_hw5_3"],   // THE END TIME — 종말
+  lilacworld15: ["bgm_hw1_3", "bgm_hw1_3", "bgm_hw1_3"],   // New Beginning — 회복
   /* 2026-11-14 — 그랜드 플래닛(DLC) 10챕터 전용 필드곡. 종전엔 HUNT_THEME_OF 로 옛 챕터 곡을 빌려
    *  프리즈마·노벨·세르니움 30구역이 같은 3곡, 스타게이트·메크, 네오시티·오피니시아가 같은 곡이었다.
-   *  쓰이지 않던 옛 곡(포레스트·무스펠·니플·동굴 물소리)을 나눠 챕터끼리 필드곡이 겹치지 않게 한다. */
-  dlcstargate: ["bgm_nidavellir_1", "bgm_nidavellir_2", "bgm_nidavellir_3"],
-  dlcmech:     ["bgm_muspelheim_1", "bgm_muspelheim_2", "bgm_muspelheim_3"],
-  dlcprisma:   ["bgm_alfheim_1", "bgm_alfheim_2", "bgm_alfheim_3"],
+   *  쓰이지 않던 옛 곡(포레스트·화산·설원·동굴 물소리)을 나눠 챕터끼리 필드곡이 겹치지 않게 한다. */
+  dlcstargate: ["bgm_forgehall_1", "bgm_forgehall_2", "bgm_forgehall_3"],
+  dlcmech:     ["bgm_emberland_1", "bgm_emberland_2", "bgm_emberland_3"],
+  dlcprisma:   ["bgm_fairyglade_1", "bgm_fairyglade_2", "bgm_fairyglade_3"],
   dlcnovel:    ["bgm_forest_1", "bgm_forest_2", "bgm_forest_3"],
-  dlcsernium:  ["bgm_niflheim_1", "bgm_niflheim_2", "bgm_niflheim_3"],
+  dlcsernium:  ["bgm_frostland_1", "bgm_frostland_2", "bgm_frostland_3"],
   dlcneocity:  ["bgm_kingdom_1", "bgm_kingdom_2", "bgm_kingdom_3"],
   dlcopinicia: ["bgm_cave_water", "bgm_cave_water", "bgm_cave_water"], // 남은 곡이 1곡뿐 — 챕터 전체 1곡
   dlcocean:    ["bgm_abyss_1", "bgm_abyss_2", "bgm_abyss_3"],
   dlcreverse:  ["bgm_cave_1", "bgm_cave_2", "bgm_cave_3"],
-  dlcswallow:  ["bgm_hel_1", "bgm_hel_2", "bgm_hel_3"],
+  dlcswallow:  ["bgm_duskrealm_1", "bgm_duskrealm_2", "bgm_duskrealm_3"],
   
 };
 /** 챕터 대표곡(폴백·목록용) — 구간 배정의 첫 곡 */
 const CHAPTER_THEME: Record<string, string> = {
   forest: "bgm_forest_1",
   kingdom: "bgm_kingdom_1",
-  alfheim: "bgm_alfheim_1",
-  muspelheim: "bgm_muspelheim_1",
-  niflheim: "bgm_niflheim_1",
+  fairyglade: "bgm_fairyglade_1",
+  emberland: "bgm_emberland_1",
+  frostland: "bgm_frostland_1",
   cave: "bgm_cave_1",
-  nidavellir: "bgm_nidavellir_1",
-  hel: "bgm_hel_1",
+  forgehall: "bgm_forgehall_1",
+  duskrealm: "bgm_duskrealm_1",
   abyss: "bgm_abyss_1",
 };
-const VILLAGE_TRACKS = ["bgm_village_forest", "bgm_village_kingdom", "bgm_village_alfheim",
-  "bgm_village_muspelheim", "bgm_village_niflheim"];
+const VILLAGE_TRACKS = ["bgm_village_forest", "bgm_village_kingdom", "bgm_village_fairyglade",
+  "bgm_village_emberland", "bgm_village_frostland"];
 const VILLAGE_OF: Record<string, string> = {
   /* v1.1.1 — 마을도 챕터 정서를 따른다(지적 2번). 화산 촌락은 대장간 톤, 설원 마을은
    *  차가운 톤, 어둠 요정 마을은 연금술 톤, 저승 마을은 lo-fi 톤 — 밝은 마을곡 금지. */
   /* 2026-11-14 — bgm_village_village 는 영프 1장 필드곡(bgm_hw1_1)과 **같은 파일**이다. 시작 마을은 거점곡으로. */
   village: "bgm_village_forest",
   forest: "bgm_village_forest",
-  /* 2026-11-14 — DLC 마을: 쓰이지 않던 무스펠·니플 마을곡을 메크·노벨에 준다(마을곡 8곡 / 10마을 — 2쌍은 공유). */
-  dlcmech: "bgm_village_muspelheim",
-  dlcnovel: "bgm_village_niflheim",
+  /* 2026-11-14 — DLC 마을: 쓰이지 않던 화산·설원 마을곡을 메크·노벨에 준다(마을곡 8곡 / 10마을 — 2쌍은 공유). */
+  dlcmech: "bgm_village_emberland",
+  dlcnovel: "bgm_village_frostland",
   kingdom: "bgm_village_kingdom",
-  alfheim: "bgm_village_alfheim",
-  muspelheim: "bgm_village_muspelheim",
-  niflheim: "bgm_village_niflheim",
+  fairyglade: "bgm_village_fairyglade",
+  emberland: "bgm_village_emberland",
+  frostland: "bgm_village_frostland",
   cave: "bgm_village_cave",
-  nidavellir: "bgm_village_nidavellir",
+  forgehall: "bgm_village_forgehall",
   /* vc232 (#7) — 영프 편 마을곡.
    * vc235 — 15챕터 마을 BGM. 5개만 있으면 6장 이후 마을이 폴백으로 떨어진다.
    *  기존 5곡을 챕터 정서에 맞춰 3개씩 순환 배정한다(신규 음원 없이 커버). */
-  howlrstone1: "bgm_village_kingdom",
-  howlrstone2: "bgm_village_kingdom",
-  howlrstone3: "bgm_village_kingdom",
-  howlrstone4: "bgm_village_alfheim",
-  howlrstone5: "bgm_village_alfheim",
-  howlrstone6: "bgm_village_alfheim",
-  howlrstone7: "bgm_village_muspelheim",
-  howlrstone8: "bgm_village_muspelheim",
-  howlrstone9: "bgm_village_hel",
-  howlrstone10: "bgm_village_hel",
-  howlrstone11: "bgm_village_hel",
-  howlrstone12: "bgm_village_abyss",
-  howlrstone13: "bgm_village_abyss",
-  howlrstone14: "bgm_village_abyss",
-  howlrstone15: "bgm_village_kingdom",
-  hel: "bgm_village_hel",
+  lilacworld1: "bgm_village_kingdom",
+  lilacworld2: "bgm_village_kingdom",
+  lilacworld3: "bgm_village_kingdom",
+  lilacworld4: "bgm_village_fairyglade",
+  lilacworld5: "bgm_village_fairyglade",
+  lilacworld6: "bgm_village_fairyglade",
+  lilacworld7: "bgm_village_emberland",
+  lilacworld8: "bgm_village_emberland",
+  lilacworld9: "bgm_village_duskrealm",
+  lilacworld10: "bgm_village_duskrealm",
+  lilacworld11: "bgm_village_duskrealm",
+  lilacworld12: "bgm_village_abyss",
+  lilacworld13: "bgm_village_abyss",
+  lilacworld14: "bgm_village_abyss",
+  lilacworld15: "bgm_village_kingdom",
+  duskrealm: "bgm_village_duskrealm",
   abyss: "bgm_village_abyss",
 };
-const BOSS_TRACKS = ["bgm_forest_boss", "bgm_kingdom_boss", "bgm_alfheim_boss",
-  "bgm_muspelheim_boss", "bgm_niflheim_boss"];
+const BOSS_TRACKS = ["bgm_forest_boss", "bgm_kingdom_boss", "bgm_fairyglade_boss",
+  "bgm_emberland_boss", "bgm_frostland_boss"];
 /* v1.1.1 — 챕터별 보스곡. 각 곡은 그 챕터의 정서 풀에서 뽑았다(설원=얼어붙은 결전,
  *  룬 광산=기계적 결전, 저승=죽음의 정적 …). 같은 곡 재사용 없이 9챕터 전부 다르다. */
 const BOSS_OF: Record<string, string> = {
   forest: "bgm_forest_boss",
   kingdom: "bgm_kingdom_boss",
-  alfheim: "bgm_alfheim_boss",
-  muspelheim: "bgm_muspelheim_boss",
-  niflheim: "bgm_niflheim_boss",
+  fairyglade: "bgm_fairyglade_boss",
+  emberland: "bgm_emberland_boss",
+  frostland: "bgm_frostland_boss",
   cave: "bgm_cave_boss",
-  nidavellir: "bgm_nidavellir_boss",
-  hel: "bgm_hel_boss",
+  forgehall: "bgm_forgehall_boss",
+  duskrealm: "bgm_duskrealm_boss",
   abyss: "bgm_abyss_boss",
-  /* 2026-11-14 — DLC 보스곡: 쓰이지 않던 무스펠·포레스트 보스곡을 메크·노벨에, 세르니움은 니플 보스곡.
-   *  리버스는 동굴 보스곡(=영프 6장 필드곡 파일) 대신 헬 보스곡. 보스곡 8곡 / 10챕터 — 2쌍은 공유. */
-  dlcmech: "bgm_muspelheim_boss",
+  /* 2026-11-14 — DLC 보스곡: 쓰이지 않던 화산·포레스트 보스곡을 메크·노벨에, 세르니움은 설원 보스곡.
+   *  리버스는 동굴 보스곡(=영프 6장 필드곡 파일) 대신 명계 보스곡. 보스곡 8곡 / 10챕터 — 2쌍은 공유. */
+  dlcmech: "bgm_emberland_boss",
   dlcnovel: "bgm_forest_boss",
-  dlcsernium: "bgm_niflheim_boss",
-  dlcreverse: "bgm_hel_boss",
+  dlcsernium: "bgm_frostland_boss",
+  dlcreverse: "bgm_duskrealm_boss",
   /* vc232 (#7) — 영프 편 보스곡. 본편 해당 챕터 보스곡과 겹치지 않게 교차 배정.
    *  (보스곡은 챕터당 1곡뿐이라 신규 생성 전까지는 교차 배정으로 중복을 피한다) */
   /* vc235 — 15챕터 보스곡. 보스가 있는 장(3·7·8·10·14)은 전용곡,
    *  없는 장도 구역 4~5에서 전투가 이어지므로 인접 곡을 배정해 폴백을 없앤다. */
   /* 2026-11-14 — bgm_cave_boss 는 영프 6장 필드곡(bgm_hw4_1)과 **같은 파일**이라 보스곡으로 쓰지 않는다. */
-  howlrstone1: "bgm_forest_boss",
-  howlrstone2: "bgm_forest_boss",
-  howlrstone3: "bgm_kingdom_boss",
-  howlrstone4: "bgm_kingdom_boss",
-  howlrstone5: "bgm_nidavellir_boss",
-  howlrstone6: "bgm_nidavellir_boss",
-  howlrstone7: "bgm_niflheim_boss",
-  howlrstone8: "bgm_niflheim_boss",
-  howlrstone9: "bgm_abyss_boss",
-  howlrstone10: "bgm_abyss_boss",
-  howlrstone11: "bgm_niflheim_boss",
-  howlrstone12: "bgm_abyss_boss",
-  howlrstone13: "bgm_niflheim_boss",
-  howlrstone14: "bgm_abyss_boss",
-  howlrstone15: "bgm_abyss_boss",
+  lilacworld1: "bgm_forest_boss",
+  lilacworld2: "bgm_forest_boss",
+  lilacworld3: "bgm_kingdom_boss",
+  lilacworld4: "bgm_kingdom_boss",
+  lilacworld5: "bgm_forgehall_boss",
+  lilacworld6: "bgm_forgehall_boss",
+  lilacworld7: "bgm_frostland_boss",
+  lilacworld8: "bgm_frostland_boss",
+  lilacworld9: "bgm_abyss_boss",
+  lilacworld10: "bgm_abyss_boss",
+  lilacworld11: "bgm_frostland_boss",
+  lilacworld12: "bgm_abyss_boss",
+  lilacworld13: "bgm_frostland_boss",
+  lilacworld14: "bgm_abyss_boss",
+  lilacworld15: "bgm_abyss_boss",
 };
 /** 재림 보스 — splitStage("r5")는 ch="r", zone=5/10/15로 파싱된다 */
-const REBIRTH_BOSS_OF: Record<number, string> = { 5: "bgm_kingdom_boss", 10: "bgm_hel_boss", 15: "bgm_abyss_boss" };
+const REBIRTH_BOSS_OF: Record<number, string> = { 5: "bgm_kingdom_boss", 10: "bgm_duskrealm_boss", 15: "bgm_abyss_boss" };
 /** 기존 음원 재사용: 추가 사냥터도 이름/지형 정서별로 명시 배정한다. */
 export const HUNT_THEME_OF: Record<string, string> = {
-  dlcstargate: "nidavellir", dlcprisma: "alfheim", dlcocean: "abyss",
-  dlcreverse: "cave", dlcneocity: "kingdom", dlcmech: "nidavellir",
-  dlcswallow: "hel", dlcopinicia: "kingdom", dlcnovel: "alfheim", dlcsernium: "alfheim",
+  dlcstargate: "forgehall", dlcprisma: "fairyglade", dlcocean: "abyss",
+  dlcreverse: "cave", dlcneocity: "kingdom", dlcmech: "forgehall",
+  dlcswallow: "duskrealm", dlcopinicia: "kingdom", dlcnovel: "fairyglade", dlcsernium: "fairyglade",
   /* vc232 (#7) — 영프 편은 HUNT_THEME_OF 로 본편 챕터를 재사용하지 않는다.
-   *  곡은 STAGE_BGM.howlrstone* 에서 직접 배정한다(아래). 종전 방식은
+   *  곡은 STAGE_BGM.lilacworld* 에서 직접 배정한다(아래). 종전 방식은
    *  "영프 1장 = 본편 kingdom 곡"이라 본편에서 들은 곡이 그대로 반복됐다. */
 };
 export const REBIRTH_THEME_OF: Record<number, string> = {
-  1: "forest", 2: "niflheim", 3: "cave", 4: "kingdom", 5: "kingdom",
-  6: "abyss", 7: "muspelheim", 8: "niflheim", 9: "hel", 10: "hel",
-  11: "alfheim", 12: "abyss", 13: "nidavellir", 14: "hel", 15: "abyss",
+  1: "forest", 2: "frostland", 3: "cave", 4: "kingdom", 5: "kingdom",
+  6: "abyss", 7: "emberland", 8: "frostland", 9: "duskrealm", 10: "duskrealm",
+  11: "fairyglade", 12: "abyss", 13: "forgehall", 14: "duskrealm", 15: "abyss",
 };
 /** 챕터/재림 공용 보스 트랙 선택 (미지의 챕터 → 첫 보스곡 폴백) */
 function bossTrackOfCh(ch: string, zone: number): string {
   if (ch === "r") return REBIRTH_BOSS_OF[zone] ?? BOSS_TRACKS[0];
   /* vc235 — 영프(hw*)는 전용 보스곡을 아직 만들지 않아 챕터 정서의 본편 보스곡을
-   *  빌려온다. BOSS_OF 에 howlrstone 키가 없으므로 아래 ?? 가 그 역할을 한다.
+   *  빌려온다. BOSS_OF 에 lilacworld 키가 없으므로 아래 ?? 가 그 역할을 한다.
    *  (일반 구역은 STAGE_BGM 의 bgm_hw* 를 쓰므로 폴백이 아니다) */
   return BOSS_OF[ch] ?? BOSS_OF[HUNT_THEME_OF[ch] ?? ch] ?? BOSS_TRACKS[0];
 }
 /** 챕터 일반 구역 폴백 (미지의 챕터 키) */
 const FALLBACK_TRACKS = [CHAPTER_THEME.forest];
 
-/** 스테이지 키 파싱 — "howlrstone2x3"→{ch:"howlrstone2",zone:3} / "village"→마을 */
+/** 스테이지 키 파싱 — "lilacworld2x3"→{ch:"lilacworld2",zone:3} / "village"→마을 */
 function splitStage(stage: string): { ch: string; zone: number; isVillageStage: boolean } {
   if (stage === "village") return { ch: "village", zone: 0, isVillageStage: true };
   if (stage.endsWith("v")) return { ch: stage.slice(0, -1), zone: 0, isVillageStage: true };
-  /* vc235 — 챕터 키 자체가 숫자로 끝나는 경우(howlrstone1 ~ howlrstone5)를
-   *  먼저 분리한다. 종전 정규식 `^([a-z]+)(\d+)$` 는 `howlrstone11` 을
-   *  ch="howlrstone", zone=11 로 잘라 STAGE_BGM["howlrstone1"] 에 닿지 못했고,
+  /* vc235 — 챕터 키 자체가 숫자로 끝나는 경우(lilacworld1 ~ lilacworld5)를
+   *  먼저 분리한다. 종전 정규식 `^([a-z]+)(\d+)$` 는 `lilacworld11` 을
+   *  ch="lilacworld", zone=11 로 잘라 STAGE_BGM["lilacworld1"] 에 닿지 못했고,
    *  영프 50개 구역 전부가 FALLBACK_TRACKS[0](= bgm_forest_1)로 떨어졌다.
    *  stages.ts:parseStage 와 같은 우선순위로 맞춘다. */
-  /* vc235 — `howlrstone{장}x{구역}` (예 howlrstone15x4). 챕터가 두 자리라
-   *  붙여쓰기는 모호하다. 구 세이브 키(`howlrstone11`)도 계속 인정한다. */
-  const hwx = /^(howlrstone(?:[1-9]|1[0-5]))x([1-9]|10)$/.exec(stage);
+  /* vc235 — `lilacworld{장}x{구역}` (예 lilacworld15x4). 챕터가 두 자리라
+   *  붙여쓰기는 모호하다. 구 세이브 키(`lilacworld11`)도 계속 인정한다. */
+  const hwx = /^(lilacworld(?:[1-9]|1[0-5]))x([1-9]|10)$/.exec(stage);
   if (hwx) return { ch: hwx[1], zone: parseInt(hwx[2], 10), isVillageStage: false };
-  const hw = /^(howlrstone[1-5])(\d{1,2})$/.exec(stage);
+  const hw = /^(lilacworld[1-5])(\d{1,2})$/.exec(stage);
   if (hw) return { ch: hw[1], zone: parseInt(hw[2], 10), isVillageStage: false };
   const m = stage.match(/^([a-z]+)(\d+)$/);
   if (m) return { ch: m[1], zone: parseInt(m[2], 10), isVillageStage: false };
@@ -544,7 +544,7 @@ export function stageTrack(stage: string): string {
   if (parsed.ch === "r" && REBIRTH_BOSS_OF[zone]) return REBIRTH_BOSS_OF[zone];
   /* vc235 — 영프 편은 챕터당 스테이지가 4~5개라 "10구역 = 보스" 가 성립하지 않는다.
    *  마지막 구역이 곧 보스 구역이므로 그때만 전투곡을 쓴다. */
-  const hwSpec = HOWLRSTONE_CHAPTERS.find((c) => c.key === parsed.ch);
+  const hwSpec = LILACWORLD_CHAPTERS.find((c) => c.key === parsed.ch);
   if (hwSpec) {
     return zone >= hwSpec.stages ? bossTrackOfCh(ch, zone) : (STAGE_BGM[ch]?.[zoneSlot(zone)] ?? bossTrackOfCh(ch, zone));
   }

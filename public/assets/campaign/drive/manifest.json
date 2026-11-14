@@ -641,15 +641,15 @@
       "sha256": "219b1050b6b1e2321862ad1596418c3110b3ddfba93de95efbb32deaeb34592b",
       "provenance": "Existing src/game/audio.ts track and mix configuration; public/assets/CREDITS.md"
     },
-    "bgm_alfheim_1": {
-      "url": "/assets/audio/bgm_alfheim_1.ogg",
-      "archivePath": "CERTZ/public/assets/audio/bgm_alfheim_1.ogg",
+    "bgm_fairyglade_1": {
+      "url": "/assets/audio/bgm_fairyglade_1.ogg",
+      "archivePath": "CERTZ/public/assets/audio/bgm_fairyglade_1.ogg",
       "sha256": "657acb54cd32d4818672641103e4e5eb99aadd6b5f8e3cff4b5ca506fdd69844",
       "provenance": "Existing src/game/audio.ts track and mix configuration; public/assets/CREDITS.md"
     },
-    "bgm_niflheim_1": {
-      "url": "/assets/audio/bgm_niflheim_1.ogg",
-      "archivePath": "CERTZ/public/assets/audio/bgm_niflheim_1.ogg",
+    "bgm_frostland_1": {
+      "url": "/assets/audio/bgm_frostland_1.ogg",
+      "archivePath": "CERTZ/public/assets/audio/bgm_frostland_1.ogg",
       "sha256": "6cc61c7654803ea4e5b8fac61cc19352ce420a2d26b0f84b3593b5b2139cc05f",
       "provenance": "Existing src/game/audio.ts track and mix configuration; public/assets/CREDITS.md"
     },

@@ -23,11 +23,11 @@ export class OathAudio {
     const track = combat
       ? "bgm_forest_boss"
       : theme === "snow"
-        ? "bgm_niflheim_1"
+        ? "bgm_frostland_1"
         : ["ruin", "machine", "volcano"].includes(theme)
           ? "bgm_cave_1"
           : theme === "astral"
-            ? "bgm_alfheim_1"
+            ? "bgm_fairyglade_1"
             : ["garden", "forest", "desert"].includes(theme)
               ? "bgm_forest_1"
               : "bgm_village_forest";

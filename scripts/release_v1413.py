@@ -68,10 +68,10 @@ except Exception:
 - physics `useTree: true` (공간 분할 → 충돌 체크 O(n²) → O(n log n))
 
 ## 6. 셰이더 약화 (눈 맵 + 보스전)
-- WorldScene.ts — 눈 맵(niflheim) 파티클 빈도 130→240ms, 알파 0.8→0.42
+- WorldScene.ts — 눈 맵(frostland) 파티클 빈도 130→240ms, 알파 0.8→0.42
 - WorldScene.ts — 보스 블룸 blendAmount 0.46→0.24 (카오스 0.5→0.30), 비네트 0.14→0.06, 보스 라이트 0.34→0.18
 - StudioFX.ts — 앰비언트 블룸 blendAmount 0.32→0.14
-- Lighting.ts — 니플헤임 암전 0.28→0.18 (다른 어두운 챕터도 동급 축소)
+- Lighting.ts — 설원 암전 0.28→0.18 (다른 어두운 챕터도 동급 축소)
 
 ## 검증
 - TypeScript 0 오류, ESLint 0 에러 (신규 코드)

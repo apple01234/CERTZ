@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""vc147 (#27) — 투구/후드 코스튬 얼굴 복원 (7 슈트: lily nightblade paladin sylvan valkyrie warlord witch).
+"""vc147 (#27) — 투구/후드 코스튬 얼굴 복원 (7 슈트: lily nightblade paladin sylvan wingmaiden warlord witch).
 정면 프레임(idle*/walk*)의 얼굴 영역(FX)에서 어두운 부분을 피부톤으로 되채우고
 기준 눈 좌표(크림슨 기준: (43-44,52-53) × (29-30))에 눈을 그린다.
 · 기존 붉은 계열 픽셀(기존 눈/입)은 보존 — 중복 드로잉 방지
@@ -8,7 +8,7 @@
 from PIL import Image
 import os, sys
 
-SUITS = ["lily", "nightblade", "paladin", "sylvan", "valkyrie", "warlord", "witch"]
+SUITS = ["lily", "nightblade", "paladin", "sylvan", "wingmaiden", "warlord", "witch"]
 FX = (41, 24, 56, 34)          # x0,y0,x1,y1 (포함)
 EYE_Y = (29, 30)
 EYE_XS = [(43, 44), (52, 53)]

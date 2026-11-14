@@ -1,4 +1,4 @@
-// 로컬 서버: 최소 세이브 주입 → 무스펠헤임/숲/니플헤임 지면 캡처
+// 로컬 서버: 최소 세이브 주입 → 화산/숲/설원 지면 캡처
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
@@ -7,8 +7,8 @@ const SAVE_KEY = 'sertz_save_v2';
 
 const STAGES = [
   { key: 'forest1', label: 'forest1 (숲)', stage: 'forest1' },
-  { key: 'muspelheim1', label: 'muspelheim1 (꽃게타일)', stage: 'muspelheim1' },
-  { key: 'niflheim1', label: 'niflheim1 (니플헤임)', stage: 'niflheim1' },
+  { key: 'emberland1', label: 'emberland1 (꽃게타일)', stage: 'emberland1' },
+  { key: 'frostland1', label: 'frostland1 (설원)', stage: 'frostland1' },
 ];
 
 function makeSave(stage) {

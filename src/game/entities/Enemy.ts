@@ -38,7 +38,7 @@ const BODY_CFG: Record<EnemyKey, { bw: number; bh: number; hw: number; hh: numbe
   emberwolf: { bw: 36, bh: 20, hw: 56, hh: 30, burst: 0xffa05a },
   firespirit: { bw: 22, bh: 24, hw: 36, hh: 36, burst: 0xffc06a },
   runegolem: { bw: 22, bh: 24, hw: 36, hh: 36, burst: 0xffe08a },
-  helhound: { bw: 36, bh: 20, hw: 56, hh: 30, burst: 0xe86a8a },
+  duskhound: { bw: 36, bh: 20, hw: 56, hh: 30, burst: 0xe86a8a },
   // v3.0.2 — 신규 종 9종 (50 Monsters Pack, CC0)
   x2_frog: { bw: 22, bh: 18, hw: 34, hh: 30, burst: 0x6ab0c8 },
   x2_rat: { bw: 24, bh: 16, hw: 38, hh: 24, burst: 0xa8a0b8 },
@@ -130,7 +130,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
 
   def: EnemyDef;
-  /** v3.0.15 (#16) — 이 적의 원소 (챕터 테마 결정: 무스펠헤임 화염 등) */
+  /** v3.0.15 (#16) — 이 적의 원소 (챕터 테마 결정: 화산 화염 등) */
   readonly elem: ElemKey;
   /** v3.0.6 — maxHP % 고정 피해 하한 (정예는 생성 후 상향 설정) */
   dmgPct: number = DMG_PCT.mob;
@@ -327,7 +327,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (opts?.flee) this.flee = true;
     /* vc236 — 어픽스는 dummy 가 아닐 때만 유효: 허수아비는 훈련용 정적 개체라 어픽스 로직을 전부 건너뛴다. */
     if (opts?.affixes && opts.affixes.length > 0 && !opts.dummy) this.affixes = opts.affixes;
-    /* vc142 (쿠소디아 프리즈 ②·탑 밸런스) — abs 플래그: hp/atk/exp/gold를 절대값으로 직접 사용.
+    /* vc142 (왕국 프리즈 ②·탑 밸런스) — abs 플래그: hp/atk/exp/gold를 절대값으로 직접 사용.
      * 기존엔 opts.hp를 무조건 base.hp의 배수로 해석해 탑/황금몬스터가 절대값을 넘기면
      * base.hp × 절대값 = 수만 HP 괴물이 spawn → "게임이 멈춘 것처럼" 보였다. */
     if (opts && (opts.hp !== undefined || opts.atk !== undefined || opts.exp !== undefined || opts.gold !== undefined)) {

@@ -215,7 +215,7 @@ export async function ensureWorldAssets(scene: Phaser.Scene, data: { stage?: str
   const allMonsters = Object.keys(ENEMIES).sort((a, b) => b.length - a.length);
   // Only authored story fields have a closed spawn list. Tower/park/gate/raid
   // waves and village activities can select enemies outside StageDef.enemies.
-  const regional = /^(?:howlrstone\d+x\d+|dlc[a-z]+\d+|r\d+)$/.test(stage.key);
+  const regional = /^(?:lilacworld\d+x\d+|dlc[a-z]+\d+|r\d+)$/.test(stage.key);
   const monsters = new Set<string>(regional ? stage.enemies.map(enemy => enemy.key) : allMonsters);
   if (stage.elite) monsters.add(stage.elite.key);
   for (const key of ["x2_rat", "golem", "runegolem"]) monsters.add(key); // tutorial and class trials

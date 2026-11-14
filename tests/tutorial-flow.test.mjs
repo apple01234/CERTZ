@@ -56,7 +56,7 @@ test('tutorial migration preserves legacy and completed saves; new version resum
   for (const save of [{}, { lv: 200, tutStep: 4 }, { introSeen: true, tutorialDone: false }, { introSeen: false, tutorialDone: true }, { tutorialVersion: 2, tutorialDone: true }]) assert.equal(tutorialResume(save), null);
   assert.equal(tutorialResume(null), 0); assert.equal(tutorialResume({ introSeen: false }), 0);
   for (const [value, expected] of [[-1, 0], [6, 6], [999, 12], [NaN, 0], [Infinity, 0]]) assert.equal(tutorialResume({ tutorialVersion: TUTORIAL_VERSION, tutStep: value }), expected);
-  assert.equal(tutorialStage(2), 'howlrstone1x1'); assert.equal(tutorialStage(3), 'howlrstone1x2');
+  assert.equal(tutorialStage(2), 'lilacworld1x1'); assert.equal(tutorialStage(3), 'lilacworld1x2');
 });
 test('cinematic stages reject general controls; practice exposes only taught controls', () => {
   for (const step of ['opening', 'training', 'ending']) for (const action of ['move', 'attack', 'skill1', 'interact', 'inv', 'quest', 'dash']) assert.equal(tutorialAllows(step, action), false);

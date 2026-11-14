@@ -1,4 +1,4 @@
-import { HOWLRSTONE_CHAPTERS } from "./howlrstone";
+import { LILACWORLD_CHAPTERS } from "./lilacworld";
 import type { RoomLayout } from "./mapgen";
 import { overrideToLayout } from "./mapOverrides";
 import { chapterPlace } from "./chapterStoryPlan";
@@ -72,17 +72,17 @@ export function authoredRoomLayout(seed: string, mapW: number, mapH: number): Ro
     };
   }
 
-  const story = /^howlrstone(\d+)x(\d+)$/.exec(seed);
+  const story = /^lilacworld(\d+)x(\d+)$/.exec(seed);
   const planet = /^dlc([a-z]+)([1-9]|10)$/.exec(seed);
   let theme: AuthoredTheme;
   let variant: number;
   if (story) {
     const chapter = Number(story[1]), sub = Number(story[2]);
-    const spec = HOWLRSTONE_CHAPTERS.find((item) => item.key === `howlrstone${chapter}`);
+    const spec = LILACWORLD_CHAPTERS.find((item) => item.key === `lilacworld${chapter}`);
     if (!spec || sub < 1 || sub > spec.stages) return null;
     // 1.txt:5-18: Lilac rescues the young Haru at a cliff, before the later castle scenes.
     theme = chapter === 1 && sub === 1 ? "cliff" : spec.boss && sub === spec.stages ? "arena" : CHAPTER_THEMES[chapter - 1];
-    const p = chapterPlace(`howlrstone${chapter}`, sub);
+    const p = chapterPlace(`lilacworld${chapter}`, sub);
     if (p) {
       const roleTheme: Record<string, AuthoredTheme> = { cliff: "cliff", village: "town", inn: "library", road: "grove", camp: "town", court: "arena", observatory: "conduit", harbor: "coast", deck: "coast", shore: "coast", sanctuary: "grove", garden: "grove", tunnel: "citadel", throne: "citadel", domain: "arena", rift: "ruins", dungeon: "citadel", ruin: "ruins" };
       theme = p.boss ? "arena" : roleTheme[p.role] === "arena" ? "citadel" : roleTheme[p.role] ?? theme;

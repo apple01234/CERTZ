@@ -37,7 +37,7 @@ const { chromium } = require("playwright");
     const proto = Object.getPrototypeOf(sc);
     const origGS = proto.gotoStage;
     proto.gotoStage = function (n, e, f) { console.log("DBG gotoStage→", n, "force=", f, "trans=", this.transitioning); return origGS.call(this, n, e, f); };
-    sc.monsterKills["boss_vord"] = 1;
+    sc.monsterKills["boss_riftwarden"] = 1;
     console.log("DBG emit 시작");
     window.__SERTZ_EB__.emit("rpg:bossReplay", { ch: "r5", lv: "easy" });
     console.log("DBG emit 완료");

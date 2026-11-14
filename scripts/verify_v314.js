@@ -67,7 +67,7 @@ async function gotoStage(page, st) {
 
   /* ① 도로 제거 + ② 오브젝트 배치 통계 */
   const stageStats = {};
-  for (const st of ["forest1", "village", "niflheim1"]) {
+  for (const st of ["forest1", "village", "frostland1"]) {
     await gotoStage(page, st);
     await page.screenshot({ path: `scripts/shot_v314_${st}.png` });
     stageStats[st] = await page.evaluate(() => {

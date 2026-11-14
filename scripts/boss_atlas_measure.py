@@ -42,7 +42,7 @@ for frac in (1/3, 2/3):
     band = row_opaque[max(0, y-4):y+4]
     print(f"row-opaque around y={y}: {np.round(band, 3).tolist()}")
 
-# 6) 블록별 12×7 등분 셀 안 불투명 비율 (니드호그 블록 = 좌상단) — 셀 경계 정확성 검증
+# 6) 블록별 12×7 등분 셀 안 불투명 비율 (탐식의 흑룡 블록 = 좌상단) — 셀 경계 정확성 검증
 bw, bh = W / 3, H / 3
 print(f"block size: {bw:.2f} x {bh:.2f}")
 blk = opaque[:int(bh), :int(bw)]

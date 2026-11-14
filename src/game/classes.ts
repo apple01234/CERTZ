@@ -1309,7 +1309,7 @@ export const SKILL5B_INFO: Record<Skill5BKey, { name: string; desc: string }> = 
   },
   stormbringer: {
     name: "뇌왕: 연합의 뇌격",
-    desc: "심층 수련장를 타고 번개가 솟아올라 하늘과 땅을 잇는 기둥이 된다 — 수직형 낙뢰. 기둥에 닿은 적은 계속 감전된다 (7초·수직 기둥)",
+    desc: "대지를 타고 번개가 솟아올라 하늘과 땅을 잇는 기둥이 된다 — 수직형 낙뢰. 기둥에 닿은 적은 계속 감전된다 (7초·수직 기둥)",
   },
 
   /* ── 마법 ── */

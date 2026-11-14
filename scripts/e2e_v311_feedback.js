@@ -3,7 +3,7 @@
  *  [2] 돌진 직업 특색 — 돌진 중 주행 애니 재생 + 계열별 이펙트 헬퍼 존재
  *  [3] 2차 스킬 체감 — 버서커 파괴의 회전베기: 전방 러지(이동 실측) + "파괴의 광기!" 텍스트 / 3차+ Z 오라
  *  [4] 3·4차 스킬 아이콘 — 24종 PNG HTTP 200 + 스카이로드 s3/s4 버튼 img 렌더
- *  [5] 복귀 포탈 — kingdom1(3-1) 복귀 차원문 라벨이 "쿠소디아 마을" (사냥터 아님)
+ *  [5] 복귀 포탈 — kingdom1(3-1) 복귀 차원문 라벨이 "왕국 마을" (사냥터 아님)
  *  + 회귀: pageerror 0 */
 const { chromium } = require("playwright");
 const { spawn } = require("child_process");
@@ -228,7 +228,7 @@ async function gotoStage(page, stageKey, savePatch = {}) {
   });
   ok(aura, "워로드(3차) Z 시전 시 클래스색 오라 링 생성");
 
-  console.log("== [5] 복귀 포탈 — 3-1 → 쿠소디아 마을 ==");
+  console.log("== [5] 복귀 포탈 — 3-1 → 왕국 마을 ==");
   await gotoStage(page, "kingdom1", {});
   const portalLabel = await page.evaluate(() => {
     const w = window.__SERTZ__.game.scene.getScene("world");

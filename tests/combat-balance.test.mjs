@@ -15,7 +15,7 @@ import { mainChain, trajectory } from '../scripts/measure-combat-balance.mjs';
 import { BOSS_STAGE_STATS, STAGES } from '../src/game/stages.ts';
 
 const rows = mainChain();
-const story = rows.filter(r => r.key.startsWith('howlrstone'));
+const story = rows.filter(r => r.key.startsWith('lilacworld'));
 const dlc = rows.filter(r => r.key.startsWith('dlc'));
 
 test('본편 보스: 노말 전투 길이가 목표 밴드 안이다', () => {
@@ -32,7 +32,7 @@ test('본편 보스: 노말 전투 길이가 목표 밴드 안이다', () => {
 });
 
 test('영프 편 잡몹: 원킬도 노가다도 아니다', () => {
-  for (const r of story.filter(r => r.mobHtk && !r.key.startsWith('howlrstone1x'))) {
+  for (const r of story.filter(r => r.mobHtk && !r.key.startsWith('lilacworld1x'))) {
     assert.ok(r.mobHtkMax >= 2.5, `${r.key}: 가장 단단한 몹도 ${r.mobHtkMax}타 — 원킬 구역 (2.5타 이상)`);
     assert.ok(r.mobHtk <= 5 && r.mobHtkMax <= 8, `${r.key}: 중앙값 ${r.mobHtk}타 / 최대 ${r.mobHtkMax}타 (5 / 8 이하)`);
   }
@@ -42,14 +42,14 @@ test('영프 편 잡몹: 원킬도 노가다도 아니다', () => {
 
 test('영프 편 잡몹 위협: 튀는 구역 없이 12~60대 안이다', () => {
   /* 2026-11-14 — 조정 전: 2-2·3-3·5-2 는 122~586대(앞 장 잡몹 혼입), 10~12장은 73~89대(약한 유령 위주). */
-  for (const r of story.filter(r => r.hitsToDie && !r.key.startsWith('howlrstone1x'))) {
+  for (const r of story.filter(r => r.hitsToDie && !r.key.startsWith('lilacworld1x'))) {
     assert.ok(r.hitsToDie >= 12 && r.hitsToDie <= 60, `${r.key}: 표준 육성이 ${r.hitsToDie}대에 죽는다 (12~60)`);
   }
 });
 
 test('성장 궤적: 영프 한 장에서 15레벨 넘게 오르지 않는다', () => {
   /* 2026-11-14 — 조정 전: 5장 +14(Lv28→42), 14장 +24(Lv106→130) — 전투 없는 6·15장 몫을 몰아 줬다. */
-  for (const c of trajectory().filter(c => c.chapter.startsWith('howlrstone'))) {
+  for (const c of trajectory().filter(c => c.chapter.startsWith('lilacworld'))) {
     assert.ok(c.exitLv - c.enterLv <= 15, `${c.chapter}: Lv${c.enterLv}→${c.exitLv}`);
   }
 });

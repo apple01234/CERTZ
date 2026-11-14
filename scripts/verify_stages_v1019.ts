@@ -2,7 +2,7 @@
  * v1.0.19 A-3 — 신규 스테이지 15종 데이터 무결성 검증 (tsx)
  *  · 기존 90구역 전부 유지 + 신규 15종 추가
  *  · 체인: village→...→abyss10→r1→...→r15
- *  · 보스 3종(vord/jorm/nagr) · 정예 3곳 · scaleMul 순차 상승
+ *  · 보스 3종(riftwarden/unionserpent/angelknight) · 정예 3곳 · scaleMul 순차 상승
  *  · 테마/몬스터/보상 고유성 (중복 조합 없음)
  */
 import { STAGES, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, stageScale, stageIntro, BOSS_DEFS } from "../src/game/stages";
@@ -14,7 +14,7 @@ const ok = (name: boolean, msg: string) => {
 };
 
 /* 1) 기존 스테이지 전부 존재 (마을 + 9챕터×10 + 챕터마을 9 + 특별구역) */
-const oldKeys = ["village", "forest1", "forest10", "forestv", "kingdom1", "kingdom10", "alfheim5", "muspelheim10", "niflheim1", "cave10", "nidavellir5", "hel10", "abyss1", "abyss10", "dojang", "gate", "closet", "tower", "park", "interior_inn"];
+const oldKeys = ["village", "forest1", "forest10", "forestv", "kingdom1", "kingdom10", "fairyglade5", "emberland10", "frostland1", "cave10", "forgehall5", "duskrealm10", "abyss1", "abyss10", "dojang", "gate", "closet", "tower", "park", "interior_inn"];
 ok(oldKeys.every((k) => STAGES[k]), `기존 스테이지 ${oldKeys.length}키 전부 존재 (회귀 없음)`);
 
 /* 2) 신규 15종 존재 */
@@ -32,7 +32,7 @@ ok(PREV_STAGE["r1"] === "abyss10", "r1 복귀 = abyss10 (역순 체인)");
 /* 4) 보스 3종 */
 const bossStages = rbKeys.filter((k) => STAGES[k].boss);
 ok(bossStages.length === 3 && bossStages.join(",") === "r5,r10,r15", `보스 스테이지 3종 (r5·r10·r15) — 실제: ${bossStages.join(",")}`);
-ok(!!BOSS_DEFS.vord && !!BOSS_DEFS.jorm && !!BOSS_DEFS.nagr, "신규 보스 3종 정의 (베오르드·요르문간드·나그라파르)");
+ok(!!BOSS_DEFS.riftwarden && !!BOSS_DEFS.unionserpent && !!BOSS_DEFS.angelknight, "신규 보스 3종 정의 (재림의 파수꾼·연합을 삼키는 뱀·재림의 천사기사)");
 
 /* 5) scaleMul 순차 상승 (난이도 곡선) */
 let curveOk = true;

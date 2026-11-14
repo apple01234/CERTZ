@@ -21,7 +21,7 @@ import {
 function doc(over = {}) {
   return {
     version: 1,
-    name: 'howlrstone1x2',
+    name: 'lilacworld1x2',
     cols: 9, rows: 7,
     cellW: 150.667, cellH: 131.111,
     openRows: [
@@ -57,11 +57,11 @@ function doc(over = {}) {
 test.beforeEach(() => __resetMapOverrides());
 
 test('저장된 오버라이드가 레이아웃으로 변환된다', () => {
-  __setMapOverride('howlrstone1x2', doc());
-  assert.equal(hasMapOverride('howlrstone1x2'), true);
-  assert.deepEqual(mapOverrideSeeds(), ['howlrstone1x2']);
+  __setMapOverride('lilacworld1x2', doc());
+  assert.equal(hasMapOverride('lilacworld1x2'), true);
+  assert.deepEqual(mapOverrideSeeds(), ['lilacworld1x2']);
 
-  const r = overrideToLayout('howlrstone1x2');
+  const r = overrideToLayout('lilacworld1x2');
   assert.ok(r, '변환 실패');
   assert.equal(r.ok, true, `불변식 위반: ${JSON.stringify(r)}`);
   assert.equal(r.layout.cols, 9);
@@ -79,28 +79,28 @@ test('입구/출구가 열려 있지 않으면 ok=false (게임은 프리셋으�
   /* 입구를 벽으로 막은 문서 */
   const rows = doc().openRows.slice();
   rows[3] = '##' + rows[3].slice(2);
-  __setMapOverride('howlrstone1x2', doc({ openRows: rows }));
-  const r = overrideToLayout('howlrstone1x2');
+  __setMapOverride('lilacworld1x2', doc({ openRows: rows }));
+  const r = overrideToLayout('lilacworld1x2');
   assert.ok(r, '문서는 있어야 한다');
   assert.equal(r.ok, false, '막힌 입구를 통과시켰다');
 });
 
 test('입구와 출구가 같으면 ok=false', () => {
-  __setMapOverride('howlrstone1x2', doc({ exit: doc().entry }));
-  assert.equal(overrideToLayout('howlrstone1x2').ok, false);
+  __setMapOverride('lilacworld1x2', doc({ exit: doc().entry }));
+  assert.equal(overrideToLayout('lilacworld1x2').ok, false);
 });
 
 test('행 길이가 cols 와 다르면 null (손상 데이터 무시)', () => {
   const rows = doc().openRows.slice();
   rows[2] = '#...#';                 // 짧은 행
-  __setMapOverride('howlrstone1x2', doc({ openRows: rows }));
-  assert.equal(overrideToLayout('howlrstone1x2'), null);
+  __setMapOverride('lilacworld1x2', doc({ openRows: rows }));
+  assert.equal(overrideToLayout('lilacworld1x2'), null);
 });
 
 test('openRows 개수가 rows 와 다르면 null', () => {
   const rows = doc().openRows.slice(0, 4);
-  __setMapOverride('howlrstone1x2', doc({ openRows: rows }));
-  assert.equal(overrideToLayout('howlrstone1x2'), null);
+  __setMapOverride('lilacworld1x2', doc({ openRows: rows }));
+  assert.equal(overrideToLayout('lilacworld1x2'), null);
 });
 
 test('cols/rows 가 비정상이면 null', () => {
@@ -111,8 +111,8 @@ test('cols/rows 가 비정상이면 null', () => {
 });
 
 test('오버라이드가 없는 시드는 null', () => {
-  assert.equal(overrideToLayout('howlrstone9x9'), null);
-  assert.equal(hasMapOverride('howlrstone9x9'), false);
+  assert.equal(overrideToLayout('lilacworld9x9'), null);
+  assert.equal(hasMapOverride('lilacworld9x9'), false);
 });
 
 test('loadMapOverrides: 매니페스트가 없으면 0 을 반환하고 throw 하지 않는다', async () => {
@@ -132,14 +132,14 @@ test('loadMapOverrides: 매니페스트와 맵을 읽어 등록한다', async ()
   const d = doc();
   const fakeFetch = async (url) => {
     if (String(url).includes('_index.json')) {
-      return { ok: true, json: async () => [{ seed: 'howlrstone1x2', file: 'howlrstone1x2.json' }] };
+      return { ok: true, json: async () => [{ seed: 'lilacworld1x2', file: 'lilacworld1x2.json' }] };
     }
     return { ok: true, json: async () => d };
   };
   const n = await loadMapOverrides(fakeFetch);
   assert.equal(n, 1);
-  assert.equal(hasMapOverride('howlrstone1x2'), true);
-  const r = overrideToLayout('howlrstone1x2');
+  assert.equal(hasMapOverride('lilacworld1x2'), true);
+  const r = overrideToLayout('lilacworld1x2');
   assert.equal(r.ok, true);
 });
 

@@ -220,7 +220,7 @@ export type RaidDiff = 0 | 1 | 2;
  *  보상 코인은 난이도 비례로 유지(14/30/64). */
 export const RAID_DIFFS: { name: string; boss: string; hp: number; coin: number; req: number; color: string }[] = [
   { name: "노말", boss: "수문장 거인 베히모스", hp: 2400, coin: 14, req: 3, color: "#8fe84a" },
-  { name: "하드", boss: "심연의 감시자 니드호그", hp: 5200, coin: 30, req: 6, color: "#a8ecff" },
+  { name: "하드", boss: "심연의 감시자", hp: 5200, coin: 30, req: 6, color: "#a8ecff" },
   { name: "카오스", boss: "차원의 군주 아비슬로드", hp: 9600, coin: 64, req: 10, color: "#ff8ab0" },
 ];
 

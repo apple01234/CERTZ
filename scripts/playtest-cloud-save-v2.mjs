@@ -13,7 +13,7 @@ async function request(path,body,authorize=true){
 try{
  const register=await request('/api/auth/register',{id,pw,name:id.slice(-8)},false);
  assert.equal(register.status,200);token=register.data.token;created=true;assert.ok(token);
- const data={v:2,storyRevision:'haru-evernote-v1',stage:'howlrstone1x2',lv:12,exp:0,cls:'berserker',gold:30,skillMastery:{solar:5},tutorialDone:true};
+ const data={v:2,storyRevision:'haru-evernote-v1',stage:'lilacworld1x2',lv:12,exp:0,cls:'berserker',gold:30,skillMastery:{solar:5},tutorialDone:true};
  const inactive={...data,cls:'guardian',skillMastery:{life:491}};
  assert.equal((await request('/api/auth/cloud-save',{data,chars:{active:data,inactive}})).status,200);
  const restored=await request('/api/auth/cloud-save?saveVersion=2');

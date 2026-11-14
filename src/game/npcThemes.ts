@@ -3,11 +3,11 @@ export const FIELD_NPC_LOOKS: Record<string, readonly string[]> = {
   forest: ["spum_scout", "spum_forager", "spum_villager_m"],
   kingdom: ["spum_villager_f", "spum_knight", "spum_villager_f"],
   cave: ["spum_miner", "spum_mystic", "spum_miner"],
-  niflheim: ["spum_scout", "spum_butler", "spum_mystic"],
-  muspelheim: ["spum_miner", "spum_smith", "spum_villager_f"],
-  alfheim: ["spum_elf", "spum_mystic", "spum_elf"],
-  nidavellir: ["spum_smith", "spum_mystic", "spum_merchant"],
-  hel: ["spum_skel", "spum_butler", "spum_devil"],
+  frostland: ["spum_scout", "spum_butler", "spum_mystic"],
+  emberland: ["spum_miner", "spum_smith", "spum_villager_f"],
+  fairyglade: ["spum_elf", "spum_mystic", "spum_elf"],
+  forgehall: ["spum_smith", "spum_mystic", "spum_merchant"],
+  duskrealm: ["spum_skel", "spum_butler", "spum_devil"],
   abyss: ["spum_scout", "spum_mystic", "spum_fisher"],
 };
 export function fieldNpcLook(chapter: string, variant: number, fallback: string): string {

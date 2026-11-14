@@ -5745,9 +5745,9 @@ function BossReplayPanel({ rpg, onClose }: { rpg?: RpgState; onClose: () => void
             기존엔 챕터 보스 9종만 재림판에 있어 "재림" 시리즈가 불완전했다. */}
         {(() => {
           const RB_BOSSES: { ch: string; bk: keyof typeof BOSS_DEFS; label: string }[] = [
-            { ch: "r5", bk: "vord", label: "재림5 파수꾼의 대문" },
-            { ch: "r10", bk: "jorm", label: "재림10 뱀의 소용돌이" },
-            { ch: "r15", bk: "nagr", label: "재림15 종언의 왕좌 앞" },
+            { ch: "r5", bk: "riftwarden", label: "재림5 파수꾼의 대문" },
+            { ch: "r10", bk: "unionserpent", label: "재림10 뱀의 소용돌이" },
+            { ch: "r15", bk: "angelknight", label: "재림15 종언의 왕좌 앞" },
           ];
           return (
             <>

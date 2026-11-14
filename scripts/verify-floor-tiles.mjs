@@ -67,10 +67,10 @@ if (BASE) {
       s.tutorialDone = true; s.tutStep = -1;
     });
     /* 마을은 layout 이 없어 authored 바닥을 안 쓴다. 어두운 스테이지(cave)로 이동해 확인한다. */
-    await page.evaluate(() => window.__SERTZ_SCENE__.startTransition("howlrstone1x2"));
+    await page.evaluate(() => window.__SERTZ_SCENE__.startTransition("lilacworld1x2"));
     await page.waitForFunction(() => {
       const s = window.__SERTZ_SCENE__;
-      return s?.stageDef?.key === "howlrstone1x2" && !s.transitioning;
+      return s?.stageDef?.key === "lilacworld1x2" && !s.transitioning;
     }, { timeout: 60000 });
     await page.waitForTimeout(2500);
 

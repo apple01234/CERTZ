@@ -66,7 +66,7 @@ async function enterWorld(page) {
   /* ── ① 지면 텍스처 8종 256x256 확인 ── */
   const texInfo = await page.evaluate(() => {
     const w = window.__SERTZ__.game.scene.getScene("world");
-    const keys = ["tile_grass", "tile_dark", "tile_magma", "tile_snow", "tile_cave", "tile_stone", "tile_hel", "tile_abyss"];
+    const keys = ["tile_grass", "tile_dark", "tile_magma", "tile_snow", "tile_cave", "tile_stone", "tile_duskrealm", "tile_abyss"];
     return keys.map((k) => {
       const t = w.textures.get(k);
       const s = t && t.source && t.source[0];

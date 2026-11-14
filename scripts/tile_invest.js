@@ -54,7 +54,7 @@ async function enterWorld(page) {
 
   await enterWorld(page);
 
-  const stages = ["village", "forest1", "alfheim1", "niflheim1", "cave1", "muspelheim1"];
+  const stages = ["village", "forest1", "fairyglade1", "frostland1", "cave1", "emberland1"];
   for (const st of stages) {
     await page.evaluate((s) => {
       const w = window.__SERTZ__.game.scene.getScene("world");

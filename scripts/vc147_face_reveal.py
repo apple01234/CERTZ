@@ -98,7 +98,7 @@ def main():
     targets = []
     for path in sorted(glob.glob("public/assets/cost_*_idle*.webp") + glob.glob("public/assets/cost_*_walk*.webp")):
         name = os.path.basename(path)
-        fam = name.rsplit("_", 1)[0]  # cost_valkyrie_idle
+        fam = name.rsplit("_", 1)[0]  # cost_wingmaiden_idle
         suit = "_".join(fam.split("_")[1:-1])
         if only and suit != only:
             continue

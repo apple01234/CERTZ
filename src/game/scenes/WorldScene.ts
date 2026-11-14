@@ -9,7 +9,7 @@ import { zoneSpawnCap, stageEnemyFloor } from "../stages";
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_STAGE_STATS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { finaleTargetOrder, finalePlanReach, type FinalePlan } from "../fx/ultFinalePlan";
-import { storyPortalDestination, storyEntryAllowed, howlFinalStage, YOUNG_PRINCESS_VILLAGE } from "../storyProgression";
+import { storyPortalDestination, storyEntryAllowed, lwFinalStage, YOUNG_PRINCESS_VILLAGE } from "../storyProgression";
 import { fieldNpcLook } from "../npcThemes";
 import { resolveGroundTile } from "../tileThemes"; // vc204 — 지역 지면 → 타일 단일 매핑
 import { renderAuthoredMapLayers } from "../fx/AuthoredMapLayers";
@@ -147,9 +147,9 @@ const CAM_CINEMA_MAX_MS = 6000;
  *   보유분은 18 에메랄드로 자동 환수(config.ts 마이그레이션), 세이브 hair 슬롯은 null 강제. */
 
 /* v1.4.32 (#게임멈춤) — 저사양 환경(모바일 브라우저·APK 웹뷰) 판정.
- *  보스전 카메라 블룸(프레임버퍼 이중 패스)이 유발하는 GPU 프리즈는 무스펠(v1.4.30)·
- *  니플헤임(v1.4.31)에서 챕터 화이트리스트로 막았지만, 동일 계열 프리즈가 다른 챕터
- *  (발할라·알프헤임·심연 등)에서도 계속 제보됐다 — 기기 문제지 챕터 문제가 아니다.
+ *  보스전 카메라 블룸(프레임버퍼 이중 패스)이 유발하는 GPU 프리즈는 화산(v1.4.30)·
+ *  설원(v1.4.31)에서 챕터 화이트리스트로 막았지만, 동일 계열 프리즈가 다른 챕터
+ *  (천상·요정 숲·심연 등)에서도 계속 제보됐다 — 기기 문제지 챕터 문제가 아니다.
  *  이제 저사양 환경에서는 챕터 무관하게 카메라 블룸(앰비언트·보스전 모두)을 생략한다.
  *  보스라이트·비네트·잉걸불·툰 림라이트는 유지 — 분위기 손실 최소화. PC는 기존과 동일. */
 let lowPerfEnvCache: boolean | null = null;
@@ -246,9 +246,9 @@ export class WorldScene extends Phaser.Scene {
   private tutRetryMs = 0; // update 루프 재시도 누적 (타이머 이벤트가 유실되는 레이스 차단용)
   /* v1.0.12 (#횃불장치) — 암전 챕터 근접 점등 횃불 (가까이 가면 5초간 점등) */
   private torches: { prop: Phaser.GameObjects.Sprite; glow: Phaser.GameObjects.Image; x: number; y: number; litUntil: number; cdUntil: number }[] = [];
-  /* v1.0.12 (#3D팩 2차 투입) — 날씨 파티클 (니플헤임 눈보라 · v1.0.13부터 벚꽃 날씨는 제거) */
+  /* v1.0.12 (#3D팩 2차 투입) — 날씨 파티클 (설원 눈보라 · v1.0.13부터 벚꽃 날씨는 제거) */
   private weatherSnow: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
-  /* v1.0.13 — 마을 벚꽃 날림 제거 (유저 지시: "벚꽃 그냥 없애") — 날씨는 니플헤임 눈보라만 유지 */
+  /* v1.0.13 — 마을 벚꽃 날림 제거 (유저 지시: "벚꽃 그냥 없애") — 날씨는 설원 눈보라만 유지 */
 
   /* vc226 — 상태 정의·미러 (state/gameState.ts).
    *
@@ -1709,7 +1709,7 @@ export class WorldScene extends Phaser.Scene {
 
   private initLighting(stageKey: StageKey) {
     /* v4.1.5 — 동적 조명: 챕터별 암전 + 플레이어 횃불 광원 (fx/Lighting.ts).
-     *  암전 챕터(동굴/헬/심연 등)에서는 어둠이 깔리고 광원이 시야를 만든다.
+     *  암전 챕터(동굴/명계/심연 등)에서는 어둠이 깔리고 광원이 시야를 만든다.
      *  마을/실내/야외 밝은 챕터는 오버레이 없음(광원만 가능).
      *
      * vc278 — framedRoom 에서는 앰비언트/횃불 광원을 **켜지 않는다**.
@@ -1859,9 +1859,9 @@ export class WorldScene extends Phaser.Scene {
     /* DLC·재림도 동일한 검증 지면을 사용한다. 오염 원본으로 폴백하지 않는다. */
     const packTex = this.textures.exists(mappedGround) ? mappedGround : "ground_slate";
     const canVary = !!packTex && this.textures.exists(`${packTex}_v1`);
-    /* v1.4.30 (#11 니플헤임 눈부심) — 흰 눈바닥 타일이 화면을 압도하므로 챕터별 지면 틴트 도입.
+    /* v1.4.30 (#11 설원 눈부심) — 흰 눈바닥 타일이 화면을 압도하므로 챕터별 지면 틴트 도입.
      *  흰색 타일을 청회색으로 곱해 전체 톤 다운 (암전과 별개로 원본 자체가 밝은 타일 보정). */
-    const CH_GROUND_TINT: Record<string, number> = { niflheim: 0xc4d6ea }; // vc147 (#21) — 0x70819c→밝은 설원톤 (눈 지형 체감 복원)
+    const CH_GROUND_TINT: Record<string, number> = { frostland: 0xc4d6ea }; // vc147 (#21) — 0x70819c→밝은 설원톤 (눈 지형 체감 복원)
     const gTint = CH_GROUND_TINT[parseStage(stageKey).ch];
     /* v1.4.35 (#5) — 팩 타일을 변형 3종과 섞어 깐다.
      *  TileSprite 는 단일 텍스처만 반복하므로, 변형이 있으면 같은 크기의
@@ -1934,7 +1934,7 @@ export class WorldScene extends Phaser.Scene {
     } else {
       /* vc204 — 변형 타일이 없어도 매핑 결과(packTex)를 써야 한다.
        *  이전에는 여기서 groundTex(원본)를 그대로 써서, 변형(_v1/_v2)이 없는 지역은
-       *  tileThemes 매핑이 통째로 무시됐다(무스펠헤임이 계속 붉은 게 타일로 나온 원인). */
+       *  tileThemes 매핑이 통째로 무시됐다(화산이 계속 붉은 게 타일로 나온 원인). */
       groundTs = this.add.tileSprite(0, 0, this.stageW, this.stageH, packTex).setOrigin(0).setDepth(0);
       /* ═══ vc236 (지시 #1 "타일맵 배치 정신없고 ㅈ같음") ═══
        *
@@ -2012,7 +2012,7 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- 장식 (F1: 정의된 소수만 — 실내는 buildInterior가 자체 배치) ---------- */
     if (!this.isInterior && !authoredArt) this.placeDecor(stageKey);
     /* vc238 — 날씨는 맵 렌더 방식과 무관하게 항상 적용한다(placeDecor 은 authored 맵에서 호출되지 않음). */
-    this.setupHowlrstoneWeather(stageKey);
+    this.setupLilacworldWeather(stageKey);
 
     /* ---------- 상점 NPC (v3.0.15 #9 — 상인은 마을에만 배치. 필드 몬스터 구역에서 제거) ---------- */
     if (!this.isInterior && this.stageDef.isVillage) this.spawnMerchant();
@@ -2055,8 +2055,8 @@ export class WorldScene extends Phaser.Scene {
       });
       /* v1.0.10 (#GameStudio FX) — 앰비언트 블룸: 보스전 전용이던 쉐이더를 평시 전투에도.
        *  스킬 이펙트/파티클/참격이 카메라 블룸으로 발광 — “보스전에만 적용” 버그 해소 */
-      /*  v1.4.31 (#5) — 니플헤임 평시 앰비언트 블룸도 스킵 (눈보라+암전+광원 다중 ADD 레이어
-       *  위 블룸 프레임버퍼 패스가 프리즈 유발 — 무스펠 프리즈와 동일 계열). */
+      /*  v1.4.31 (#5) — 설원 평시 앰비언트 블룸도 스킵 (눈보라+암전+광원 다중 ADD 레이어
+       *  위 블룸 프레임버퍼 패스가 프리즈 유발 — 화산 프리즈와 동일 계열). */
       /* vc143 (#눈맵튕김) — 허용 판정을 ambientBloomAllowed() 단일 소스로 통일
        *  (재림 눈/용암 구역 r2/r8·r4 등은 parseStage가 village를 반환해 챕터 게이트를
        *   우회하던 구멍 — groundTex 기반으로 잡는다) */
@@ -2070,7 +2070,7 @@ export class WorldScene extends Phaser.Scene {
     }
     /* vc146 (#5) — 2.5D 카메라 초기화 (심도 안개 + y-depth 정렬. 설정에서 끌 수 있음) */
     this.initPerspective();
-    /* v3.3.0 (지시 #5) — 현재 챕터 번호 기록: 챕터 4(알프헤임)부터만 체력% 고정 피해 발동 */
+    /* v3.3.0 (지시 #5) — 현재 챕터 번호 기록: 챕터 4(요정 숲)부터만 체력% 고정 피해 발동 */
     this.player.stageCh = chapterSpec(stageKey)?.num ?? 1;
     if (savedPlayer) this.restoreFromSave(savedPlayer, stageKey);
     /* v4.0.0 — 바르가 데일리 초기화 (출석부/일일 퀘스트/티켓/오프라인 보상) */
@@ -2199,11 +2199,11 @@ export class WorldScene extends Phaser.Scene {
       /* vc236 — 정예 어픽스. 챕터가 오를수록 개수가 는다(1~3개).
        *  rng 는 위 스폰과 **같은 결정론 스트림**을 이어 쓴다 — 같은 시드 → 같은 어픽스.
        *  배율은 기존 hpMult/atkMult 를 대체하지 않고 **곱한다**(어픽스 0개면 정확히 1.0).
-       *  챕터 번호: 본편은 CHAPTERS 인덱스, 영프 편은 키의 숫자(howlrstone12 → 12).
+       *  챕터 번호: 본편은 CHAPTERS 인덱스, 영프 편은 키의 숫자(lilacworld12 → 12).
        *  둘 다 아니면(마을 등) 1개 — 정예가 있는 스테이지에만 닿는 분기라 안전한 기본값. */
       const chKey = parseStage(this.stageDef.key).ch;
       const chIdx = CHAPTERS.findIndex((c) => c.key === chKey);
-      const chapNo = chIdx >= 0 ? chIdx + 1 : Number(chKey.replace("howlrstone", "")) || 0;
+      const chapNo = chIdx >= 0 ? chIdx + 1 : Number(chKey.replace("lilacworld", "")) || 0;
       const affixes = rollEliteAffixes(() => rng.frac(), chapNo >= 7 ? 3 : chapNo >= 4 ? 2 : 1);
       const e = new Enemy(this, ex, ey, el.key, {
         hp: el.hpMult * sc.hp * affixHpMult(affixes),
@@ -2263,7 +2263,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.isInterior) {
       /* 실내 — 출구 문은 interactables로 처리 */
     } else if (this.stageDef.isVillage) {
-      /* vc186b DLC — 세계 구원(아부디토스 격파) 후 본마을에 그랜드플래닛 게이트를 세운다.
+      /* vc186b DLC — 세계 구원(종언의 마룡 격파) 후 본마을에 그랜드플래닛 게이트를 세운다.
        *  사용자 지시: "NPC대화후 마을포탈 생성"
        *  → npcDlcTalked(리안과 대화 완료) + cleared(세계 구원) 두 조건이 모두 참일 때만.
        *  기존 9챕터 마을 흐름은 건드리지 않는다(조건 불충족 시 아무것도 안 생김). */
@@ -2540,7 +2540,7 @@ export class WorldScene extends Phaser.Scene {
 
     EventBus.emit("ui:playing");
     if (resumeTutorial !== null) this.startTutorial(resumeTutorial);
-    else if (stageKey === "howlrstone1x2") this.addHistoryNpc();
+    else if (stageKey === "lilacworld1x2") this.addHistoryNpc();
     else EventBus.emit("tut:state", { active: false, step: null });
     this.emitHud();
     this.emitQuest();
@@ -2791,7 +2791,7 @@ export class WorldScene extends Phaser.Scene {
 
   private playChapterIntroCutscene(stageKey: StageKey): boolean {
     /* vc251 — 수련 원정 9지역 삭제로 `isTrainingStage` 가드 불필요.
-     *  남은 챕터는 howlrstone/DLC 뿐이고 전부 인트로 컷씬을 가진다. */
+     *  남은 챕터는 lilacworld/DLC 뿐이고 전부 인트로 컷씬을 가진다. */
     if (!this.player) return false;
     const parsed = parseStage(stageKey);
     if (!parsed.ch || parsed.ch === "village") return false;
@@ -2895,7 +2895,7 @@ export class WorldScene extends Phaser.Scene {
      *  종전에는 camCinema 가 true 인 동안 여기서 즉시 return 했고, 그 플래그를 푸는 곳은
      *  보스 인트로 팬 완료 콜백 하나뿐이었다(타임아웃 없음). 팬 콜백이 한 번이라도
      *  불리지 않으면 카메라가 그 자리에 영구 정지했다
-     *  ("카메라 줌 아웃시 원래대로 안돌아오는 버그", "무스펠헤임에서 카메라 안움직이는 버그").
+     *  ("카메라 줌 아웃시 원래대로 안돌아오는 버그", "화산에서 카메라 안움직이는 버그").
      *  → camCinema 가 상한(연출 최대 길이 + 여유)을 넘겨 유지되면 강제 해제하고 경고를 남긴다. */
     if (this.camCinema) {
       if (!this.camCinemaSince) this.camCinemaSince = this.time.now;
@@ -3374,12 +3374,12 @@ export class WorldScene extends Phaser.Scene {
     const WALLS: Record<string, number> = {
       forest: 0x7a9a5a,
       kingdom: 0xa89878,
-      alfheim: 0x8a7ac8,
-      muspelheim: 0xa85a38,
-      niflheim: 0xa9c4e0, // vc147 (#21) — 0x66809e→밝은 빙설 톤 (눈부심 아니라 가시성 목적)
+      fairyglade: 0x8a7ac8,
+      emberland: 0xa85a38,
+      frostland: 0xa9c4e0, // vc147 (#21) — 0x66809e→밝은 빙설 톤 (눈부심 아니라 가시성 목적)
       cave: 0x9a7a58,
-      nidavellir: 0xb8a068,
-      hel: 0x8a5aaa,
+      forgehall: 0xb8a068,
+      duskrealm: 0x8a5aaa,
       abyss: 0x6a5a9a,
     };
     const wallTex = "wall_rock";
@@ -3585,10 +3585,10 @@ export class WorldScene extends Phaser.Scene {
    *   wx_spark5(작은 빛 입자) / wx_smoke(연기)만 재사용한다. 배포 목록 무변경.
    *  [비용] 저사양(fxLevel 0)은 빈도를 2배로 낮춘다.
    *  [주의] 마을(youngprincessv)은 제외 — 예전에 "벚꽃 없애" 지시가 있었다. */
-  private setupHowlrstoneWeather(stageKey: StageKey) {
+  private setupLilacworldWeather(stageKey: StageKey) {
     const chNow = parseStage(stageKey).ch;
-    if (!chNow?.startsWith("howlrstone")) return;
-    const chapterNo = Number(chNow.replace("howlrstone", ""));
+    if (!chNow?.startsWith("lilacworld")) return;
+    const chapterNo = Number(chNow.replace("lilacworld", ""));
     const slow = this.fxLevel === 0;
     const swirl = (tex: string, cfg: Phaser.Types.GameObjects.Particles.ParticleEmitterConfig) => {
       this.weatherSnow = this.add.particles(0, 0, tex, cfg).setDepth(54);
@@ -3692,7 +3692,7 @@ export class WorldScene extends Phaser.Scene {
     const take = (x: number, y: number) => { placed.push([x, y]); };
 
     /* vc251 — 수련 원정 9지역 삭제로 지역별 지형 분기를 제거.
-     *  남은 챕터는 DLC(별/행성)와 howlrstone(라일락 월드)뿐이라 기본 세트를 쓴다. */
+     *  남은 챕터는 DLC(별/행성)와 lilacworld(라일락 월드)뿐이라 기본 세트를 쓴다. */
     const treeSet: string[] = ["tree", "tree", "pine", "kd_plant1", "kd_plant2", "kd_plant3"]; // v1.4.11 — kd_plant 자생나무 3종 합류
     /* v1.4.19 (검은 사각형 글리치 안전망) — 배치 전에 실제 등록된 텍스처만 남긴다.
      *  부트 로드 목록 누락 키(예: v1.4.11 kd_plant)가 Phaser __MISSING 폴백으로
@@ -3824,7 +3824,7 @@ export class WorldScene extends Phaser.Scene {
     {
       const TX_SET_OF: Record<string, string> = {
         tile_grass: "gp", tile_path: "dp", tile_magma: "dp", tile_magma_path: "dp",
-        tile_cave: "cp", tile_stone: "cp", tile_dark: "ap", tile_hel: "ap", tile_abyss: "ap",
+        tile_cave: "cp", tile_stone: "cp", tile_dark: "ap", tile_duskrealm: "ap", tile_abyss: "ap",
         tile_snow: "si", tile_ice: "si",
         /* vc196 — 무료 타일맵(Kenney CC0) 128px 세트. 위 11종은 256px 시절 키다.
          *  지면 변형 스캐터는 "이 타일 위에 어울리는 pvar/gvar"를 골라 얹는 것이라
@@ -3865,7 +3865,7 @@ export class WorldScene extends Phaser.Scene {
 
 
 
-    // 헬 — 무덤·고목·해골 (무료 에셋 Undead Pack, CC0 — v1.5 배치1 이관)
+    // 명계 — 무덤·고목·해골 (무료 에셋 Undead Pack, CC0 — v1.5 배치1 이관)
 
     /* v1.4.10 — 숲(연합 거점) 유적 나무/소품(fm_tree/fm_prop) 블록 삭제 (유저 지시
      *  "나무 및 오브젝트들의 배치가 이상하고 에셋이 안어울려" + "유적 없애고 상자만 놔뒀는데 뭐임?"):
@@ -3874,7 +3874,7 @@ export class WorldScene extends Phaser.Scene {
      *  깔리거나 뚫고 다니게 된다. 마을 유적은 v1.4.3~4에서 이미 철거됐고, 유저가
      *  필드에서 여전히 본 '유적 같은 것'의 잔여분이 이 fm_* 소품 — 전면 제거로 정리.
      *  숲은 기본 tree/pine/rock 세트로 통일해 아트 정합성 확보 */
-    // 쿠소디아/이전 서사 — 육한 식물·바위·뼈 (Cursed Land, CC0 — v1.5 배치1 이관)
+    // 왕국/이전 서사 — 육한 식물·바위·뼈 (Cursed Land, CC0 — v1.5 배치1 이관)
     /* v2.6 수정 — 육식 식물류(cl_jawsplant 등)는 장식이 아니라 '위험 오브젝트'.
      *  (※ 능대 swampbeast는 몬스터명 — 이 오브젝트와는 별개)
      *  밟으면 챕터 배율에 비례한 접촉 데미지 + 씹기 연출 (버그: 닿아도 데미지 없음)
@@ -3900,7 +3900,7 @@ export class WorldScene extends Phaser.Scene {
     }
 
     /* v4.3.0 — 암전 챕터 환경 불빛 (유저 지시 "어두운 분위기의 챕터만 맵 어둡게 + 불빛 있게"):
-     *  열린 셀 중심에 정적 횃불 글로우 5개 — 니플헤임은 한파(청색), 그 외 따뜻한 횃불색.
+     *  열린 셀 중심에 정적 횃불 글로우 5개 — 설원은 한파(청색), 그 외 따뜻한 횃불색.
      *  충돌/파티클 없는 저비용 ADD 글로우+플리커 (이펙트 절제 원칙 유지) */
     if (ambientFor(parseStage(stageKey).ch)) {
       const lay1 = this.layout;
@@ -3936,14 +3936,14 @@ export class WorldScene extends Phaser.Scene {
     }
 
     /* v1.0.12 (#3D팩 2차 투입 — "내가 준 고급 에셋") — Toon Shaders Pro/Hovl 팩 텍스처로
-     *  날씨 레이어 구축: 니플헤임 계열 = 눈보라(wx_snowflake).
+     *  날씨 레이어 구축: 설원 계열 = 눈보라(wx_snowflake).
      *  v1.0.13 — 마을 벚꽃 날림 제거 (유저 지시: "벚꽃 그냥 없애").
      *  카메라 상단 폭 emitZone — 파티클은 월드 좌표에 떨어져 스크롤과 자연스럽게 어긋난다.
      *  v1.4.13 (#6 셰이더 약화) — 눈 맵 셰이더 너무 강함: 파티클 빈도 130→240ms, 알파 0.8→0.42,
      *  속도/스케일 축소로 "눈보라 너무 강해" 체감 완화 (분위기는 유지, 가독성 향상).
-     *  v1.4.30 (#11) — 니플헤임 눈부심 완화에 맞춰 눈보라 알파 0.42→0.30으로 추가 축소.
+     *  v1.4.30 (#11) — 설원 눈부심 완화에 맞춰 눈보라 알파 0.42→0.30으로 추가 축소.
      *  v1.4.31 (#6 어둡게 + #5 프리즈) — 알파 0.30→0.22 추가 축소, 저사양(fxLevel 0)에선
-     *  발생 빈도 2배 완화(480ms)로 파티클 부하 절반 — 니플헤임 프리즈 완화. */
+     *  발생 빈도 2배 완화(480ms)로 파티클 부하 절반 — 설원 프리즈 완화. */
     {
       const chNow = parseStage(stageKey).ch;
     }
@@ -4297,7 +4297,7 @@ export class WorldScene extends Phaser.Scene {
    * vc186b DLC — 본마을 「그랜드플래닛 게이트」
    *
    * 사용자 지시: "NPC대화후 마을포탈 생성"
-   *  1) 세계 구원(cleared) — 아부디토스 격파
+   *  1) 세계 구원(cleared) — 종언의 마룡 격파
    *  2) 마을 NPC(리안)와 DLC 안내 대화 완료(dlcTalked)
    *  두 조건이 모두 참일 때 본마을 중앙 광장 동쪽에 게이트가 선다.
    *
@@ -4371,8 +4371,8 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.portal();
     /* 유저 지시 — 애델리오나 마을에서 곧바로 1-1 스테이지로 진입한다.
      *  youngprincessv 는 경유지에서 빠졌으므로 목적지로 나올 일이 없다. */
-    this.showBanner(destination.startsWith("howlrstone")
-      ? "하울르스톤: 영준 프린세스 — 첫 구역으로 향한다"
+    this.showBanner(destination.startsWith("lilacworld")
+      ? "영준 프린세스 — 첫 구역으로 향한다"
       : "그랜드 플레닛 — 제1행성 스타게이트로 향한다");
     this.startTransition(destination, { delay: 520 });
   }
@@ -4490,7 +4490,7 @@ export class WorldScene extends Phaser.Scene {
     opts?: { delay?: number; entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; gmBossArena?: boolean; contestFrom?: StageKey; save?: SaveData }
   ) {
     if (this.transitioning) return;
-    if (this.tut && !(this.tut.currentId === "training" && target === "howlrstone1x2")) return;
+    if (this.tut && !(this.tut.currentId === "training" && target === "lilacworld1x2")) return;
     /* v1.4.30 (#12 보스전 포탈 차단) — 보스전(스토리·재림·GM 체험·공동토벌전) 도중에는
      *  모든 구역 전환을 차단한다. 전진/복귀 포탈·부적 워프·친구 따라가기·공동토벌전
      *  입장·긴급귀환이 전부 startTransition 단일 통로를 지나므로 여기서 한 번만 막으면
@@ -4577,7 +4577,7 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.28 (#이동퀘스트) — 이동형(reach) 퀘스트 완료 판정 누락 수정:
      *  포탈을 타고 구역을 떠날 때 현재 퀘스트가 reach면 완료(advance) 처리 후 이동.
      *  기존엔 완료 처리 없이 씬만 전환해 세이브의 questIdx가 reach에 그대로 남아
-     *  "숲의 신전으로"/"다음 해역으로"가 이동해도 영영 미완료로 유지됐다.
+     *  "숲의 신전으로"/"다음 지역으로"가 이동해도 영영 미완료로 유지됐다.
      *  (다음 퀘스트 배치는 새 구역 진입 복구 로직이 처리하므로 afterAdvance는 생략) */
     if (this.currentQuest()?.type === "reach") this.advanceQuest();
     // 구역 체인 — 마을 → forest1..10 → kingdom1..10 → … → abyss10 순차 진행
@@ -6354,7 +6354,7 @@ export class WorldScene extends Phaser.Scene {
     const py = my(this.player.y);
     mm.fillStyle(0xffffff, 1).fillCircle(px, py, 2.6 / z);
     mm.lineStyle(1 / z, 0xffffff, 0.45).strokeCircle(px, py, 4.6 / z);
-    /* vc145 (#6) — 미니맵 위 현재 위치 라벨 (예: "3-2 · 쿠소디아").
+    /* vc145 (#6) — 미니맵 위 현재 위치 라벨 (예: "3-2 · 왕국").
      *  줌/리사이즈마다 redrawMinimap이 도니 위치/크기가 자동 추적된다.
      *  vc179 (스크린샷 버그) — 마을은 STAGE_SHORT와 stageDef.name이 같은 문자열이라
      *  "쿠스디아 마을 · 쿠스디아 마을"로 중복 출력됐다. 같으면 한 번만 쓴다. */
@@ -8029,7 +8029,7 @@ export class WorldScene extends Phaser.Scene {
 
   private GATE_POOL_EASY = ["x3_goblin", "wolf", "x2_frog", "x2_rat"] as EnemyKey[];
   private GATE_POOL_MID = ["minion", "spider", "frostwolf", "x2_bat", "x3_imp", "x3_tinyzombie"] as EnemyKey[];
-  private GATE_POOL_HARD = ["emberwolf", "helhound", "x3_orcwarrior", "x3_wogol", "x2_darkhound", "x3_necromancer"] as EnemyKey[];
+  private GATE_POOL_HARD = ["emberwolf", "duskhound", "x3_orcwarrior", "x3_wogol", "x2_darkhound", "x3_necromancer"] as EnemyKey[];
 
   private spawnGateWave() {
     this.gateWave++;
@@ -9356,12 +9356,12 @@ export class WorldScene extends Phaser.Scene {
 
   /** vc238 (P4 후속) — 현재 스테이지의 **챕터 진행 번호**(1부터).
    *  `zoneSpawnCap` 에 넘겨 구역당 동시 스폰 상한을 정한다.
-   *  · 영프 편(howlrstone12x3) → 12
+   *  · 영프 편(lilacworld12x3) → 12
    *  · DLC(dlcstargate5) → 본편 15장 뒤이므로 15 + 1 = 16 … 세르니움은 25
    *  · 그 외(마을·탑·파크 등) → 1 (최소 상한 = 기존과 동일한 20) */
   private stageChapterNo(): number {
     const ch = parseStage(this.stageDef.key).ch;
-    const hw = /^howlrstone(\d+)$/.exec(ch);
+    const hw = /^lilacworld(\d+)$/.exec(ch);
     if (hw) return Number(hw[1]);
     const dlcIdx = CHAPTERS.findIndex((c) => c.key === ch);
     /* DLC 10개를 영프 편 15장 뒤에 이어 붙인다 — 진행도가 단조로 유지된다. */
@@ -10014,15 +10014,15 @@ export class WorldScene extends Phaser.Scene {
          *  v1.4.13 (#6 셰이더 약화) — 보스전 셰이더 너무 강함: blendAmount 0.46/0.5 → 0.24/0.30,
          *  비네트 강도 0.14 → 0.06, blurSteps 4 → 3. 강렬한 순간은 살리고 눈부심 완화. */
         const fxk = loadFx().intensity <= 0 ? 0 : Math.min(3.0, loadFx().intensity / 55); // vc149 #3 상한 확대
-        /* v1.4.30 (#1 무스펠 프리즈) — 화염 챕터(무스펠헤임)는 용암 균열 글로우·잉걸불·
+        /* v1.4.30 (#1 화산 프리즈) — 화염 챕터(화산)는 용암 균열 글로우·잉걸불·
          *  지형 ADD 블렌드가 전 챕터 중 가장 많다. 여기에 보스전 카메라 블룸(프레임버퍼
          *  이중 패스)이 겹치면 저사양 기기에서 GPU 컨텍스트 유실→렌더 프리즈가
-         *  집중 발생 — 무스펠헤임 보스전은 블룸을 건너뛴다 (보스라이트·비네트·잉걸불 유지). */
-        /*  v1.4.31 (#5) — 니플헤임도 동일 적용: 눈보라 파티클 + 암전 + 7~8개 ADD 광원 +
+         *  집중 발생 — 화산 보스전은 블룸을 건너뛴다 (보스라이트·비네트·잉걸불 유지). */
+        /*  v1.4.31 (#5) — 설원도 동일 적용: 눈보라 파티클 + 암전 + 7~8개 ADD 광원 +
          *  앰비언트 블룸까지 겹치는 챕터라 보스전 블룸 이중 패스에서 같은 프리즈가 발생했다. */
         const raidCh = parseStage(this.stageDef.key).ch;
         /* v1.4.32 (#게임멈춤) — 저사양 환경(모바일/APK)은 챕터 무관 보스전 블룸 생략:
-         *  화염·설원 외 챕터(발할라·심연 등)에서 동종 GPU 프리즈가 계속 제보됐다. */
+         *  화염·설원 외 챕터(천상·심연 등)에서 동종 GPU 프리즈가 계속 제보됐다. */
         const bloomSkip = isLowPerfEnv(); /* vc251 — 화염·설원 챕터 삭제 */
         if (fxk > 0 && !bloomSkip) {
           const bloom = Phaser.Actions.AddEffectBloom(cam, {
@@ -10065,7 +10065,7 @@ export class WorldScene extends Phaser.Scene {
   private bossChaos = false;
 
   /* vc143 (#눈맵튕김) — 앰비언트 블룸 허용 판정 (단일 소스).
-   *  니플헤임·무스펠헤임 + 눈(tile_snow)/용암(tile_magma) 지면 재림 구역(r2·r8 등 —
+   *  설원·화산 + 눈(tile_snow)/용암(tile_magma) 지면 재림 구역(r2·r8 등 —
    *  parseStage가 village를 반환해 챕터 게이트를 우회하던 구멍) + 저사양 환경에서는
    *  프레임버퍼 블룸 패스를 금지한다. 재부착 3경로(applyFxMode·tickFxQuality 복원·
    *  clearBossPostFX)가 전부 이 헬퍼를 거친다 — "눈 맵에서 자꾸 튕김"의 근본 차단:
@@ -10081,7 +10081,7 @@ export class WorldScene extends Phaser.Scene {
     /* vc251 — 화염·설원 챕터 삭제로 챕터 분기 불필요 (지면 루마 판정만 유지) */
     const gt = (this.stageDef as { groundTex?: string }).groundTex;
     /* vc196 — 종전엔 타일 이름(tile_snow/tile_magma)으로만 판정했다. 무료 타일맵으로
-     *  지형 키를 바꾸자 무스펠헤임 지면이 tile_magma → tile_lava 가 되어 이 가드가
+     *  지형 키를 바꾸자 화산 지면이 tile_magma → tile_lava 가 되어 이 가드가
      *  조용히 뚫렸다 = 용암맵에서 프레임버퍼 블룸 풀가동 = 컨텍스트 손실 4회 → Canvas
      *  폴백 재부팅. 이름이 아니라 "밝은 지면인가"로 판정한다: 설원·용암·황금·성운처럼
      *  자체 발광에 가까운 타일은 블룸을 얹으면 하이라이트가 포화된다. */
@@ -10327,8 +10327,8 @@ export class WorldScene extends Phaser.Scene {
       this.stageDef.key === "tower" || this.stageDef.key === "closet" || this.stageDef.key === "gate" ||
       this.stageDef.key === "dojang" || this.stageDef.key === "park" || this.stageDef.key === "praid";
     /* vc251 — 수련 원정 9지역 삭제로 `isTrainingStage` 조건 제거.
-     *  남은 스테이지는 village / howlrstone / DLC 뿐이며, NEXT_STAGE 가 null 인 곳이
-     *  곧 최종 지점이다(howlrstone 마지막은 dlcstargate1 로 이어지므로 제외됨). */
+     *  남은 스테이지는 village / lilacworld / DLC 뿐이며, NEXT_STAGE 가 null 인 곳이
+     *  곧 최종 지점이다(lilacworld 마지막은 dlcstargate1 로 이어지므로 제외됨). */
     const final = !specialZone && NEXT_STAGE[this.stageDef.key] === null;
     /* vc231 — 영프 편 마지막 구역은 NEXT_STAGE 가 dlcstargate1 이라 final 이 아니다.
      *  `this.cleared`(본편 세계 구원) 를 건드리지 않는다 — 영프 엔딩은 별도 플래그다. */
@@ -10346,11 +10346,11 @@ export class WorldScene extends Phaser.Scene {
      * `next === null` 로 판정하지 않는 이유: 영프 편 5-10 의 NEXT_STAGE 는
      * `dlcstargate1` 이다(체인 연결). 즉 null 이 아니므로 `final` 로 잡히지 않는다.
      * ══════════════════════════════════════════════════════════════════════════ */
-    const howlFinal = howlFinalStage(this.stageDef.key);
-    if (howlFinal) {
+    const lwFinal = lwFinalStage(this.stageDef.key);
+    if (lwFinal) {
       this.youngPrincessCleared = true;
       this.time.delayedCall(1200, () => {
-        this.showDialogueOnce("howlrstoneEnding");
+        this.showDialogueOnce("lilacworldEnding");
       });
     }
     this.saveSoon();
@@ -11388,7 +11388,7 @@ export class WorldScene extends Phaser.Scene {
       const ch = String(v?.ch ?? "");
       /* v3.0.28 (#보스난이도) — 재도전 난이도 (기본 노말) */
       const lv = typeof v?.lv === "string" && v.lv in BOSS_DIFFS ? (v.lv as BossDiffKey) : "normal";
-      /* v1.4.3 (#재림시리즈 완성) — 재림 지역 보스 3종(r5 베오르드 / r10 요르문간드 / r15 나그라파르)
+      /* v1.4.3 (#재림시리즈 완성) — 재림 지역 보스 3종(r5 재림의 파수꾼 / r10 연합을 삼키는 뱀 / r15 재림의 천사기사)
        *  재도전 지원. 재림판은 보스 구역 자체가 목적지라 target = r구역 그대로.
        *  스토리 완료 판정은 퀘스트 인덱스 대신 컬렉션 등록(최초 처치)으로 한다. */
       const isRebirth = /^r(5|10|15)$/.test(ch);
@@ -11487,7 +11487,7 @@ export class WorldScene extends Phaser.Scene {
       if (v.type === "dlc") {
         /* ═══ vc186b — 운영자(GM) DLC 임시 해금 ═══
          *  사용자 지시: "운영자 임시해금"
-         *  아부디토스를 잡지 않아도 DLC 를 열어 테스트/운영 지원할 수 있게 한다.
+         *  종언의 마룡를 잡지 않아도 DLC 를 열어 테스트/운영 지원할 수 있게 한다.
          *  cleared(세계 구원) 와 dlcTalked(NPC 대화) 를 동시에 켜고,
          *  본마을이면 게이트를 즉시 세운다. 되돌리기는 "dlcOff". */
         const on = v.value !== "off";
@@ -11604,7 +11604,7 @@ export class WorldScene extends Phaser.Scene {
          *
          *  → 보스가 **실제로 서 있는 구역**을 3단으로 찾아 그리로 이동한다:
          *     ① STAGES 의 bossKey 역색인(가장 정확 — 재림판 r5/r10/r15 포함)
-         *     ② CHAPTERS(그랜드플래닛 DLC) ③ HOWLRSTONE 챕터(영프 편)
+         *     ② CHAPTERS(그랜드플래닛 DLC) ③ LILACWORLD 챕터(영프 편)
          *  셋 다 없으면 그때만 안내를 띄운다(조용한 실패 금지). */
         const where = gmBossStage(v.value as BossKey);
         if (!where) {
@@ -17519,7 +17519,7 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.15 (#3) — 반복의뢰 수주 판정용 savedQuestIdx 즉시 갱신 (stale 판정 제거:
      *  기존엔 씬 재입장 전까지 옛 인덱스를 보고 수주 조건을 false로 판정했다) */
     this.savedQuestIdx[this.stageDef.key] = this.questIdx;
-    if (done && howlFinalStage(this.stageDef.key) && this.questIdx === this.stageDef.quests.length) {
+    if (done && lwFinalStage(this.stageDef.key) && this.questIdx === this.stageDef.quests.length) {
       this.youngPrincessCleared = true;
       this.cleared = true;
     }
@@ -17576,7 +17576,7 @@ export class WorldScene extends Phaser.Scene {
               : step.type === "travel"
                 ? `${mapName ?? "계승지"}에서 토벌 — 다른 맵의 킬은 포함되지 않는다`
                 : step.type === "collect"
-                  ? "해역의 빛나는 흔적을 회수"
+                  ? "지역의 빛나는 흔적을 회수"
                   : "",
         };
       }
@@ -18332,7 +18332,7 @@ export class WorldScene extends Phaser.Scene {
     const vw = cam.width;
     const vh = cam.height;
     this.dialoguing = true;
-    /* vc142 (쿠소디아 프리즈 ①) — 챕터카드가 dialogueSince를 세팅하지 않아 대사 붙임
+    /* vc142 (왕국 프리즈 ①) — 챕터카드가 dialogueSince를 세팅하지 않아 대사 붙임
      * 자가치유 watchdog(20s)이 발동하지 않는 구멍. 트윈 체인이 컨텍스트 롱스프링 등으로
      * 끊기면 physics.world.pause() 영구 잠금 = "왕국에서 멈춤". watchdog 등록 + 강제 해제 이중 안전망. */
     this.dialogueSince = this.time.now;
@@ -18796,7 +18796,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** Optional world conversations retain the old prologue's lore without stopping first play. */
   private addHistoryNpc() {
-    if (this.stageDef.key !== "howlrstone1x2" || this.interactables.some(it => it.dlg === "tutorial_history")) return;
+    if (this.stageDef.key !== "lilacworld1x2" || this.interactables.some(it => it.dlg === "tutorial_history")) return;
     const point = this.tutorialPoint(-110, 80);
     const actor = createCastSprite(this, "recorder", point.x, point.y);
     if (!actor) return;
@@ -18852,7 +18852,7 @@ export class WorldScene extends Phaser.Scene {
 
   tutorialTransition(): void {
     this.resetInputState();
-    this.startTransition("howlrstone1x2", { delay: 520 });
+    this.startTransition("lilacworld1x2", { delay: 520 });
   }
 
   tutorialDrop(point: { x: number; y: number }): void {
@@ -18908,8 +18908,8 @@ export class WorldScene extends Phaser.Scene {
     this.introSeen = true;
     this.storyChoices = { haruWho: "flee", ...this.storyChoices };
     if (!this.cutsceneSeen.includes("lilacCut_rea1_lilac00")) this.cutsceneSeen.push("lilacCut_rea1_lilac00");
-    if (this.stageDef.key === "howlrstone1x2") {
-      const introKey = stageIntroSeenKey("howlrstone1", 2);
+    if (this.stageDef.key === "lilacworld1x2") {
+      const introKey = stageIntroSeenKey("lilacworld1", 2);
       if (!this.cutsceneSeen.includes(introKey)) this.cutsceneSeen.push(introKey);
     }
     this.tutStep = -1;
@@ -18959,7 +18959,7 @@ export class WorldScene extends Phaser.Scene {
   private currentZone(): FishingZone {
     const key = this.stageDef.key;
     const ch = key.replace(/\d+$/, "").replace(/v$/, "");
-    const valid: FishingZone[] = ["forest", "kingdom", "alfheim", "muspelheim", "niflheim", "cave", "nidavellir", "hel", "abyss"];
+    const valid: FishingZone[] = ["forest", "kingdom", "fairyglade", "emberland", "frostland", "cave", "forgehall", "duskrealm", "abyss"];
     return (valid.includes(ch as FishingZone) ? ch : "forest") as FishingZone;
   }
 

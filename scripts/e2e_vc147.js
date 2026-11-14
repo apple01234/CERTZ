@@ -2,7 +2,7 @@
  * e2e_vc147.js — vc147 검증 (피드백 30종):
  *  정적: 쉐이더 정방향/툰 강화 · 궁극기 300/500% · s5b 해금(fifth2) · rd 래퍼 · fifth2 체인 12단계
  *        · s5b 버튼 옆 배치(maxWidth 2SK+26) · 키탭 · 거래 스냅샷 · 스폰 캡(20/50) · 유니온 강화
- *        · 신화 장비 · HUD 로봇 제거 · 니플헤임 0.30 · 미니맵 중앙 · 게이트 147/1.0.7
+ *        · 신화 장비 · HUD 로봇 제거 · 설원 0.30 · 미니맵 중앙 · 게이트 147/1.0.7
  *  런타임: 타이틀 로그인 위젯 · 월드 진입 · fifth2 hunt 진행 · 절전 30FPS 토글 · 공격 키탭 · pageerror 0
  */
 const { chromium } = require("playwright");
@@ -46,7 +46,7 @@ const fs = require("fs");
   const hud = fs.readFileSync("src/components/game/HUD.tsx", "utf8");
   ok("⑳ 우상단 로봇 제거", !hud.includes("<Bot size={17} />"));
   const light = fs.readFileSync("src/game/fx/Lighting.ts", "utf8");
-  ok("⑲ 니플헤임 0.30", light.includes("alpha: 0.3, light: { scale: 2.0, alpha: 0.65 }"));
+  ok("⑲ 설원 0.30", light.includes("alpha: 0.3, light: { scale: 2.0, alpha: 0.65 }"));
   ok("④ 미니맵 중앙 복귀", !ws.includes("cx0 + 44"));
   ok("㉕ 사연 비트 추가", (ws.match(/fieldreq\|/g) || []).length >= 2 && (fs.readFileSync("src/game/stages.ts", "utf8").match(/\[사연\]|\[기믹\]/g) || []).length === 18);
   ok("㉖ NPC 3종 다양화", ws.includes("약초 할멈") && ws.includes("해골 문지기"));

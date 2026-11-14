@@ -24,7 +24,7 @@ import {
   buildLayerData, snapPropScale, propIsSolid,
   type EditorLayerRole, type SavedLayout,
 } from "@/game/tilemapEditorCore";
-import { HOWLRSTONE_CHAPTERS } from "@/game/howlrstone";
+import { LILACWORLD_CHAPTERS } from "@/game/lilacworld";
 import { EDITOR_ASSETS } from "@/game/editorAssetManifest";
 import AssetBrowser, { type ImportedAsset } from "./AssetBrowser";
 
@@ -39,16 +39,16 @@ type Tool = "wall" | "path" | "prop" | "entry" | "exit";
 /**
  * 반영 가능한 스테이지 시드 — `authoredLayouts` 가 실제로 인식하는 키만.
  *
- * [vc236] 종전엔 이 목록을 손으로 적어 두었고, howlrstone 9장까지만 있어
+ * [vc236] 종전엔 이 목록을 손으로 적어 두었고, lilacworld 9장까지만 있어
  *  10~15장은 에디터에서 아예 고를 수 없었다(코드가 아니라 목록이 낡아서 생긴 누락).
- *  이제 `HOWLRSTONE_CHAPTERS` 의 `stages`(챕터별 실제 구역 수)에서 **유도**한다 —
+ *  이제 `LILACWORLD_CHAPTERS` 의 `stages`(챕터별 실제 구역 수)에서 **유도**한다 —
  *  챕터를 늘리면 에디터 목록도 자동으로 따라온다.
  *
- * [중요] 게임은 `howlrstone{장}x{구역}` 형식만 authored 로 처리한다.
+ * [중요] 게임은 `lilacworld{장}x{구역}` 형식만 authored 로 처리한다.
  *  목록에 없는 seed 를 저장하면 게임이 무시하므로, 반영 가능한 것만 노출한다.
  */
-const STAGE_SEEDS: { seed: string; label: string }[] = HOWLRSTONE_CHAPTERS.flatMap((c) => {
-  const no = Number(c.key.replace("howlrstone", ""));
+const STAGE_SEEDS: { seed: string; label: string }[] = LILACWORLD_CHAPTERS.flatMap((c) => {
+  const no = Number(c.key.replace("lilacworld", ""));
   return Array.from({ length: c.stages }, (_, i) => ({
     seed: `${c.key}x${i + 1}`,
     label: `${no}장 ${i + 1}구역`,
@@ -116,7 +116,7 @@ export default function TilemapEditor() {
   /* vc236 — 브러시 크기(1·2·3). 3×3 은 큰 방을 칠할 때 클릭 수를 9분의 1로 줄인다. */
   const [brush, setBrush] = useState(1);
   /* vc236 — 반영 대상 스테이지 — 저장/반영 시 이 시드로 게임에 알린다. */
-  const [seed, setSeed] = useState<string>("howlrstone1x2");
+  const [seed, setSeed] = useState<string>("lilacworld1x2");
 
   /* vc236 — undo/redo. SkillEditor 와 같은 HISTORY_MAX 규칙을 쓴다.
    *  `redo` 는 실행취소로 꺼낸 상태를 다시 밀어넣을 자리다 — 새 편집이 생기면 비운다

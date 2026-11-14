@@ -3,7 +3,7 @@ const HOLD1 = { warbringer: 24000, crusader: 24000, deadeye: 22000, skylord: 220
 const slot = process.argv[2] || '5', TS = Number(process.argv[3] || 5);
 const only = process.argv[4] ? process.argv[4].split(',') : Object.keys(HOLD1);
 const { browser, page, errors } = await boot('궁검증');
-const at = await warp(page, 'howlrstone3x1');
+const at = await warp(page, 'lilacworld3x1');
 await page.waitForFunction(() => window.__SERTZ_SCENE__.enemies.some(x => x.active && x.alive), null, { timeout: 60000 }).catch(() => {});
 const out = {};
 for (const cls of only) {

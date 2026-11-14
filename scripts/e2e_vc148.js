@@ -1,7 +1,7 @@
 /**
  * e2e_vc148.js — 보스 그리드 수리 검증:
- *  ① 아틀라스 3종 신규 로드(abudditos/vord/gram) + 풀애니 등록 + 프레임 기하 일치
- *  ② vord가 boss2(유령선)가 아닌 전용 흑룡 아틀라스를 쓰는지(정적)
+ *  ① 아틀라스 3종 신규 로드(doomwyrm/riftwarden/warden) + 풀애니 등록 + 프레임 기하 일치
+ *  ② riftwarden가 boss2(유령선)가 아닌 전용 흑룡 아틀라스를 쓰는지(정적)
  *  ③ 페이지 에러 0 · 게이트 148/1.0.8
  */
 const { chromium } = require("playwright");
@@ -14,11 +14,11 @@ const fs = require("fs");
   const errors = [];
 
   const tex = fs.readFileSync("src/game/textures.ts", "utf8");
-  ok("BOSS_ATLAS 3종 등록", /boss_abudditos:\s*\{ key: "atl_boss_abudditos", file: "atl_boss_abudditos\.webp", fw: 298, fh: 220 \}/.test(tex) && /boss_vord:\s*\{ key: "atl_boss_vord"/.test(tex) && /boss_gram:\s*\{ key: "atl_boss_gram"/.test(tex));
-  ok("행 프레임 수 실측값", tex.includes("boss_abudditos: [8, 8, 7, 8, 8, 8, 8]") && /boss_gram:\s*\[6, 6, 6, 6, 6, 6, 6\]/.test(tex));
+  ok("BOSS_ATLAS 3종 등록", /boss_doomwyrm:\s*\{ key: "atl_boss_doomwyrm", file: "atl_boss_doomwyrm\.webp", fw: 298, fh: 220 \}/.test(tex) && /boss_riftwarden:\s*\{ key: "atl_boss_riftwarden"/.test(tex) && /boss_warden:\s*\{ key: "atl_boss_warden"/.test(tex));
+  ok("행 프레임 수 실측값", tex.includes("boss_doomwyrm: [8, 8, 7, 8, 8, 8, 8]") && /boss_warden:\s*\[6, 6, 6, 6, 6, 6, 6\]/.test(tex));
   const st = fs.readFileSync("src/game/stages.ts", "utf8");
-  ok("vord 전용 아틀라스 전환", /key: "vord"[\s\S]{0,600}?tex: "boss_vord"/.test(st) && !/key: "vord"[\s\S]{0,600}?tex: "boss2"/.test(st));
-  for (const f of ["atl_boss_abudditos", "atl_boss_vord", "atl_boss_gram"]) {
+  ok("riftwarden 전용 아틀라스 전환", /key: "riftwarden"[\s\S]{0,600}?tex: "boss_riftwarden"/.test(st) && !/key: "riftwarden"[\s\S]{0,600}?tex: "boss2"/.test(st));
+  for (const f of ["atl_boss_doomwyrm", "atl_boss_riftwarden", "atl_boss_warden"]) {
     ok(`파일 ${f}.webp`, fs.existsSync(`public/assets/${f}.webp`));
     ok(`초상화 bossport_${f.replace("atl_boss_", "")}.webp`, fs.existsSync(`public/assets/bossport_boss_${f.replace("atl_boss_", "")}.webp`));
   }
@@ -58,7 +58,7 @@ const fs = require("fs");
     const s = window.__SERTZ_SCENE__;
     if (!s) return { err: "no-scene" };
     const out = {};
-    for (const [texKey, key] of [["boss_abudditos", "atl_boss_abudditos"], ["boss_vord", "atl_boss_vord"], ["boss_gram", "atl_boss_gram"]]) {
+    for (const [texKey, key] of [["boss_doomwyrm", "atl_boss_doomwyrm"], ["boss_riftwarden", "atl_boss_riftwarden"], ["boss_warden", "atl_boss_warden"]]) {
       const t = s.textures.exists(key) ? s.textures.get(key) : null;
       const fr = t && t.get ? t.get(0) : null;
       out[texKey] = {
@@ -72,9 +72,9 @@ const fs = require("fs");
     }
     return out;
   });
-  for (const k of ["boss_abudditos", "boss_vord", "boss_gram"]) {
+  for (const k of ["boss_doomwyrm", "boss_riftwarden", "boss_warden"]) {
     const a = atlas[k] || {};
-    ok(`${k} 아틀라스 로드+기하`, a.loaded === true && a.w === (k === "boss_gram" ? 304 : 298) && a.h === (k === "boss_gram" ? 274 : 220), JSON.stringify(a));
+    ok(`${k} 아틀라스 로드+기하`, a.loaded === true && a.w === (k === "boss_warden" ? 304 : 298) && a.h === (k === "boss_warden" ? 274 : 220), JSON.stringify(a));
     ok(`${k} 풀애니(idle/sp3/die)`, a.idle && a.sp3 && a.die);
   }
 

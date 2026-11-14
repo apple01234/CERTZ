@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """스토리 확장 스테이지 에셋 베이크 — 전부 기존 CC0/CC-BY 소스에서 추출.
 
-- 제3지역 스바르트알프헤임(동굴): 동굴 거미(TD 0110) / 수정 골렘(TD 0109)
-- 제4지역 니플헤임(설원): 서리 늑대(LPC wolf 청백 틴트) / 얼음 골렘(TD 0109 청백 틴트)
+- 제3지역 어둠 동굴(동굴): 동굴 거미(TD 0110) / 수정 골렘(TD 0109)
+- 제4지역 설원(설원): 서리 늑대(LPC wolf 청백 틴트) / 얼음 골렘(TD 0109 청백 틴트)
 - 제5지역 심연의 왕좌: 심연 유령(TD 0121 보라 틴트)
 - 보스: 눈보라의 거수(behemoth, CC-BY gilgaphoenixignis) / 심연의 군주(alvaric, CC-BY gilgaphoenixignis)
 - 타일/데코: 기존 tile_grass/tile_path/cave 타일/kenney 소나무·바위 색 변조

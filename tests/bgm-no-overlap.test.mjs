@@ -7,10 +7,10 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 const { STAGES } = await import('../src/game/data.ts');
 const { stageTrack } = await import('../src/game/audio.ts');
-const { HOWLRSTONE_CHAPTERS } = await import('../src/game/howlrstone.ts');
+const { LILACWORLD_CHAPTERS } = await import('../src/game/lilacworld.ts');
 
 const chapterOf = (k) => /^(dlc[a-z]+)[1-9]$/.exec(k)?.[1]
-  ?? (() => { const m = /^(howlrstone\d+)x(\d+)$/.exec(k); const c = m && HOWLRSTONE_CHAPTERS.find(h => h.key === m[1]); return c && Number(m[2]) < c.stages ? c.key : null; })();
+  ?? (() => { const m = /^(lilacworld\d+)x(\d+)$/.exec(k); const c = m && LILACWORLD_CHAPTERS.find(h => h.key === m[1]); return c && Number(m[2]) < c.stages ? c.key : null; })();
 
 test('챕터 필드곡은 다른 챕터와 겹치지 않는다', () => {
   const owner = new Map();

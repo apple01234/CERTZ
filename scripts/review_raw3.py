@@ -8,7 +8,7 @@ RAW = "/home/z/my-project/scripts/boss_raw3"
 OUT = "/tmp/bossreview"
 os.makedirs(OUT, exist_ok=True)
 
-keys = sys.argv[1:] or ["nidhog","jorm","fenrir","behemoth","surt","skoll","gram","nagr","guardian","abysslord","abudditos","vord"]
+keys = sys.argv[1:] or ["blackwyrm","unionserpent","greedwolf","behemoth","flamegiant","twinwolf","warden","angelknight","guardian","abysslord","doomwyrm","riftwarden"]
 for k in keys:
     p = f"{RAW}/{k}_raw.png"
     if not os.path.exists(p):

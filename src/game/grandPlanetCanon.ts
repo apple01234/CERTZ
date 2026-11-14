@@ -256,7 +256,7 @@ export function storyChoiceLabel(key: string, id: string | undefined): string | 
   },
   jade: {
     key: "jade", name: "제이드 · 마공학 에너지 분신", hp: 32000, atk: 54, speed: 96, exp: 2200, gold: 1100,
-    tex: "boss_vord", orbTint: 0x56e8e0, introDialogue: "gpJadeFight", sig: "summon", summonKey: "runegolem",
+    tex: "boss_riftwarden", orbTint: 0x56e8e0, introDialogue: "gpJadeFight", sig: "summon", summonKey: "runegolem",
     patterns: { p1: ["slam", "beam"], p2: ["summon", "shieldcast", "beam"], p3: ["summon", "shieldcast", "beam", "crystalburst"] },
   },
   reversecore: {
@@ -266,12 +266,12 @@ export function storyChoiceLabel(key: string, id: string | undefined): string | 
   },
   fabian: {
     key: "fabian", name: "힘의 부호 파비앙 · 대련", hp: 26000, atk: 50, speed: 120, exp: 1800, gold: 900,
-    tex: "boss_fenrir", orbTint: 0xffba80, introDialogue: "gpFabian", sig: "counter",
+    tex: "boss_greedwolf", orbTint: 0xffba80, introDialogue: "gpFabian", sig: "counter",
     patterns: { p1: ["charge", "slam"], p2: ["charge", "slam", "counter"], p3: ["charge", "counter", "slam"] },
   },
   snorikaking: {
     key: "snorikaking", name: "클로체스 · 얼어붙은 심장", hp: 28000, atk: 50, speed: 96, exp: 1800, gold: 1000,
-    tex: "boss_hati", orbTint: 0xb4e5ff, introDialogue: "snowKing", sig: "frostnova",
+    tex: "boss_twinmate", orbTint: 0xb4e5ff, introDialogue: "snowKing", sig: "frostnova",
     patterns: { p1: ["volley", "frostnova"], p2: ["frostnova", "zones", "charge"], p3: ["frostnova", "zones", "beam"] },
   },
 };
@@ -283,7 +283,7 @@ export const SNORIKA_ENTRY = "snorika1";
 export const SNORIKA_END = "snorika6";
 export const SNORIKA_STORY = {
   title: "눈의 왕국 스노리카", source: "지정 문서 6 — 눈의왕국 스노리카",
-  template: "howlrstone2", groundTex: "tile_snow", pathTex: "tile_ice", bg: "#101b34",
+  template: "lilacworld2", groundTex: "tile_snow", pathTex: "tile_ice", bg: "#101b34",
   returnStage: "youngprincessv", bossAt: 5, boss: "snorikaking" as const,
   beats: [
     beat(1, "snowBook", "천문대의 수상한 책", "벨리카·란·넬리야가 받은 책을 조사한다.", "collect"),

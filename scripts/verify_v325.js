@@ -113,7 +113,7 @@ ok("#4 퀘스트창·보스창 분리: PanelKind boss + BossReplayPanel + 라우
 ok("#4 퀘스트창에 보스창 연결 버튼", pn.includes("전용 창 열기"));
 
 const db = read("src/components/game/DialogueBox.tsx");
-ok("#8 보스 초상화 404 수정: idle 프레임 파일명 사용", db.includes("boss_nidhog_idle0") && db.includes("def.tex}_idle0"));
+ok("#8 보스 초상화 404 수정: idle 프레임 파일명 사용", db.includes("boss_blackwyrm_idle0") && db.includes("def.tex}_idle0"));
 ok("#8 초상화 로드 실패 시 깨진 이미지 숨김", db.includes("onError") && db.includes("portraitOk"));
 ok("#6 초상화 원본 비율 유지(object-cover·top)", db.includes("object-cover object-top"));
 

@@ -7,8 +7,8 @@
   tx_{set}_gvar{1,2}.png          : 지면 명도 변형 (반복 패턴 깨기)
   tx_{set}_pvar.png               : 길 명도 변형
 
-세트: gp(마을/숲 grass+path) dp(알프헤임 dark+path) cp(동굴 cave+path_dark)
-      si(니플헤임 snow+ice) ap(왕좌 abyss+path_dark)
+세트: gp(마을/숲 grass+path) dp(요정 숲 dark+path) cp(동굴 cave+path_dark)
+      si(설원 snow+ice) ap(왕좌 abyss+path_dark)
 모든 블롭은 고정 시드(결정적) — 재실행해도 동일 결과.
 """
 import random

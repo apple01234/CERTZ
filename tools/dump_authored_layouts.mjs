@@ -19,7 +19,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const { authoredRoomLayout } = await import(path.join(here, '../src/game/authoredLayouts.ts'));
 const { STAGES } = await import(path.join(here, '../src/game/stages.ts'));
 
-const DEFAULT_KEYS = ['howlrstone1x2', 'dlcstargate1', 'dlcocean1', 'dlcneocity1', 'dlcprisma1'];
+const DEFAULT_KEYS = ['lilacworld1x2', 'dlcstargate1', 'dlcocean1', 'dlcneocity1', 'dlcprisma1'];
 const all = process.argv.includes('--all');
 
 const out = [];

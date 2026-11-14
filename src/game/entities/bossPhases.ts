@@ -82,7 +82,7 @@ export const TELEGRAPH_MS: Record<string, number> = {
   magicburst: 1000,
   portalteleport: 820,
 
-  /* 스바르트알프헤임 3종 */
+  /* 어둠 동굴 3종 */
   greenslash: 800,
   vanish: 800,
   shieldcast: 900,
@@ -169,7 +169,7 @@ export function attacksAfter(phase: number): number {
  *
  * 왜 합집합인가: 페이즈 전환은 "패턴 **교체**"가 아니라 "**확장**"이어야 한다.
  * 실제로 abysslord 는 p1 의 자기 시그니처(`greenslash`)와 `slam` 이 p3 에 없어서
- * 최종 페이즈에서 정체성 패턴을 못 썼고, skoll 도 `slam` 이 사라졌다.
+ * 최종 페이즈에서 정체성 패턴을 못 썼고, twinwolf 도 `slam` 이 사라졌다.
  * Boss.pickAttack 이 이 함수를 그대로 쓰므로, 데이터에 구멍이 있어도 전투에서는
  * 패턴이 **줄지 않는다** — 테스트가 이 계약을 강제한다.
  */

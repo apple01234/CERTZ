@@ -218,7 +218,7 @@ const ASSET_LIST = [
   "tile_abyss",
   "tile_path_dark",
   // v2.0 이전 서사 확장 타일 (v1.5 이관)
-  "tile_magma", "tile_magma_path", "tile_stone", "tile_hel",
+  "tile_magma", "tile_magma_path", "tile_stone", "tile_duskrealm",
   /* vc196 — 무료 타일맵(Kenney CC0) 128px 심리스 19종 */
   "tile_amber", "tile_ash", "tile_blood", "tile_deep", "tile_desert", "tile_forest", "tile_garden", "tile_grass2", "tile_lava", "tile_morgue", "tile_moss", "tile_nebula", "tile_ruin", "tile_sand", "tile_vault",
   /* vc204 — 지면으로 승격한 256px 지형 타일. 이전에는 파일만 있고 등록되지 않아
@@ -290,14 +290,14 @@ const ASSET_LIST = [
   "firespirit_run0", "firespirit_run1", "firespirit_run2", "firespirit_run3",
   "runegolem_idle0", "runegolem_idle1",
   "runegolem_run0", "runegolem_run1", "runegolem_run2", "runegolem_run3",
-  "helhound_idle0", "helhound_idle1",
-  "helhound_run0", "helhound_run1", "helhound_run2", "helhound_run3",
-  /* v1.4.31 (#4 보스 개편) — 아틀라스 보스(boss/boss2/boss3·nidhog/surt/fenrir/skoll)는
+  "duskhound_idle0", "duskhound_idle1",
+  "duskhound_run0", "duskhound_run1", "duskhound_run2", "duskhound_run3",
+  /* v1.4.31 (#4 보스 개편) — 아틀라스 보스(boss/boss2/boss3·blackwyrm/flamegiant/greedwolf/twinwolf)는
    *  개별 idle0/1 이미지 철수 → atl_* 스프라이트시트 1장으로 대체 (preload 후반 로드).
-   *  구형 유지 보스(jorm/gram/abudditos)는 개별 프레임 경로 유지 */
-  "boss_jorm_idle0", "boss_jorm_idle1",
-  "boss_gram_idle0", "boss_gram_idle1",
-  "boss_abudditos_idle0", "boss_abudditos_idle1",
+   *  구형 유지 보스(unionserpent/warden/doomwyrm)는 개별 프레임 경로 유지 */
+  "boss_unionserpent_idle0", "boss_unionserpent_idle1",
+  "boss_warden_idle0", "boss_warden_idle1",
+  "boss_doomwyrm_idle0", "boss_doomwyrm_idle1",
   // 퀘스트/이펙트 소스
   "fragment",
   "spark",

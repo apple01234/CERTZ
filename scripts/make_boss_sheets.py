@@ -170,19 +170,19 @@ def build_all_bosses():
     # [key, builder] — 12종
     specs = [
         ("bsw_guardian",  lambda: dragon_variant((8, 30, 1.12, 1.02))),     # 심연의 수호자 — 화룡(적)
-        ("bsw_nidhog",    lambda: dragon_variant(None)),                     # 탐식의 드래곤 — 네이티브 녹색
-        ("bsw_gram",      lambda: dragon_variant((38, 55, 1.15, 1.06))),     # 혈안의 문지기 가름 — 성황(금)
-        ("bsw_fenrir",    lambda: dragon_variant((128, 150, 0.82, 1.05))),   # 탐욕의 늑대 — ?? (아래에서 늑대로 덮음)
-        ("bsw_abudditos", lambda: dragon_variant((175, 205, 1.25, 0.55))),   # 종언의 마룡 — 보이드 퍼플
-        ("bsw_vord",      lambda: dragon_variant((128, 152, 0.85, 1.10))),   # 재림 파수꾼 — 빙청
-        ("bsw_jorm",      lambda: dragon_variant((95, 118, 1.0, 1.0))),      # 요르문간드 — 해록(청록)
-        ("bsw_nagr",      lambda: dragon_variant((335, 360, 1.3, 0.6))),     # 재림 종언 — 진홍 암흑
-        ("bsw_surt",      lambda: golem_variant()),                          # 화염의 거인 — 네이티브 용암
+        ("bsw_blackwyrm",    lambda: dragon_variant(None)),                     # 탐식의 드래곤 — 네이티브 녹색
+        ("bsw_warden",      lambda: dragon_variant((38, 55, 1.15, 1.06))),     # 혈안의 문지기 혈안의 문지기 — 성황(금)
+        ("bsw_greedwolf",    lambda: dragon_variant((128, 150, 0.82, 1.05))),   # 탐욕의 늑대 — ?? (아래에서 늑대로 덮음)
+        ("bsw_doomwyrm", lambda: dragon_variant((175, 205, 1.25, 0.55))),   # 종언의 마룡 — 보이드 퍼플
+        ("bsw_riftwarden",      lambda: dragon_variant((128, 152, 0.85, 1.10))),   # 재림 파수꾼 — 빙청
+        ("bsw_unionserpent",      lambda: dragon_variant((95, 118, 1.0, 1.0))),      # 연합을 삼키는 뱀 — 해록(청록)
+        ("bsw_angelknight",      lambda: dragon_variant((335, 360, 1.3, 0.6))),     # 재림 종언 — 진홍 암흑
+        ("bsw_flamegiant",      lambda: golem_variant()),                          # 화염의 거인 — 네이티브 용암
         ("bsw_abysslord", lambda: golem_variant((2, 48, 90, 168, 200, 1.15, 0.8))),  # 심연의 군주 — 암흑 퍼플
         ("bsw_behemoth",  None),                                             # 유령선 — ship.py에서 별도
-        ("bsw_skoll",     lambda: wolf_variant((1.10, 0.93, 0.62))),         # 교만의 쌍랑 — 금양 늑대
-        ("bsw_gram_wolf", lambda: wolf_variant((1.22, 0.55, 0.55))),         # (예비) 혈안 늑대
-        ("bsw_fenrir_w",  lambda: wolf_variant((0.82, 0.94, 1.10))),         # 탐욕의 늑대 펜리르 — 서리 늑대
+        ("bsw_twinwolf",     lambda: wolf_variant((1.10, 0.93, 0.62))),         # 교만의 쌍랑 — 금양 늑대
+        ("bsw_warden_wolf", lambda: wolf_variant((1.22, 0.55, 0.55))),         # (예비) 혈안 늑대
+        ("bsw_greedwolf_w",  lambda: wolf_variant((0.82, 0.94, 1.10))),         # 탐욕의 늑대 탐욕의 늑대 — 서리 늑대
     ]
     frames = {}
     for name, fn in specs:

@@ -154,7 +154,7 @@ export function computeFramedView(
   /* ⚠️ Phaser 4 의 scroll 은 **뷰 좌상단이 아니라 카메라 원점(화면 중앙)의 월드 좌표**다
    *  (Camera.preRender: midPoint = scroll + width/2, worldView = midPoint - width/2/zoom).
    *  종전에는 scroll 을 뷰 좌상단으로 계산해 넘겼고, 그 오차만큼 방이 오른쪽·아래로 밀려
-   *  **왼쪽이 잘렸다**(실측 howlrstone11x1: 좌 여백 0px / 우 76px, 줌 0.5521).
+   *  **왼쪽이 잘렸다**(실측 lilacworld11x1: 좌 여백 0px / 우 76px, 줌 0.5521).
    *  원점 보정을 빼면 scroll = 방중앙 - 화면/2 가 되어 줌과 무관해진다.
    *  (WorldScene.applyManualCameraFollow 의 비-프레이밍 경로도 같은 보정을 쓴다.) */
   return {

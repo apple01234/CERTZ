@@ -42,7 +42,7 @@ THEMES = {
     "tile_path": (0.09, 0.22, 1.02), "tile_path_dark": (0.08, 0.18, 0.78),
     "tile_magma": (0.03, 1.15, 1.00), "tile_lava": (0.02, 1.30, 1.12),
     "tile_magma_path": (0.04, 1.05, 0.90), "tile_ash": (0.00, 0.10, 0.72),
-    "tile_hel": (0.76, 0.55, 0.72), "tile_void": (0.72, 0.65, 0.55),
+    "tile_duskrealm": (0.76, 0.55, 0.72), "tile_void": (0.72, 0.65, 0.55),
     "tile_abyss": (0.66, 0.70, 0.60), "tile_deep": (0.60, 0.60, 0.50),
     "tile_nebula": (0.80, 0.85, 0.88), "tile_starfield": (0.62, 0.75, 0.48),
     "tile_divine": (0.13, 0.50, 1.45), "tile_water": (0.52, 0.90, 1.05),

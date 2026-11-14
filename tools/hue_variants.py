@@ -58,7 +58,7 @@ THEMES = {
     "tile_lava":         (0.02, 1.30, 1.12, "grass"),
     "tile_magma_path":   (0.04, 1.05, 0.90, "grass"),
     "tile_ash":          (0.00, 0.10, 0.72, "grass"),
-    "tile_hel":          (0.76, 0.55, 0.72, "grass"),
+    "tile_duskrealm":          (0.76, 0.55, 0.72, "grass"),
     "tile_void":         (0.72, 0.65, 0.55, "grass"),
     "tile_abyss":        (0.66, 0.70, 0.60, "grass"),
     "tile_deep":         (0.60, 0.60, 0.50, "grass"),

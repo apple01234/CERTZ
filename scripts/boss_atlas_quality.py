@@ -6,12 +6,12 @@ vc139 보스 아틀라스 화질 복구 파이프라인
                        → 픽셀 격자 일그러짐 + 압축 뭉개짐 = "화질 ㅈ구림"
   조치:
     A. 고해상 소스 4종 교체 (유저 업로드 원본 크롭 — 원칙 준수)
-       surt   ← assets_src/boss_sheets/bsw_surt.webp     (6열×7행, 셀 256×171)
-       fenrir ← assets_src/boss_sheets/bsw_fenrir.webp   (6열×7행, 셀 204×183)
+       flamegiant   ← assets_src/boss_sheets/bsw_flamegiant.webp     (6열×7행, 셀 256×171)
+       greedwolf ← assets_src/boss_sheets/bsw_greedwolf.webp   (6열×7행, 셀 204×183)
        boss2  ← assets_src/boss_sheets/bsw_behemoth.webp (유령선, 6열×7행)
-       nidhog ← upload/file_000000007c8c82069f7efbeb11b62fb2.png (수목룡 식물, 10열×6행)
+       blackwyrm ← upload/file_000000007c8c82069f7efbeb11b62fb2.png (수목룡 식물, 10열×6행)
        · bsw 행 순서 [idle,walk,atk,death,sp1,sp2,sp3] → 게임 순서 [idle,walk,atk,sp1,sp2,sp3,die] 리맵
-    B. 마스터 유도 5종(boss·boss3·skoll·nagr·hati) — vc137과 동일 기하(프레임 크기/행 구성 보존),
+    B. 마스터 유도 5종(boss·boss3·twinwolf·angelknight·twinmate) — vc137과 동일 기하(프레임 크기/행 구성 보존),
        NEAREST → LANCZOS + 언샵 + q92 (프리멀티지 알파로 체커보드 오염 제거)
   출력: public/assets/atl_*.webp + bossport_*.webp + manifest 갱신 + 검수 프리뷰
 """
@@ -139,22 +139,22 @@ def hd_boss(name, src_path, x0s, y0s, cw, ch, remap, desc):
                       "scale": round(scale, 2), "src": os.path.basename(src_path)}
     print(f"[HD] {name}: {fw}x{fh} · {len(cells)}행 {counts} · {kb:.0f}KB · ×{scale:.2f} · {desc}")
 
-# 1) 수르트 — bsw_surt 6열×7행 (실측: x=5+256k w245 / y=4+171k h163)
-hd_boss("atl_boss_surt", f"{BASE}/assets_src/boss_sheets/bsw_surt.webp",
+# 1) 화염의 거인 — bsw_flamegiant 6열×7행 (실측: x=5+256k w245 / y=4+171k h163)
+hd_boss("atl_boss_flamegiant", f"{BASE}/assets_src/boss_sheets/bsw_flamegiant.webp",
         [5 + 256 * i for i in range(6)], [4 + 171 * i for i in range(7)], 256, 171,
-        BSW_REMAP, "수르트 — 무스펠 용암골렘(고해상)")
+        BSW_REMAP, "화염의 거인 — 화산 용암골렘(고해상)")
 
-# 2) 펜리르 — bsw_fenrir 6열×7행 (실측: x=4+204k w196 / y 실측행)
-hd_boss("atl_boss_fenrir", f"{BASE}/assets_src/boss_sheets/bsw_fenrir.webp",
+# 2) 탐욕의 늑대 — bsw_greedwolf 6열×7행 (실측: x=4+204k w196 / y 실측행)
+hd_boss("atl_boss_greedwolf", f"{BASE}/assets_src/boss_sheets/bsw_greedwolf.webp",
         [4 + 204 * i for i in range(6)], [(18, 180), (189, 364), (373, 548), (556, 732), (741, 916), (924, 1100), (1108, 1284)], 196, 0,
-        BSW_REMAP, "펜리르 — 설원 백랑(고해상)")
+        BSW_REMAP, "탐욕의 늑대 — 설원 백랑(고해상)")
 
 # 3) 보스2 — bsw_behemoth 유령선 6열×7행 (균일 그리드 256×171)
 hd_boss("atl_boss2", f"{BASE}/assets_src/boss_sheets/bsw_behemoth.webp",
         [256 * i for i in range(6)], [171 * i for i in range(7)], 256, 171,
         BSW_REMAP, "베히모스 — 미드가르드 해적선(고해상 유령선)")
 
-# 4) 니드호그 — 식물 시트 (시트 자체 그리드라인 피팅: 10/11/12열 × 6/7행 후보 중 경계선 밝기 최적)
+# 4) 탐식의 흑룡 — 식물 시트 (시트 자체 그리드라인 피팅: 10/11/12열 × 6/7행 후보 중 경계선 밝기 최적)
 plant = Image.open(f"{BASE}/upload/file_000000007c8c82069f7efbeb11b62fb2.png").convert("RGBA")
 parr = np.array(plant)
 PH, PW = parr.shape[:2]
@@ -204,19 +204,19 @@ max_h = max(c.getbbox()[3] - c.getbbox()[1] for row in pcells for c in row if c 
 fw = int(np.ceil(max_w * scale)) + PAD; fh = int(np.ceil(max_h * scale)) + PAD
 fw += fw % 2; fh += fh % 2
 atlas, counts = build_atlas(pcells, len(pcells), fw, fh, scale)
-out = f"{OUT_DIR}/atl_boss_nidhog.webp"
+out = f"{OUT_DIR}/atl_boss_blackwyrm.webp"
 atlas.save(out, "WEBP", quality=Q_HD, method=M_ETH)
-save_portrait(atlas, fw, fh, "boss_nidhog")
+save_portrait(atlas, fw, fh, "boss_blackwyrm")
 pv = atlas.resize((max(1, atlas.width // 3), max(1, atlas.height // 3)), Image.LANCZOS)
-pv.save(f"{PREVIEW_DIR}/atl_boss_nidhog_all.png")
+pv.save(f"{PREVIEW_DIR}/atl_boss_blackwyrm_all.png")
 kb = os.path.getsize(out) / 1024
-manifest["atl_boss_nidhog"] = {"fw": fw, "fh": fh, "nrows": len(pcells),
+manifest["atl_boss_blackwyrm"] = {"fw": fw, "fh": fh, "nrows": len(pcells),
                                "rowNames": (["idle", "walk", "atk", "sp1", "sp2", "sp3", "die"] if len(pcells) == 7
                                             else ["idle", "walk", "atk", "sp1", "sp2", "die"]),
                                "rowCounts": counts, "kb": round(kb),
-                               "desc": "니드호그 — 알프헤임 수목룡(고해상)", "scale": round(scale, 2),
+                               "desc": "탐식의 흑룡 — 요정 숲 수목룡(고해상)", "scale": round(scale, 2),
                                "src": "file_000000007c8c8206.png"}
-print(f"[HD] atl_boss_nidhog: {fw}x{fh} · {len(pcells)}행 {counts} · {kb:.0f}KB · ×{scale:.2f}")
+print(f"[HD] atl_boss_blackwyrm: {fw}x{fh} · {len(pcells)}행 {counts} · {kb:.0f}KB · ×{scale:.2f}")
 
 # ═════════════════ PART B — 마스터 유도 5종 (vc137 기하 보존 + LANCZOS) ═════════════════
 SRC = MASTER
@@ -287,11 +287,11 @@ TARGET_CONTENT = 300.0
 SCALE_MIN, SCALE_MAX = 4.0, 5.6   # vc137 8.0 → 5.6 (용량·연화 절제, 콘텐츠 ~260px)
 
 MASTER_SHEETS = [
-    ("atl_boss",      (2, 2), "심연의 수호자 — 스바르트 흑마수(LANCZOS 개선)"),
-    ("atl_boss3",     (2, 0), "심연의 군주 — 헬 악마(LANCZOS 개선)"),
-    ("atl_boss_skoll",(1, 2), "스콜 — 얼음 봉황(LANCZOS 개선)"),
-    ("atl_boss_nagr", (2, 1), "발할라 천사기사(LANCZOS 개선)"),
-    ("atl_boss_hati", (0, 2), "하티 — 스콜 트윈 화염 늑대(LANCZOS 개선)"),
+    ("atl_boss",      (2, 2), "심연의 수호자 — 어둠 동굴 흑마수(LANCZOS 개선)"),
+    ("atl_boss3",     (2, 0), "심연의 군주 — 명계 악마(LANCZOS 개선)"),
+    ("atl_boss_twinwolf",(1, 2), "얼음 늑대 — 얼음 봉황(LANCZOS 개선)"),
+    ("atl_boss_angelknight", (2, 1), "천상 천사기사(LANCZOS 개선)"),
+    ("atl_boss_twinmate", (0, 2), "화염 늑대 — 얼음 늑대 트윈 화염 늑대(LANCZOS 개선)"),
 ]
 
 for name, (br, bc), desc in MASTER_SHEETS:

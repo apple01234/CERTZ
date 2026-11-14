@@ -6,9 +6,9 @@ from PIL import Image, ImageDraw
 PUB = "/home/z/my-project/public/assets"
 SPECS = [
     ("boss", "guardian 화룡"), ("boss2", "behemoth 유령선"), ("boss3", "abysslord 암흑골렘"),
-    ("boss_nidhog", "nidhog 녹룡"), ("boss_surt", "surt 골렘"), ("boss_fenrir", "fenrir 서리늑대"),
-    ("boss_skoll", "skoll 금늑대"), ("boss_gram", "gram 핏빛늑대"), ("boss_abudditos", "abudditos 마룡"),
-    ("boss_vord", "vord 성황룡"), ("boss_jorm", "jorm 해룡"), ("boss_nagr", "nagr 진홍룡"),
+    ("boss_blackwyrm", "blackwyrm 녹룡"), ("boss_flamegiant", "flamegiant 골렘"), ("boss_greedwolf", "greedwolf 서리늑대"),
+    ("boss_twinwolf", "twinwolf 금늑대"), ("boss_warden", "warden 핏빛늑대"), ("boss_doomwyrm", "doomwyrm 마룡"),
+    ("boss_riftwarden", "riftwarden 성황룡"), ("boss_unionserpent", "unionserpent 해룡"), ("boss_angelknight", "angelknight 진홍룡"),
 ]
 COLS, TILE_W, TILE_H = 4, 300, 220
 rows = (len(SPECS) + COLS - 1) // COLS

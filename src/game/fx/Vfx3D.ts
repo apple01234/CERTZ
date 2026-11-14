@@ -111,7 +111,7 @@ class Vfx3DImpl {
    *  Phaser P4 렌더 변환은 screen = origin + z×(world - scroll - origin)이므로 실제 보이는
    *  뷰 중심 = scroll + origin×(1 - 1/z) + vw/2. 기존 sync는 보정항 origin×(1-1/z)를 빼먹어
    *  PC(줌≈2)에서 3D 이펙트가 실제 위치보다 최대 ~(w/2)(1-1/z), (h/2)(1-1/z)px 우하단으로
-   *  어긋났다 — 보스 격파 폭발·수르트 불기둥 등이 "오른쪽 구석"에 떠던 원인. */
+   *  어긋났다 — 보스 격파 폭발·화염의 거인 불기둥 등이 "오른쪽 구석"에 떠던 원인. */
   sync(cam: { scrollX: number; scrollY: number; width: number; height: number; zoom: number }) {
     if (!this.ok || !this.renderer) return;
     const z = cam.zoom || 1;

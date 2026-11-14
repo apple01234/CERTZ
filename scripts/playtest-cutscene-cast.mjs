@@ -43,8 +43,8 @@ try {
   });
   // Exercise real authored direction, real map floors, the shared dialogue UI and real input.
   for (const [stage, id, expected] of [
-    ['howlrstone1x1', 'pendant', 'cast_lilac'], ['howlrstone4x1', 'vellica', 'cast_vellica'],
-    ['howlrstone6x1', 'injury', 'cast_lucy'], ['howlrstone8x1', 'relationship', 'cast_ari'],
+    ['lilacworld1x1', 'pendant', 'cast_lilac'], ['lilacworld4x1', 'vellica', 'cast_vellica'],
+    ['lilacworld6x1', 'injury', 'cast_lucy'], ['lilacworld8x1', 'relationship', 'cast_ari'],
   ]) {
     await page.keyboard.press('Escape');
     await page.evaluate((key) => {

@@ -329,10 +329,10 @@ for (const scenario of Object.values(LILAC_SCENARIOS)) scenario.steps = stageLil
 export type LilacPlacement = { sub: number; id: string };
 /** 15 chapters have 4–5 real fields. Never schedule scenes at nonexistent sub9/10. */
 export const LILAC_CHAPTER_MAP: Record<string, LilacPlacement[]> = {
-  howlrstone1: [{ sub: 1, id: "lilac00" }, { sub: 4, id: "lilac01" }],
+  lilacworld1: [{ sub: 1, id: "lilac00" }, { sub: 4, id: "lilac01" }],
   ...Object.fromEntries(Array.from({ length: 14 }, (_, index) => {
     const chapter = index + 2;
-    return [`howlrstone${chapter}`, [{ sub: 1, id: `lilac${String(chapter).padStart(2, "0")}` }]];
+    return [`lilacworld${chapter}`, [{ sub: 1, id: `lilac${String(chapter).padStart(2, "0")}` }]];
   })),
 };
 

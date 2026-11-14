@@ -25,12 +25,12 @@ const ok = (name, cond) => { assert.ok(cond, `✗ ${name}`); checks++; };
  * 스테이지 키 → 챕터 진행 번호. `zoneSpawnCap` 이 이 번호를 받는다.
  * `WorldScene.stageChapterNo()` 와 **같은 규칙**이어야 한다 —
  * 두 곳이 갈라지면 "맵엔 32마리 배치했는데 게임은 20마리만 도는" 유령 버그가 된다.
- *   · howlrstone12x3 → 12
+ *   · lilacworld12x3 → 12
  *   · dlcstargate5   → 본편 15장 뒤이므로 16 (CHAPTERS 인덱스 기반)
  *   · 그 외(마을/탑/파크 등) → 1 (최소 상한)
  */
 function chapterNoOf(stageKey) {
-  const hw = /^howlrstone(\d+)x\d+$/.exec(stageKey);
+  const hw = /^lilacworld(\d+)x\d+$/.exec(stageKey);
   if (hw) return Number(hw[1]);
   const dlc = /^(dlc[a-z]+)\d+$/.exec(stageKey);
   if (dlc) {
@@ -105,7 +105,7 @@ for (const { stage, key, mixKeys } of bounties) {
 }
 // Boss-only and healing/rebuilding maps have no impossible repeat target; all live combat fields retain theirs.
 for (const [stage, def] of Object.entries(STAGES)) {
-  if (/^(howlrstone\d+x\d+|dlc[a-z]+\d+)$/.test(stage) && !def.boss && def.enemies.length) ok(`${stage}: 전투 구역의 반복 의뢰 보존`, !!def.repeat);
+  if (/^(lilacworld\d+x\d+|dlc[a-z]+\d+)$/.test(stage) && !def.boss && def.enemies.length) ok(`${stage}: 전투 구역의 반복 의뢰 보존`, !!def.repeat);
 }
 ok(`반복 의뢰 전수 검사 (${bounties.length}건)`, bounties.length > 350);
 
@@ -136,9 +136,9 @@ ok(`반복 의뢰 전수 검사 (${bounties.length}건)`, bounties.length > 350)
   }
   ok(`전 스테이지 상한 이내 (위반: ${tight.join(' ') || '없음'})`, tight.length === 0);
 
-  /* 초반 보호 — howlrstone 1~3장은 종전과 같은 20 상한을 유지해야 한다. */
+  /* 초반 보호 — lilacworld 1~3장은 종전과 같은 20 상한을 유지해야 한다. */
   ok(
-    'howlrstone 1~3장은 상한 20 유지 (신규 유저 보호)',
+    'lilacworld 1~3장은 상한 20 유지 (신규 유저 보호)',
     [1, 2, 3].every((n) => zoneSpawnCap(n) === 20),
   );
 }

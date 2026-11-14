@@ -48,7 +48,7 @@ def analyze(path, name):
                 merged.append(list(s))
         print(f"  band{bi} y[{y0}:{y1}] h={y1-y0}: {len(merged)} segs -> {merged}")
 
-analyze(f"{UP}/file_00000000dbf88206abc6be51bc743b76.png", "GOLEM (muspelheim)")
+analyze(f"{UP}/file_00000000dbf88206abc6be51bc743b76.png", "GOLEM (emberland)")
 analyze(f"{UP}/file_000000003b688206be0cc7248e5d9eb9.png", "WOLF/YETI (sniftheim)")
-analyze(f"{UP}/file_000000004a5482069531efe87ab73ca2.png", "DRAGON-A (alfheim)")
+analyze(f"{UP}/file_000000004a5482069531efe87ab73ca2.png", "DRAGON-A (fairyglade)")
 analyze(f"{UP}/file_000000006604820983e9f96db34595a9.png", "DRAGON-B (detailed)")

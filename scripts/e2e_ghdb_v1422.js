@@ -79,11 +79,11 @@ async function get(path, token, origin) {
   ok("me(?token= 쿼리 — 네이티브 경로)", meQ.status === 200 && meQ.data.user?.id === "eertest1");
 
   console.log("[3] 클라우드 세이브");
-  const saveObj = { lv: 42, cls: "ranger", playerName: "테스터1", owned: ["bd_surt", "bd_fenrir"], accessories: [], inf: { rebirths: 1, towerBest: 7 } };
+  const saveObj = { lv: 42, cls: "ranger", playerName: "테스터1", owned: ["bd_flamegiant", "bd_greedwolf"], accessories: [], inf: { rebirths: 1, towerBest: 7 } };
   const cs1 = await post("/api/auth/cloud-save", { data: saveObj }, tok1);
   ok("cloud-save 업로드", cs1.status === 200 && cs1.data.ok === true && typeof cs1.data.updatedAt === "number");
   const cs1g = await get("/api/auth/cloud-save", tok1);
-  ok("cloud-save 복원(데이터 일치)", cs1g.status === 200 && cs1g.data.data?.lv === 42 && cs1g.data.data?.owned?.[0] === "bd_surt");
+  ok("cloud-save 복원(데이터 일치)", cs1g.status === 200 && cs1g.data.data?.lv === 42 && cs1g.data.data?.owned?.[0] === "bd_flamegiant");
   const csBad = await post("/api/auth/cloud-save", { data: "string" }, tok1);
   ok("세이브 형식 검증 400", csBad.status === 400);
   const csAnon = await post("/api/auth/cloud-save", { data: {} });
@@ -97,25 +97,25 @@ async function get(path, token, origin) {
   ok("내 순위(me) 동봉", rank1.data.me?.name === "테스터1" && rank1.data.me?.rank >= 1);
 
   console.log("[5] 거래소 전 경로");
-  const noAuth = await post("/api/market/list", { itemKey: "bd_surt", up: 0, price: 1000 });
+  const noAuth = await post("/api/market/list", { itemKey: "bd_flamegiant", up: 0, price: 1000 });
   ok("비로그인 등록 401", noAuth.status === 401);
-  const notOwned = await post("/api/market/list", { itemKey: "bd_gram", up: 0, price: 1000 }, tok1);
+  const notOwned = await post("/api/market/list", { itemKey: "bd_warden", up: 0, price: 1000 }, tok1);
   ok("미보유 등록 403", notOwned.status === 403);
   const badItem = await post("/api/market/list", { itemKey: "weapon_1", up: 0, price: 1000 }, tok1);
   ok("화이트리스트 외 403", badItem.status === 403);
-  const badPrice = await post("/api/market/list", { itemKey: "bd_surt", up: 0, price: 99999999 }, tok1);
+  const badPrice = await post("/api/market/list", { itemKey: "bd_flamegiant", up: 0, price: 99999999 }, tok1);
   ok("가격 상한 400", badPrice.status === 400);
 
-  const list1 = await post("/api/market/list", { itemKey: "bd_surt", up: 3, price: 5000 }, tok1);
+  const list1 = await post("/api/market/list", { itemKey: "bd_flamegiant", up: 3, price: 5000 }, tok1);
   ok("등록 성공 + id", list1.status === 200 && list1.data.ok && typeof list1.data.id === "string");
   const listingId = list1.data.id;
-  const dupItem = await post("/api/market/list", { itemKey: "bd_surt", up: 0, price: 100 }, tok1);
+  const dupItem = await post("/api/market/list", { itemKey: "bd_flamegiant", up: 0, price: 100 }, tok1);
   ok("동일 아이템 중복 등록 409", dupItem.status === 409);
 
   const own = await post("/api/market/buy", { id: listingId }, tok1);
   ok("본인 물건 구매 403", own.status === 403);
   const buy = await post("/api/market/buy", { id: listingId }, tok2);
-  ok("구매 성공 + 스냅샷", buy.status === 200 && buy.data.ok && buy.data.item?.itemKey === "bd_surt" && Array.isArray(buy.data.listings));
+  ok("구매 성공 + 스냅샷", buy.status === 200 && buy.data.ok && buy.data.item?.itemKey === "bd_flamegiant" && Array.isArray(buy.data.listings));
   const bought = await post("/api/market/buy", { id: listingId }, tok2);
   ok("이미 판매된 등록 404", bought.status === 404);
 
@@ -124,9 +124,9 @@ async function get(path, token, origin) {
   const again = await post("/api/market/collect", {}, tok1);
   ok("재수령 400", again.status === 400);
 
-  const list2 = await post("/api/market/list", { itemKey: "bd_fenrir", up: 1, price: 2000 }, tok1);
+  const list2 = await post("/api/market/list", { itemKey: "bd_greedwolf", up: 1, price: 2000 }, tok1);
   const cancel = await post("/api/market/cancel", { id: list2.data.id }, tok1);
-  ok("취소 성공 + 아이템 반환", cancel.status === 200 && cancel.data.item?.itemKey === "bd_fenrir");
+  ok("취소 성공 + 아이템 반환", cancel.status === 200 && cancel.data.item?.itemKey === "bd_greedwolf");
   const mktMine = await get("/api/market", tok1);
   ok("게스트 응답 아님 + pending 0", mktMine.data.guest === undefined && mktMine.data.pending?.gold === 0);
 

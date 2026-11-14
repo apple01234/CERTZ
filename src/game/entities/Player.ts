@@ -8214,7 +8214,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /* ---------------- 피격 / 사망 / 성장 ---------------- */
 
   /** v3.0.6 — hpPct(0~1): maxHP % 고정 피해 하한 (몬스터/보스 전용 — 후반 탱킹 방지)
-   *  v3.3.0 (지시 #5) — 챕터 4(알프헤임)부터 % 고정 피해 적용, 그 전은 순수 수치 피해만
+   *  v3.3.0 (지시 #5) — 챕터 4(요정 숲)부터 % 고정 피해 적용, 그 전은 순수 수치 피해만
    *  (초보 마을 느낌: 초반 맵은 방어/레벨로 데미지를 0까지 깎을 수 있고, 후반은 %로 고정 방어 무시) */
   takeDamage(dmg: number, fromDir: Phaser.Math.Vector2, pierce = 0, hpPct = 0, trueDmg = false) {
     if (this.iframes > 0 || this.state === "dead") return;

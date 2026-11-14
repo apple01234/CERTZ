@@ -10,7 +10,7 @@ const { chromium } = require("playwright");
     {speaker:"상인 라고스", lines:["어서 오게, 모험가여!","좋은 물건이 많다네."]},
     {speaker:"직업 교관 카이엔", lines:["자네의 길을 선택하게."]},
     {speaker:"마법사 흐레스", lines:["마법의 흐름이 느껴지는가?"]},
-    {speaker:"알프헤임의 여왕 요정", lines:["인피니트보석이 흔들리고 있다."]},
+    {speaker:"요정 숲의 여왕 요정", lines:["인피니트보석이 흔들리고 있다."]},
     {speaker:"대장장이 브라키", lines:["쇠를 두드려 보겠나?"]},
   ];
   const r = await p.evaluate((shapes)=>{

@@ -55,7 +55,7 @@ for (const mode of (process.env.REGION_QA_MODES ?? 'desktop,mobile').split(','))
       await page.waitForFunction(() => window.__SERTZ_SCENE__?.assetsReady, null, { timeout: 180000 });
       const initial = await inspect(page);
       initial.clickToWorldMs = Date.now() - started;
-      assert.equal(initial.stage, 'howlrstone1x1');
+      assert.equal(initial.stage, 'lilacworld1x1');
       assert.ok(initial.bodyComplete && initial.walk && initial.common);
       assert.deepEqual(initial.missing, []);
       assert.ok(initial.progress.total < 1500);
@@ -79,7 +79,7 @@ for (const mode of (process.env.REGION_QA_MODES ?? 'desktop,mobile').split(','))
       await page.screenshot({ path: `${out}/${mode}-outfit.png` });
 
       const regions = [];
-      for (const target of ['howlrstone10x3', 'dlcocean1', 'park', 'howlrstone1x1']) {
+      for (const target of ['lilacworld10x3', 'dlcocean1', 'park', 'lilacworld1x1']) {
         await page.evaluate(target => {
           const s = window.__SERTZ_SCENE__;
           s.cleared = true; s.youngPrincessCleared = true;

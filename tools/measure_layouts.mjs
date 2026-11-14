@@ -75,9 +75,9 @@ function bfsFarthest(open, cols, rows, from) {
 }
 
 const CHAPTER_STYLE = {
-  forest: "grotto", kingdom: "cavern", alfheim: "terrace",
-  muspelheim: "circuit", niflheim: "cavern", cave: "grotto",
-  nidavellir: "terrace", hel: "circuit", abyss: "grotto",
+  forest: "grotto", kingdom: "cavern", fairyglade: "terrace",
+  emberland: "circuit", frostland: "cavern", cave: "grotto",
+  forgehall: "terrace", duskrealm: "circuit", abyss: "grotto",
   dlcstargate: "circuit", dlcprisma: "terrace", dlcocean: "cavern",
   dlcreverse: "circuit", dlcneocity: "terrace", dlcmech: "circuit",
   dlcswallow: "cavern", dlcopinicia: "terrace", dlcnovel: "grotto",
@@ -101,9 +101,9 @@ const CELL_TARGET = {
 };
 
 function styleOf(s) {
-  const hw = /^(howlrstone\d+)/.exec(s);
+  const hw = /^(lilacworld\d+)/.exec(s);
   if (hw) {
-    const n = parseInt(hw[1].replace("howlrstone", ""), 10);
+    const n = parseInt(hw[1].replace("lilacworld", ""), 10);
     return ["grotto", "terrace", "cavern", "circuit"][n % 4];
   }
   const rb = /^(r\d+)/.exec(s);
@@ -187,9 +187,9 @@ function generateRoomLayout(seed, mapW, mapH) {
 }
 
 const CH = [
-  ["forest", 1900, 1070], ["kingdom", 1750, 990], ["alfheim", 1500, 860],
-  ["muspelheim", 2200, 1250], ["niflheim", 1670, 950], ["cave", 1670, 950],
-  ["nidavellir", 1670, 950], ["hel", 1670, 950], ["abyss", 1430, 830],
+  ["forest", 1900, 1070], ["kingdom", 1750, 990], ["fairyglade", 1500, 860],
+  ["emberland", 2200, 1250], ["frostland", 1670, 950], ["cave", 1670, 950],
+  ["forgehall", 1670, 950], ["duskrealm", 1670, 950], ["abyss", 1430, 830],
 ];
 
 const rows = [];

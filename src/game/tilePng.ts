@@ -4,7 +4,7 @@
  *  PNG 원본(256px, 70~193색)에서 뽑은 **열화본**이었다:
  *    tile_magma  107색 →  7색   ← "종이 쪼가리"의 정체
  *    tile_abyss   67색 → 39색
- *    tile_hel    129색 → 49색
+ *    tile_duskrealm    129색 → 49색
  *    tile_ice    193색 → 129색
  *    tile_stone   70색 → 39색
  *  webp 자체가 이미 뭉개져 있어, webp 를 정상화해도 복구되지 않는다.
@@ -17,7 +17,7 @@ export const TILE_PNG_KEYS: readonly string[] = [
   "tile_cave",
   "tile_dark",
   "tile_grass",
-  "tile_hel",
+  "tile_duskrealm",
   "tile_ice",
   "tile_magma",
   "tile_magma_path",

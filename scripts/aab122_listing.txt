@@ -64,11 +64,11 @@ Archive:  /home/z/my-project/download/SERTZ-v1.0.1-beta.aab
   4443573  1981-01-01 01:01   base/assets/public/assets/audio/bgm_abyss3.ogg
   2666001  1981-01-01 01:01   base/assets/public/assets/audio/bgm_abyss4.ogg
   2421832  1981-01-01 01:01   base/assets/public/assets/audio/bgm_abyss5.ogg
-  2467922  1981-01-01 01:01   base/assets/public/assets/audio/bgm_alfheim1.ogg
-  1239390  1981-01-01 01:01   base/assets/public/assets/audio/bgm_alfheim2.ogg
-  1809651  1981-01-01 01:01   base/assets/public/assets/audio/bgm_alfheim3.ogg
-  2692918  1981-01-01 01:01   base/assets/public/assets/audio/bgm_alfheim4.ogg
-  3606015  1981-01-01 01:01   base/assets/public/assets/audio/bgm_alfheim5.ogg
+  2467922  1981-01-01 01:01   base/assets/public/assets/audio/bgm_fairyglade1.ogg
+  1239390  1981-01-01 01:01   base/assets/public/assets/audio/bgm_fairyglade2.ogg
+  1809651  1981-01-01 01:01   base/assets/public/assets/audio/bgm_fairyglade3.ogg
+  2692918  1981-01-01 01:01   base/assets/public/assets/audio/bgm_fairyglade4.ogg
+  3606015  1981-01-01 01:01   base/assets/public/assets/audio/bgm_fairyglade5.ogg
   4364475  1981-01-01 01:01   base/assets/public/assets/audio/bgm_boss1.ogg
   3558886  1981-01-01 01:01   base/assets/public/assets/audio/bgm_boss2.ogg
   1805930  1981-01-01 01:01   base/assets/public/assets/audio/bgm_boss3.ogg
@@ -217,34 +217,34 @@ Archive:  /home/z/my-project/download/SERTZ-v1.0.1-beta.aab
       346  1981-01-01 01:01   base/assets/public/assets/boss3_idle0.webp
     18647  1981-01-01 01:01   base/assets/public/assets/boss3_idle1.png
       338  1981-01-01 01:01   base/assets/public/assets/boss3_idle1.webp
-    31232  1981-01-01 01:01   base/assets/public/assets/boss_abudditos_idle0.png
-      252  1981-01-01 01:01   base/assets/public/assets/boss_abudditos_idle0.webp
-    30255  1981-01-01 01:01   base/assets/public/assets/boss_abudditos_idle1.png
-      252  1981-01-01 01:01   base/assets/public/assets/boss_abudditos_idle1.webp
-    13392  1981-01-01 01:01   base/assets/public/assets/boss_fenrir_idle0.png
-      292  1981-01-01 01:01   base/assets/public/assets/boss_fenrir_idle0.webp
-    12949  1981-01-01 01:01   base/assets/public/assets/boss_fenrir_idle1.png
-      304  1981-01-01 01:01   base/assets/public/assets/boss_fenrir_idle1.webp
-    12483  1981-01-01 01:01   base/assets/public/assets/boss_gram_idle0.png
-      292  1981-01-01 01:01   base/assets/public/assets/boss_gram_idle0.webp
-    12042  1981-01-01 01:01   base/assets/public/assets/boss_gram_idle1.png
-      292  1981-01-01 01:01   base/assets/public/assets/boss_gram_idle1.webp
+    31232  1981-01-01 01:01   base/assets/public/assets/boss_doomwyrm_idle0.png
+      252  1981-01-01 01:01   base/assets/public/assets/boss_doomwyrm_idle0.webp
+    30255  1981-01-01 01:01   base/assets/public/assets/boss_doomwyrm_idle1.png
+      252  1981-01-01 01:01   base/assets/public/assets/boss_doomwyrm_idle1.webp
+    13392  1981-01-01 01:01   base/assets/public/assets/boss_greedwolf_idle0.png
+      292  1981-01-01 01:01   base/assets/public/assets/boss_greedwolf_idle0.webp
+    12949  1981-01-01 01:01   base/assets/public/assets/boss_greedwolf_idle1.png
+      304  1981-01-01 01:01   base/assets/public/assets/boss_greedwolf_idle1.webp
+    12483  1981-01-01 01:01   base/assets/public/assets/boss_warden_idle0.png
+      292  1981-01-01 01:01   base/assets/public/assets/boss_warden_idle0.webp
+    12042  1981-01-01 01:01   base/assets/public/assets/boss_warden_idle1.png
+      292  1981-01-01 01:01   base/assets/public/assets/boss_warden_idle1.webp
     27973  1981-01-01 01:01   base/assets/public/assets/boss_idle0.png
       238  1981-01-01 01:01   base/assets/public/assets/boss_idle0.webp
     27413  1981-01-01 01:01   base/assets/public/assets/boss_idle1.png
       226  1981-01-01 01:01   base/assets/public/assets/boss_idle1.webp
-    37736  1981-01-01 01:01   base/assets/public/assets/boss_nidhog_idle0.png
-      344  1981-01-01 01:01   base/assets/public/assets/boss_nidhog_idle0.webp
-    37175  1981-01-01 01:01   base/assets/public/assets/boss_nidhog_idle1.png
-      334  1981-01-01 01:01   base/assets/public/assets/boss_nidhog_idle1.webp
-    12101  1981-01-01 01:01   base/assets/public/assets/boss_skoll_idle0.png
-      302  1981-01-01 01:01   base/assets/public/assets/boss_skoll_idle0.webp
-    11544  1981-01-01 01:01   base/assets/public/assets/boss_skoll_idle1.png
-      304  1981-01-01 01:01   base/assets/public/assets/boss_skoll_idle1.webp
-    20977  1981-01-01 01:01   base/assets/public/assets/boss_surt_idle0.png
-      300  1981-01-01 01:01   base/assets/public/assets/boss_surt_idle0.webp
-    20562  1981-01-01 01:01   base/assets/public/assets/boss_surt_idle1.png
-      316  1981-01-01 01:01   base/assets/public/assets/boss_surt_idle1.webp
+    37736  1981-01-01 01:01   base/assets/public/assets/boss_blackwyrm_idle0.png
+      344  1981-01-01 01:01   base/assets/public/assets/boss_blackwyrm_idle0.webp
+    37175  1981-01-01 01:01   base/assets/public/assets/boss_blackwyrm_idle1.png
+      334  1981-01-01 01:01   base/assets/public/assets/boss_blackwyrm_idle1.webp
+    12101  1981-01-01 01:01   base/assets/public/assets/boss_twinwolf_idle0.png
+      302  1981-01-01 01:01   base/assets/public/assets/boss_twinwolf_idle0.webp
+    11544  1981-01-01 01:01   base/assets/public/assets/boss_twinwolf_idle1.png
+      304  1981-01-01 01:01   base/assets/public/assets/boss_twinwolf_idle1.webp
+    20977  1981-01-01 01:01   base/assets/public/assets/boss_flamegiant_idle0.png
+      300  1981-01-01 01:01   base/assets/public/assets/boss_flamegiant_idle0.webp
+    20562  1981-01-01 01:01   base/assets/public/assets/boss_flamegiant_idle1.png
+      316  1981-01-01 01:01   base/assets/public/assets/boss_flamegiant_idle1.webp
       255  1981-01-01 01:01   base/assets/public/assets/buff_king.png
       134  1981-01-01 01:01   base/assets/public/assets/buff_king.webp
       364  1981-01-01 01:01   base/assets/public/assets/cainos_water0.webp
@@ -1150,34 +1150,34 @@ Archive:  /home/z/my-project/download/SERTZ-v1.0.1-beta.aab
       330  1981-01-01 01:01   base/assets/public/assets/cost_sylvan_walkup1.webp
       340  1981-01-01 01:01   base/assets/public/assets/cost_sylvan_walkup2.webp
       330  1981-01-01 01:01   base/assets/public/assets/cost_sylvan_walkup3.webp
-      428  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_atk0.webp
-      522  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_atk1.webp
-      466  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_atk2.webp
-      410  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_atk3.webp
-      404  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_atkdown0.webp
-      484  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_atkdown1.webp
-      464  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_atkdown2.webp
-      370  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_atkdown3.webp
-      350  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_atkup0.webp
-      432  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_atkup1.webp
-      374  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_atkup2.webp
-      378  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_atkup3.webp
-      380  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_idle0.webp
-      384  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_idle1.webp
-      380  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_idle2.webp
-      380  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_idle3.webp
-      386  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_walk0.webp
-      394  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_walk1.webp
-      390  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_walk2.webp
-      388  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_walk3.webp
-      416  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_walkside0.webp
-      420  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_walkside1.webp
-      424  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_walkside2.webp
-      426  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_walkside3.webp
-      322  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_walkup0.webp
-      360  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_walkup1.webp
-      376  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_walkup2.webp
-      318  1981-01-01 01:01   base/assets/public/assets/cost_valkyrie_walkup3.webp
+      428  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_atk0.webp
+      522  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_atk1.webp
+      466  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_atk2.webp
+      410  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_atk3.webp
+      404  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_atkdown0.webp
+      484  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_atkdown1.webp
+      464  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_atkdown2.webp
+      370  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_atkdown3.webp
+      350  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_atkup0.webp
+      432  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_atkup1.webp
+      374  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_atkup2.webp
+      378  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_atkup3.webp
+      380  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_idle0.webp
+      384  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_idle1.webp
+      380  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_idle2.webp
+      380  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_idle3.webp
+      386  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_walk0.webp
+      394  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_walk1.webp
+      390  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_walk2.webp
+      388  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_walk3.webp
+      416  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_walkside0.webp
+      420  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_walkside1.webp
+      424  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_walkside2.webp
+      426  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_walkside3.webp
+      322  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_walkup0.webp
+      360  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_walkup1.webp
+      376  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_walkup2.webp
+      318  1981-01-01 01:01   base/assets/public/assets/cost_wingmaiden_walkup3.webp
       730  1981-01-01 01:01   base/assets/public/assets/cost_void_atk0.webp
      1032  1981-01-01 01:01   base/assets/public/assets/cost_void_atk1.webp
       736  1981-01-01 01:01   base/assets/public/assets/cost_void_atk2.webp
@@ -1822,34 +1822,34 @@ Archive:  /home/z/my-project/download/SERTZ-v1.0.1-beta.aab
       318  1981-01-01 01:01   base/assets/public/assets/costm_sylvan_walkup1.webp
       314  1981-01-01 01:01   base/assets/public/assets/costm_sylvan_walkup2.webp
       326  1981-01-01 01:01   base/assets/public/assets/costm_sylvan_walkup3.webp
-      378  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_atk0.webp
-      472  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_atk1.webp
-      400  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_atk2.webp
-      372  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_atk3.webp
-      376  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_atkdown0.webp
-      442  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_atkdown1.webp
-      422  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_atkdown2.webp
-      400  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_atkdown3.webp
-      344  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_atkup0.webp
-      386  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_atkup1.webp
-      358  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_atkup2.webp
-      354  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_atkup3.webp
-      368  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_idle0.webp
-      368  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_idle1.webp
-      368  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_idle2.webp
-      366  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_idle3.webp
-      368  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_walk0.webp
-      366  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_walk1.webp
-      360  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_walk2.webp
-      372  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_walk3.webp
-      394  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_walkside0.webp
-      382  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_walkside1.webp
-      380  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_walkside2.webp
-      384  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_walkside3.webp
-      308  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_walkup0.webp
-      362  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_walkup1.webp
-      354  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_walkup2.webp
-      306  1981-01-01 01:01   base/assets/public/assets/costm_valkyrie_walkup3.webp
+      378  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_atk0.webp
+      472  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_atk1.webp
+      400  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_atk2.webp
+      372  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_atk3.webp
+      376  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_atkdown0.webp
+      442  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_atkdown1.webp
+      422  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_atkdown2.webp
+      400  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_atkdown3.webp
+      344  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_atkup0.webp
+      386  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_atkup1.webp
+      358  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_atkup2.webp
+      354  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_atkup3.webp
+      368  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_idle0.webp
+      368  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_idle1.webp
+      368  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_idle2.webp
+      366  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_idle3.webp
+      368  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_walk0.webp
+      366  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_walk1.webp
+      360  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_walk2.webp
+      372  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_walk3.webp
+      394  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_walkside0.webp
+      382  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_walkside1.webp
+      380  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_walkside2.webp
+      384  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_walkside3.webp
+      308  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_walkup0.webp
+      362  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_walkup1.webp
+      354  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_walkup2.webp
+      306  1981-01-01 01:01   base/assets/public/assets/costm_wingmaiden_walkup3.webp
       730  1981-01-01 01:01   base/assets/public/assets/costm_void_atk0.webp
      1032  1981-01-01 01:01   base/assets/public/assets/costm_void_atk1.webp
       736  1981-01-01 01:01   base/assets/public/assets/costm_void_atk2.webp
@@ -2093,18 +2093,18 @@ Archive:  /home/z/my-project/download/SERTZ-v1.0.1-beta.aab
       140  1981-01-01 01:01   base/assets/public/assets/hair_ponytail_b.webp
       120  1981-01-01 01:01   base/assets/public/assets/hair_ponytail_f.webp
       142  1981-01-01 01:01   base/assets/public/assets/hair_ponytail_s.webp
-      524  1981-01-01 01:01   base/assets/public/assets/helhound_idle0.png
-      222  1981-01-01 01:01   base/assets/public/assets/helhound_idle0.webp
-      514  1981-01-01 01:01   base/assets/public/assets/helhound_idle1.png
-      218  1981-01-01 01:01   base/assets/public/assets/helhound_idle1.webp
-      524  1981-01-01 01:01   base/assets/public/assets/helhound_run0.png
-      222  1981-01-01 01:01   base/assets/public/assets/helhound_run0.webp
-      479  1981-01-01 01:01   base/assets/public/assets/helhound_run1.png
-      212  1981-01-01 01:01   base/assets/public/assets/helhound_run1.webp
-      524  1981-01-01 01:01   base/assets/public/assets/helhound_run2.png
-      222  1981-01-01 01:01   base/assets/public/assets/helhound_run2.webp
-      514  1981-01-01 01:01   base/assets/public/assets/helhound_run3.png
-      224  1981-01-01 01:01   base/assets/public/assets/helhound_run3.webp
+      524  1981-01-01 01:01   base/assets/public/assets/duskhound_idle0.png
+      222  1981-01-01 01:01   base/assets/public/assets/duskhound_idle0.webp
+      514  1981-01-01 01:01   base/assets/public/assets/duskhound_idle1.png
+      218  1981-01-01 01:01   base/assets/public/assets/duskhound_idle1.webp
+      524  1981-01-01 01:01   base/assets/public/assets/duskhound_run0.png
+      222  1981-01-01 01:01   base/assets/public/assets/duskhound_run0.webp
+      479  1981-01-01 01:01   base/assets/public/assets/duskhound_run1.png
+      212  1981-01-01 01:01   base/assets/public/assets/duskhound_run1.webp
+      524  1981-01-01 01:01   base/assets/public/assets/duskhound_run2.png
+      222  1981-01-01 01:01   base/assets/public/assets/duskhound_run2.webp
+      514  1981-01-01 01:01   base/assets/public/assets/duskhound_run3.png
+      224  1981-01-01 01:01   base/assets/public/assets/duskhound_run3.webp
       674  1981-01-01 01:01   base/assets/public/assets/hero_atk0.png
       232  1981-01-01 01:01   base/assets/public/assets/hero_atk0.webp
       801  1981-01-01 01:01   base/assets/public/assets/hero_atk1.png
@@ -2196,15 +2196,15 @@ Archive:  /home/z/my-project/download/SERTZ-v1.0.1-beta.aab
       520  1981-01-01 01:01   base/assets/public/assets/hv2_trail.webp
     11290  1981-01-01 01:01   base/assets/public/assets/hv_flash.webp
     14828  1981-01-01 01:01   base/assets/public/assets/hv_slash.webp
-      704  1981-01-01 01:01   base/assets/public/assets/i_bd_abudditos.webp
+      704  1981-01-01 01:01   base/assets/public/assets/i_bd_doomwyrm.webp
       710  1981-01-01 01:01   base/assets/public/assets/i_bd_abysslord.webp
       714  1981-01-01 01:01   base/assets/public/assets/i_bd_behemoth.webp
-      604  1981-01-01 01:01   base/assets/public/assets/i_bd_fenrir.webp
-      690  1981-01-01 01:01   base/assets/public/assets/i_bd_gram.webp
+      604  1981-01-01 01:01   base/assets/public/assets/i_bd_greedwolf.webp
+      690  1981-01-01 01:01   base/assets/public/assets/i_bd_warden.webp
       682  1981-01-01 01:01   base/assets/public/assets/i_bd_guardian.webp
-      640  1981-01-01 01:01   base/assets/public/assets/i_bd_nidhog.webp
-      712  1981-01-01 01:01   base/assets/public/assets/i_bd_skoll.webp
-      632  1981-01-01 01:01   base/assets/public/assets/i_bd_surt.webp
+      640  1981-01-01 01:01   base/assets/public/assets/i_bd_blackwyrm.webp
+      712  1981-01-01 01:01   base/assets/public/assets/i_bd_twinwolf.webp
+      632  1981-01-01 01:01   base/assets/public/assets/i_bd_flamegiant.webp
       600  1981-01-01 01:01   base/assets/public/assets/i_buff_crit.webp
       486  1981-01-01 01:01   base/assets/public/assets/i_buff_luck.webp
       204  1981-01-01 01:01   base/assets/public/assets/i_chest_gold.webp
@@ -2266,32 +2266,32 @@ Archive:  /home/z/my-project/download/SERTZ-v1.0.1-beta.aab
       606  1981-01-01 01:01   base/assets/public/assets/i_ring_swift.webp
       686  1981-01-01 01:01   base/assets/public/assets/i_ring_titan.webp
       670  1981-01-01 01:01   base/assets/public/assets/i_sfa_abyss.webp
-      670  1981-01-01 01:01   base/assets/public/assets/i_sfa_alfheim.webp
+      670  1981-01-01 01:01   base/assets/public/assets/i_sfa_fairyglade.webp
       666  1981-01-01 01:01   base/assets/public/assets/i_sfa_cave.webp
       698  1981-01-01 01:01   base/assets/public/assets/i_sfa_forest.webp
-      666  1981-01-01 01:01   base/assets/public/assets/i_sfa_hel.webp
+      666  1981-01-01 01:01   base/assets/public/assets/i_sfa_duskrealm.webp
       680  1981-01-01 01:01   base/assets/public/assets/i_sfa_kingdom.webp
-      772  1981-01-01 01:01   base/assets/public/assets/i_sfa_muspelheim.webp
-      690  1981-01-01 01:01   base/assets/public/assets/i_sfa_nidavellir.webp
-      784  1981-01-01 01:01   base/assets/public/assets/i_sfa_niflheim.webp
+      772  1981-01-01 01:01   base/assets/public/assets/i_sfa_emberland.webp
+      690  1981-01-01 01:01   base/assets/public/assets/i_sfa_forgehall.webp
+      784  1981-01-01 01:01   base/assets/public/assets/i_sfa_frostland.webp
       610  1981-01-01 01:01   base/assets/public/assets/i_sfr_abyss.webp
-      620  1981-01-01 01:01   base/assets/public/assets/i_sfr_alfheim.webp
+      620  1981-01-01 01:01   base/assets/public/assets/i_sfr_fairyglade.webp
       616  1981-01-01 01:01   base/assets/public/assets/i_sfr_cave.webp
       718  1981-01-01 01:01   base/assets/public/assets/i_sfr_forest.webp
-      634  1981-01-01 01:01   base/assets/public/assets/i_sfr_hel.webp
+      634  1981-01-01 01:01   base/assets/public/assets/i_sfr_duskrealm.webp
       636  1981-01-01 01:01   base/assets/public/assets/i_sfr_kingdom.webp
-      628  1981-01-01 01:01   base/assets/public/assets/i_sfr_muspelheim.webp
-      692  1981-01-01 01:01   base/assets/public/assets/i_sfr_nidavellir.webp
-      690  1981-01-01 01:01   base/assets/public/assets/i_sfr_niflheim.webp
+      628  1981-01-01 01:01   base/assets/public/assets/i_sfr_emberland.webp
+      692  1981-01-01 01:01   base/assets/public/assets/i_sfr_forgehall.webp
+      690  1981-01-01 01:01   base/assets/public/assets/i_sfr_frostland.webp
       524  1981-01-01 01:01   base/assets/public/assets/i_sfw_abyss.webp
-      594  1981-01-01 01:01   base/assets/public/assets/i_sfw_alfheim.webp
+      594  1981-01-01 01:01   base/assets/public/assets/i_sfw_fairyglade.webp
       526  1981-01-01 01:01   base/assets/public/assets/i_sfw_cave.webp
       404  1981-01-01 01:01   base/assets/public/assets/i_sfw_forest.webp
-      530  1981-01-01 01:01   base/assets/public/assets/i_sfw_hel.webp
+      530  1981-01-01 01:01   base/assets/public/assets/i_sfw_duskrealm.webp
       606  1981-01-01 01:01   base/assets/public/assets/i_sfw_kingdom.webp
-      424  1981-01-01 01:01   base/assets/public/assets/i_sfw_muspelheim.webp
-      532  1981-01-01 01:01   base/assets/public/assets/i_sfw_nidavellir.webp
-      434  1981-01-01 01:01   base/assets/public/assets/i_sfw_niflheim.webp
+      424  1981-01-01 01:01   base/assets/public/assets/i_sfw_emberland.webp
+      532  1981-01-01 01:01   base/assets/public/assets/i_sfw_forgehall.webp
+      434  1981-01-01 01:01   base/assets/public/assets/i_sfw_frostland.webp
       210  1981-01-01 01:01   base/assets/public/assets/i_tier_cube.webp
       440  1981-01-01 01:01   base/assets/public/assets/icegolem_idle0.png
       190  1981-01-01 01:01   base/assets/public/assets/icegolem_idle0.webp
@@ -3369,8 +3369,8 @@ Archive:  /home/z/my-project/download/SERTZ-v1.0.1-beta.aab
     14866  1981-01-01 01:01   base/assets/public/assets/tile_dark.webp
     30873  1981-01-01 01:01   base/assets/public/assets/tile_grass.png
     14508  1981-01-01 01:01   base/assets/public/assets/tile_grass.webp
-    30862  1981-01-01 01:01   base/assets/public/assets/tile_hel.png
-    14556  1981-01-01 01:01   base/assets/public/assets/tile_hel.webp
+    30862  1981-01-01 01:01   base/assets/public/assets/tile_duskrealm.png
+    14556  1981-01-01 01:01   base/assets/public/assets/tile_duskrealm.webp
       682  1981-01-01 01:01   base/assets/public/assets/tile_ice.png
       496  1981-01-01 01:01   base/assets/public/assets/tile_ice.webp
     32388  1981-01-01 01:01   base/assets/public/assets/tile_magma.png
@@ -3517,7 +3517,7 @@ Archive:  /home/z/my-project/download/SERTZ-v1.0.1-beta.aab
     21948  1981-01-01 01:01   base/assets/public/assets/ui/union/art_speed.png
     61619  1981-01-01 01:01   base/assets/public/assets/ui/union/raid_abysslord.png
     42445  1981-01-01 01:01   base/assets/public/assets/ui/union/raid_behemoth.png
-    57800  1981-01-01 01:01   base/assets/public/assets/ui/union/raid_nidhogg.png
+    57800  1981-01-01 01:01   base/assets/public/assets/ui/union/raid_blackwyrm.png
     23990  1981-01-01 01:01   base/assets/public/assets/ui/union/ub_atk.png
     18840  1981-01-01 01:01   base/assets/public/assets/ui/union/ub_def.png
     22036  1981-01-01 01:01   base/assets/public/assets/ui/union/ub_exp.png

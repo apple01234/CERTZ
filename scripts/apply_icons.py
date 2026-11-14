@@ -4,18 +4,18 @@ import re
 
 KEYS = """potion_hp7 potion_hp8 potion_hp9 potion_hp10 potion_mp7 potion_mp8 potion_mp9 potion_mp10
 potion_hp3 potion_hp4 potion_hp5 potion_hp6 potion_mp3 potion_mp4 potion_mp5 potion_mp6
-bd_fenrir ring_swift ring_fortune ring_phantom sfr_alfheim sfr_cave sfr_abyss
-bd_nidhog bd_surt ring_might sfr_kingdom sfr_muspelheim sfr_hel
-bd_guardian bd_gram ring_titan sfr_niflheim sfr_nidavellir
+bd_greedwolf ring_swift ring_fortune ring_phantom sfr_fairyglade sfr_cave sfr_abyss
+bd_blackwyrm bd_flamegiant ring_might sfr_kingdom sfr_emberland sfr_duskrealm
+bd_guardian bd_warden ring_titan sfr_frostland sfr_forgehall
 bd_behemoth sfr_forest
-bd_skoll bd_abysslord bd_abudditos pendant_moon pendant_sage pendant_star
+bd_twinwolf bd_abysslord bd_doomwyrm pendant_moon pendant_sage pendant_star
 pendant_ward pendant_blood
 tier_cube chest_iron chest_silver chest_gold chest_legend
 pack_starter pack_growth pack_premium pack_ultimate pack_daily pack_weekly
 pet_wisp pet_ember pet_unicorn pet_frost pet_golem pet_reaper
 buff_luck exp_book buff_crit
-sfw_forest sfw_kingdom sfw_alfheim sfw_muspelheim sfw_niflheim sfw_cave sfw_nidavellir sfw_hel sfw_abyss
-sfa_forest sfa_kingdom sfa_alfheim sfa_muspelheim sfa_niflheim sfa_cave sfa_nidavellir sfa_hel sfa_abyss
+sfw_forest sfw_kingdom sfw_fairyglade sfw_emberland sfw_frostland sfw_cave sfw_forgehall sfw_duskrealm sfw_abyss
+sfa_forest sfa_kingdom sfa_fairyglade sfa_emberland sfa_frostland sfa_cave sfa_forgehall sfa_duskrealm sfa_abyss
 ring_dragon ring_ancient
 cos_frost cos_storm cos_holy cos_flame cos_shadow cos_rainbow""".split()
 

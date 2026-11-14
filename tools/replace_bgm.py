@@ -8,7 +8,7 @@
 
 실측(tools/analyze_bgm.py):
   현재 보스 9곡 중 6곡이 스펙트럼 평탄도 0.35~0.46 (화이트노이즈 과다)
-  bgm_abyss_2 / abyss_boss / muspelheim_boss 는 178 BPM
+  bgm_abyss_2 / abyss_boss / emberland_boss 는 178 BPM
   배급팩 FAP BGM 은 0.089~0.260 으로 전 구간 깨끗
 
 처리
@@ -37,17 +37,17 @@ BACKUP = os.path.join(AUDIO, ".orig_vc202")
 MAP = {
     "bgm_abyss_2.ogg":        "Scene Theme 5",
     "bgm_abyss_boss.ogg":     "Boss Theme 2",
-    "bgm_muspelheim_boss.ogg": "Boss Theme 2",
+    "bgm_emberland_boss.ogg": "Boss Theme 2",
     "bgm_cave_water.ogg":     "Scene Theme 6",
-    "bgm_niflheim_boss.ogg":  "Boss Theme 1",
-    "bgm_alfheim_boss.ogg":   "Boss Theme 1",
+    "bgm_frostland_boss.ogg":  "Boss Theme 1",
+    "bgm_fairyglade_boss.ogg":   "Boss Theme 1",
     "bgm_forest_1.ogg":       "Scene Theme 2",
     "bgm_forest_boss.ogg":    "Boss Theme 1",
-    "bgm_muspelheim_1.ogg":   "Scene Theme 3",
-    "bgm_nidavellir_boss.ogg": "Boss Theme 1",
-    "bgm_nidavellir_3.ogg":   "Scene Theme 5",
-    "bgm_muspelheim_3.ogg":   "Scene Theme 5",
-    "bgm_hel_2.ogg":          "Scene Theme 3",
+    "bgm_emberland_1.ogg":   "Scene Theme 3",
+    "bgm_forgehall_boss.ogg": "Boss Theme 1",
+    "bgm_forgehall_3.ogg":   "Scene Theme 5",
+    "bgm_emberland_3.ogg":   "Scene Theme 5",
+    "bgm_duskrealm_2.ogg":          "Scene Theme 3",
 }
 
 

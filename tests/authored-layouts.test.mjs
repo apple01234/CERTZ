@@ -5,7 +5,7 @@ import { authoredOpenXY, authoredRoomLayout } from '../src/game/authoredLayouts.
 import { AUTHORED_GROUND_SOURCES, renderAuthoredMapLayers } from '../src/game/fx/AuthoredMapLayers.ts';
 import { isSolidDecor } from '../src/game/decorObjects.ts';
 import { chapterEncounter } from '../src/game/chapterStoryPlan.ts';
-import { HOWLRSTONE_CHAPTERS } from '../src/game/howlrstone.ts';
+import { LILACWORLD_CHAPTERS } from '../src/game/lilacworld.ts';
 
 function reachable(lay) {
   const visited = new Set([lay.entry]), queue = [lay.entry];
@@ -22,7 +22,7 @@ function reachable(lay) {
 }
 
 test('all 65 story rooms and 100 planet fields have one connected, protected route', () => {
-  const cases = HOWLRSTONE_CHAPTERS.flatMap(spec => Array.from({ length: spec.stages }, (_, i) => ({
+  const cases = LILACWORLD_CHAPTERS.flatMap(spec => Array.from({ length: spec.stages }, (_, i) => ({
     key: `${spec.key}x${i + 1}`, width: spec.width + (i + 1) * 130, height: spec.height + (i + 1) * 30,
     boss: !!chapterEncounter(spec.key, i + 1),
   })));
@@ -61,7 +61,7 @@ test('all 65 story rooms and 100 planet fields have one connected, protected rou
 });
 
 test('story geography has distinct authored structures and no changes to feature maps', () => {
-  const expected = { howlrstone1x1: 'cliff', howlrstone5x2: 'coast', howlrstone6x1: 'grove', howlrstone10x1: 'ruins' };
+  const expected = { lilacworld1x1: 'cliff', lilacworld5x2: 'coast', lilacworld6x1: 'grove', lilacworld10x1: 'ruins' };
   const masks = [];
   for (const [key, theme] of Object.entries(expected)) {
     const lay = authoredRoomLayout(key, 2400, 1280);
@@ -69,16 +69,16 @@ test('story geography has distinct authored structures and no changes to feature
     masks.push(lay.open.join(','));
   }
   assert.equal(new Set(masks).size, 4);
-  const cliff = authoredRoomLayout('howlrstone1x1', 2400, 1280);
+  const cliff = authoredRoomLayout('lilacworld1x1', 2400, 1280);
   assert.ok(cliff.authored.landmarks.some((p) => p.kind === 'cliff'));
   assert.equal(cliff.authored.ground, 'ground_meadow');
-  assert.equal(authoredRoomLayout('howlrstone1x2', 2400, 1280).authored.theme, 'town', 'the village training area precedes the castle');
-  const citadel = authoredRoomLayout('howlrstone10x3', 2400, 1280);
+  assert.equal(authoredRoomLayout('lilacworld1x2', 2400, 1280).authored.theme, 'town', 'the village training area precedes the castle');
+  const citadel = authoredRoomLayout('lilacworld10x3', 2400, 1280);
   assert.deepEqual(citadel.authored.landmarks.map(x => x.kind), ['gate-water','gate-wind','gate-lightning','gate-fire']);
   assert.equal(citadel.open[citadel.cols + 6], false, 'gate rooms retain walls between their north entrances');
-  const coast = authoredRoomLayout('howlrstone5x2', 2400, 1280);
+  const coast = authoredRoomLayout('lilacworld5x2', 2400, 1280);
   assert.equal(coast.authored.landmarks.filter(x => x.kind === 'pier').length, 2);
-  for (const key of ['village', 'youngprincessv', 'dlcstargatev', 'forest1', 'dojang', 'tower1', 'howlrstone99x1', 'howlrstone1x99', 'dlcunknown1']) {
+  for (const key of ['village', 'youngprincessv', 'dlcstargatev', 'forest1', 'dojang', 'tower1', 'lilacworld99x1', 'lilacworld1x99', 'dlcunknown1']) {
     assert.equal(authoredRoomLayout(key, 2400, 1280), null, key);
   }
 });
@@ -116,7 +116,7 @@ test('Authored floor bands clip to cell edges and never bleed or leave gaps', ()
     };
   };
   const scene = makeScene();
-  const lay = authoredRoomLayout('howlrstone1x1', 2400, 1280);
+  const lay = authoredRoomLayout('lilacworld1x1', 2400, 1280);
   const before = [...lay.open];
   const result = renderAuthoredMapLayers(scene, lay, () => {});
   assert.ok(result, 'authored layers render');
@@ -208,7 +208,7 @@ test('vc238 edge decor outlines the floor without ever narrowing a route', () =>
   });
 
   /* 모든 영프 구역 + 그랜드 플래닛 일부 — 경계 장식이 통행로/입출구를 건드리지 않아야 한다. */
-  const cases = HOWLRSTONE_CHAPTERS.flatMap(spec => Array.from({ length: spec.stages }, (_, i) => ({
+  const cases = LILACWORLD_CHAPTERS.flatMap(spec => Array.from({ length: spec.stages }, (_, i) => ({
     key: `${spec.key}x${i + 1}`, width: spec.width + (i + 1) * 130, height: spec.height + (i + 1) * 30,
   })));
   cases.push({ key: 'dlcstargate1', width: 2330, height: 1230 });

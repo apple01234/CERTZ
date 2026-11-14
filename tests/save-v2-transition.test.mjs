@@ -7,7 +7,7 @@ import { skillMasteryProgress, migrateLegacySkillMastery } from '../src/game/ski
 
 const base = () => ({ stage: 'youngprincessv', lv: 60, exp: 9, maxHp: 400, atk: 70, cleared: false,
   playerName: '수련검증', cls: 'berserker', gold: 987, emerald: 23, owned: ['weapon_1'],
-  questIdx: { howlrstone1x1: 2, dojang: 1 }, youngPrincessCleared: true, skillMastery: { solar: 100, life: 200 } });
+  questIdx: { lilacworld1x1: 2, dojang: 1 }, youngPrincessCleared: true, skillMastery: { solar: 100, life: 200 } });
 
 function storage() {
   const data = new Map(), events = [];
@@ -39,7 +39,7 @@ test('unknown/unmarked story preserves progress; only explicit compatible legacy
     const next = migrateSave({ ...original, storyRevision: revision });
     assert.equal(next.stage, 'dlcstargatev'); assert.equal(next.youngPrincessCleared, true);
     assert.deepEqual(next.questIdx, original.questIdx); assert.equal(next.gold, 987);
-    assert.deepEqual(next.skillMastery, { solar: 61, life: 491 }); assert.equal(next.v, 2);
+    assert.deepEqual(next.skillMastery, { solar: 61, life: 491 }); assert.equal(next.v, SAVE_VERSION);
     assert.deepEqual(migrateSave(next), next);
   }
   const old = migrateSave({ ...original, storyRevision: 'memory-oath-v1', storyChoices: { old: 'choice' } });
@@ -58,7 +58,7 @@ test('actual load/write/slot roundtrip backs original once and never converts v2
   writeSave(save);
   assert.equal(readCharSave('test').skillMastery.solar, 61);
   assert.equal(loadSave().skillMastery.life, 491);
-  assert.equal(JSON.parse(store.getItem(SAVE_KEY)).v, 2);
+  assert.equal(JSON.parse(store.getItem(SAVE_KEY)).v, SAVE_VERSION);
   assert.equal(store.getItem(saveMigrationBackupKey(key)), raw);
 });
 
@@ -81,14 +81,14 @@ test('backup quota and future saves cannot overwrite originals or enter through 
   const restored = importCloudSave(base()); assert.equal(restored.ok, false); assert.equal(store.getItem(key), raw);
   assert.ok(events.some(e => e.detail?.reason.includes('백업')));
   store.denyBackup = false;
-  const future = JSON.stringify({ ...base(), v: 3 }); store.setItem(key, future);
+  const future = JSON.stringify({ ...base(), v: SAVE_VERSION + 1 }); store.setItem(key, future);
   assert.equal(readCharSave('a'), null); writeSave({ ...base(), v: 2 });
   assert.equal(store.getItem(key), future);
 });
 
 test('an unreadable character aborts whole snapshot; a failed legacy mirror does not misreport a successful restore', () => {
   const { store, events } = storage(), raw = JSON.stringify(base());
-  store.setItem('sertz_char_a', raw); store.setItem('sertz_char_b', JSON.stringify({ ...base(), playerName: '미래검증', v: 3 }));
+  store.setItem('sertz_char_a', raw); store.setItem('sertz_char_b', JSON.stringify({ ...base(), playerName: '미래검증', v: SAVE_VERSION + 1 }));
   store.setItem(SLOTS_KEY, JSON.stringify({ v: 1, slots: 8, activeId: null, chars: {
     a: { id: 'a', name: '수련검증', lv: 60 }, b: { id: 'b', name: '미래검증', lv: 60 } } }));
   assert.throws(() => collectLocalChars(), /전체 클라우드 백업/);

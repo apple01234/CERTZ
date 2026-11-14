@@ -211,9 +211,9 @@ save(to64(grass), f"{A}/tile_grass.png"); report.append("[tile] tile_grass <- se
 # path: 세렌 흙길 — 실측 (192,32) 셀이 순수 흙색 (196,159,82)
 path = cell(SER_PNG, 192, 96, 32, 32, 2)
 save(to64(path), f"{A}/tile_path.png"); report.append("[tile] tile_path <- serene dirt(192,96)")
-# dark(알프헤임 보라 숲): grass → 보라 시프트 (채도↑)
+# dark(요정 숲 보라 숲): grass → 보라 시프트 (채도↑)
 save(to64(hueshift(grass, 95, 1.0, 0.75)), f"{A}/tile_dark.png"); report.append("[tile] tile_dark <- grass purple v2")
-# magma(무스펠하임): 저주 땅 플랫 필 (352,96) 16px → red-orange
+# magma(화산): 저주 땅 플랫 필 (352,96) 16px → red-orange
 cur_flat = cell(CUR_G, 352, 96, 16, 16, 4)
 save(to64(hueshift(cur_flat, -18, 1.15, 0.95)), f"{A}/tile_magma.png"); report.append("[tile] tile_magma <- cursed red")
 # snow: grass → 청백 데색 (밝기 과노출 수정)
@@ -226,8 +226,8 @@ save(to64(cave), f"{A}/tile_cave.png"); report.append("[tile] tile_cave <- catac
 # stone: 카타콤 바닥 변형 (832,208)
 stone = cell(RF_M, 832, 208, 16, 16, 4)
 save(to64(stone), f"{A}/tile_stone.png"); report.append("[tile] tile_stone <- catacomb floor v2")
-# hel: cursed 플랫 → 딥 퍼플
-save(to64(hueshift(cur_flat, 210, 0.9, 0.75)), f"{A}/tile_hel.png"); report.append("[tile] tile_hel <- cursed purple")
+# duskrealm: cursed 플랫 → 딥 퍼플
+save(to64(hueshift(cur_flat, 210, 0.9, 0.75)), f"{A}/tile_duskrealm.png"); report.append("[tile] tile_duskrealm <- cursed purple")
 # abyss: 카타콤 다크 필 (736,416) 16px → 인디고
 abyss = cell(RF_M, 736, 416, 16, 16, 4)
 save(to64(hueshift(abyss, 40, 1.1, 0.85)), f"{A}/tile_abyss.png"); report.append("[tile] tile_abyss <- catacomb dark")
@@ -374,7 +374,7 @@ prev = Image.new("RGBA", (1280, 800), (18, 20, 28, 255))
 from PIL import ImageDraw
 dr = ImageDraw.Draw(prev)
 xs, ys = 4, 4
-tiles = ["tile_grass", "tile_path", "tile_dark", "tile_magma", "tile_snow", "tile_cave", "tile_stone", "tile_hel", "tile_abyss", "tile_magma_path", "tile_ice", "tile_path_dark", "x2_bricks", "tree", "pine", "rock", "house_a", "house_b"]
+tiles = ["tile_grass", "tile_path", "tile_dark", "tile_magma", "tile_snow", "tile_cave", "tile_stone", "tile_duskrealm", "tile_abyss", "tile_magma_path", "tile_ice", "tile_path_dark", "x2_bricks", "tree", "pine", "rock", "house_a", "house_b"]
 for k in tiles:
     im = Image.open(f"{A}/{k}.png").convert("RGBA")
     if im.width > 64:

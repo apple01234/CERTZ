@@ -683,7 +683,7 @@ export const EDITOR_ASSETS: EditorAsset[] = [
   { url:"/assets/ui/heart_half.webp", name:"heart_half", category:"ui", group:"" },
   { url:"/assets/ui/union/raid_abysslord.png", name:"raid_abysslord", category:"ui", group:"" },
   { url:"/assets/ui/union/raid_behemoth.png", name:"raid_behemoth", category:"ui", group:"" },
-  { url:"/assets/ui/union/raid_nidhogg.png", name:"raid_nidhogg", category:"ui", group:"" },
+  { url:"/assets/ui/union/raid_blackwyrm.png", name:"raid_blackwyrm", category:"ui", group:"" },
   { url:"/assets/ui/union/ub_atk.png", name:"ub_atk", category:"ui", group:"" },
   { url:"/assets/ui/union/ub_def.png", name:"ub_def", category:"ui", group:"" },
   { url:"/assets/ui/union/ub_exp.png", name:"ub_exp", category:"ui", group:"" },

@@ -43,13 +43,13 @@ test('completed custom intro suppresses chapter and legacy fallback on revisit',
     ts.transpile(`class Subject { ${methods(['stagePresentationSeen', 'rememberStagePresentation'])} }; return Subject;`))(
     parseStage, stageIntro, stageIntroSeenKey, lilacScenarioIdAt);
   const p = Object.assign(new Subject(), { cutsceneSeen: [], seenSet: new Set(), saveSoon() {} });
-  assert.equal(p.stagePresentationSeen('howlrstone1x1'), false);
-  const scenario = lilacScenarioIdAt('howlrstone1', 1);
+  assert.equal(p.stagePresentationSeen('lilacworld1x1'), false);
+  const scenario = lilacScenarioIdAt('lilacworld1', 1);
   assert.ok(scenario); p.cutsceneSeen.push(`lilacCut_rea1_${scenario}`);
-  assert.equal(p.stagePresentationSeen('howlrstone1x1'), true);
-  p.rememberStagePresentation('howlrstone1x2'); p.rememberStagePresentation('howlrstone1x2');
-  assert.equal(p.cutsceneSeen.filter(k => k === 'stage:howlrstone1x2').length, 1);
-  p.seenSet.clear(); assert.equal(p.stagePresentationSeen('howlrstone1x2'), true);
+  assert.equal(p.stagePresentationSeen('lilacworld1x1'), true);
+  p.rememberStagePresentation('lilacworld1x2'); p.rememberStagePresentation('lilacworld1x2');
+  assert.equal(p.cutsceneSeen.filter(k => k === 'stage:lilacworld1x2').length, 1);
+  p.seenSet.clear(); assert.equal(p.stagePresentationSeen('lilacworld1x2'), true);
 });
 test('privileged auth ignores an offline cached admin; ordinary offline accounts still work', async () => {
   const raw = readFileSync('src/game/account.ts', 'utf8');

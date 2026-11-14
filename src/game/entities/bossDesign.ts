@@ -76,8 +76,8 @@ export const CANON_BOSS_DESIGN = {
 export type CanonBossKey = keyof typeof CANON_BOSS_DESIGN;
 /** Existing optional maps replay documented encounters; these aliases do not create new canon people. */
 export const BOSS_RECORD_ALIASES: Record<string, CanonBossKey> = {
-  guardian: "reversecore", behemoth: "jade", abysslord: "littlestar", nidhog: "desknis", surt: "scarlet_dark",
-  fenrir: "rasion", skoll: "littlestar", gram: "verodin", abudditos: "scarlet", vord: "reversecore", jorm: "harold", nagr: "desknis",
+  guardian: "reversecore", behemoth: "jade", abysslord: "littlestar", blackwyrm: "desknis", flamegiant: "scarlet_dark",
+  greedwolf: "rasion", twinwolf: "littlestar", warden: "verodin", doomwyrm: "scarlet", riftwarden: "reversecore", unionserpent: "harold", angelknight: "desknis",
 };
 export function canonBossOf(key: string): BossDesign | null {
   const id = BOSS_RECORD_ALIASES[key] ?? key;

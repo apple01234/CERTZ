@@ -1,16 +1,16 @@
 /**
  * SERTZ 게임 데이터 (v2.0)
  *  - 스테이지/몬스터/보스 정의는 stages.ts (9챕터 × 10구역 생성기)에서 재수출
- *  - v3.0.10 본게임 세계관 확정판 스토리 (하울르스톤 9왕국 · 안내인 · 아부디토스)
+ *  - v3.0.10 본게임 세계관 확정판 스토리 (영프 9왕국 · 안내인 · 종언의 마룡)
  *  - v4.1.3 (#신화고증) — 보스 표기 고증 정리 (지시 #8):
- *    · 최종 보스 표기 니드그림 → 아부디토스 (키/세계관 근원인 이전 서사의 종언 존재)
- *    · 수르트: 정령 → 화염의 거인 (무스펠헤임을 다스리는 불의 거인 — 라그나로크 고증)
- *    · 스콜&하티: 쌍두 → 쌍랑 (해와 달을 쫓는 쌍둥이 늑대 — 두 머리가 아님)
- *    · 헬 보스 그람 → 가름 (Garmr — 헬의 대문을 지키는 사냥개. 그람은 시구르드의 검이다)
+ *    · 최종 보스 표기 종언의 마룡 → 종언의 마룡 (키/세계관 근원인 이전 서사의 종언 존재)
+ *    · 화염의 거인: 정령 → 화염의 거인 (화산을 다스리는 불의 거인 — 종말 고증)
+ *    · 교만의 쌍랑: 쌍두 → 쌍랑 (해와 달을 쫓는 쌍둥이 늑대 — 두 머리가 아님)
+ *    · 명계 보스 혈안의 문지기 → 혈안의 문지기 (Garmr — 명계의 대문을 지키는 사냥개. 혈안의 문지기은 시구르드의 검이다)
  *  - v1.9 아이템/BM(버프·펫·치장) 유지 + 강화 12단계 확장 (메이플 스타포스식)
  */
 import { CHAPTERS, ENEMIES, type ChapterKey } from "./stages";
-import { HOWLRSTONE_CHAPTERS } from "./howlrstone";
+import { LILACWORLD_CHAPTERS } from "./lilacworld";
 import { LILAC_DIALOGUES } from "./lilacStory";
 import { GRAND_PLANET_DIALOGUES } from "./grandPlanetCanon";
 import { CHAPTER_STORY_PLAN } from "./chapterStoryPlan";
@@ -116,17 +116,17 @@ export type ItemKey =
   /* v3.0.6 (지시 #9) — 보스 전용 드롭 (상점 판매 금지 — 유저 거래소 예정) */
   | "bd_guardian"
   | "bd_behemoth"
-  | "bd_nidhog"
-  | "bd_surt"
-  | "bd_fenrir"
-  | "bd_skoll"
-  | "bd_gram"
+  | "bd_blackwyrm"
+  | "bd_flamegiant"
+  | "bd_greedwolf"
+  | "bd_twinwolf"
+  | "bd_warden"
   | "bd_abysslord"
-  | "bd_abudditos"
+  | "bd_doomwyrm"
   /* v1.0.15 (재림 전리품) — 재림 지역 보스 3종 전용 드롭.
-   *  기존 9종(BOSS_DROP_ITEMS)에서 vord/jorm/nagr만 누락되어 있어,
+   *  기존 9종(BOSS_DROP_ITEMS)에서 riftwarden/unionserpent/angelknight만 누락되어 있어,
    *  재림 보스를 잡아도 전용 전리품이 나오지 않던 구멍을 메운다. */
-  | "bd_vord" | "bd_jorm" | "bd_nagr"
+  | "bd_riftwarden" | "bd_unionserpent" | "bd_angelknight"
   | "gm_sword" | "gm_armor" | "gm_ring" | "gm_elixir" // v1.0.2 — GM 전용
   /* v3.0.6 — BM 상점 (에메랄드 전용 — 상점과 분리) */
   | "pet_atlas"
@@ -142,7 +142,7 @@ export type ItemKey =
   /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 (완전 교체 코스튬) */
   | "outfit_dragon" | "outfit_frost" | "outfit_sakura" | "outfit_void"
   /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 (유저 제공 SPUM 파트 실제 조합) */
-  | "outfit_valkyrie" | "outfit_witch" | "outfit_sylvan" | "outfit_lily"
+  | "outfit_wingmaiden" | "outfit_witch" | "outfit_sylvan" | "outfit_lily"
   | "outfit_warlord" | "outfit_paladin" | "outfit_nightblade" | "outfit_mariner"
   /* v1.4.11 — 잠자던 시트(cost_flame·cost_mystic 계열 112프레임) 활성화 신규 코스튬 2종 */
   | "outfit_flame" | "outfit_mystic"
@@ -157,12 +157,12 @@ export type ItemKey =
   /* v3.0.15 (#11) — 챕터 테마 장비 세트 9종 (무기/방어구/반지 × 챕터) */
   | "sfw_forest" | "sfa_forest" | "sfr_forest"
   | "sfw_kingdom" | "sfa_kingdom" | "sfr_kingdom"
-  | "sfw_alfheim" | "sfa_alfheim" | "sfr_alfheim"
-  | "sfw_muspelheim" | "sfa_muspelheim" | "sfr_muspelheim"
-  | "sfw_niflheim" | "sfa_niflheim" | "sfr_niflheim"
+  | "sfw_fairyglade" | "sfa_fairyglade" | "sfr_fairyglade"
+  | "sfw_emberland" | "sfa_emberland" | "sfr_emberland"
+  | "sfw_frostland" | "sfa_frostland" | "sfr_frostland"
   | "sfw_cave" | "sfa_cave" | "sfr_cave"
-  | "sfw_nidavellir" | "sfa_nidavellir" | "sfr_nidavellir"
-  | "sfw_hel" | "sfa_hel" | "sfr_hel"
+  | "sfw_forgehall" | "sfa_forgehall" | "sfr_forgehall"
+  | "sfw_duskrealm" | "sfa_duskrealm" | "sfr_duskrealm"
   | "sfw_abyss" | "sfa_abyss" | "sfr_abyss"
   /* vc147 (#25) — 신화 등급 장비: 세트(에픽) 상위 최종 스펙업층. 카오스 보스 체력 대비
    *  스펙업 요소 부족 해소 — 고가 골드 싱크 + 대폭 스탯 점프로 장기 성장 목표 제공 */
@@ -432,20 +432,20 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
    *  보스별 1종, 100% 드롭. 상점 에픽 대비 확실히 강한 수치. */
   bd_guardian: { key: "bd_guardian", kind: "accessory", name: "수호자의 문장", icon: "i_bd_guardian", price: 0, tier: "legend", maxHp: 90, crit: 5, slot: "ring", tradeLock: true, bossDrop: "심연의 수호자 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_behemoth: { key: "bd_behemoth", kind: "accessory", name: "침몰의 심장", icon: "i_bd_behemoth", price: 0, tier: "legend", maxHp: 120, def: 2, slot: "pendant", tradeLock: true, bossDrop: "침몰의 선장 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_nidhog: { key: "bd_nidhog", kind: "accessory", name: "탐식의 비늘", icon: "i_bd_nidhog", price: 0, tier: "legend", crit: 8, maxHp: 60, slot: "ring", tradeLock: true, bossDrop: "니드호그 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_surt: { key: "bd_surt", kind: "accessory", name: "화염 정령의 인장", icon: "i_bd_surt", price: 0, tier: "legend", crit: 10, slot: "pendant", tradeLock: true, bossDrop: "수르트 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_fenrir: { key: "bd_fenrir", kind: "accessory", name: "탐욕의 속니", icon: "i_bd_fenrir", price: 0, tier: "legend", crit: 12, maxHp: 50, slot: "ring", tradeLock: true, bossDrop: "펜리르 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_skoll: { key: "bd_skoll", kind: "accessory", name: "교만의 쌍랑 귀걸이", icon: "i_bd_skoll", price: 0, tier: "legend", crit: 8, maxHp: 80, slot: "pendant", tradeLock: true, bossDrop: "스콜&하티 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_gram: { key: "bd_gram", kind: "accessory", name: "대지의 핵", icon: "i_bd_gram", price: 0, tier: "legend", maxHp: 150, def: 3, slot: "ring", tradeLock: true, bossDrop: "가름 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_blackwyrm: { key: "bd_blackwyrm", kind: "accessory", name: "탐식의 비늘", icon: "i_bd_blackwyrm", price: 0, tier: "legend", crit: 8, maxHp: 60, slot: "ring", tradeLock: true, bossDrop: "탐식의 흑룡 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_flamegiant: { key: "bd_flamegiant", kind: "accessory", name: "화염 정령의 인장", icon: "i_bd_flamegiant", price: 0, tier: "legend", crit: 10, slot: "pendant", tradeLock: true, bossDrop: "화염의 거인 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_greedwolf: { key: "bd_greedwolf", kind: "accessory", name: "탐욕의 속니", icon: "i_bd_greedwolf", price: 0, tier: "legend", crit: 12, maxHp: 50, slot: "ring", tradeLock: true, bossDrop: "탐욕의 늑대 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_twinwolf: { key: "bd_twinwolf", kind: "accessory", name: "교만의 쌍랑 귀걸이", icon: "i_bd_twinwolf", price: 0, tier: "legend", crit: 8, maxHp: 80, slot: "pendant", tradeLock: true, bossDrop: "교만의 쌍랑 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_warden: { key: "bd_warden", kind: "accessory", name: "대지의 핵", icon: "i_bd_warden", price: 0, tier: "legend", maxHp: 150, def: 3, slot: "ring", tradeLock: true, bossDrop: "혈안의 문지기 드롭 — 상점 판매 금지 · 거래소 예정" },
   bd_abysslord: { key: "bd_abysslord", kind: "accessory", name: "심연의 군주의 관", icon: "i_bd_abysslord", price: 0, tier: "legend", crit: 14, maxHp: 100, slot: "pendant", tradeLock: true, bossDrop: "심연의 군주 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_abudditos: { key: "bd_abudditos", kind: "accessory", name: "마룡의 계약서", icon: "i_bd_abudditos", price: 0, tier: "legend", crit: 18, maxHp: 130, slot: "pendant", tradeLock: true, bossDrop: "아부디토스 드롭 — 최고 보스 전리품 · 거래소 예정" },
+  bd_doomwyrm: { key: "bd_doomwyrm", kind: "accessory", name: "마룡의 계약서", icon: "i_bd_doomwyrm", price: 0, tier: "legend", crit: 18, maxHp: 130, slot: "pendant", tradeLock: true, bossDrop: "종언의 마룡 드롭 — 최고 보스 전리품 · 거래소 예정" },
   /* v1.0.15 (재림 전리품) — 재림 지역 보스 3종 전용 드롭.
-   *  수치는 기존 9종의 강함 계층(스콜 8/80 → 아부디토스 18/130)을 이어받아 배치:
-   *  vord(HP 42000) < jorm(60000) < nagr(95000) 순으로 강화. 슬롯은 ring/pendant 교차로
+   *  수치는 기존 9종의 강함 계층(얼음 늑대 8/80 → 종언의 마룡 18/130)을 이어받아 배치:
+   *  riftwarden(HP 42000) < unionserpent(60000) < angelknight(95000) 순으로 강화. 슬롯은 ring/pendant 교차로
    *  기존 유물과 세트를 맞출 때 선택지가 생기게 했다. 아이콘은 기존 i_bd_* 재활용(신규 에셋 0). */
-  bd_vord: { key: "bd_vord", kind: "accessory", name: "파수꾼의 지진핵", icon: "i_bd_guardian", price: 0, tier: "legend", def: 4, maxHp: 160, slot: "ring", tradeLock: true, bossDrop: "재림의 파수꾼 베오르드 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_jorm: { key: "bd_jorm", kind: "accessory", name: "연합의 독니", icon: "i_bd_nidhog", price: 0, tier: "legend", crit: 16, atk: 12, slot: "ring", tradeLock: true, bossDrop: "탐식의 뱀 드롭 — 상점 판매 금지 · 거래소 예정" },
-  bd_nagr: { key: "bd_nagr", kind: "accessory", name: "종언의 천사인장", icon: "i_bd_abudditos", price: 0, tier: "legend", crit: 20, maxHp: 150, def: 3, slot: "pendant", tradeLock: true, bossDrop: "나그라파르 드롭 — 재림 최종 전리품 · 거래소 예정" },
+  bd_riftwarden: { key: "bd_riftwarden", kind: "accessory", name: "파수꾼의 지진핵", icon: "i_bd_guardian", price: 0, tier: "legend", def: 4, maxHp: 160, slot: "ring", tradeLock: true, bossDrop: "재림의 파수꾼 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_unionserpent: { key: "bd_unionserpent", kind: "accessory", name: "연합의 독니", icon: "i_bd_blackwyrm", price: 0, tier: "legend", crit: 16, atk: 12, slot: "ring", tradeLock: true, bossDrop: "탐식의 뱀 드롭 — 상점 판매 금지 · 거래소 예정" },
+  bd_angelknight: { key: "bd_angelknight", kind: "accessory", name: "종언의 천사인장", icon: "i_bd_doomwyrm", price: 0, tier: "legend", crit: 20, maxHp: 150, def: 3, slot: "pendant", tradeLock: true, bossDrop: "재림의 천사기사 드롭 — 재림 최종 전리품 · 거래소 예정" },
   /* ================= v1.0.2 (#GM아이템) — 관리자 전용 테스트 장비 =================
    *  일반 유저는 어떤 경로로도 획득 불가 (상품 목록/드롭 테이블 미포함 + gmOnly 거래 차단).
    *  지급은 GM 패널(서버 롤 검증 통과자)에서만. tradeLock으로 골드 판매도 차단. */
@@ -471,7 +471,7 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   outfit_sakura: { key: "outfit_sakura", kind: "cosmetic", name: "벚꽃 검부이", icon: "cost_sakura_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
   outfit_void: { key: "outfit_void", kind: "cosmetic", name: "공허의 순례자", icon: "costm_void_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
   /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 (유저 제공 SPUM 파트 실제 조합 — 투구/후드/헤어/망토/의상 파트) */
-  outfit_valkyrie: { key: "outfit_valkyrie", kind: "cosmetic", name: "성역의 은빛 갑주", icon: "cost_valkyrie_idle0", price: 128000, bmPrice: 52, bmOnly: true, tier: "legend" },
+  outfit_wingmaiden: { key: "outfit_wingmaiden", kind: "cosmetic", name: "성역의 은빛 갑주", icon: "cost_wingmaiden_idle0", price: 128000, bmPrice: 52, bmOnly: true, tier: "legend" },
   outfit_witch: { key: "outfit_witch", kind: "cosmetic", name: "심연의 후드 마녀", icon: "cost_witch_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
   outfit_sylvan: { key: "outfit_sylvan", kind: "cosmetic", name: "숲의 후드 수호자", icon: "cost_sylvan_idle0", price: 88000, bmPrice: 36, bmOnly: true, tier: "epic" },
   outfit_lily: { key: "outfit_lily", kind: "cosmetic", name: "흑발의 백합 검부이", icon: "cost_lily_idle0", price: 128000, bmPrice: 48, bmOnly: true, tier: "legend" },
@@ -608,27 +608,27 @@ export const ITEMS: Record<ItemKey, ItemDef> = {
   sfw_forest: { key: "sfw_forest", kind: "weapon", name: "숲의 수호자 대검", icon: "i_sfw_forest", price: 380, tier: "rare", atk: 9 , clsOnly: ["warrior"] },
   sfa_forest: { key: "sfa_forest", kind: "armor", name: "숲의 수호자 갑옷", icon: "i_sfa_forest", price: 340, tier: "rare", def: 4 },
   sfr_forest: { key: "sfr_forest", kind: "accessory", name: "숲의 수호자 반지", icon: "i_sfr_forest", price: 360, tier: "rare", crit: 5, maxHp: 20, slot: "ring" },
-  sfw_kingdom: { key: "sfw_kingdom", kind: "weapon", name: "쿠소디아 기사검", icon: "i_sfw_kingdom", price: 820, tier: "rare", atk: 15 , clsOnly: ["warrior"] },
-  sfa_kingdom: { key: "sfa_kingdom", kind: "armor", name: "쿠소디아 기사 갑옷", icon: "i_sfa_kingdom", price: 720, tier: "rare", def: 7 },
-  sfr_kingdom: { key: "sfr_kingdom", kind: "accessory", name: "쿠소디아 기사 반지", icon: "i_sfr_kingdom", price: 760, tier: "rare", crit: 7, maxHp: 30, slot: "ring" },
-  sfw_alfheim: { key: "sfw_alfheim", kind: "weapon", name: "정령왕의 지팡이", icon: "item_wpn_staff", price: 1600, tier: "epic", atk: 21 , clsOnly: ["mage"] },
-  sfa_alfheim: { key: "sfa_alfheim", kind: "armor", name: "정령왕의 갑주", icon: "i_sfa_alfheim", price: 1400, tier: "epic", def: 10 },
-  sfr_alfheim: { key: "sfr_alfheim", kind: "accessory", name: "정령왕의 반지", icon: "i_sfr_alfheim", price: 1500, tier: "epic", crit: 9, maxHp: 40, slot: "ring" },
-  sfw_muspelheim: { key: "sfw_muspelheim", kind: "weapon", name: "화염의 군주 대검", icon: "i_sfw_muspelheim", price: 2700, tier: "epic", atk: 28 , clsOnly: ["warrior"] },
-  sfa_muspelheim: { key: "sfa_muspelheim", kind: "armor", name: "화염의 군주 갑주", icon: "i_sfa_muspelheim", price: 2300, tier: "epic", def: 13 },
-  sfr_muspelheim: { key: "sfr_muspelheim", kind: "accessory", name: "화염의 군주 반지", icon: "i_sfr_muspelheim", price: 2500, tier: "epic", crit: 11, maxHp: 55, slot: "ring" },
-  sfw_niflheim: { key: "sfw_niflheim", kind: "weapon", name: "서리바다의 설화장", icon: "item_wpn_staff", price: 4300, tier: "epic", atk: 36 , clsOnly: ["mage"] },
-  sfa_niflheim: { key: "sfa_niflheim", kind: "armor", name: "서리바다의 갑주", icon: "i_sfa_niflheim", price: 3700, tier: "epic", def: 16 },
-  sfr_niflheim: { key: "sfr_niflheim", kind: "accessory", name: "서리바다의 반지", icon: "i_sfr_niflheim", price: 4000, tier: "epic", crit: 13, maxHp: 70, slot: "ring" },
+  sfw_kingdom: { key: "sfw_kingdom", kind: "weapon", name: "왕국 기사검", icon: "i_sfw_kingdom", price: 820, tier: "rare", atk: 15 , clsOnly: ["warrior"] },
+  sfa_kingdom: { key: "sfa_kingdom", kind: "armor", name: "왕국 기사 갑옷", icon: "i_sfa_kingdom", price: 720, tier: "rare", def: 7 },
+  sfr_kingdom: { key: "sfr_kingdom", kind: "accessory", name: "왕국 기사 반지", icon: "i_sfr_kingdom", price: 760, tier: "rare", crit: 7, maxHp: 30, slot: "ring" },
+  sfw_fairyglade: { key: "sfw_fairyglade", kind: "weapon", name: "정령왕의 지팡이", icon: "item_wpn_staff", price: 1600, tier: "epic", atk: 21 , clsOnly: ["mage"] },
+  sfa_fairyglade: { key: "sfa_fairyglade", kind: "armor", name: "정령왕의 갑주", icon: "i_sfa_fairyglade", price: 1400, tier: "epic", def: 10 },
+  sfr_fairyglade: { key: "sfr_fairyglade", kind: "accessory", name: "정령왕의 반지", icon: "i_sfr_fairyglade", price: 1500, tier: "epic", crit: 9, maxHp: 40, slot: "ring" },
+  sfw_emberland: { key: "sfw_emberland", kind: "weapon", name: "화염의 군주 대검", icon: "i_sfw_emberland", price: 2700, tier: "epic", atk: 28 , clsOnly: ["warrior"] },
+  sfa_emberland: { key: "sfa_emberland", kind: "armor", name: "화염의 군주 갑주", icon: "i_sfa_emberland", price: 2300, tier: "epic", def: 13 },
+  sfr_emberland: { key: "sfr_emberland", kind: "accessory", name: "화염의 군주 반지", icon: "i_sfr_emberland", price: 2500, tier: "epic", crit: 11, maxHp: 55, slot: "ring" },
+  sfw_frostland: { key: "sfw_frostland", kind: "weapon", name: "서리바다의 설화장", icon: "item_wpn_staff", price: 4300, tier: "epic", atk: 36 , clsOnly: ["mage"] },
+  sfa_frostland: { key: "sfa_frostland", kind: "armor", name: "서리바다의 갑주", icon: "i_sfa_frostland", price: 3700, tier: "epic", def: 16 },
+  sfr_frostland: { key: "sfr_frostland", kind: "accessory", name: "서리바다의 반지", icon: "i_sfr_frostland", price: 4000, tier: "epic", crit: 13, maxHp: 70, slot: "ring" },
   sfw_cave: { key: "sfw_cave", kind: "weapon", name: "심연광의 쌍단검", icon: "item_wpn_dagger", price: 7000, tier: "epic", atk: 45 , clsOnly: ["thief", "warrior"] },
   sfa_cave: { key: "sfa_cave", kind: "armor", name: "심연광의 갑주", icon: "i_sfa_cave", price: 6000, tier: "epic", def: 20 },
   sfr_cave: { key: "sfr_cave", kind: "accessory", name: "심연광의 반지", icon: "i_sfr_cave", price: 6400, tier: "epic", crit: 15, maxHp: 90, slot: "ring" },
-  sfw_nidavellir: { key: "sfw_nidavellir", kind: "weapon", name: "드워프 장인의 검", icon: "i_sfw_nidavellir", price: 10800, tier: "epic", atk: 56 , clsOnly: ["warrior"] },
-  sfa_nidavellir: { key: "sfa_nidavellir", kind: "armor", name: "드워프 장인의 갑주", icon: "i_sfa_nidavellir", price: 9200, tier: "epic", def: 24 },
-  sfr_nidavellir: { key: "sfr_nidavellir", kind: "accessory", name: "드워프 장인의 반지", icon: "i_sfr_nidavellir", price: 9800, tier: "epic", crit: 17, maxHp: 115, slot: "ring" },
-  sfw_hel: { key: "sfw_hel", kind: "weapon", name: "저승 파수꾼의 단검", icon: "item_wpn_dagger", price: 16200, tier: "epic", atk: 68 , clsOnly: ["thief"] },
-  sfa_hel: { key: "sfa_hel", kind: "armor", name: "저승 파수꾼의 갑주", icon: "i_sfa_hel", price: 13800, tier: "epic", def: 28 },
-  sfr_hel: { key: "sfr_hel", kind: "accessory", name: "저승 파수꾼의 반지", icon: "i_sfr_hel", price: 14700, tier: "epic", crit: 19, maxHp: 140, slot: "ring" },
+  sfw_forgehall: { key: "sfw_forgehall", kind: "weapon", name: "드워프 장인의 검", icon: "i_sfw_forgehall", price: 10800, tier: "epic", atk: 56 , clsOnly: ["warrior"] },
+  sfa_forgehall: { key: "sfa_forgehall", kind: "armor", name: "드워프 장인의 갑주", icon: "i_sfa_forgehall", price: 9200, tier: "epic", def: 24 },
+  sfr_forgehall: { key: "sfr_forgehall", kind: "accessory", name: "드워프 장인의 반지", icon: "i_sfr_forgehall", price: 9800, tier: "epic", crit: 17, maxHp: 115, slot: "ring" },
+  sfw_duskrealm: { key: "sfw_duskrealm", kind: "weapon", name: "저승 파수꾼의 단검", icon: "item_wpn_dagger", price: 16200, tier: "epic", atk: 68 , clsOnly: ["thief"] },
+  sfa_duskrealm: { key: "sfa_duskrealm", kind: "armor", name: "저승 파수꾼의 갑주", icon: "i_sfa_duskrealm", price: 13800, tier: "epic", def: 28 },
+  sfr_duskrealm: { key: "sfr_duskrealm", kind: "accessory", name: "저승 파수꾼의 반지", icon: "i_sfr_duskrealm", price: 14700, tier: "epic", crit: 19, maxHp: 140, slot: "ring" },
   sfw_abyss: { key: "sfw_abyss", kind: "weapon", name: "종언 마룡의 검", icon: "i_sfw_abyss", price: 24000, tier: "epic", atk: 82 , clsOnly: ["warrior"] },
   sfa_abyss: { key: "sfa_abyss", kind: "armor", name: "종언 마룡의 갑주", icon: "i_sfa_abyss", price: 20500, tier: "epic", def: 33 },
   sfr_abyss: { key: "sfr_abyss", kind: "accessory", name: "종언 마룡의 반지", icon: "i_sfr_abyss", price: 22000, tier: "epic", crit: 23, maxHp: 180, slot: "ring" },
@@ -716,7 +716,7 @@ export type CosmeticKey = "cos_dawn" | "cos_gold" | "cos_abyss" | "cos_wings" | 
   /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 */
   | "outfit_dragon" | "outfit_frost" | "outfit_sakura" | "outfit_void"
   /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 */
-  | "outfit_valkyrie" | "outfit_witch" | "outfit_sylvan" | "outfit_lily"
+  | "outfit_wingmaiden" | "outfit_witch" | "outfit_sylvan" | "outfit_lily"
   | "outfit_warlord" | "outfit_paladin" | "outfit_nightblade" | "outfit_mariner"
   | "outfit_flame" | "outfit_mystic";
 
@@ -853,7 +853,7 @@ export const COSMETIC_DEFS: Record<CosmeticKey, CosmeticDef> = {
   outfit_sakura: { key: "outfit_sakura", name: "벚꽃 검부이", icon: "cost_sakura_idle0", desc: "흑발에 벚꽃 스커트의 검부이 — 봄밤의 일섭 (여형)", price: 560, tint: 0xffb0d0, slot: "outfit" },
   outfit_void: { key: "outfit_void", name: "공허의 순례자", icon: "costm_void_idle0", desc: "보랏빛 로브의 은발 순례자 — 공허를 건니는 자 (남형)", price: 560, tint: 0xb08aff, slot: "outfit" },
   /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 (SPUM 파트 실제 조합 — 투구/후드/헤어/망토) */
-  outfit_valkyrie: { key: "outfit_valkyrie", name: "성역의 은빛 갑주", icon: "cost_valkyrie_idle0", desc: "은빛 나이트 투구에 백은 장갑의 성역 수호자 — 전장을 날는 여신 (여형)", price: 560, tint: 0xcfe0ff, slot: "outfit" },
+  outfit_wingmaiden: { key: "outfit_wingmaiden", name: "성역의 은빛 갑주", icon: "cost_wingmaiden_idle0", desc: "은빛 나이트 투구에 백은 장갑의 성역 수호자 — 전장을 날는 여신 (여형)", price: 560, tint: 0xcfe0ff, slot: "outfit" },
   outfit_witch: { key: "outfit_witch", name: "심연의 후드 마녀", icon: "cost_witch_idle0", desc: "보라 후드에 심연색 로브의 마녀 — 밤의 마술을 다루는 자 (여형)", price: 560, tint: 0xb08aff, slot: "outfit" },
   outfit_sylvan: { key: "outfit_sylvan", name: "숲의 후드 수호자", icon: "cost_sylvan_idle0", desc: "갈색 후드에 녹색 튜닉의 숲 수호자 — 나무와 말이 통하는 자 (여형)", price: 560, tint: 0x9adf6a, slot: "outfit" },
   outfit_lily: { key: "outfit_lily", name: "흑발의 백합 검부이", icon: "cost_lily_idle0", desc: "흑발에 백합 문장의 붉은 망토 검부이 — 조용한 일섭의 화신 (여형)", price: 560, tint: 0xffb0d0, slot: "outfit" },
@@ -884,11 +884,11 @@ export const BODY_PREFIXES = [
   "costm_silver", "costm_crimson", "costm_seraph", "costm_abyss", "costm_nightmare", "costm_gilded",
   "costm_dragon", "costm_frost", "costm_sakura", "costm_void",
   /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 (여 4 + 남 4): SPUM 파트 실제 조합 */
-  "cost_valkyrie", "cost_witch", "cost_sylvan", "cost_lily",
+  "cost_wingmaiden", "cost_witch", "cost_sylvan", "cost_lily",
   "costm_warlord", "costm_paladin", "costm_nightblade", "costm_mariner",
   /* v1.3.1 (#1) — 교차 성별 시트: 어떤 성별이 어떤 세트를 착용해도 시트가 존재 (성별 반대 착용 대응) */
   "cost_warlord", "cost_paladin", "cost_nightblade", "cost_mariner",
-  "costm_valkyrie", "costm_witch", "costm_sylvan", "costm_lily",
+  "costm_wingmaiden", "costm_witch", "costm_sylvan", "costm_lily",
   /* v1.4.11 — 잠자던 시트 활성화 (cost_flame·cost_mystic 계열 — 남녀형 완비) */
   "cost_flame", "costm_flame", "cost_mystic", "costm_mystic",
   /* v1.2.0 (#13) — 2차 8직업 전용 외형 (여/남 각 8종): 전직하면 외형 자체가 바뀐다.
@@ -987,12 +987,12 @@ export const SHOP_STOCK: ItemKey[] = [
   /* v3.0.15 (#11) — 챕터 테마 세트 장비 (ShopPanel에서 unlockedSets 기반으로 미해금 숨김) */
   "sfw_forest", "sfa_forest", "sfr_forest",
   "sfw_kingdom", "sfa_kingdom", "sfr_kingdom",
-  "sfw_alfheim", "sfa_alfheim", "sfr_alfheim",
-  "sfw_muspelheim", "sfa_muspelheim", "sfr_muspelheim",
-  "sfw_niflheim", "sfa_niflheim", "sfr_niflheim",
+  "sfw_fairyglade", "sfa_fairyglade", "sfr_fairyglade",
+  "sfw_emberland", "sfa_emberland", "sfr_emberland",
+  "sfw_frostland", "sfa_frostland", "sfr_frostland",
   "sfw_cave", "sfa_cave", "sfr_cave",
-  "sfw_nidavellir", "sfa_nidavellir", "sfr_nidavellir",
-  "sfw_hel", "sfa_hel", "sfr_hel",
+  "sfw_forgehall", "sfa_forgehall", "sfr_forgehall",
+  "sfw_duskrealm", "sfa_duskrealm", "sfr_duskrealm",
   "sfw_abyss", "sfa_abyss", "sfr_abyss",
   /* vc147 (#25) — 신화 등급 최종 장비 상점 진열 (스펙업 확충) */
   "mythic_weapon", "mythic_armor", "mythic_ring", "mythic_pendant",
@@ -1014,18 +1014,18 @@ export function sellValue(item: ItemDef): number {
 export const TRADE_PRICES: Record<string, number> = {
   bd_guardian: 8,   // 심연의 수호자 (1챕터)
   bd_behemoth: 10,  // 눈보라의 거수
-  bd_nidhog: 12,    // 니드호그
-  bd_surt: 14,      // 수르트
-  bd_fenrir: 16,    // 펜리르
-  bd_skoll: 18,     // 스콜&하티
-  bd_gram: 20,      // 가름 (구 그람 — 신화 고증: 헬의 문지기 Garmr)
+  bd_blackwyrm: 12,    // 탐식의 흑룡
+  bd_flamegiant: 14,      // 화염의 거인
+  bd_greedwolf: 16,    // 탐욕의 늑대
+  bd_twinwolf: 18,     // 교만의 쌍랑
+  bd_warden: 20,      // 혈안의 문지기 (구 혈안의 문지기 — 신화 고증: 명계의 문지기 Garmr)
   bd_abysslord: 24, // 심연의 군주
-  bd_abudditos: 30, // 아부디토스 (최종 보스 — 텍스처 키 bd_abudditos 유지)
+  bd_doomwyrm: 30, // 종언의 마룡 (최종 보스 — 텍스처 키 bd_doomwyrm 유지)
   /* v1.0.15 (재림 전리품) — 재림 지역 보스 3종: 기존 9종 최고가(30) 위로 계단식 배치.
    *  보스 HP 계층(42000 / 60000 / 95000)에 맞춰 36 / 42 / 52. */
-  bd_vord: 36,      // 재림의 파수꾼 베오르드 (재림 r5)
-  bd_jorm: 42,      // 요르문간드 (재림 r10)
-  bd_nagr: 52,      // 나그라파르 (재림 r15 — 재림 지역 최종)
+  bd_riftwarden: 36,      // 재림의 파수꾼 (재림 r5)
+  bd_unionserpent: 42,      // 연합을 삼키는 뱀 (재림 r10)
+  bd_angelknight: 52,      // 재림의 천사기사 (재림 r15 — 재림 지역 최종)
 };
 
 /** 거래소 판매가 (에메랄드) — 구매가의 60%, 최소 1 */
@@ -1036,10 +1036,10 @@ export function tradeValue(key: ItemKey): number {
 
 /** 거래소 진열 목록 (보스 드롭 9종 — 등급순) */
 export const TRADE_STOCK: ItemKey[] = [
-  "bd_guardian", "bd_behemoth", "bd_nidhog", "bd_surt", "bd_fenrir",
-  "bd_skoll", "bd_gram", "bd_abysslord", "bd_abudditos",
+  "bd_guardian", "bd_behemoth", "bd_blackwyrm", "bd_flamegiant", "bd_greedwolf",
+  "bd_twinwolf", "bd_warden", "bd_abysslord", "bd_doomwyrm",
   /* v1.0.15 (재림 전리품) — 재림 지역 보스 3종 (가격 오름차순 유지) */
-  "bd_vord", "bd_jorm", "bd_nagr",
+  "bd_riftwarden", "bd_unionserpent", "bd_angelknight",
 ];
 
 /* v1.4.3 (유저 리포트 ④ 보스 유물·일부 아이템 이미지 로드 실패) — 전 아이템 아이콘 키.
@@ -1111,7 +1111,7 @@ export const BM_STOCK: ItemKey[] = [
   /* v1.3.0 (지시 #4) — NPC급 옷 세트 4종 (캐시상점 합류) */
   "outfit_dragon", "outfit_frost", "outfit_sakura", "outfit_void",
   /* v1.3.1 (#1) — SPUM 에셋 신규 코스튬 8종 (캐시상점 합류) */
-  "outfit_valkyrie", "outfit_witch", "outfit_sylvan", "outfit_lily",
+  "outfit_wingmaiden", "outfit_witch", "outfit_sylvan", "outfit_lily",
   "outfit_warlord", "outfit_paladin", "outfit_nightblade", "outfit_mariner",
   "acc_crown", "acc_ribbon", "acc_halo", "acc_wings_devil", "acc_wings_fairy",
   "acc_cape_crimson", "acc_cape_royal",
@@ -1287,17 +1287,17 @@ export function dailyDeals(today: string): ItemKey[] {
 export const BOSS_DROP_ITEMS: Record<string, ItemKey> = {
   guardian: "bd_guardian",
   behemoth: "bd_behemoth",
-  nidhog: "bd_nidhog",
-  surt: "bd_surt",
-  fenrir: "bd_fenrir",
-  skoll: "bd_skoll",
-  gram: "bd_gram",
+  blackwyrm: "bd_blackwyrm",
+  flamegiant: "bd_flamegiant",
+  greedwolf: "bd_greedwolf",
+  twinwolf: "bd_twinwolf",
+  warden: "bd_warden",
   abysslord: "bd_abysslord",
-  abudditos: "bd_abudditos",
+  doomwyrm: "bd_doomwyrm",
   /* v1.0.15 (재림 전리품) — 재림 지역 보스 3종 누락분 보충 (WorldScene 보스 처치 드롭 경로) */
-  vord: "bd_vord",
-  jorm: "bd_jorm",
-  nagr: "bd_nagr",
+  riftwarden: "bd_riftwarden",
+  unionserpent: "bd_unionserpent",
+  angelknight: "bd_angelknight",
 };
 
 /* ================= v3.0.15 (#16) — 원소 데미지 시스템 (원신 참고) =================
@@ -1391,12 +1391,12 @@ export const CHAPTER_ELEM: Record<string, ElemKey> = {
   village: "none",
   forest: "nature",
   kingdom: "water",     /* 에스테반 수상도시 — 바다의 왕국 */
-  alfheim: "light",
-  muspelheim: "fire",
-  niflheim: "ice",
+  fairyglade: "light",
+  emberland: "fire",
+  frostland: "ice",
   cave: "earth",        /* 이안페우스 심부 — 땅 */
-  nidavellir: "electric", /* 크렌렐브 광맥 — 룬·광물이 내는 전기 */
-  hel: "dark",
+  forgehall: "electric", /* 크렌렐브 광맥 — 룬·광물이 내는 전기 */
+  duskrealm: "dark",
   abyss: "dark",
 };
 
@@ -1561,13 +1561,13 @@ export function sumPotLines(pots: (Potentials | undefined)[]): { atk: number; de
  *  수치는 해당 챕터 구간 최고급 장비보다 살짝 위 — 세트 가치 프리미엄. */
 export const SET_GEAR: Record<string, { ch: string; num: number; title: string; w: ItemKey; a: ItemKey; r: ItemKey }> = {
   forest: { ch: "forest", num: 2, title: "숲의 수호자 세트", w: "sfw_forest", a: "sfa_forest", r: "sfr_forest" },
-  kingdom: { ch: "kingdom", num: 3, title: "쿠소디아 기사단 세트", w: "sfw_kingdom", a: "sfa_kingdom", r: "sfr_kingdom" },
-  alfheim: { ch: "alfheim", num: 4, title: "정령왕 세트", w: "sfw_alfheim", a: "sfa_alfheim", r: "sfr_alfheim" },
-  muspelheim: { ch: "muspelheim", num: 5, title: "화염의 군주 세트", w: "sfw_muspelheim", a: "sfa_muspelheim", r: "sfr_muspelheim" },
-  niflheim: { ch: "niflheim", num: 6, title: "서리바다 세트", w: "sfw_niflheim", a: "sfa_niflheim", r: "sfr_niflheim" },
+  kingdom: { ch: "kingdom", num: 3, title: "왕국 기사단 세트", w: "sfw_kingdom", a: "sfa_kingdom", r: "sfr_kingdom" },
+  fairyglade: { ch: "fairyglade", num: 4, title: "정령왕 세트", w: "sfw_fairyglade", a: "sfa_fairyglade", r: "sfr_fairyglade" },
+  emberland: { ch: "emberland", num: 5, title: "화염의 군주 세트", w: "sfw_emberland", a: "sfa_emberland", r: "sfr_emberland" },
+  frostland: { ch: "frostland", num: 6, title: "서리바다 세트", w: "sfw_frostland", a: "sfa_frostland", r: "sfr_frostland" },
   cave: { ch: "cave", num: 7, title: "심연광 세트", w: "sfw_cave", a: "sfa_cave", r: "sfr_cave" },
-  nidavellir: { ch: "nidavellir", num: 8, title: "드워프 장인 세트", w: "sfw_nidavellir", a: "sfa_nidavellir", r: "sfr_nidavellir" },
-  hel: { ch: "hel", num: 9, title: "저승 파수꾼 세트", w: "sfw_hel", a: "sfa_hel", r: "sfr_hel" },
+  forgehall: { ch: "forgehall", num: 8, title: "드워프 장인 세트", w: "sfw_forgehall", a: "sfa_forgehall", r: "sfr_forgehall" },
+  duskrealm: { ch: "duskrealm", num: 9, title: "저승 파수꾼 세트", w: "sfw_duskrealm", a: "sfa_duskrealm", r: "sfr_duskrealm" },
   abyss: { ch: "abyss", num: 10, title: "종언 마룡 세트", w: "sfw_abyss", a: "sfa_abyss", r: "sfr_abyss" },
 };
 
@@ -1578,12 +1578,12 @@ export type SetBonusDef = { atkPct: number; defAdd: number; maxHp: number; critA
 export const SET_BONUS: Record<string, SetBonusDef> = {
   forest: { atkPct: 3, defAdd: 1, maxHp: 40, critAdd: 0 },
   kingdom: { atkPct: 4, defAdd: 2, maxHp: 60, critAdd: 0 },
-  alfheim: { atkPct: 5, defAdd: 2, maxHp: 80, critAdd: 1 },
-  muspelheim: { atkPct: 6, defAdd: 3, maxHp: 100, critAdd: 1 },
-  niflheim: { atkPct: 7, defAdd: 4, maxHp: 120, critAdd: 2 },
+  fairyglade: { atkPct: 5, defAdd: 2, maxHp: 80, critAdd: 1 },
+  emberland: { atkPct: 6, defAdd: 3, maxHp: 100, critAdd: 1 },
+  frostland: { atkPct: 7, defAdd: 4, maxHp: 120, critAdd: 2 },
   cave: { atkPct: 8, defAdd: 4, maxHp: 150, critAdd: 2 },
-  nidavellir: { atkPct: 9, defAdd: 5, maxHp: 180, critAdd: 2 },
-  hel: { atkPct: 10, defAdd: 6, maxHp: 220, critAdd: 3 },
+  forgehall: { atkPct: 9, defAdd: 5, maxHp: 180, critAdd: 2 },
+  duskrealm: { atkPct: 10, defAdd: 6, maxHp: 220, critAdd: 3 },
   abyss: { atkPct: 12, defAdd: 8, maxHp: 300, critAdd: 4 },
 };
 
@@ -1643,13 +1643,13 @@ export function nextCollectionGoal(registered: number): CollectionMilestone | nu
  *  atk 보너스는 챕터가 깊어질수록 커진다(후반 결정이 더 값지다). */
 export const FRAGMENT_META: Record<string, { name: string; color: number; atk: number; lines: string[] }> = {
   forest: { name: "숲의 결정", color: 0x9df0ff, atk: 5, lines: ["촉촉한 초록빛 결정이다. 숲의 숨결이 손안에서 맴돈다.", "잎사귀 문양이 잠시 떠올랐다 사라진다.", "연합의 가지가 스쳤던 흔적이 아직 따뜻하다."] },
-  kingdom: { name: "늪의 진주", color: 0x8fd8ff, atk: 8, lines: ["진주 표면에 늪의 안개가 흘러간다.", "쿠소디아 기사단의 문장이 비쳐 나온다.", "물속에서도 꺼지지 않는 빛이다."] },
-  alfheim: { name: "성전의 빛구슬", color: 0xfff3a8, atk: 11, lines: ["손안에서 종소리 같은 온기가 퍼진다.", "요정들의 노랫소리가 잠깐 들리는 것 같다.", "빛의 결정 — 연합와 가장 가까운 조각."] },
-  muspelheim: { name: "화염의 심핵", color: 0xffa24a, atk: 14, lines: ["극열의 해역에서도 타오르는 심장 같은 결정.", "불티가 튀며 룬 문자가 타오른다.", "이 열기는 연합를 지키는 불꽃이다."] },
-  niflheim: { name: "서리 결정", color: 0xbfe8ff, atk: 17, lines: ["서리꽃이 결정 위에서 피었다 진다.", "극한의 추위도 이 빛을 삼키지 못했다.", "차가운 표면 아래에서 숨결이 뛴다."] },
+  kingdom: { name: "늪의 진주", color: 0x8fd8ff, atk: 8, lines: ["진주 표면에 늪의 안개가 흘러간다.", "왕국 기사단의 문장이 비쳐 나온다.", "물속에서도 꺼지지 않는 빛이다."] },
+  fairyglade: { name: "성전의 빛구슬", color: 0xfff3a8, atk: 11, lines: ["손안에서 종소리 같은 온기가 퍼진다.", "요정들의 노랫소리가 잠깐 들리는 것 같다.", "빛의 결정 — 연합와 가장 가까운 조각."] },
+  emberland: { name: "화염의 심핵", color: 0xffa24a, atk: 14, lines: ["극열의 땅에서도 타오르는 심장 같은 결정.", "불티가 튀며 룬 문자가 타오른다.", "이 열기는 연합를 지키는 불꽃이다."] },
+  frostland: { name: "서리 결정", color: 0xbfe8ff, atk: 17, lines: ["서리꽃이 결정 위에서 피었다 진다.", "극한의 추위도 이 빛을 삼키지 못했다.", "차가운 표면 아래에서 숨결이 뛴다."] },
   cave: { name: "심연 수정", color: 0xc79aff, atk: 20, lines: ["보랏빛이 어둠을 삼키네.", "어둠 요정들의 비밀이 수정 안에 갇혀 있다.", "수정을 비추면 깊은 동굴이 비친다."] },
-  nidavellir: { name: "룬 광석의 눈", color: 0xffd76a, atk: 23, lines: ["룬 문자가 읽힌다 — '연합를 지켜라'.", "난쟁이 장인들의 망치 소리가 울리는 것 같다.", "광맥 깊은 곳에서도 빛을 잃지 않는다."] },
-  hel: { name: "전쟁의 잔광", color: 0xff8f6a, atk: 26, lines: ["수많은 용사들의 기억이 담긴 결정.", "대전쟁의 땅에서도 살아 있었어.", "잔광이 울부짖다 조용해진다."] },
+  forgehall: { name: "룬 광석의 눈", color: 0xffd76a, atk: 23, lines: ["룬 문자가 읽힌다 — '연합를 지켜라'.", "난쟁이 장인들의 망치 소리가 울리는 것 같다.", "광맥 깊은 곳에서도 빛을 잃지 않는다."] },
+  duskrealm: { name: "전쟁의 잔광", color: 0xff8f6a, atk: 26, lines: ["수많은 용사들의 기억이 담긴 결정.", "대전쟁의 땅에서도 살아 있었어.", "잔광이 울부짖다 조용해진다."] },
   abyss: { name: "연합의 눈동자", color: 0x7de8ff, atk: 30, lines: ["마지막 조각 — 연합가 직접 두었던 눈.", "다섯 왕국의 숨결이 손안에서 하나로 울린다.", "종언의 왕좌도 이 빛 앞에서는 조용하다."] },
 };
 
@@ -1664,7 +1664,7 @@ export type DialogueDef = { speaker: string; /** v1.0.2 (#초상화) — portrai
 /* ================= 스토리 대사 (v3.0.10 본게임 세계관 확정판) =================
  *  잠뜰 이전 서사 라인을 본게임 고유 세계관으로 통합·증축:
  *  연합 기록관과 다섯 왕국 — 연합의 가지로 빚은 룬 펜던트 속 정령 안내인,
- *  뿌리에서 깨어난 종언의 마룡 아부디토스, 흩어진 일곱 세계의 결정. */
+ *  뿌리에서 깨어난 종언의 마룡, 흩어진 일곱 세계의 결정. */
 
 export const DIALOGUES: Record<string, DialogueDef> = {
   /* vc251 — 수련 원정 9지역 삭제로 필드 정보 NPC 대사(fieldNpc_*)도 제거했다. */
@@ -1685,38 +1685,38 @@ export const DIALOGUES: Record<string, DialogueDef> = {
   fragment2: { speaker: "연합 안내인", lines: ["원정에서 발견한 결정이야. 수집 보너스는 그대로 유지돼."] },
   fragment_forest: { speaker: "연합 안내인", lines: ["원정에서 발견한 결정이야. 수집 보너스는 그대로 유지돼."] },
   fragment_kingdom: { speaker: "연합 안내인", lines: ["원정에서 발견한 결정이야. 수집 보너스는 그대로 유지돼."] },
-  fragment_alfheim: { speaker: "연합 안내인", lines: ["원정에서 발견한 결정이야. 수집 보너스는 그대로 유지돼."] },
-  fragment_muspelheim: { speaker: "연합 안내인", lines: ["원정에서 발견한 결정이야. 수집 보너스는 그대로 유지돼."] },
-  fragment_niflheim: { speaker: "연합 안내인", lines: ["원정에서 발견한 결정이야. 수집 보너스는 그대로 유지돼."] },
+  fragment_fairyglade: { speaker: "연합 안내인", lines: ["원정에서 발견한 결정이야. 수집 보너스는 그대로 유지돼."] },
+  fragment_emberland: { speaker: "연합 안내인", lines: ["원정에서 발견한 결정이야. 수집 보너스는 그대로 유지돼."] },
+  fragment_frostland: { speaker: "연합 안내인", lines: ["원정에서 발견한 결정이야. 수집 보너스는 그대로 유지돼."] },
   fragment_cave: { speaker: "연합 안내인", lines: ["원정에서 발견한 결정이야. 수집 보너스는 그대로 유지돼."] },
-  fragment_nidavellir: { speaker: "연합 안내인", lines: ["원정에서 발견한 결정이야. 수집 보너스는 그대로 유지돼."] },
-  fragment_hel: { speaker: "연합 안내인", lines: ["원정에서 발견한 결정이야. 수집 보너스는 그대로 유지돼."] },
+  fragment_forgehall: { speaker: "연합 안내인", lines: ["원정에서 발견한 결정이야. 수집 보너스는 그대로 유지돼."] },
+  fragment_duskrealm: { speaker: "연합 안내인", lines: ["원정에서 발견한 결정이야. 수집 보너스는 그대로 유지돼."] },
   fragment_abyss: { speaker: "연합 안내인", lines: ["원정에서 발견한 결정이야. 수집 보너스는 그대로 유지돼."] },
   worldtreeBlessing: { speaker: "연합 안내인", lines: ["원정 결정 수집 보너스를 얻었다. 공격력·방어력·체력 보너스가 영구 적용된다."] },
   kingdomDone: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
   guardianDone: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
-  muspelIntro: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
+  emberlandIntro: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
   spiritPurgeDone: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
-  bossIntroSurt: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
-  surtDone: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
-  niflIntro: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
+  bossIntroFlamegiant: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
+  flamegiantDone: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
+  frostlandIntro: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
   frostRoutDone: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
-  bossIntroFenrir: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
-  fenrirDone: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
+  bossIntroGreedwolf: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
+  greedwolfDone: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
   caveIntro: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
   spiderDone: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
   caveDone: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
-  nidavellirIntro: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
+  forgehallIntro: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
   runePurgeDone: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
-  bossIntroSkoll: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
-  skollDone: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
-  helIntro: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
+  bossIntroTwinwolf: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
+  twinwolfDone: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
+  duskrealmIntro: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
   houndPurgeDone: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
-  bossIntroGram: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
-  gramDone: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
+  bossIntroWarden: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
+  wardenDone: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
   abyssIntro: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
   wraithDone: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
-  bossIntroAbudditos: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
+  bossIntroDoomwyrm: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
   victory: { speaker: "연합 안내인", lines: ["도전을 마쳤다. 이 승리는 원정 기록으로 남는다."] },
   bossIntroGuardian: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
   bossIntroBehemoth: { speaker: "연합 안내인", lines: ["이곳은 연합의 선택 수련 원정이다. 본편 이야기의 선행 조건이 아니다.","장비와 물약을 점검하고 공격 예고 뒤의 빈틈을 노리자."] },
@@ -1765,7 +1765,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
   },
   /* v1.4.41 — 챕터 진입 컷씬 대사 19종.
    *  StoryCutscene 이 카메라 연출을 재생할 때 이 키로 대사를 띄운다.
-   *  화자는 챕터별 안내자(대부분 안내인 계열) — 세계관: 라일락 · 다섯 왕국 · 하울르스톤. */
+   *  화자는 챕터별 안내자(대부분 안내인 계열) — 세계관: 라일락 · 다섯 왕국 · 영프. */
   chapterIntro_dlcstargate: {
     speaker: "별길 항해사",
     lines: [
@@ -1848,13 +1848,13 @@ export const DIALOGUES: Record<string, DialogueDef> = {
   },
 
   /* ══════════════════════════════════════════════════════════════════════════
-   * vc231 — 영프 편(하울르스톤: 영준 프린세스) 챕터 인트로 5종
+   * vc231 — 영프 편(영준 프린세스) 챕터 인트로 5종
    *  기획서 1기 15화 원문. 화자(스칼렛·아리·루시·도사)의 실제 대사는 원문 문장을 그대로 쓴다.
    * ══════════════════════════════════════════════════════════════════════════ */
   /* ── 1장: 절벽의 약속 — 정본 1.txt:4-34 (하루 · 라일락 · 펜던트) ──
    *  vc286 — 종전 문구는 5.txt의 스칼렛+책 버전이었다. 정본 규칙(충돌 시 1.txt 우선)에 맞춰
    *  하루의 절벽 사건과 라일락의 펜던트로 교체. 화자는 두 사람의 대화를 기록하는 기록자. */
-  chapterIntroHowlrstone1: {
+  chapterIntroLilacworld1: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "「태어난 곳도, 부모도, 살아갈 이유도 모르는 고아, 하루. 이웃집 부부가 그를 길렀기에 귀족가 아이들의 놀림거리가 되기 일쑤였습니다.」",
@@ -1864,7 +1864,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     ],
   },
   /* ── 2장: 떠나야 할 이유 — 정본 1.txt:44-98 (기사단 · 지하 감옥의 검 · 사념체 · 마을 습격) ── */
-  chapterIntroHowlrstone2: {
+  chapterIntroLilacworld2: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "「몇 년 뒤 열일곱이 된 하루는 기사단 입단 시험을 치렀고, 그곳에서 디오와 다시 마주쳤습니다.」",
@@ -1874,7 +1874,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     ],
   },
   /* ── 3장: 칼리야의 수련 — 정본 2.txt:35-45 (도깨비 · 도사 리엘 · 카피와 순환) ── */
-  chapterIntroHowlrstone3: {
+  chapterIntroLilacworld3: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "「에델리오나를 떠난 하루는 칼리야까지 걸어가 탈진한 채 언덕에 쓰러졌습니다. 도깨비들이 그를 약탈하려 했습니다.」",
@@ -1884,7 +1884,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     ],
   },
   /* ── 4장: 벨리카와 에벤트 — 정본 2.txt:46-61 (아리 구조 · 리안 · 일섬 · 원소 수련) ── */
-  chapterIntroHowlrstone4: {
+  chapterIntroLilacworld4: {
     speaker: "에벤트왕국 근위대장 아리스텔라",
     lines: [
       "\"여긴 에벤트왕국입니다. 제 소개를 깜빡했군요, 저는 근위대장 '아리스텔라 데스티니'라고 합니다.\"",
@@ -1894,7 +1894,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
     ],
   },
   /* ── 5장: 남부의 해전 — 정본 2.txt:59-71 (3일 뒤 침공 · 벨리카의 번개 · 일섬 각성) ── */
-  chapterIntroHowlrstone5: {
+  chapterIntroLilacworld5: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "「스칼렛이 각 왕국에 사흘 뒤 남부를 침공하겠다 선포했습니다. 연합은 방어가 아니라 결전을 택했습니다.」",
@@ -1906,7 +1906,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
   /* vc235 — 15챕터 인트로 (원문 1기 15화, 1화=1챕터).
    *  기존 5개(3화씩 묶음)를 화 단위로 재작성했다. 원문에 없는 설정은 만들지 않고,
    *  각 화의 실제 장면(왕립도서관·에스테반·상어전함·에벤트·연합·초월자… )만 쓴다. */
-  chapterIntroHowlrstone6: {
+  chapterIntroLilacworld6: {
     speaker: "생명의 초월자 루시페르",
     lines: [
       "「…여기까지 왔구나. 라일락 월드의 사정은 이제 알겠지.」",
@@ -1915,7 +1915,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
       "{name}, 초월자가 직접 모습을 드러냈다. 남은 시간이 얼마 없다는 뜻이다.",
     ],
   },
-  chapterIntroHowlrstone7: {
+  chapterIntroLilacworld7: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "「군단장들이 한꺼번에 움직였습니다. 해롤드, 베로니카, 딘 — 셋이 동시에요.」",
@@ -1924,7 +1924,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
       "{name}, 군단장 전선을 뚫어야 어둠의 성채로 갈 수 있다.",
     ],
   },
-  chapterIntroHowlrstone8: {
+  chapterIntroLilacworld8: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "「페르온 — 원래 에벤트왕국의 기사단장이었습니다. 다크엑스칼리버를 들고 돌아섰습니다.」",
@@ -1933,7 +1933,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
       "{name}, 어느 쪽도 쉽게 물러서지 않는다.",
     ],
   },
-  chapterIntroHowlrstone9: {
+  chapterIntroLilacworld9: {
     speaker: "라일락",
     lines: [
       "「…내 꽃말은 '추억'이야. 이름을 부르는 사람마다 추억이 되라고 지어준 이름.」",
@@ -1942,7 +1942,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
       "{name}, 라일락이 희생했다. 페르온이 그 뜻을 이어받아 합류한다.",
     ],
   },
-  chapterIntroHowlrstone10: {
+  chapterIntroLilacworld10: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "「어둠의 성채입니다. 스칼렛이 셀 수 없을 만큼 군대를 만들어냈습니다.」",
@@ -1951,7 +1951,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
       "{name}, 네 개의 문을 전부 지나야 성채 안으로 들어갈 수 있다.",
     ],
   },
-  chapterIntroHowlrstone11: {
+  chapterIntroLilacworld11: {
     speaker: "빛의 아이온",
     lines: [
       "「…왔구나. 나는 빛의 아이온. 저것은 어둠의 알다바오트.」",
@@ -1960,7 +1960,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
       "{name}, 왕좌에 가까울수록 보석의 힘이 강해진다. 조심하라.",
     ],
   },
-  chapterIntroHowlrstone12: {
+  chapterIntroLilacworld12: {
     speaker: "제르와 란",
     lines: [
       "「여기부터는 우리가 지킨다. 장벽을 치겠다.」",
@@ -1969,7 +1969,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
       "{name}, 남은 사람이 여섯이다. 그래도 아직 끝난 것이 아니다.",
     ],
   },
-  chapterIntroHowlrstone13: {
+  chapterIntroLilacworld13: {
     speaker: "태양의 표식",
     lines: [
       "「보석이 깨졌다. 그 파편이 검에 새겨졌다 — 이것이 태양의 표식이다.」",
@@ -1978,7 +1978,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
       "{name}, 지금이 최후의 일격이다.",
     ],
   },
-  chapterIntroHowlrstone14: {
+  chapterIntroLilacworld14: {
     speaker: "시간의 초월자",
     lines: [
       "「스칼렛이 어둠의 완전체가 됐다. 라일락 월드의 반이 빨려 들어가고 있다.」",
@@ -1987,7 +1987,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
       "{name}, THE END TIME — 이 싸움이 모든 것의 끝이다.",
     ],
   },
-  chapterIntroHowlrstone15: {
+  chapterIntroLilacworld15: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "「세계가 되돌아왔습니다. 하지만 보석의 힘과 시간, 추억은 완전히 리셋되지 않았습니다.」",
@@ -1998,7 +1998,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
   },
 
   /* ══════════════════════════════════════════════════════════════════════════
-   * vc231 — 영프 편 보스 인트로 5종 (HOWLRSTONE_BOSSES.introDialogue)
+   * vc231 — 영프 편 보스 인트로 5종 (LILACWORLD_BOSSES.introDialogue)
    * ══════════════════════════════════════════════════════════════════════════ */
   bossIntroHarold: {
     speaker: "바다의 군단장 해롤드",
@@ -2045,9 +2045,9 @@ export const DIALOGUES: Record<string, DialogueDef> = {
       "하지만 — 시간의 초월자가 모든 사람의 염원을 총알에 담아 정확하게 헤드샷을 하였다.",
     ],
   },
-  /* vc231 — 영프 편 엔딩 (HOWLRSTONE_FINAL 격파 후 1회).
+  /* vc231 — 영프 편 엔딩 (LILACWORLD_FINAL 격파 후 1회).
    *  원문 15화 "New Binginning Not the End" 마지막 문단을 그대로 쓴다. */
-  howlrstoneEnding: {
+  lilacworldEnding: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "스칼렛이 파괴한 모든 것들이 돌아왔다. 하지만 완전히 리셋되지 않은 것들도 있었다 —",
@@ -2128,99 +2128,99 @@ const WALK_AMBIENT: Record<ChapterKey, string[]> = {
     "이 바다를 건너면 신의도시 세르니움이다. 고향이 코앞이야.",
   ],
   /* vc251 — 수련 원정 9지역 삭제. 해당 지역 워크라인 대사도 함께 제거했다. */
-  /* vc231/vc235 — 영프 편(하울르스톤) 15챕터. 원문 1기 15화의 화별 장면에 맞춘다.
+  /* vc231/vc235 — 영프 편(영프) 15챕터. 원문 1기 15화의 화별 장면에 맞춘다.
    *  본편의 연합·안내인 톤과 구분되도록 "라일락 월드"라는 다른 세계를 의식한 대사로 쓴다.
    *  vc235: 5챕터 → 15챕터(1화=1챕터)로 나누면서 각 화의 실제 장면에 맞춰 분배했다. */
-  howlrstone1: [
+  lilacworld1: [
     "여기가 라일락 월드야. 연합가 아니라… 다섯 왕국이 보석 하나 때문에 싸우는 곳.",
     "왕립도서관에서 책 한 권이 머리 위로 툭 떨어졌다더니, 그게 전쟁의 시작이었어.",
     "'웨폰마스터를 위한 정리서' — 세 가지 경우가 적혀 있대. 읽어볼 만하지.",
     "스칼렛이 왕조를 탈환했어. 좋은 쪽으로 움직이면 좋겠는데.",
   ],
-  howlrstone2: [
+  lilacworld2: [
     "에스테반 왕국의 아덴하르 총리 — 말은 정중한데 눈은 전혀 웃지 않아.",
     "에벤트왕국에서 서신이 왔대. '석양이 바다를 집어 삼키는 꿈'… 좋은 예감이 아니야.",
     "'순력, 혼력, 초력' — 이 세계의 힘은 태어날 때 정해지는 게 아니래.",
     "어둠이 커지고 있어. 책 한 권으로 시작된 일이 아니라, 훨씬 전부터.",
   ],
-  howlrstone3: [
+  lilacworld3: [
     "상어전함이야. 저게 바다의 군단장 해롤드의 배라고.",
     "해적선이 보여. 저게 해롤드… 크라켄으로 변한다고 했어.",
     "전쟁이 시작됐어. 이제 돌아갈 길은 없어.",
     "{name}, 여기선 우리가 이방인이야. 그래도 할 일은 똑같아 — 사람을 지키는 것.",
     "크라켄의 먹물 — 바다가 통째로 검게 물들어.",
   ],
-  howlrstone4: [
+  lilacworld4: [
     "에벤트왕국이야. 석양이 바다를 물들이고 있어.",
     "아리스텔라 근위대장 — 다들 아리라고 불러. 부상자를 돌보고 있었어.",
     "에벤트이안 왕자 리안이 직접 나왔어.",
     "두 왕국이 손을 잡으려면 서로 사과해야 하는데… 쉽지 않겠어.",
   ],
-  howlrstone5: [
+  lilacworld5: [
     "도깨비가 길을 막았어. 부채 소리와 함께 분신이 나타나 쓸어버렸어 — 도사래.",
     "조선시대 왕국의 영주 카시엘로아, 다들 시엘이라고 불러.",
     "통신석과 이동석을 놓고 연합을 맺었어.",
     "라일락 연합이 만들어졌어. 다섯 왕국이 처음으로 같은 편이 됐어.",
   ],
-  howlrstone6: [
+  lilacworld6: [
     "생명의 초월자 루시가 왔어. 초월자가 직접 움직인다는 건… 상황이 그만큼 나쁘다는 뜻이야.",
     "루시는 인피니트보석의 자아래. 보석이 스스로 사람의 모습을 한 거야.",
     "보석을 노리는 건 스칼렛만이 아니야. 다들 저걸 가지려고 해.",
     "어둠의 왕좌가 도래하기까지 — 남은 시간이 얼마 없어.",
   ],
-  howlrstone7: [
+  lilacworld7: [
     "엔젤릭 영프와 거대한 골렘 — 근위대장이 혼자 버티고 있었어.",
     "리안의 차크람과 이현의 도술. '3분뒤에 보시죠'라니, 참 멋있는 말이야.",
     "군단장들이 한꺼번에 움직였어. 해롤드, 베로니카, 딘.",
     "베로니카는 주술사, 딘은 흑마법사 — 둘이 붙으면 골치 아파.",
     "{name}, 이번엔 물러설 곳도 없어.",
   ],
-  howlrstone8: [
+  lilacworld8: [
     "두 검이 맞댈 때마다 천둥이 쳐. 솔라플래임이그니션소드와 다크엑스칼리버…",
     "페르온은 원래 에벤트왕국의 기사단장이었대.",
     "사랑하던 사람을 낙석에 잃었다고 해. 그래서 저 검을 들었어.",
     "아리와 페르온 — 두 전사의 격전이야.",
     "누가 이기든, 우리가 지켜야 할 건 저 뒤에 있어.",
   ],
-  howlrstone9: [
+  lilacworld9: [
     "라일락 — 꽃말이 '추억'이래.",
     "이름을 부르는 사람마다 추억이 되라고 지어준 이름이야.",
     "라일락이 희생했어. 우리를 살리려고.",
     "과거의 향기는 라일락 꽃밭보다 진하다… 이제 그 말의 무게를 알 것 같아.",
   ],
-  howlrstone10: [
+  lilacworld10: [
     "어둠의 성채야. 스칼렛이 셀 수 없을 만큼 군대를 만들어냈어.",
     "4개의 문 — 물, 바람, 번개, 불. 각 문에 스칼렛의 환영이 하나씩 있어.",
     "스칼렛의 환영 — 본체가 아니야. 그런데도 이 정도라니.",
     "람과 루시가 그림 열기구를 만들었어. 길이 끊겼으니 하늘로 가는 수밖에.",
     "{name}, 문을 전부 지나야 성채 안으로 들어갈 수 있어.",
   ],
-  howlrstone11: [
+  lilacworld11: [
     "어둠의 왕좌가 보여. 저 위에 뭔가 있어.",
     "빛의 아이온과 어둠의 알다바오트 — 보석이 형체를 가진 존재들이야.",
     "둘이 서로를 견제하고 있어. 우리가 끼어들 틈이 있을지도.",
     "왕좌에 가까울수록 보석의 힘이 강해져.",
   ],
-  howlrstone12: [
+  lilacworld12: [
     "저주 표식에 걸린 사람이 늘고 있어. 베로니카, 시엘, 딘까지…",
     "제르와 란이 장벽을 쳤어. 통과하려면 뭔가 내줘야 해.",
     "운명 — 정해진 건 없다고 믿고 싶어.",
     "{name}, 남은 사람이 여섯이야. 그래도 — 아직 끝난 거 아니야.",
   ],
-  howlrstone13: [
+  lilacworld13: [
     "어둠의 왕좌야. 스칼렛이 피와 어둠의 의식을 하고 있어.",
     "보석이 깨지면서 태양의 표식이 검에 새겨졌어.",
     "라일락 월드의 염원이 전부 저 검에 담겼어.",
     "최후의 일격 — 이번이 마지막이야.",
   ],
-  howlrstone14: [
+  lilacworld14: [
     "스칼렛이 어둠의 완전체가 됐어. 라일락 월드의 반이 빨려 들어가고 있어.",
     "도사가 부채를 던졌더니 총이 되고, 검이 되고…",
     "시간의 초월자가 나타났어. 이게 THE END TIME.",
     "시간이 멈추는 게 보여. 우리가 붙잡을 수 있는 건 한순간뿐이야.",
     "스칼렛을 넘어뜨려야 해. 지금 아니면 기회는 없어.",
   ],
-  howlrstone15: [
+  lilacworld15: [
     "세계가 되돌아왔어. 하지만 보석의 힘과 시간과 추억은 완전히 리셋되지 않았어.",
     "영프왕국은 스칼렛왕국과 거의 통합됐고, 에스텔라왕국은 재건 중이야.",
     "라일락 연합의 탄생 — 다섯 왕국이 처음으로 하나가 됐어.",
@@ -2264,22 +2264,22 @@ for (const spec of CHAPTERS) {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
- * vc231 — 영프 편(하울르스톤) 구역 안내/정예 경고/보스 접근 대사 자동 생성.
+ * vc231 — 영프 편(영프) 구역 안내/정예 경고/보스 접근 대사 자동 생성.
  *
  * 본편과 같은 구조를 쓰되 화자를 "라일락 연합의 기록자"로 둔다 —
  * 영프 편의 주인공은 원문의 리안·아리·루시 등이고, 플레이어({name})는 연합의 일원으로
  * 참전한 위치이기 때문. 본편의 연합 안내인는 이 세계(라일락 월드)에 존재하지 않는다.
  * ══════════════════════════════════════════════════════════════════════════ */
-for (const hw of HOWLRSTONE_CHAPTERS) {
+for (const hw of LILACWORLD_CHAPTERS) {
   const n = hw.key.slice(-1);
   const lines = WALK_AMBIENT[hw.key];
   for (let i = 0; i < 3; i++) {
-    DIALOGUES[`howlWalk${n}_${i + 1}`] = {
+    DIALOGUES[`lwWalk${n}_${i + 1}`] = {
       speaker: "라일락 연합의 기록자",
       lines: [lines[i]],
     };
   }
-  DIALOGUES[`howlEliteWarn${n}`] = {
+  DIALOGUES[`lwEliteWarn${n}`] = {
     speaker: "라일락 연합의 기록자",
     lines: [
       "{name}, 잠깐. 이 구역의 기운이 다르다 — 군단장의 눈이 닿은 것 같아.",
@@ -2287,7 +2287,7 @@ for (const hw of HOWLRSTONE_CHAPTERS) {
       "물약을 챙기고, 상대의 공격 패턴을 봐가며 싸우자!",
     ],
   };
-  DIALOGUES[`howlBossApproach${n}`] = {
+  DIALOGUES[`lwBossApproach${n}`] = {
     speaker: "라일락 연합의 기록자",
     lines: [
       `${hw.episodes}의 끝 — ${hw.title}의 왕좌가 눈앞이다.`,
@@ -2303,7 +2303,7 @@ for (const hw of HOWLRSTONE_CHAPTERS) {
 DIALOGUES["rebirthWalk1"] = {
   speaker: "연합 안내인",
   lines: [
-    "심층 수련장 너머… 죽은 땅이 다시 숨을 쉬기 시작했어. 여긴 '재림의 땅'.",
+    "균열 너머… 죽은 땅이 다시 숨을 쉬기 시작했어. 여긴 '재림의 땅'.",
     "심연이 완전히 죽진 않았어. 재림한 어둠이 예전보다 훨씬 짙게 번지고 있어.",
     "{name}, 여긴 제10장보다 훨씬 위험해. 장비 점검 확실히 하고 가자!",
   ],
@@ -2407,9 +2407,9 @@ function jobStory(family: FamilyKey, tier: 1 | 2 | 3 | 4): JobStoryDef {
       id: "s1",
       type: "hunt",
       title: tier === 1 ? "[전직 스토리] 첫 수련" : tier === 2 ? "[전직 스토리] 무장 훈련" : tier === 3 ? "[전직 스토리] 정예 사냥" : "[전직 스토리] 초월의 수련",
-      desc: `지금 머무는 해역의 몬스터 ${stepBase}마리를 처치하고 실전 감각을 되찾자.`,
+      desc: `지금 머무는 지역의 몬스터 ${stepBase}마리를 처치하고 실전 감각을 되찾자.`,
       need: stepBase,
-      targetLabel: "지금 해역의 몬스터",
+      targetLabel: "지금 지역의 몬스터",
       dialogue: `js${family}${tier}Step1`,
       reward: 120 + tier * 40,
       expReward: 200 + tier * 120,
@@ -2434,7 +2434,7 @@ function jobStory(family: FamilyKey, tier: 1 | 2 | 3 | 4): JobStoryDef {
       title: tier >= 4 ? "[전직 스토리] 초월 적응" : "[전직 스토리] 전장 적응",
       desc: `더 강해진 몸을 확인하자 — 몬스터 ${huntMid}마리를 처치하자.`,
       need: huntMid,
-      targetLabel: "지금 해역의 몬스터",
+      targetLabel: "지금 지역의 몬스터",
       dialogue: `js${family}${tier}Step1`,
       reward: 200 + tier * 60,
       expReward: 320 + tier * 180,
@@ -2741,25 +2741,25 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
     npcA: { name: "선원 롤프", tex: "spum_villager_m", dlg: "vlgKingdomA" },
     npcB: { name: "늪지 어부 팰", tex: "spum_fisher", dlg: "vlgKingdomB" },
   },
-  alfheim: {
+  fairyglade: {
     houseTint: 0xc2aef8,
     signColor: "#d8c8ff",
-    npcA: { name: "요정 사절 리안", tex: "spum_elf", dlg: "vlgAlfheimA" },
-    npcB: { name: "성전 견습 기사", tex: "spum_knight", dlg: "vlgAlfheimB" },
+    npcA: { name: "요정 사절 리안", tex: "spum_elf", dlg: "vlgFairygladeA" },
+    npcB: { name: "성전 견습 기사", tex: "spum_knight", dlg: "vlgFairygladeB" },
   },
-  muspelheim: {
+  emberland: {
     houseTint: 0xffa878,
     signColor: "#ffb080",
-    /* v3.0.28 (#NPC대화) — dlg 키가 VLG 등록 규칙(vlg{챕터명}A/B)과 어긋나 무스펠헤임부터
-     *  주민 대화가 표시되지 않던 버그 수정 (vlgMuspelA → vlgMuspelheimA) */
-    npcA: { name: "대장장이 브라키", tex: "spum_smith", dlg: "vlgMuspelheimA" },
-    npcB: { name: "용암 광부 코일", tex: "spum_miner", dlg: "vlgMuspelheimB" },
+    /* v3.0.28 (#NPC대화) — dlg 키가 VLG 등록 규칙(vlg{챕터명}A/B)과 어긋나 화산부터
+     *  주민 대화가 표시되지 않던 버그 수정 (vlgEmberlandA → vlgEmberlandA) */
+    npcA: { name: "대장장이 브라키", tex: "spum_smith", dlg: "vlgEmberlandA" },
+    npcB: { name: "용암 광부 코일", tex: "spum_miner", dlg: "vlgEmberlandB" },
   },
-  niflheim: {
+  frostland: {
     houseTint: 0x9cccff,
     signColor: "#a8e0ff",
-    npcA: { name: "얼음 낚시꾼 시그룬", tex: "spum_villager_f", dlg: "vlgNiflheimA" },
-    npcB: { name: "눈보라 정찰병", tex: "spum_scout", dlg: "vlgNiflheimB" },
+    npcA: { name: "얼음 낚시꾼 시그룬", tex: "spum_villager_f", dlg: "vlgFrostlandA" },
+    npcB: { name: "눈보라 정찰병", tex: "spum_scout", dlg: "vlgFrostlandB" },
   },
   cave: {
     houseTint: 0xb09ccc,
@@ -2767,17 +2767,17 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
     npcA: { name: "수정 채굴자 그밀", tex: "spum_mystic", dlg: "vlgCaveA" },
     npcB: { name: "어둠 요정 피난민", tex: "spum_devil", dlg: "vlgCaveB" },
   },
-  nidavellir: {
+  forgehall: {
     houseTint: 0xe8c474,
     signColor: "#ffd76a",
-    npcA: { name: "룬 대장장이 두린", tex: "spum_smith", dlg: "vlgNidavellirA" },
-    npcB: { name: "광산 감독관", tex: "spum_knight", dlg: "vlgNidavellirB" },
+    npcA: { name: "룬 대장장이 두린", tex: "spum_smith", dlg: "vlgForgehallA" },
+    npcB: { name: "광산 감독관", tex: "spum_knight", dlg: "vlgForgehallB" },
   },
-  hel: {
+  duskrealm: {
     houseTint: 0xc89ae8,
     signColor: "#d0a8ff",
-    npcA: { name: "전쟁 유령 아르벨", tex: "spum_skel", dlg: "vlgHelA" },
-    npcB: { name: "저택 집사 무르", tex: "spum_butler", dlg: "vlgHelB" },
+    npcA: { name: "전쟁 유령 아르벨", tex: "spum_skel", dlg: "vlgDuskrealmA" },
+    npcB: { name: "저택 집사 무르", tex: "spum_butler", dlg: "vlgDuskrealmB" },
   },
   abyss: {
     houseTint: 0x9a8ade,
@@ -2863,12 +2863,12 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
   const VLG: Record<string, { a: { sp: string; lines: string[] }; b: { sp: string; lines: string[] } }> = {
     forest: {"a":{"sp":"연합 원정 안내원","lines":["이곳은 본편과 분리된 선택 수련 원정이야.","입구의 귀환문으로 거점에 돌아갈 수 있어.","장비와 스킬을 시험하고 필요할 때 쉬어 가자."]},"b":{"sp":"연합 보급 담당","lines":["장비·전직·강화 기능은 계속 이용할 수 있어.","원정 완료는 본편 이야기의 입장 조건이 아니야."]}},
     kingdom: {"a":{"sp":"연합 원정 안내원","lines":["이곳은 본편과 분리된 선택 수련 원정이야.","입구의 귀환문으로 거점에 돌아갈 수 있어.","장비와 스킬을 시험하고 필요할 때 쉬어 가자."]},"b":{"sp":"연합 보급 담당","lines":["장비·전직·강화 기능은 계속 이용할 수 있어.","원정 완료는 본편 이야기의 입장 조건이 아니야."]}},
-    alfheim: {"a":{"sp":"연합 원정 안내원","lines":["이곳은 본편과 분리된 선택 수련 원정이야.","입구의 귀환문으로 거점에 돌아갈 수 있어.","장비와 스킬을 시험하고 필요할 때 쉬어 가자."]},"b":{"sp":"연합 보급 담당","lines":["장비·전직·강화 기능은 계속 이용할 수 있어.","원정 완료는 본편 이야기의 입장 조건이 아니야."]}},
-    muspelheim: {"a":{"sp":"연합 원정 안내원","lines":["이곳은 본편과 분리된 선택 수련 원정이야.","입구의 귀환문으로 거점에 돌아갈 수 있어.","장비와 스킬을 시험하고 필요할 때 쉬어 가자."]},"b":{"sp":"연합 보급 담당","lines":["장비·전직·강화 기능은 계속 이용할 수 있어.","원정 완료는 본편 이야기의 입장 조건이 아니야."]}},
-    niflheim: {"a":{"sp":"연합 원정 안내원","lines":["이곳은 본편과 분리된 선택 수련 원정이야.","입구의 귀환문으로 거점에 돌아갈 수 있어.","장비와 스킬을 시험하고 필요할 때 쉬어 가자."]},"b":{"sp":"연합 보급 담당","lines":["장비·전직·강화 기능은 계속 이용할 수 있어.","원정 완료는 본편 이야기의 입장 조건이 아니야."]}},
+    fairyglade: {"a":{"sp":"연합 원정 안내원","lines":["이곳은 본편과 분리된 선택 수련 원정이야.","입구의 귀환문으로 거점에 돌아갈 수 있어.","장비와 스킬을 시험하고 필요할 때 쉬어 가자."]},"b":{"sp":"연합 보급 담당","lines":["장비·전직·강화 기능은 계속 이용할 수 있어.","원정 완료는 본편 이야기의 입장 조건이 아니야."]}},
+    emberland: {"a":{"sp":"연합 원정 안내원","lines":["이곳은 본편과 분리된 선택 수련 원정이야.","입구의 귀환문으로 거점에 돌아갈 수 있어.","장비와 스킬을 시험하고 필요할 때 쉬어 가자."]},"b":{"sp":"연합 보급 담당","lines":["장비·전직·강화 기능은 계속 이용할 수 있어.","원정 완료는 본편 이야기의 입장 조건이 아니야."]}},
+    frostland: {"a":{"sp":"연합 원정 안내원","lines":["이곳은 본편과 분리된 선택 수련 원정이야.","입구의 귀환문으로 거점에 돌아갈 수 있어.","장비와 스킬을 시험하고 필요할 때 쉬어 가자."]},"b":{"sp":"연합 보급 담당","lines":["장비·전직·강화 기능은 계속 이용할 수 있어.","원정 완료는 본편 이야기의 입장 조건이 아니야."]}},
     cave: {"a":{"sp":"연합 원정 안내원","lines":["이곳은 본편과 분리된 선택 수련 원정이야.","입구의 귀환문으로 거점에 돌아갈 수 있어.","장비와 스킬을 시험하고 필요할 때 쉬어 가자."]},"b":{"sp":"연합 보급 담당","lines":["장비·전직·강화 기능은 계속 이용할 수 있어.","원정 완료는 본편 이야기의 입장 조건이 아니야."]}},
-    nidavellir: {"a":{"sp":"연합 원정 안내원","lines":["이곳은 본편과 분리된 선택 수련 원정이야.","입구의 귀환문으로 거점에 돌아갈 수 있어.","장비와 스킬을 시험하고 필요할 때 쉬어 가자."]},"b":{"sp":"연합 보급 담당","lines":["장비·전직·강화 기능은 계속 이용할 수 있어.","원정 완료는 본편 이야기의 입장 조건이 아니야."]}},
-    hel: {"a":{"sp":"연합 원정 안내원","lines":["이곳은 본편과 분리된 선택 수련 원정이야.","입구의 귀환문으로 거점에 돌아갈 수 있어.","장비와 스킬을 시험하고 필요할 때 쉬어 가자."]},"b":{"sp":"연합 보급 담당","lines":["장비·전직·강화 기능은 계속 이용할 수 있어.","원정 완료는 본편 이야기의 입장 조건이 아니야."]}},
+    forgehall: {"a":{"sp":"연합 원정 안내원","lines":["이곳은 본편과 분리된 선택 수련 원정이야.","입구의 귀환문으로 거점에 돌아갈 수 있어.","장비와 스킬을 시험하고 필요할 때 쉬어 가자."]},"b":{"sp":"연합 보급 담당","lines":["장비·전직·강화 기능은 계속 이용할 수 있어.","원정 완료는 본편 이야기의 입장 조건이 아니야."]}},
+    duskrealm: {"a":{"sp":"연합 원정 안내원","lines":["이곳은 본편과 분리된 선택 수련 원정이야.","입구의 귀환문으로 거점에 돌아갈 수 있어.","장비와 스킬을 시험하고 필요할 때 쉬어 가자."]},"b":{"sp":"연합 보급 담당","lines":["장비·전직·강화 기능은 계속 이용할 수 있어.","원정 완료는 본편 이야기의 입장 조건이 아니야."]}},
     abyss: {"a":{"sp":"연합 원정 안내원","lines":["이곳은 본편과 분리된 선택 수련 원정이야.","입구의 귀환문으로 거점에 돌아갈 수 있어.","장비와 스킬을 시험하고 필요할 때 쉬어 가자."]},"b":{"sp":"연합 보급 담당","lines":["장비·전직·강화 기능은 계속 이용할 수 있어.","원정 완료는 본편 이야기의 입장 조건이 아니야."]}},
 
     /* ══════════════════════════════════════════════════════════════════════
@@ -3002,8 +3002,8 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
     }
   }
 
-/* ===== vc239 — 영프편 비트 대사 (howlrstone.ts 가 참조하는 22키) =====
- *  [왜 필요했나] `howlrstone.ts` 의 beats[].dialogue 가 `howlBook`·`howlWar`·`howlLilac`
+/* ===== vc239 — 영프편 비트 대사 (lilacworld.ts 가 참조하는 22키) =====
+ *  [왜 필요했나] `lilacworld.ts` 의 beats[].dialogue 가 `lwBook`·`lwWar`·`lwLilac`
  *  같은 키를 참조하는데 DIALOGUES 에 하나도 없었다. `showDialogueOnce` 는 없는 키에
  *  조용히 false 를 돌려주므로 **1기 15장 비트 대사가 한 번도 재생되지 않았다**
  *  (브라우저 검증에서 확인). 챕터 인트로·보스 인트로는 정상이었으므로 비트만 비어 있었다.
@@ -3013,7 +3013,7 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
  *  구조자는 라일락(+펜던트), 주인공은 하루다. 2기 결말은 창작하지 않는다. */
 const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
   /* ── 1장: 절벽 · 펜던트 · 지하 감옥의 검 (1화) ── */
-  howlBook: {
+  lwBook: {
     speaker: "라일락",
     lines: [
       "\"세상에는 세 가지 사람이 있어. 누군가를 죽이는 사람과 두려움에 도망치는 사람, 그리고 그 죽음에서 누군가를 살리는 사람.\"",
@@ -3021,7 +3021,7 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
       "그녀는 자신의 펜던트를 건네며 말했다. \"이 펜던트가 너를 지켜 줄 거야. 기사단에 정식으로 들어와서 돌려줘.\"",
     ],
   },
-  howlLetter: {
+  lwLetter: {
     speaker: "하루",
     lines: [
       "펜던트가 강해지는 쪽으로 나아가니 지하로 가는 나선 계단이 보였다.",
@@ -3031,7 +3031,7 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
     ],
   },
   /* ── 3장: 칼리야 · 도사 리엘 (2.txt:35-45) ── */
-  howlRiel: {
+  lwRiel: {
     speaker: "리엘",
     lines: [
       "\"그 검… 어디서 얻었지? 아무나 들 수 있는 검이 아닌데.\"",
@@ -3040,7 +3040,7 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
     ],
   },
   /* ── 2장: 기사단 · 지하 감옥의 검 · 사념체 (1.txt:44-98) ── */
-  howlWar: {
+  lwWar: {
     speaker: "리처드",
     lines: [
       "\"그 검은 일반적인 검이 아니야. 아주 오래전부터 에델리오나의 왕가가 대대로 지켜온 검이라네.\"",
@@ -3049,7 +3049,7 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
     ],
   },
   /* ── 1장 완료 — 정본 1.txt:96-190 (마을 습격 · 사념체 · 각성 · 그리고 사람을 죽였다) ── */
-  howlrstone1Done: {
+  lilacworld1Done: {
     speaker: "하루",
     lines: [
       "「디오는 용병들과 사념체를 이끌고 마을을 습격했습니다. 사람들은 나를 지키려다 하나씩 쓰러졌습니다.」",
@@ -3059,7 +3059,7 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
     ],
   },
   /* ── 4장: 에벤트 왕국 · 아리 (4화) ── */
-  howlAri: {
+  lwAri: {
     speaker: "아리스텔라",
     lines: [
       "\"여긴 에벤트왕국입니다. 제 소개를 깜빡했군요, 저는 근위대장 '아리스텔라 데스티니'라고 합니다.\"",
@@ -3068,7 +3068,7 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
     ],
   },
   /* ── 5장: 조선시대 왕국 · 시엘 · 연합 (5화) ── */
-  howlDokkaebi: {
+  lwDokkaebi: {
     speaker: "하루",
     lines: [
       "가는 도중 도깨비들이 나타나 가진 것을 탈하려고 협박했다.",
@@ -3077,7 +3077,7 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
     ],
   },
   /* ── 5장: 남부의 해전 (2.txt:59-71) ── */
-  howlSouthWar: {
+  lwSouthWar: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "「스칼렛이 각 왕국에 사흘 뒤 남부를 침공하겠다 선포했습니다. 연합은 방어가 아니라 결전을 택했습니다.」",
@@ -3085,7 +3085,7 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
       "「리안은 칼리야에 웨폰마스터들이 없다는 사실을 알고 제르와 지원군을 그쪽으로 보냈습니다.」",
     ],
   },
-  howlBolt: {
+  lwBolt: {
     speaker: "벨리카",
     lines: [
       "\"하루, 내 번개를 복사해봐! 네 능력이면 할 수 있어!\"",
@@ -3094,7 +3094,7 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
     ],
   },
   /* ── 9장: 연합의 재집결 (2.txt:144-156) ── */
-  howlUnited: {
+  lwUnited: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "「연합은 당장 에델리오나로 가고 싶었지만 부상자가 많아 섣불리 움직이지 못했습니다.」",
@@ -3102,14 +3102,14 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
       "「스칼렛은 영프가 자기 왕국을 버릴 리 없다고 판단해 병력을 영준프린세스로 돌렸고, 연합은 그 틈을 얻었습니다.」",
     ],
   },
-  howlGateBreak: {
+  lwGateBreak: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "「도사는 반란군에 에델리오나의 결계 파괴를 부탁했고, 반란군은 목숨을 걸고 승낙했습니다.」",
       "「반란군이 성 내부의 결계를 파괴하는 데 성공했습니다. 이제 성채로 갈 길이 열렸습니다.」",
     ],
   },
-  howlAlliance: {
+  lwAlliance: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "화해와 연합이 필요하다고 생각한 두 왕국이 라일락 연합을 만들었다.",
@@ -3118,7 +3118,7 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
     ],
   },
   /* ── 6장: 루시 · 라이트 보석 (6화) ── */
-  howlLuci: {
+  lwLuci: {
     speaker: "루시페르",
     lines: [
       "\"나는 생명의 초월자 루시페르 에크레디트. 루시라고 불러.\"",
@@ -3127,14 +3127,14 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
     ],
   },
   /* ── 7장: 군단장들 (7화) ── */
-  howlGolem: {
+  lwGolem: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "근위대장이 더 이상 막기 어려운 것 같았다 — 엔젤릭 영프와 거대한 골렘이 있었기 때문이다.",
       "\"군단장들이 한꺼번에 움직였습니다. 해롤드, 베로니카, 딘 — 셋이 동시에요.\"",
     ],
   },
-  howlRiande: {
+  lwRiande: {
     speaker: "리안",
     lines: [
       "\"3분 뒤에 보시죠.\"",
@@ -3142,7 +3142,7 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
       "\"2대 2, 이제야 수가 맞는군.\"",
     ],
   },
-  howlSwords: {
+  lwSwords: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "암흑의 그림자 페르온과 근위대장 아리가 싸우고 있던 곳엔 날붙이가 부딪히는 소리만이 울려 퍼지고 있었다.",
@@ -3150,7 +3150,7 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
     ],
   },
   /* ── 8장: 두 전사의 격전 (8화) ── */
-  howlLilac: {
+  lwLilac: {
     speaker: "라일락",
     lines: [
       "\"꽃말이 추억이라… 너의 이름을 부르는 사람마다 추억이 되라고 이름을 지었어.\"",
@@ -3158,21 +3158,21 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
     ],
   },
   /* ── 10장: 어둠의 성채 · 4개의 문 (10화) ── */
-  howlFourDoors: {
+  lwFourDoors: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "4개의 문을 클리어해야만 스칼렛이 있는 어둠의 왕좌로 갈 수 있다.",
       "문은 물, 바람, 번개, 불 — 각 문마다 스칼렛의 환영이 하나씩 자리한다.",
     ],
   },
-  howlWindDoor: {
+  lwWindDoor: {
     speaker: "루시페르",
     lines: [
       "루시가 만든 풀의 장막과 란이 만든 그림 몬스터로 공격을 막고, 리안이 공격했다.",
       "\"두 번째 문을 열었어. 다음이야.\"",
     ],
   },
-  howlBalloon: {
+  lwBalloon: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "스칼렛이 가는 길을 끊었다. 란과 루시가 힘을 합쳐 그림 열기구를 만들었다.",
@@ -3180,7 +3180,7 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
     ],
   },
   /* ── 11장: 어둠의 왕좌 (11화) ── */
-  howlIon: {
+  lwIon: {
     speaker: "빛의 아이온",
     lines: [
       "\"…왔구나. 나는 빛의 아이온. 저것은 어둠의 알다바오트.\"",
@@ -3188,7 +3188,7 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
     ],
   },
   /* ── 12장: 운명 (12화) ── */
-  howlCurse: {
+  lwCurse: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "베로니카, 시엘, 딘이 저주의 표식을 맞아 힘을 잃어갔다.",
@@ -3196,14 +3196,14 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
     ],
   },
   /* ── 13장: 최후의 일격 (13화) ── */
-  howlSunMark: {
+  lwSunMark: {
     speaker: "하루",
     lines: [
       "보석이 깨지면서 태양의 표식이 검에 새겨졌다.",
       "라일락 월드에 있는 모든 자의 염원이 그 표식에 모였다.",
     ],
   },
-  howlEndTime: {
+  lwEndTime: {
     speaker: "스칼렛",
     lines: [
       "\"내가 이것만으로 끝날것이라고 생각하는거야?\"",
@@ -3211,14 +3211,14 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
     ],
   },
   /* ── 14장: THE END TIME (14화) ── */
-  howlTimeRuler: {
+  lwTimeRuler: {
     speaker: "하루",
     lines: [
       "도사가 부채를 던지더니 긴 총이 되었다. 검을 머리 위에서 아래로 쓸어 내리더니 시간의 초월자로 변했다.",
       "\"되도록이면 이 힘을 쓰지 않으려고 했는데……. 시간과 생명과 빛이 있는 한, 다시 돌릴 수 있어.\"",
     ],
   },
-  howlNewBeginning: {
+  lwNewBeginning: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "완전히 5왕국이 서로 싸우지 않고 연합의 임무로 파견될 수 있도록 — 연합의 증표를 세웠다.",
@@ -3226,17 +3226,17 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
     ],
   },
   /* ── 15장: New Beginning Not the End (15화) ── */
-  howlSerniumCall: {
+  lwSerniumCall: {
     speaker: "라일락 연합의 기록자",
     lines: [
       "그랜드 플래닛에 있는 세르니움에서 에벤트왕국에 연락이 왔다.",
       "파견 선발대를 준비하라고. 다음 여정은 그랜드 플레닛에서 이어진다.",
     ],
   },
-  /* ── 장 마무리 (bossDone) — howlrstone.ts 의 chapterSpec.bossDone 이 참조한다.
+  /* ── 장 마무리 (bossDone) — lilacworld.ts 의 chapterSpec.bossDone 이 참조한다.
    *  보스가 없는 장도 있어 메시지는 "다음 구역/해역으로" 수준의 안내로 통일한다. */
   /* ── 2장 완료 — 정본 1.txt:100-174 (마을 습격 · 사념체 · 디오와의 결말) ── */
-  howlrstone2Done: {
+  lilacworld2Done: {
     speaker: "하루",
     lines: [
       "「디오는 다크니스 크리스탈의 힘을 얻어 사념체를 조종했습니다. 기사단도 시스터즈도 속수무책이었습니다.」",
@@ -3244,55 +3244,55 @@ const HOWL_BEATS: Record<string, { speaker: string; lines: string[] }> = {
       "「디오의 목에 칼을 겨눴지만 손이 떨려 내리꽂지 못했습니다. 그렇게 나는 사람을 죽였습니다.」",
     ],
   },
-  howlrstone3Done: {
+  lilacworld3Done: {
     speaker: "라일락 연합의 기록자",
     lines: ["바다의 군단장 해롤드가 쓰러졌다. 상어전함이 멈추고 해역이 잠잠해졌다."],
   },
-  howlrstone4Done: {
+  lilacworld4Done: {
     speaker: "아리스텔라",
     lines: ["에벤트왕국의 습격자들이 물러갔습니다. 근위대장으로서 이 은혜는 잊지 않겠습니다."],
   },
-  howlrstone5Done: {
+  lilacworld5Done: {
     speaker: "라일락 연합의 기록자",
     lines: ["라일락 연합이 결성됐다. 다섯 왕국이 같은 이름 아래 모인 것은 이번이 처음이다."],
   },
-  howlrstone6Done: {
+  lilacworld6Done: {
     speaker: "루시페르",
     lines: ["라이트 보석의 파편을 되찾았어. 이제 어둠의 왕좌가 다가오는 걸 막을 수 있어."],
   },
-  howlrstone7Done: {
+  lilacworld7Done: {
     speaker: "라일락 연합의 기록자",
     lines: ["베로니카와 딘이 후퇴했다. 군단장 전선이 하나 뚫렸다."],
   },
-  howlrstone8Done: {
+  lilacworld8Done: {
     speaker: "라일락 연합의 기록자",
     lines: ["페르온의 다크엑스칼리버가 멈췄다. 두 전사의 격전이 끝났다."],
   },
-  howlrstone9Done: {
+  lilacworld9Done: {
     speaker: "페르온",
     lines: ["라일락의 뜻을 이어받겠다. 어둠에 왕좌로 가는 길은 내가 잘 안다 — 나도 돕지."],
   },
-  howlrstone10Done: {
+  lilacworld10Done: {
     speaker: "라일락 연합의 기록자",
     lines: ["4개의 문이 모두 열렸다. 물, 바람, 번개, 불 — 이제 어둠의 왕좌로 갈 수 있다."],
   },
-  howlrstone11Done: {
+  lilacworld11Done: {
     speaker: "빛의 아이온",
     lines: ["빛과 어둠의 형체가 흩어졌다. 왕좌의 주인이 아직 남아 있다."],
   },
-  howlrstone12Done: {
+  lilacworld12Done: {
     speaker: "라일락 연합의 기록자",
     lines: ["저주의 표식이 약해졌다. 남은 6명이 다시 힘을 되찾았다."],
   },
-  howlrstone13Done: {
+  lilacworld13Done: {
     speaker: "하루",
     lines: ["태양의 표식이 검에 완전히 새겨졌다. 이제 멈추지 않는다."],
   },
-  howlrstone14Done: {
+  lilacworld14Done: {
     speaker: "라일락 연합의 기록자",
     lines: ["어둠의 완전체가 무너졌다. 스칼렛이 쓰러지고 라일락 월드가 되돌아오기 시작했다."],
   },
-  howlrstone15Done: {
+  lilacworld15Done: {
     speaker: "라일락 연합의 기록자",
     lines: ["세계가 복구되고 라일락 연합이 남았다. 세르니움에서 온 연락이 다음 여정의 시작이다."],
   },
@@ -3328,7 +3328,7 @@ for (const id of ["gpLittleStarFight", "gpJadeFight", "gpCoreFight", "gpFabian"]
 /* [제거됨] 아래 루프는 15장 인트로/완료 대사를 `${plan.title}` · "…에서 이야기가 이어진다."
  *  · "…의 이야기를 기록했다. / 다음 장소로 향하자." 라는 **템플릿 2줄로 덮어썼다**.
  *  그래서 위 표에 정본(1.txt~8.txt)을 옮겨 적은 30개 키가 화면에 도달하지 못했다
- *  (실측: chapterIntroHowlrstone1 = ["절벽의 약속","라일락과 만난 절벽에서 이야기가 이어진다."]).
+ *  (실측: chapterIntroLilacworld1 = ["절벽의 약속","라일락과 만난 절벽에서 이야기가 이어진다."]).
  *  지금은 표의 문장이 그대로 재생된다. 장소 이름이 바뀌어도 대사가 따라 깨지지 않는다. */
 
 DIALOGUES.gpCoreFight = { speaker: "라일락 연합의 기록자", lines: ["컨트롤타워가 독가스 공급을 제어하고 있다.", "방어망을 피해 제어 장치를 멈추자."] };

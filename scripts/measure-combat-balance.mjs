@@ -6,7 +6,7 @@
 import { STAGES, ENEMIES, BOSS_DEFS, BOSS_DIFFS, BOSS_STAGE_STATS, QUEST_EXP_MUL, stageScale, stageEnemyFloor, chapterSpec, parseStage } from '../src/game/stages.ts';
 import { expToNext } from '../src/game/expTable.ts';
 import { ITEMS } from '../src/game/data.ts';
-import { HOWLRSTONE_CHAPTERS } from '../src/game/howlrstone.ts';
+import { LILACWORLD_CHAPTERS } from '../src/game/lilacworld.ts';
 import { mitigateEnemyDamage } from '../src/game/combat/defense.ts';
 
 const gear = (kind, stat, lv) => Math.max(0, ...Object.values(ITEMS)
@@ -46,7 +46,7 @@ export function measure(key, lv) {
 /** 본편 진행 순서의 장 목록(영프 15장 → 그랜드 플레닛 10행성). */
 export function chapters() {
   return [
-    ...HOWLRSTONE_CHAPTERS.map(c => ({ name: c.key, gate: c.lvGate, keys: Array.from({ length: c.stages }, (_, i) => `${c.key}x${i + 1}`) })),
+    ...LILACWORLD_CHAPTERS.map(c => ({ name: c.key, gate: c.lvGate, keys: Array.from({ length: c.stages }, (_, i) => `${c.key}x${i + 1}`) })),
     ...[...new Set(Object.keys(STAGES).map(k => chapterSpec(k)).filter(sp => sp?.lvGate))].map(sp => ({
       name: sp.key, gate: sp.lvGate, keys: Object.keys(STAGES).filter(k => chapterSpec(k) === sp && parseStage(k).sub > 0).sort((a, b) => parseStage(a).sub - parseStage(b).sub) })),
   ];

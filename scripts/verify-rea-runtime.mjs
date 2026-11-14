@@ -36,9 +36,9 @@ try {
     }, stage, { timeout: 30000 });
   };
   await transition('youngprincessv');
-  for (const stage of ['howlrstone1x1', 'howlrstone3x1', 'howlrstone6x1', 'howlrstone10x2']) {
+  for (const stage of ['lilacworld1x1', 'lilacworld3x1', 'lilacworld6x1', 'lilacworld10x2']) {
     await transition(stage);
-    await page.waitForTimeout(stage === 'howlrstone1x1' ? 6500 : 2300);
+    await page.waitForTimeout(stage === 'lilacworld1x1' ? 6500 : 2300);
     const during = await page.evaluate(() => {
       const s = window.__SERTZ_SCENE__;
       return { stage: s.stageDef.key, cinematic: s.camCinema, paused: s.physics.world.isPaused,

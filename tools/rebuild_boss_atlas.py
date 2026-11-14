@@ -4,7 +4,7 @@
 
 왜 이 도구가 필요한가:
   배포본 atl_boss_*.webp 는 assets_src/boss_sheets/bsw_*.webp 를 잘라 만든다.
-  그런데 bsw_abudditos / bsw_nagr / bsw_nidhog / bsw_vord / bsw_jorm 은
+  그런데 bsw_doomwyrm / bsw_angelknight / bsw_blackwyrm / bsw_riftwarden / bsw_unionserpent 은
   git 에 커밋된 시점부터 픽셀 단위로 완전히 동일한 파일이다(중복).
   그래서 아틀라스를 아무리 다시 잘라도 같은 그림이 나온다.
 

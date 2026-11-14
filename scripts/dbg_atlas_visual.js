@@ -50,12 +50,12 @@ const { chromium } = require("playwright");
     const cx = ws.player?.x ?? 400;
     const cy = ws.player?.y ?? 400;
     const y0 = cy - 150;
-    ws.add.sprite(cx, y0, "atl_boss_nidhog", 0).setDepth(200).setName("v1");
-    ws.add.sprite(cx - 160, y0 + 30, "atl_boss_fenrir", 0).setDepth(200).setName("v2");
-    ws.add.sprite(cx + 160, y0 + 30, "atl_boss_skoll", 0).setDepth(200).setName("v3");
+    ws.add.sprite(cx, y0, "atl_boss_blackwyrm", 0).setDepth(200).setName("v1");
+    ws.add.sprite(cx - 160, y0 + 30, "atl_boss_greedwolf", 0).setDepth(200).setName("v2");
+    ws.add.sprite(cx + 160, y0 + 30, "atl_boss_twinwolf", 0).setDepth(200).setName("v3");
     ws.add.sprite(cx - 80, y0 + 170, "atl_boss2", 0).setDepth(200).setName("v4");
-    ws.add.sprite(cx + 80, y0 + 170, "atl_boss_surt", 0).setDepth(200).setName("v5");
-    ws.add.sprite(cx, y0 + 290, "atl_boss_nagr", 0).setDepth(200).setName("v6");
+    ws.add.sprite(cx + 80, y0 + 170, "atl_boss_flamegiant", 0).setDepth(200).setName("v5");
+    ws.add.sprite(cx, y0 + 290, "atl_boss_angelknight", 0).setDepth(200).setName("v6");
     try { ws.dialoguing = false; ws.physics.world.resume(); } catch {}
   });
   await p.waitForTimeout(900);

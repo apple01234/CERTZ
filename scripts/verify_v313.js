@@ -66,9 +66,9 @@ async function gotoStage(page, st) {
 
   await enterWorld(page);
 
-  /* ① 타일 검증 — forest1(잔디+흙길) / muspelheim1(마그마길) / niflheim1(얼음) */
+  /* ① 타일 검증 — forest1(잔디+흙길) / emberland1(마그마길) / frostland1(얼음) */
   const tileStats = {};
-  for (const st of ["forest1", "muspelheim1", "niflheim1"]) {
+  for (const st of ["forest1", "emberland1", "frostland1"]) {
     await gotoStage(page, st);
     await page.screenshot({ path: `scripts/shot_v313_${st}.png` });
     tileStats[st] = await page.evaluate(() => {

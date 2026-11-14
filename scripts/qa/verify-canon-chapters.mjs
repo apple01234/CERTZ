@@ -51,10 +51,10 @@ async function readKeys(keys) {
   return out;
 }
 
-const intro = await readKeys(['chapterIntroHowlrstone3', 'chapterIntroHowlrstone5', 'chapterIntroHowlrstone9']);
+const intro = await readKeys(['chapterIntroLilacworld3', 'chapterIntroLilacworld5', 'chapterIntroLilacworld9']);
 for (const [k, v] of Object.entries(intro)) console.log(`\n[${k}]\n${v}`);
 
-const done = await readKeys(['howlrstone3Done', 'howlrstone5Done', 'howlrstone9Done']);
+const done = await readKeys(['lilacworld3Done', 'lilacworld5Done', 'lilacworld9Done']);
 for (const [k, v] of Object.entries(done)) console.log(`\n[${k}]\n${v}`);
 
 /* 1장 퀘스트 동선: 1-2 에서 reach 퀘스트로 차원문이 열리는지 확인 */
@@ -67,7 +67,7 @@ const warp = async (stage) => page.evaluate(async (st) => {
   return { stage: s.stageDef?.key, quest: s.currentQuest?.()?.type ?? null, quests: s.stageDef?.quests?.length ?? 0 };
 }, stage);
 
-for (const st of ['howlrstone1x1', 'howlrstone1x2', 'howlrstone1x3', 'howlrstone3x2', 'howlrstone5x2', 'howlrstone9x2']) {
+for (const st of ['lilacworld1x1', 'lilacworld1x2', 'lilacworld1x3', 'lilacworld3x2', 'lilacworld5x2', 'lilacworld9x2']) {
   const r = await warp(st);
   console.log(`\nwarp ${st} ->`, JSON.stringify(r));
   await page.waitForTimeout(600);

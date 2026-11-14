@@ -12,7 +12,7 @@ BootScene 이 `ASSET_LIST` 를 **항상 `.webp` 로** 로드한다:
 PNG 를 저품질로 재인코딩한 **열화본**이다. 실측:
 
     tile_magma  png 107색 → webp   7색   (93% 손실)
-    tile_hel    png 129색 → webp  49색
+    tile_duskrealm    png 129색 → webp  49색
     tile_ice    png 193색 → webp 129색
     tile_abyss  png  67색 → webp  39색
     tile_stone  png  70색 → webp  39색

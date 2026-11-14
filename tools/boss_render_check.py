@@ -26,14 +26,14 @@ OUT = "/root/.hermes/cache/scratch/deploy/boss"
 # 이번 챕터 매핑 (stages.ts CHAPTERS)
 CHAPTER = [
     ("forest", "2. 숲의 신전", "boss", "심연의 수호자 guardian"),
-    ("kingdom", "3. 쿠소디아", "boss2", "눈보라의 거수 behemoth"),
-    ("alfheim", "4. 알프헤임", "boss_nidhog", "니드호그 nidhog"),
-    ("muspelheim", "5. 무스펠헤임", "boss_surt", "수르트 surt"),
-    ("niflheim", "6. 니플헤임", "boss_fenrir", "펜리르 fenrir"),
-    ("cave", "7. 스바르트알프헤임", "boss3", "심연의 군주 abysslord"),
-    ("nidavellir", "8. 니다벨리르", "boss_skoll", "스콜&하티 skoll"),
-    ("hel", "9. 헬", "boss_gram", "가름 gram"),
-    ("abyss", "10. 세계수의 뿌리", "boss_abudditos", "아부디토스 abudditos"),
+    ("kingdom", "3. 왕국", "boss2", "눈보라의 거수 behemoth"),
+    ("fairyglade", "4. 요정 숲", "boss_blackwyrm", "탐식의 흑룡 blackwyrm"),
+    ("emberland", "5. 화산", "boss_flamegiant", "화염의 거인 flamegiant"),
+    ("frostland", "6. 설원", "boss_greedwolf", "탐욕의 늑대 greedwolf"),
+    ("cave", "7. 어둠 동굴", "boss3", "심연의 군주 abysslord"),
+    ("forgehall", "8. 대장간 광산", "boss_twinwolf", "교만의 쌍랑 twinwolf"),
+    ("duskrealm", "9. 명계", "boss_warden", "혈안의 문지기 warden"),
+    ("abyss", "10. 세계수의 뿌리", "boss_doomwyrm", "종언의 마룡 doomwyrm"),
 ]
 
 

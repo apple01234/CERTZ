@@ -1,7 +1,7 @@
 /**
  * e2e_vc143.js — 피드백 9종 검증:
- *  ① 퀘스트 곡선 실측 (forest1 초반 5~8 유지 / hel1 중반 100+ / 반복의뢰 100+)
- *  ② 눈맵 프리즈 근본 수정 — niflheim1 앰비언트 블룸 미부착 + applyFxMode 복원 경로 재부착 차단
+ *  ① 퀘스트 곡선 실측 (forest1 초반 5~8 유지 / duskrealm1 중반 100+ / 반복의뢰 100+)
+ *  ② 눈맵 프리즈 근본 수정 — frostland1 앰비언트 블룸 미부착 + applyFxMode 복원 경로 재부착 차단
  *     + 대조군 forest1은 복원 시 블룸 부착 (게이트가 눈맵만 막는지 확인)
  *  ③ 공유 보스 릴레이 스모크 (netBossMsg emit 무예외) + perf 훅
  *  ④ 선택형 대화 UI (dialogue:show choices → 버튼 렌더 → dialogue:choice 수신)
@@ -73,15 +73,15 @@ const { chromium } = require("playwright");
   await jump("forest1");
   const f1 = await worldInfo();
   ok("forest1 초반 퀘스트 마릿수 유지(5~14)", f1.autoNeed >= 5 && f1.autoNeed <= 14, `${f1.key} auto=${f1.autoNeed}(${f1.autoTitle}) repeat=${f1.repeatNeed}`);
-  await jump("hel1");
+  await jump("duskrealm1");
   const h1 = await worldInfo();
-  ok("hel1 중반 퀘스트 마릿수 100+(#3)", h1.autoNeed >= 100, `${h1.key} auto=${h1.autoNeed}(${h1.autoTitle})`);
-  ok("hel1 반복의뢰 100+(#3)", h1.repeatNeed >= 100, `repeat=${h1.repeatNeed}`);
+  ok("duskrealm1 중반 퀘스트 마릿수 100+(#3)", h1.autoNeed >= 100, `${h1.key} auto=${h1.autoNeed}(${h1.autoTitle})`);
+  ok("duskrealm1 반복의뢰 100+(#3)", h1.repeatNeed >= 100, `repeat=${h1.repeatNeed}`);
 
   /* ── 3) 눈맵 블룸 게이트 (#1) ── */
-  await jump("niflheim1");
+  await jump("frostland1");
   const n1 = await worldInfo();
-  ok("niflheim1(눈맵) 부팅 시 앰비언트 블룸 미부착", n1.ambientBloom === 0, `ambient=${n1.ambientBloom}`);
+  ok("frostland1(눈맵) 부팅 시 앰비언트 블룸 미부착", n1.ambientBloom === 0, `ambient=${n1.ambientBloom}`);
   /* 크래시 경로 재현 — fx 절전→복원 사이클 */
   const snowAfterCycle = await p.evaluate(() => {
     const ws = window.__SERTZ__.game.scene.getScene("world");

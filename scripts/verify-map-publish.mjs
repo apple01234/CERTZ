@@ -18,7 +18,7 @@ import path from "node:path";
 
 const BASE = process.argv[2] || "http://127.0.0.1:3131";
 const ROOT = path.resolve(import.meta.dirname, "..");
-const SEED = "howlrstone1x2";
+const SEED = "lilacworld1x2";
 const MAPS_DIR = path.join(ROOT, "public/assets/maps");
 
 let pass = 0, fail = 0;

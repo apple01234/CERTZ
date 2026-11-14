@@ -2,7 +2,7 @@
 //
 // 문제: 배포본(public/assets/atl_boss_*.webp)의 프레임 격자가 원본 아트와 안 맞아
 //       캐릭터 발/머리가 프레임 경계에서 잘렸다(실측: 502프레임 중 270개 = 54%).
-//       특히 surt는 원본 1197px를 1020px로 세로 압축하며 177px가 사라졌다.
+//       특히 flamegiant는 원본 1197px를 1020px로 세로 압축하며 177px가 사라졌다.
 //
 // 해법: 원본(assets_src/boss_sheets/bsw_*.webp)의 실제 크기에서 격자를 다시 계산하고,
 //       각 프레임이 경계에 닿지 않도록 여백(pad)을 확보해 재구성한다.
@@ -19,15 +19,15 @@ const TMP = "/tmp/reslice";
 /* 원본 → 대상 아틀라스 매핑 + 행 구성(게임 규약: idle,run,atk,sp1,sp2,sp3,die) */
 const MAP = [
   // [원본, 출력키, 열, 행]
-  ["bsw_nidhog",    "atl_boss_nidhog",    11, 7],
-  ["bsw_surt",      "atl_boss_surt",       6, 7],
-  ["bsw_fenrir",    "atl_boss_fenrir",     6, 7],
-  ["bsw_skoll",     "atl_boss_skoll",     11, 7],
-  ["bsw_jorm",      "atl_boss_jorm",       6, 7],
-  ["bsw_nagr",      "atl_boss_nagr",      11, 7],
-  ["bsw_abudditos", "atl_boss_abudditos", 11, 7],
-  ["bsw_vord",      "atl_boss_vord",      11, 7],
-  ["bsw_gram",      "atl_boss_gram",       6, 7],
+  ["bsw_blackwyrm",    "atl_boss_blackwyrm",    11, 7],
+  ["bsw_flamegiant",      "atl_boss_flamegiant",       6, 7],
+  ["bsw_greedwolf",    "atl_boss_greedwolf",     6, 7],
+  ["bsw_twinwolf",     "atl_boss_twinwolf",     11, 7],
+  ["bsw_unionserpent",      "atl_boss_unionserpent",       6, 7],
+  ["bsw_angelknight",      "atl_boss_angelknight",      11, 7],
+  ["bsw_doomwyrm", "atl_boss_doomwyrm", 11, 7],
+  ["bsw_riftwarden",      "atl_boss_riftwarden",      11, 7],
+  ["bsw_warden",      "atl_boss_warden",       6, 7],
 ];
 
 function probe(p) {

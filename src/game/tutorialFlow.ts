@@ -34,5 +34,5 @@ export function tutorialResume(save?: TutorialSave | null): number | null {
   return !save || save.introSeen === false ? 0 : null;
 }
 export function tutorialStage(step: number): string {
-  return step < 3 ? "howlrstone1x1" : "howlrstone1x2";
+  return step < 3 ? "lilacworld1x1" : "lilacworld1x2";
 }

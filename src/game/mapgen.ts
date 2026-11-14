@@ -58,9 +58,9 @@ export function generateRoomLayout(seed: string, mapW: number, mapH: number): Ro
   /* 챕터 접두어 → 구조 성격. 인접 챕터가 같은 성격을 연속으로 쓰지 않게 배치한다. */
   const CHAPTER_STYLE: Record<string, Style> = {
     /* 본편 9챕터 */
-    forest: "grotto", kingdom: "cavern", alfheim: "terrace",
-    muspelheim: "circuit", niflheim: "cavern", cave: "grotto",
-    nidavellir: "terrace", hel: "circuit", abyss: "grotto",
+    forest: "grotto", kingdom: "cavern", fairyglade: "terrace",
+    emberland: "circuit", frostland: "cavern", cave: "grotto",
+    forgehall: "terrace", duskrealm: "circuit", abyss: "grotto",
     /* DLC 10행성 */
     dlcstargate: "circuit", dlcprisma: "terrace", dlcocean: "cavern",
     dlcreverse: "circuit", dlcneocity: "terrace", dlcmech: "circuit",
@@ -71,12 +71,12 @@ export function generateRoomLayout(seed: string, mapW: number, mapH: number): Ro
     r6: "terrace", r7: "cavern", r8: "circuit", r9: "grotto", r10: "terrace",
     r11: "cavern", r12: "circuit", r13: "grotto", r14: "terrace", r15: "cavern",
   };
-  /** 스테이지 키에서 챕터 접두어를 얻는다 (howlrstone12x3 → howlrstone12 → grotto) */
+  /** 스테이지 키에서 챕터 접두어를 얻는다 (lilacworld12x3 → lilacworld12 → grotto) */
   const styleOf = (s: string): Style => {
-    const hw = /^(howlrstone\d+)/.exec(s);
+    const hw = /^(lilacworld\d+)/.exec(s);
     if (hw) {
       /* 영프 15챕터 — 챕터 번호로 4종 순환 */
-      const n = parseInt(hw[1].replace("howlrstone", ""), 10);
+      const n = parseInt(hw[1].replace("lilacworld", ""), 10);
       return (["grotto", "terrace", "cavern", "circuit"] as Style[])[n % 4];
     }
     const rb = /^(r\d+)/.exec(s);

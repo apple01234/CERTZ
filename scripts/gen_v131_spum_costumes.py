@@ -137,7 +137,7 @@ def paste_fit(canvas, part, box, scale_w=None, anchor="center", dy=0, min_w=8, m
 # gender: f → cost_, m → costm_  |  base: 여=chf5, 남=chm0
 SETS = [
     {
-        "key": "valkyrie", "gender": "f", "face_over": True,
+        "key": "wingmaiden", "gender": "f", "face_over": True,
         "hair": (f"{V300}/2_Hair/New_Hair_05.png", (238, 240, 250), (188, 196, 224), (255, 255, 255)),
         "helmet": (f"{V300}/4_Helmet/New_Helmet_02.png", None),  # 은빛 나이트 투구
         "chest": (f"{V300}/4_Cloth/New_Cloth_06.png", None),     # 밝은 회색 상의

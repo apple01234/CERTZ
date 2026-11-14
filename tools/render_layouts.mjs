@@ -73,9 +73,9 @@ function bfsFarthest(open, cols, rows, from) {
 }
 
 const CHAPTER_STYLE = {
-  forest: "grotto", kingdom: "cavern", alfheim: "terrace",
-  muspelheim: "circuit", niflheim: "cavern", cave: "grotto",
-  nidavellir: "terrace", hel: "circuit", abyss: "grotto",
+  forest: "grotto", kingdom: "cavern", fairyglade: "terrace",
+  emberland: "circuit", frostland: "cavern", cave: "grotto",
+  forgehall: "terrace", duskrealm: "circuit", abyss: "grotto",
 };
 const PROFILE = {
   grotto:  { openMin: 0.45, openMax: 0.62, extend: 0.60 },
@@ -275,9 +275,9 @@ const OUT = "/root/.hermes/cache/scratch/layout_preview";
 fs.mkdirSync(OUT, { recursive: true });
 
 const CH = [
-  ["forest", 1900, 1070], ["kingdom", 1750, 990], ["alfheim", 1500, 860],
-  ["muspelheim", 2200, 1250], ["niflheim", 1670, 950], ["cave", 1670, 950],
-  ["nidavellir", 1670, 950], ["hel", 1670, 950], ["abyss", 1430, 830],
+  ["forest", 1900, 1070], ["kingdom", 1750, 990], ["fairyglade", 1500, 860],
+  ["emberland", 2200, 1250], ["frostland", 1670, 950], ["cave", 1670, 950],
+  ["forgehall", 1670, 950], ["duskrealm", 1670, 950], ["abyss", 1430, 830],
 ];
 
 const results = [];

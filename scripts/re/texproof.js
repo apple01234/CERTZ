@@ -1,4 +1,4 @@
-// 런타임 증거: 무스펠헤임에서 실제로 어떤 텍스처 키가 지면에 쓰였는지 덤프
+// 런타임 증거: 화산에서 실제로 어떤 텍스처 키가 지면에 쓰였는지 덤프
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
@@ -18,7 +18,7 @@ function makeSave(stage) {
 
   await page.addInitScript(({ k, v }) => {
     try { window.localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
-  }, { k: SAVE_KEY, v: makeSave('muspelheim1') });
+  }, { k: SAVE_KEY, v: makeSave('emberland1') });
 
   // Phaser Game 인스턴스를 window 에 노출시켜 잡는다
   await page.addInitScript(() => {

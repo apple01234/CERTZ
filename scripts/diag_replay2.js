@@ -31,7 +31,7 @@ const { chromium } = require("playwright");
     const origGS = proto.gotoStage;
     proto.gotoStage = function (n, e, f) { console.log("DBG gotoStage→", n, "force=", f); return origGS.call(this, n, e, f); };
     // monsterKills 주입 + emit
-    sc.monsterKills["boss_vord"] = 1;
+    sc.monsterKills["boss_riftwarden"] = 1;
     console.log("DBG pre-emit transitioning=", sc.transitioning, "dialoguing=", sc.dialoguing, "playerState=", sc.player?.state);
     window.__SERTZ_EB__.emit("rpg:bossReplay", { ch: "r5", lv: "easy" });
     console.log("DBG post-emit transitioning=", sc.transitioning);

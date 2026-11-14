@@ -5,8 +5,8 @@
 
 v2 개선:
   1. 행별 적응형 프레임 중심 — x투영 세그먼트 병합/분할, 균일 그리드와 컷 비용 비교 후 선택
-  2. 글로우 배경 임계 강화 (nidhog 48 / jorm 55)
-  3. surt 좌향 시트 → 우향 네이티브로 좌우 반전
+  2. 글로우 배경 임계 강화 (blackwyrm 48 / unionserpent 55)
+  3. flamegiant 좌향 시트 → 우향 네이티브로 좌우 반전
 """
 from PIL import Image
 import numpy as np
@@ -21,7 +21,7 @@ os.makedirs(MON, exist_ok=True)
 CELL_W, CELL_H = 240, 180
 
 SHEETS = {
-    "nidhog": dict(
+    "blackwyrm": dict(
         file="file_000000006604820983e9f96db34595a9.png",
         cx0=102.0, pitch=191.0, ncols=8, flip=False,
         rows=[(21, 164), (179, 320), (329, 472), (482, 616), (640, 761)],
@@ -32,7 +32,7 @@ SHEETS = {
                "sp3": (4, [0, 2, 4, 5, 6, 7])},
         t_lo=20, t_hi=36, matte="comp0",
     ),
-    "jorm": dict(
+    "unionserpent": dict(
         file="file_000000004a5482069531efe87ab73ca2.png",
         cx0=132.5, pitch=248.0, ncols=6, flip=False,
         rows=[(23, 170), (198, 345), (360, 514), (529, 686), (714, 869), (884, 1006)],
@@ -41,7 +41,7 @@ SHEETS = {
                "sp3": (4, None)},
         t_lo=22, t_hi=40, matte="comp",
     ),
-    "fenrir": dict(
+    "greedwolf": dict(
         file="file_000000003b688206be0cc7248e5d9eb9.png",
         cx0=109.5, pitch=204.0, ncols=6, flip=False,
         rows=[(35, 234), (265, 433), (469, 662), (716, 882), (916, 1087), (1102, 1269)],
@@ -50,7 +50,7 @@ SHEETS = {
                "sp3": (4, None)},
         t_lo=14, t_hi=30, matte="soft",
     ),
-    "surt": dict(
+    "flamegiant": dict(
         file="file_00000000dbf88206abc6be51bc743b76.png",
         cx0=129.0, pitch=254.0, ncols=6, flip=False,
         rows=[(16, 182), (188, 354), (360, 526), (532, 698), (704, 870), (876, 1012)],
@@ -85,7 +85,7 @@ def extract_cell(img_rgb: np.ndarray, x0: float, x1: float, y0: int, y1: int,
     est = bg_est_cell(cell)
     dist = np.abs(cell - est).max(axis=2)
     if matte == "soft":
-        # 소프트 마atte: 가장자리 연결 배경 제거 + 경계 페더 (펜리르 얼음 이펙트·수르트용)
+        # 소프트 마atte: 가장자리 연결 배경 제거 + 경계 페더 (탐욕의 늑대 얼음 이펙트·화염의 거인용)
         bg_mask = dist < t_hi
         lab, n = ndimage.label(bg_mask)
         if n > 0:

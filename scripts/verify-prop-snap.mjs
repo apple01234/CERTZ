@@ -12,7 +12,7 @@
 import { chromium } from "playwright";
 
 const BASE = process.argv[2] || "http://127.0.0.1:3109";
-const STAGE = process.argv[3] || "howlrstone1x2";
+const STAGE = process.argv[3] || "lilacworld1x2";
 
 const FILTER = (s) => (s || "").replace(/\s+/g, "");
 let pass = 0, fail = 0;
@@ -58,7 +58,7 @@ const info = await page.evaluate(() => {
   const s = window.__SERTZ_SCENE__;
   const out = { stage: s?.stageDef?.key, cellW: null, cellH: null, props: [], edge: 0 };
   /* ★ 실제 셀 크기를 씬의 layout 에서 읽는다 — 하드코딩 금지.
-   *  howlrstone1x2 실측: cellW 150.667 · cellH 131.111 (정수가 아니다!) */
+   *  lilacworld1x2 실측: cellW 150.667 · cellH 131.111 (정수가 아니다!) */
   if (s.layout) { out.cellW = s.layout.cellW; out.cellH = s.layout.cellH; }
   /* 이미지 이름 규약: rea:prop:<key> / rea:edge:<key> */
   for (const o of s.children.list) {

@@ -5,7 +5,7 @@
  *  ③거래소 다수 등록 UI 요소 (수량 입력·MAX·총합)
  *  ④카오스 보스 에메랄드 차등 (bossEmeraldOf 계층)
  *  ⑤도적 제2궁극기 「사(死)의 일섬」 정의 + DeathSlash 모듈 로드
- *  ⑥스바르트알프헤임 보스 패턴 풀 (greenslash/vanish/shieldcast/magicburst/portalteleport)
+ *  ⑥어둠 동굴 보스 패턴 풀 (greenslash/vanish/shieldcast/magicburst/portalteleport)
  *  ⑦퀘스트 로그 fifth2 섹션 emit
  *  ⑧게이트 vc153
  */
@@ -55,7 +55,7 @@ const t = (name, ok, detail = "") => { results.push({ name, ok, detail }); conso
 
   const stages = read("src/game/stages.ts");
   t("bossEmeraldOf 계층 공식", stages.includes("export function bossEmeraldOf"));
-  t("카오스 차등 주석(수르트~나그라파르)", stages.includes("나그라파르 66"));
+  t("카오스 차등 주석(화염의 거인~재림의 천사기사)", stages.includes("재림의 천사기사 66"));
   t("BossAttackKind 신규 5종", ["greenslash", "vanish", "shieldcast", "magicburst", "portalteleport"].every((k) => stages.includes(`| "${k}"`)));
   t("abysslord 패턴 개편", stages.includes('sig: "greenslash"') && stages.includes('"portalteleport", "crystalburst"'));
 

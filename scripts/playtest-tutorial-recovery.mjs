@@ -34,7 +34,7 @@ try {
     console.log('PASS real lesson quest panel below normal unlock level');await h.context.close();
   }
   for(const kind of (mobileOnly?[]:['completed','legacy'])) {
-    const h=await open(v=>{if(kind==='legacy'){delete v.tutorialVersion;delete v.introSeen;v.tutorialDone=false;v.tutStep=4;} v.cutsceneSeen=[...(v.cutsceneSeen??[]),'lilacCut_rea1_lilac00','howlrstone1:stage2'];});
+    const h=await open(v=>{if(kind==='legacy'){delete v.tutorialVersion;delete v.introSeen;v.tutorialDone=false;v.tutStep=4;} v.cutsceneSeen=[...(v.cutsceneSeen??[]),'lilacCut_rea1_lilac00','lilacworld1:stage2'];});
     assert.equal((await inspect(h.page)).step,null);assert.equal(h.errors.length,0);results.push({kind,result:await inspect(h.page)});console.log("PASS",kind);await h.context.close();
   }
   for(const step of (mobileOnly?[]:[4,10,11,12])) {

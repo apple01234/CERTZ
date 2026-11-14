@@ -158,7 +158,7 @@ def ramp(colors, t):
 # 타일 정의 — 기존 실측 팔레트(S/V 대역)를 기준으로 확장
 # ──────────────────────────────────────────────────────────────────────────────
 # 실측: grass S=0.49 V=0.77 / snow S=0.13 V=0.94 / stone S=0.16 V=0.20 /
-#       magma S=0.67 V=0.42 / hel S=0.50 V=0.35 / abyss S=0.19 V=0.14
+#       magma S=0.67 V=0.42 / duskrealm S=0.50 V=0.35 / abyss S=0.19 V=0.14
 TILES = {
     # ── 1기 확장 ──────────────────────────────────────────────────────────────
     "tile_grass": dict(kind="organic", seed=11, palette=["#3d6b32", "#4f8a3e", "#6fb254", "#8fd06a", "#b4e88a"],
@@ -207,7 +207,7 @@ TILES = {
                       cells=0, contrast=1.4, detail=0.5),
     "tile_bone": dict(kind="organic", seed=31, palette=["#2a2620", "#3e382e", "#564c3e", "#706450", "#8c7e64"],
                       cells=0, contrast=1.0, detail=0.42),
-    "tile_hel": dict(kind="organic", seed=32, palette=["#1a2430", "#263444", "#34485c", "#446078", "#547890"],
+    "tile_duskrealm": dict(kind="organic", seed=32, palette=["#1a2430", "#263444", "#34485c", "#446078", "#547890"],
                      cells=0, contrast=1.05, detail=0.38),
     # ── 신전/황금 ─────────────────────────────────────────────────────────────
     "tile_marble": dict(kind="crystal", seed=33, palette=["#8a8478", "#a8a294", "#c6c0b0", "#e0dcd0", "#f4f2ea"],

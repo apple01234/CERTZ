@@ -7,14 +7,14 @@ export function storyPattern(kind: StoryAttack, boss: { x: number; y: number; ph
   const circle = (x: number, y: number, radius: number): Hazard => ({ x, y, w: radius * 2, h: radius * 2, radius });
   const rect = (x: number, y: number, w: number, h: number): Hazard => ({ x, y, w, h });
   const count = boss.phase > 1 ? 3 : 2;
-  const machine = ["reversecore", "vord", "guardian"].includes(boss.key);
+  const machine = ["reversecore", "riftwarden", "guardian"].includes(boss.key);
   switch (kind) {
     case "tentacleslam": return { title: "촉수 강타 · 틈으로 이동", color: 0x49aabb, duration: 380,
       hazards: [-160, 0, 160].map((dx) => rect(target.x + dx, target.y, 72, 360)) };
     case "inkflood": return { title: "먹물 범람 · 마른 바닥으로", color: 0x62437e, duration: 3600,
       hazards: [-1, 1].map((n) => circle(target.x + n * 145, target.y, 105)), safe: rect(target.x, target.y, 60, 260) };
     case "shadowcopies": return { title: "그림자 분신 · 검격 예고", color: 0x86629f, duration: 400,
-      clones: boss.key === "dio" ? "dio" : boss.key === "desknis" || boss.key === "nagr" || boss.key === "nidhog" ? "desknis" : "feron",
+      clones: boss.key === "dio" ? "dio" : boss.key === "desknis" || boss.key === "angelknight" || boss.key === "blackwyrm" ? "desknis" : "feron",
       hazards: Array.from({ length: count }, (_, i) => rect(target.x + (i - (count - 1) / 2) * 150, target.y, 66, 260)) };
     case "cursefield": return { title: machine ? "독가스 배출 · 환기 구간으로" : "저주와 흑마법 · 표식 밖으로", color: machine ? 0x79b697 : 0x9e6dbe, duration: 3000,
       hazards: [circle(target.x, target.y, 100), circle(target.x + 220, target.y - 90, 75)] };
