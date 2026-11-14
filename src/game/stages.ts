@@ -20,8 +20,8 @@ import { GRAND_PLANET_BOSSES, type GrandPlanetBossKey } from "./grandPlanetCanon
 /* ================= 타입 ================= */
 
 export type ChapterKey =
-  /* vc251 — 옛 9개 수련 지역(forest…abyss) 삭제. 스토리는 DLC(그랜드 플레닛)부터 시작한다.
-   *  기획서 6행: "1기가 끝이나면 2기 그랜드 플레닛으로 세계가 변경된다" */
+  /* vc251 — 옛 9개 수련 지역(forest…abyss) 삭제. 스토리는 DLC(그랜드 플래닛)부터 시작한다.
+   *  기획서 6행: "1기가 끝이나면 2기 그랜드플래닛으로 세계가 변경된다" */
   | "dlcstargate" | "dlcprisma" | "dlcocean"
   /* vc192 — 기획서 18행 행성 순서의 나머지 7개.
    *  "스타게이트,프라이즈프리즈마,리버스사이버,네오시티,기계무덤 메카닉블러드시티,
@@ -44,7 +44,7 @@ export type StageKey = string;
 export const STORY_SEQUENCE = [
   /* vc231 — 영프 편 콘텐츠 투입. 이 status 가 "not-implemented" 를 벗어나는 순간
    *  `storyProgression.MIDDLE_CHAPTER_IMPLEMENTED` 가 true 가 되어
-   *  "영프 엔딩을 봐야 그랜드 플레닛이 열린다" 로 게이트가 정상 잠긴다(vc230 설계 그대로). */
+   *  "영프 엔딩을 봐야 그랜드 플래닛이 열린다" 로 게이트가 정상 잠긴다(vc230 설계 그대로). */
   { id: "howlrstone", title: "라일락 월드", chapters: [1, 15], status: "implemented" },
   { id: "grandplanet", title: "그랜드 플레닛", status: "existing-dlc" },
 ] as const;
@@ -305,7 +305,7 @@ export const CHAPTERS: ChapterSpec[] = [
    * 사용자 지시: "그냥 라일락 월드는 놔두고 DLC(추가 스토리) 느낌으로
    *              세계 구원후 기획서의 스토리 관련 게임이 이어지도록 만들어"
    *
-   * 기획서 6행: "1기가 끝이나면 2기 그랜드 플레닛으로 세계가 변경된다
+   * 기획서 6행: "1기가 끝이나면 2기 그랜드플래닛으로 세계가 변경된다
    *              이곳에서의 메인 테마는 윤지왕자와 유진으로 원래 고향 '신의도시 세르니움'이다"
    * 기획서 12행 행성 순서: 스타게이트 → 프라이즈프리즈마 → … → 오션코멘 → … → 세르니움
    *
@@ -315,7 +315,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "dlcstargate", num: 11, dlc: true,
     title: "DLC 1 — 제1행성 스타게이트",
-    subtitle: "그랜드 플레닛 · 세계를 구원한 자에게 열린 첫 번째 별",
+    subtitle: "그랜드플래닛 · 세계를 구원한 자에게 열린 첫 번째 별",
     intro: "intro", boss: "nidhog", bossDone: "guardianDone",
     width: 2000, height: 1120, groundTint: 0x5f6fd8, groundTex: "tile_nebula", pathTex: "tile_stone", bg: "#070a1c",
     flowers: 4, trees: 3, rocks: 10,
@@ -336,7 +336,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "dlcprisma", num: 12, dlc: true,
     title: "DLC 2 — 제2행성 프라이즈 프리즈마",
-    subtitle: "그랜드 플레닛 · 마법공학의 도시, 위험한 실험",
+    subtitle: "그랜드플래닛 · 마법공학의 도시, 위험한 실험",
     intro: "intro", boss: "surt", bossDone: "kingdomDone",
     width: 2200, height: 1200, groundTint: 0x8f6fd8, groundTex: "tile_desert", pathTex: "tile_sand", bg: "#120a22",
     flowers: 6, trees: 5, rocks: 12,
@@ -357,7 +357,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "dlcocean", num: 13, dlc: true,
     title: "DLC 3 — 별빛속 바다 오션코멘",
-    subtitle: "그랜드 플레닛 · 꿈이 가라앉은 바다, 신의도시로 가는 마지막 길",
+    subtitle: "그랜드플래닛 · 꿈이 가라앉은 바다, 신의도시로 가는 마지막 길",
     intro: "intro", boss: "vord", bossDone: "victory",
     width: 2100, height: 1150, groundTint: 0x3f7fd8, groundTex: "tile_ice", pathTex: "tile_snow", bg: "#06121e",
     flowers: 3, trees: 2, rocks: 8,
@@ -389,7 +389,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "dlcreverse", num: 14, dlc: true,
     title: "DLC 4 — 리버스 사이버",
-    subtitle: "그랜드 플레닛 · 지하선로의 도시, 안개와 무법자들",
+    subtitle: "그랜드플래닛 · 지하선로의 도시, 안개와 무법자들",
     intro: "intro", boss: "jorm", bossDone: "kingdomDone",
     width: 2100, height: 1150, groundTint: 0x6a7d9c, groundTex: "tile_ash", pathTex: "tile_blood", bg: "#0a0e16",
     flowers: 0, trees: 0, rocks: 12,
@@ -410,7 +410,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "dlcneocity", num: 15, dlc: true,
     title: "DLC 5 — 네오시티",
-    subtitle: "그랜드 플레닛 · 컴퍼니가 만든 세계, 다섯 개의 부호",
+    subtitle: "그랜드플래닛 · 컴퍼니가 만든 세계, 다섯 개의 부호",
     intro: "intro", boss: "nagr", bossDone: "kingdomDone",
     width: 2200, height: 1200, groundTint: 0x4f6fd8, groundTex: "tile_stone", pathTex: "tile_vault", bg: "#060a1a",
     flowers: 0, trees: 0, rocks: 10,
@@ -432,7 +432,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "dlcmech", num: 16, dlc: true,
     title: "DLC 6 — 기계무덤 메카닉 블러드시티",
-    subtitle: "그랜드 플레닛 · 기계가 죽어 묻힌 도시",
+    subtitle: "그랜드플래닛 · 기계가 죽어 묻힌 도시",
     intro: "intro", boss: "abysslord", bossDone: "kingdomDone",
     width: 2150, height: 1180, groundTint: 0x8a7a6a, groundTex: "tile_blood", pathTex: "tile_morgue", bg: "#14100a",
     flowers: 0, trees: 0, rocks: 16,
@@ -452,7 +452,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "dlcswallow", num: 17, dlc: true,
     title: "DLC 7 — 대공전함 다크스왈로해브니스",
-    subtitle: "그랜드 플레닛 · 하늘을 삼키는 전함",
+    subtitle: "그랜드플래닛 · 하늘을 삼키는 전함",
     intro: "intro", boss: "fenrir", bossDone: "kingdomDone",
     width: 2200, height: 1150, groundTint: 0x5a4a6a, groundTex: "tile_deep", pathTex: "tile_hel", bg: "#0e0814",
     flowers: 0, trees: 0, rocks: 8,
@@ -472,7 +472,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "dlcopinicia", num: 18, dlc: true,
     title: "DLC 8 — 오피니시아",
-    subtitle: "그랜드 플레닛 · 순력과 혼력의 대립점, 5대 가문의 도시",
+    subtitle: "그랜드플래닛 · 순력과 혼력의 대립점, 5대 가문의 도시",
     intro: "intro", boss: "skoll", bossDone: "kingdomDone",
     width: 2200, height: 1200, groundTint: 0xc0a060, groundTex: "tile_amber", pathTex: "tile_desert", bg: "#141008",
     flowers: 6, trees: 5, rocks: 10,
@@ -495,7 +495,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "dlcnovel", num: 19, dlc: true,
     title: "DLC 9 — 비밀의 화원 노벨 플로스",
-    subtitle: "그랜드 플레닛 · 아무도 모르는 정원",
+    subtitle: "그랜드플래닛 · 아무도 모르는 정원",
     intro: "intro", boss: "gram", bossDone: "kingdomDone",
     width: 2100, height: 1150, groundTint: 0xa8e0a0, groundTex: "tile_moss", pathTex: "tile_garden", bg: "#0a1408",
     flowers: 14, trees: 12, rocks: 6,
@@ -515,7 +515,7 @@ export const CHAPTERS: ChapterSpec[] = [
   {
     key: "dlcsernium", num: 20, dlc: true,
     title: "DLC 10 — 신의도시 세르니움",
-    subtitle: "그랜드 플레닛 · 마지막 행성, 고향이자 종착점",
+    subtitle: "그랜드플래닛 · 마지막 행성, 고향이자 종착점",
     intro: "intro", boss: "abudditos", bossDone: "kingdomDone",
     width: 2300, height: 1250, groundTint: 0xd8c890, groundTex: "tile_vault", pathTex: "tile_amber", bg: "#1a1408",
     flowers: 8, trees: 6, rocks: 8,
@@ -548,7 +548,7 @@ export const CHAPTERS: ChapterSpec[] = [
  *  결과: 비율 편차 2.15배 → 1.04배.
  *  생성: tools/rebalance-exp.py (재현 가능) */
 export const ENEMIES: Record<EnemyKey, EnemyDef> = {
-  wolf: { key: "wolf", name: "잿빛 늑대", hp: 58, atk: 13, speed: 132, aggro: 300, exp: 30, gold: [5, 8], def: 2, defPct: 0.02, dropHp: 0.3, dropMp: 0.2, profile: { charge: { cd: 3600, speed: 430, time: 420 } } },
+  wolf: { key: "wolf", name: "하울르스톤 늑대", hp: 58, atk: 13, speed: 132, aggro: 300, exp: 30, gold: [5, 8], def: 2, defPct: 0.02, dropHp: 0.3, dropMp: 0.2, profile: { charge: { cd: 3600, speed: 430, time: 420 } } },
   minion: { key: "minion", name: "심연 하수인", hp: 78, atk: 18, speed: 108, aggro: 320, exp: 41, gold: [9, 13], def: 3, defPct: 0.03, dropHp: 0.32, dropMp: 0.24, profile: { apply: { kind: "bleed", chance: 0.4, dps: 4, dur: 3500 } } },
   spider: { key: "spider", name: "동굴 거미", hp: 88, atk: 19, speed: 122, aggro: 320, exp: 46, gold: [10, 14], def: 3, defPct: 0.03, dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "poison", chance: 0.45, dps: 5, dur: 4500 }, fieldOnDeath: { kind: "poison", dps: 5, dur: 3500, radius: 80 } } },
   golem: { key: "golem", name: "수정 골렘", hp: 148, atk: 24, speed: 78, aggro: 260, exp: 77, gold: [14, 21], def: 18, defPct: 0.1, dropHp: 0.34, dropMp: 0.26, profile: { charge: { cd: 5200, speed: 330, time: 620 } } },
@@ -604,12 +604,6 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
 
 /* ================= 보스 정의 (v1.5 데이터 이관 + 챕터 보강) ================= */
 
-/** 목적격 조사: 받침 있으면 "을", 없으면 "를" (보스 이름이 바뀌어도 의뢰문이 맞게). */
-export const objJosa = (s: string) => {
-  const c = s.charCodeAt(s.length - 1) - 0xac00;
-  return s + (c >= 0 && c < 11172 && c % 28 ? "을" : "를");
-};
-
 export const BOSS_DEFS: Record<BossKey, BossDef> = {
   guardian: {
     key: "guardian", name: "심연의 수호자",
@@ -661,7 +655,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     summonKey: "wraith",
   },
   nidhog: {
-    key: "nidhog", name: "탐식의 흑룡",
+    key: "nidhog", name: "탐식의 드래곤 니드호그",
     hp: 3600, atk: 26, speed: 90, exp: 380, gold: 260,
     tex: "boss_nidhog", orbTint: 0x7dff9a, introDialogue: "bossIntroNidhog",
     /* v1.4.12 (#20 보스 정체성) — vc142: 시그니처 beam → 맹독 장판으로 교체 (탐식 독 드래곤) */
@@ -675,7 +669,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     summonKey: "swampbeast",
   },
   surt: {
-    key: "surt", name: "화염의 거인",
+    key: "surt", name: "화염의 거인 수르트",
     hp: 5400, atk: 33, speed: 88, exp: 560, gold: 340,
     tex: "boss_surt", orbTint: 0xffa05a, introDialogue: "bossIntroSurt",
     /* v1.4.12 (#20 보스 정체성) — vc142: 시그니처 zones → 추적 화염기둥으로 교체 (화염의 거인) */
@@ -688,7 +682,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     },
   },
   fenrir: {
-    key: "fenrir", name: "탐욕의 늑대",
+    key: "fenrir", name: "탐욕의 늑대 펜리르",
     hp: 7400, atk: 36, speed: 96, exp: 640, gold: 380,
     tex: "boss_fenrir", orbTint: 0xc08aff, introDialogue: "bossIntroFenrir",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 charge · 성향 0.85 */
@@ -703,7 +697,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     },
   },
   skoll: {
-    key: "skoll", name: "교만의 쌍랑", /* vc142 보스 디자인 교체 — 유저 제공 쌍랑 아틀라스(얼음 늑대 스콜+화염 늑대 하티) 반영 (구 표기: 교만의 얼음 봉황) */
+    key: "skoll", name: "교만의 쌍랑 스콜&하티", /* vc142 보스 디자인 교체 — 유저 제공 쌍랑 아틀라스(얼음 늑대 스콜+화염 늑대 하티) 반영 (구 표기: 교만의 얼음 봉황) */
     /* vc143 (#2 후반 보스 대폭 상향) — 8장 스콜 HP 8600→12000 · ATK 39→42 */
     hp: 12000, atk: 42, speed: 100, exp: 720, gold: 420,
     tex: "boss_skoll", orbTint: 0xffd97a, introDialogue: "bossIntroSkoll",
@@ -720,7 +714,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     summonKey: "runegolem",
   },
   gram: {
-    key: "gram", name: "혈안의 문지기", /* v4.1.3 (#신화고증) — 구 표기 "대지의 괴물 그람": 그람(Gram)은 시구르드의 검이다. 헬의 대문을 지키는 존재는 사냥개 가름(Garmr) */
+    key: "gram", name: "혈안의 문지기 가름", /* v4.1.3 (#신화고증) — 구 표기 "대지의 괴물 그람": 그람(Gram)은 시구르드의 검이다. 헬의 대문을 지키는 존재는 사냥개 가름(Garmr) */
     /* vc143 (#2 후반 보스 대폭 상향) — 9장 가름 HP 10600→20000 · ATK 42→48 */
     hp: 20000, atk: 48, speed: 86, exp: 860, gold: 480,
     tex: "boss_gram", orbTint: 0x8affc0, introDialogue: "bossIntroGram",
@@ -736,7 +730,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     summonKey: "helhound",
   },
   abudditos: {
-    key: "abudditos", name: "종언의 마룡", /* v4.1.3 (#신화고증) — 구 표기 "니드그림"을 세계관 근원인 아부디토스로 통일 */
+    key: "abudditos", name: "종언의 마룡 아부디토스", /* v4.1.3 (#신화고증) — 구 표기 "니드그림"을 세계관 근원인 아부디토스로 통일 */
     /* vc143 (#2 후반 보스 대폭 상향) — 10장 아부디토스 HP 14500→34000 · ATK 46→54 */
     hp: 34000, atk: 54, speed: 100, exp: 1200, gold: 650,
     tex: "boss_abudditos", orbTint: 0xff3a6a, introDialogue: "bossIntroAbudditos",
@@ -756,7 +750,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
    *  기존 보스 정의는 전부 유지 — 신규 3종은 기존 텍스처(휴먼 리소스 제로)를 재활용하되
    *  이름·색조·패턴 구성을 다르게 해 별개의 적으로 기능한다. */
   vord: {
-    key: "vord", name: "재림의 파수꾼",
+    key: "vord", name: "재림의 파수꾼 베오르드",
     /* vc143 (#2 후반 보스 대폭 상향) — 재림 r5 베오르드 HP 16800→42000 · ATK 50→58 */
     hp: 42000, atk: 58, speed: 92, exp: 1500, gold: 800,
     /* vc148 (#보스그리드) — tex boss2(유령선) 공유 → 전용 흑룡 아틀라스 (bsw_vord 8열×7행 재슬라이싱) */
@@ -775,7 +769,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
   jorm: {
     /* vc267 (P7a 정본 감사) — 표시 이름만 교체. key:"jorm" 은 세이브·스테이지 참조라 유지.
      * '요르문간드'는 정본 8개에 없는 북유럽 신화 고유명이라 정본 세계관(연합을 삼키는 뱀)으로 다시 지었다. */
-    key: "jorm", name: "연합을 삼키는 뱀",
+    key: "jorm", name: "연합를 먹는 뱀 가르간",
     /* vc143 (#2 후반 보스 대폭 상향) — 재림 r10 요르문간드 HP 21500→60000 · ATK 55→64 */
     hp: 60000, atk: 64, speed: 104, exp: 1900, gold: 980,
     /* v5.0.1 — 유저 제공 시트(박쥐날개 황금뿔 드래곤)로 boss_jorm 독립 (nidhog 공유 해제) */
@@ -793,7 +787,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     summonKey: "x2_reeffish",
   },
   nagr: {
-    key: "nagr", name: "재림의 천사기사",
+    key: "nagr", name: "재림의 종언 나그라파르",
     /* vc143 (#2 후반 보스 대폭 상향) — 재림 r15 나그라파르 HP 30000→95000 · ATK 62→72 */
     hp: 95000, atk: 72, speed: 108, exp: 2600, gold: 1400,
     /* v1.4.31 (#4 보스 개편) — 발할라 천사기사 전용 아트 아틀라스 적용 (기존 아부디토스 재사용 해제) */
@@ -1396,7 +1390,7 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
       id: `${prefix}-boss`,
       type: "boss",
       title: BOSS_DEFS[spec.boss].name,
-      desc: `${spec.title}의 주인 — ${objJosa(BOSS_DEFS[spec.boss].name)} 처치해라!`,
+      desc: `${spec.title}의 주인 — ${BOSS_DEFS[spec.boss].name}를 처치해라!`,
       targetLabel: BOSS_DEFS[spec.boss].name,
       reward: Math.round(320 * CH_QGOLD[spec.num - 2] * 0.7 * G),
       expReward: Math.round(420 * CH_XP[spec.num - 2]),
@@ -1649,7 +1643,7 @@ for (let ci = 0; ci < CHAPTERS.length; ci++) {
 }
 
 STAGES.youngprincessv = {
-  key: "youngprincessv", name: "라일락 월드: 영준 프린세스 — 시작 마을",
+  key: "youngprincessv", name: "하울르스톤: 영준 프린세스 — 시작 마을",
   subtitle: "본편 이후의 세계 — 영프 엔딩 후 이 마을에서 그랜드 플레닛으로",
   width: 1500, height: 860, groundTint: 0xffffff,
   flowerCount: 6, treeCount: 6, rockCount: 2,
@@ -1672,7 +1666,7 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
  *  · 밸런스는 각 챕터의 전용 `scaleMul` — `stageScale()` 이 우선 사용하므로
  *    기존 곡선(CH_HP/CH_ATK/CH_EXP)을 건드리지 않는다.
  *  · 체인은 `youngprincessv` 마을 → howlrstone11 … howlrstone510 → `dlcstargate1`.
- *    즉 "본편 → 영프 편 → 그랜드 플레닛" 이 끊김 없이 이어진다.
+ *    즉 "본편 → 영프 편 → 그랜드 플래닛" 이 끊김 없이 이어진다.
  * ══════════════════════════════════════════════════════════════════════════ */
 {
   const hwKeys: ChapterKey[] = HOWLRSTONE_CHAPTERS.map((c) => c.key);
@@ -1792,7 +1786,7 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
           id: `${spec.key.slice(-1)}${sub}-boss`,
           type: "boss",
           title: bossName,
-          desc: `${spec.title}의 주인 — ${objJosa(bossName)} 처치해라!`,
+          desc: `${spec.title}의 주인 — ${bossName}를 처치해라!`,
           targetLabel: bossName,
           reward: Math.round(320 * spec.scaleMul.gold * G),
           expReward: Math.round(420 * spec.scaleMul.exp),
@@ -1853,7 +1847,7 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
         scaleMul: { ...spec.scaleMul },
       };
       STAGE_SHORT[key] = `${ci + 1}-${sub}`;
-      /* 체인: 영프 내부는 순차, 마지막 구역 다음은 그랜드 플레닛 첫 구역.
+      /* 체인: 영프 내부는 순차, 마지막 구역 다음은 그랜드 플래닛 첫 구역.
        *  vc235 — 스테이지 수가 챕터마다 다르므로(4~5) `sub < 10` 하드코딩을
        *  spec.stages 로 바꾸고, 키도 `장x구역` 형식에 맞춘다.
        *  (종전엔 마지막 다음이 존재하지 않는 `howlrstone155` 를 가리켰다) */
@@ -1959,12 +1953,12 @@ NEXT_STAGE.dojang = null;
 PREV_STAGE.dojang = "village"; // 폴백 — 실제 복귀지는 입장 시 기록한 dojangFrom
 STAGE_SHORT.dojang = "무릉도장";
 
-/* ================= v4.0.0 — 균열 수비전 (웨이브 디펜스 특별 구역) =================
+/* ================= v4.0.0 — 바르가 수비전 (웨이브 디펜스 특별 구역) =================
  *  연합 뿌리의 균열(바르가)을 몰려오는 몬스터 웨이브에서 지킨다.
  *  체인 분리 — 전진 포탈 없음, 복귀 포탈은 입장 전 구역. */
 STAGES.gate = {
   key: "gate",
-  name: "균열 수비전",
+  name: "바르가 수비전",
   subtitle: "연합 뿌리의 균열이 열렸다 — 웨이브를 막아라!",
   width: 1500,
   height: 920,
@@ -1978,7 +1972,7 @@ STAGES.gate = {
 };
 NEXT_STAGE.gate = null;
 PREV_STAGE.gate = "village"; // 폴백 — 실제 복귀지는 입장 시 기록한 gateFrom
-STAGE_SHORT.gate = "균열 수비전";
+STAGE_SHORT.gate = "바르가 수비전";
 
 /* ================= v4.0.0 — 균열 던전 (골드/경험치책 파밍 던전) =================
  *  균열 속 60초 동안 몬스터가 계속 쏟아지는 파밍 전용 구역. */
@@ -2047,12 +2041,12 @@ NEXT_STAGE.contest = null;
 PREV_STAGE.contest = "village"; // 폴백 — 실제 복귀지는 입장 시 기록한 contestFrom
 STAGE_SHORT.contest = "보스 기록전";
 
-/* ================= v1.0.8 — 무한의 탑 (무한 층수 탑등반 — 무한 콘텐츠 ①) =================
+/* ================= v1.0.8 — 심연의 탑 (무한 층수 탑등반 — 무한 콘텐츠 ①) =================
  *  콘텐츠 패널에서 입장 — 층을 오를수록 강해지는 적, 10층마다 보스, 층 클리어 보상.
  *  체인 분리 — 전진 포탈 없음, 복귀 포탈은 입장 전 구역. */
 STAGES.tower = {
   key: "tower",
-  name: "무한의 탑",
+  name: "심연의 탑",
   subtitle: "무한히 이어지는 탑 — 최고층에 도전해라",
   width: 1300,
   height: 860,
@@ -2066,7 +2060,7 @@ STAGES.tower = {
 };
 NEXT_STAGE.tower = null;
 PREV_STAGE.tower = "village"; // 폴백 — 실제 복귀지는 입장 시 기록한 towerFrom
-STAGE_SHORT.tower = "무한의 탑";
+STAGE_SHORT.tower = "심연의 탑";
 
 /* ================= v1.0.18 — 몬스터 파크 (일일 입장권 · 난이도별 웨이브 사냥) =================
  *  콘텐츠 패널에서 입장 — 하루 2장의 입장권, 난이도(일반/어려움/지옥)별 몬스터 웨이브.
@@ -2260,7 +2254,7 @@ function buildRebirthStage(spec: RebirthSpec): StageDef {
       id: `${spec.key}-boss`,
       type: "boss",
       title: BOSS_DEFS[spec.bossKey].name,
-      desc: `재림의 수호자 — ${objJosa(BOSS_DEFS[spec.bossKey].name)} 처치해라!`,
+      desc: `재림의 수호자 — ${BOSS_DEFS[spec.bossKey].name}를 처치해라!`,
       targetLabel: BOSS_DEFS[spec.bossKey].name,
       reward: Math.round(spec.reward.gold * 1.6),
       expReward: Math.round(spec.reward.exp * 1.6),

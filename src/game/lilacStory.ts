@@ -332,7 +332,7 @@ export const LILAC_DIALOGUES: Record<string, { speaker: string; lines: string[] 
     speaker: "리안",
     lines: [
       "카르텔 국왕. 이야기는 들었습니다.",
-      "다음 타깃이 칼리야라면, 우리가 먼저 움직여야 합니다.",
+      "다음 타깃이 조선시대 왕국이라면, 우리가 먼저 움직여야 합니다.",
     ],
   },
   lilac04_close: {
@@ -465,13 +465,13 @@ export const LILAC_DIALOGUES: Record<string, { speaker: string; lines: string[] 
     ],
   },
   lilac07_ihyeon: {
-    speaker: "리엘",
+    speaker: "이현",
     lines: [
       "3분 뒤에 보시죠.",
     ],
   },
   lilac07_close: {
-    speaker: "리엘",
+    speaker: "이현",
     lines: [
       "도깨비신의 공격.",
       "화려하게 제압해냈다. 그리고 연결했다.",
@@ -864,7 +864,7 @@ export const LILAC_DIALOGUES: Record<string, { speaker: string; lines: string[] 
   lilacNpc_lilac15: {
     speaker: "연합 접수관",
     lines: [
-      "그랜드 플레닛의 세르니움에서 연락이 왔습니다.",
+      "그랜드 플래닛의 세르니움에서 연락이 왔습니다.",
       "파견 선발대를 준비하라고요. …이번에도 일이 커질 것 같습니다.",
     ],
   },

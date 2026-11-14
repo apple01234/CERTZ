@@ -1,5 +1,5 @@
 /* =====================================================================
- * v4.0.0 "원정 업데이트" — 균열 수비전 + 수집형 성장 시스템
+ * v4.0.0 "바르가 업데이트" — 균열 수비전 + 수집형 성장 시스템
  *  - 연합 뿌리에서 열리는 균열(바르가)을 방어하는 웨이브 디펜스,
  *    3인 협동 몬스터 웨이브 디펜스 RPG)에서 착안해 SERTZ에 맞게 재해석한 콘텐츠.
  *  - 이 파일은 데이터 테이블 + 순수 계산 헬퍼만 담당 (Phaser 의존 없음).
@@ -31,15 +31,15 @@ export const FIGURE_GRADE_META: Record<FigureGrade, { name: string; color: strin
 export const FIGURES: FigureDef[] = [
   { icon: "pet_slime", key: "fig_slime", name: "필드 슬라임", grade: 0, desc: "첫 사냥 상대의 피규어", bonus: { hp: 40 } },
   { icon: "x3_goblin_idle0", key: "fig_gob", name: "고블린 정찰병", grade: 0, desc: "숲의 단골손님", bonus: { atk: 3 } },
-  { icon: "frostwolf_idle0", key: "fig_wolf", name: "서릿늑대", grade: 0, desc: "얼어붙은 땅의 주민", bonus: { def: 2 } },
+  { icon: "frostwolf_idle0", key: "fig_wolf", name: "서릿늑대", grade: 0, desc: "니플헤임의 주민", bonus: { def: 2 } },
   { icon: "kd_plant2", key: "fig_mush", name: "황금 버섯", grade: 0, desc: "숨겨진 하늘색 반짝임", bonus: { crit: 1 } },
   { icon: "x3_orcwarrior_idle0", key: "fig_knight", name: "쿠소디아 기사", grade: 1, desc: "철벽의 방패 자세", bonus: { def: 6, hp: 80 } },
   { icon: "pet_pixie", key: "fig_archer", name: "요정 궁수", grade: 1, desc: "알프헤임의 명사수", bonus: { atk: 6 } },
   { icon: "x2_firebird_idle0", key: "fig_dragon", name: "새끼 파이어드레이크", grade: 1, desc: "아직 작은 화염", bonus: { atk: 4, crit: 2 } },
-  { icon: "x3_necromancer_idle0", key: "fig_reaper", name: "작은 사신", grade: 1, desc: "명계의 초보 사자", bonus: { crit: 3 } },
+  { icon: "x3_necromancer_idle0", key: "fig_reaper", name: "작은 사신", grade: 1, desc: "헬의 초보 사자", bonus: { crit: 3 } },
   { icon: "runegolem_idle0", key: "fig_golem", name: "룬 골렘", grade: 2, desc: "고대 룬이 깨어났다", bonus: { atkPct: 2, hp: 150 } },
-  { icon: "emberwolf_idle0", key: "fig_fenrir", name: "늑대 그림자", grade: 2, desc: "포효가 남겨둔 흔적", bonus: { atkPct: 3 } },
-  { icon: "cos_wings", key: "fig_valk", name: "천사기사의 날개", grade: 2, desc: "빛의 결정 날개", bonus: { crit: 4, def: 8 } },
+  { icon: "emberwolf_idle0", key: "fig_fenrir", name: "펜리르 그림자", grade: 2, desc: "포효가 남겨둔 흔적", bonus: { atkPct: 3 } },
+  { icon: "cos_wings", key: "fig_valk", name: "발키리 날개", grade: 2, desc: "빛의 결정 날개", bonus: { crit: 4, def: 8 } },
   { icon: "gw_crystal", key: "fig_worldtree", name: "연합의 심장", grade: 3, desc: "다섯 왕국을 지탱하는 전설", bonus: { atkPct: 4, hp: 300, crit: 2 } },
 ];
 
@@ -88,7 +88,7 @@ export type BadgeDef = {
 export const BADGES: BadgeDef[] = [
   { key: "bdg_gate1", name: "차원문의 문지기", desc: "게이트 첫 승리 기념", bonus: { hp: 100 }, src: "게이트 ★1 달성" },
   { key: "bdg_gate2", name: "웨이브 사냥꾼", desc: "20웨이브 방어의 증표", bonus: { atk: 8 }, src: "게이트 ★2 달성" },
-  { key: "bdg_gate3", name: "균열 수호자", desc: "30웨이브 방어의 전설", bonus: { atk: 12, hp: 150 }, src: "게이트 ★3 달성" },
+  { key: "bdg_gate3", name: "바르가 수호자", desc: "30웨이브 방어의 전설", bonus: { atk: 12, hp: 150 }, src: "게이트 ★3 달성" },
   { key: "bdg_closet", name: "균열 탐험가", desc: "균열 던전 파밍광", bonus: { goldPct: 5 }, src: "균열 던전 누적 10만G" },
   { key: "bdg_hunter", name: "토벌자 인장", desc: "1,000마리 사냛 증명", bonus: { atk: 5, def: 3 }, src: "업적 — 토벌 1000" },
   { key: "bdg_star", name: "별의 인장", desc: "성좌 6개 개방 기념", bonus: { crit: 3 }, src: "업적 — 성좌 수집가" },
@@ -306,7 +306,7 @@ export const GATE_CARD_POOL: GateCard[] = [
   { id: "c_cri2", tier: 2, name: "약점 간파", desc: "크리티컬 +10%p", stat: { crit: 10 } },
   { id: "c_ls2", tier: 2, name: "흡혈 송곳니", desc: "처치 시 HP 흡수 5%", stat: { lifesteal: 5 } },
   /* 3성 */
-  { id: "c_atk3", tier: 3, name: "원정대의 축복", desc: "공격력 +25%", stat: { atkPct: 25 } },
+  { id: "c_atk3", tier: 3, name: "바르가의 축복", desc: "공격력 +25%", stat: { atkPct: 25 } },
   { id: "c_skl3", tier: 3, name: "궁극의 마수렬", desc: "스킬 피해 +35%", stat: { skillPct: 35 } },
   { id: "c_hp3", tier: 3, name: "불굴의 각오", desc: "최대 HP +40%", stat: { hpPct: 40 } },
   { id: "c_cri3", tier: 3, name: "신의 시선", desc: "크리티컬 +18%p", stat: { crit: 18 } },
@@ -413,7 +413,7 @@ export const DAILY_QUESTS: DailyQuestDef[] = [
   /* v1.0.7 — 파밍/보스 일일 퀘스트 2종 확장 (리텐션 루프 강화 — 3종 → 5종) */
   { id: "farm", name: "오늘의 파밍", desc: "필드 아이템 드롭 40개 수집", goal: 40, reward: { label: "뽑기권 1 + 골드 8,000", tickets: 1, gold: 8000 } },
   { id: "boss", name: "보스 사냥", desc: "보스 1마리 처치 (재림/카오스 포함)", goal: 1, reward: { label: "골드 20,000 + 에메랄드 3", gold: 20000, emerald: 3 } },
-  { id: "gate", name: "게이트 방어", desc: "균열 수비전 1회 입장", goal: 1, reward: { label: "뽑기권 1 + 골드 5,000", tickets: 1, gold: 5000 } },
+  { id: "gate", name: "게이트 방어", desc: "바르가 수비전 1회 입장", goal: 1, reward: { label: "뽑기권 1 + 골드 5,000", tickets: 1, gold: 5000 } },
   { id: "closet", name: "균열 던전", desc: "균열 던전 1회 입장", goal: 1, reward: { label: "뽑기권 1 + 에메랄드 2", tickets: 1, emerald: 2 } },
 ];
 

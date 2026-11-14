@@ -399,6 +399,18 @@
     "sha256": "c8c046f28ff4d3ccc56d7e3514230b016611a0abd4ebfe31708f4d858beed8c7",
     "canon": "4.txt:78 '리엘(도사): 도술을 배워서 도술을 쓸 줄 알고 도술로만 봤을 때 세 손가락 안에 들 만큼 강하다. 리엘의 원력은 초월자의 힘'"
   },
+  "리엘의 스승": {
+    "src": "/assets/npcportrait/npc_riel.png",
+    "source": "/assets/npcportrait/_raw/npc_riel_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "c8c046f28ff4d3ccc56d7e3514230b016611a0abd4ebfe31708f4d858beed8c7",
+    "canon": "4.txt:78 '리엘(도사): 도술을 배워서 도술을 쓸 줄 알고 도술로만 봤을 때 세 손가락 안에 들 만큼 강하다. 리엘의 원력은 초월자의 힘'"
+  },
   "하루": {
     "src": "/assets/npcportrait/npc_haru.png",
     "source": "/assets/npcportrait/_raw/npc_haru_raw.png",
@@ -615,7 +627,7 @@
     "sha256": "8ba0b6c46cfe84cf86a9751d62136d2cc77db3425caf9827b35f42b039a4e82b",
     "canon": "8.txt '니시아의 5대 가문중 하나이자 가주인 엘리자베스는 자력 초월자... 제니퍼의 가문, 불' — 니시아 5대 가문 사람"
   },
-  "태을선인": {
+  "이현": {
     "src": "/assets/npcportrait/npc_ihyun.png",
     "source": "/assets/npcportrait/_raw/npc_ihyun_raw.png",
     "crop": [
@@ -625,7 +637,19 @@
       84
     ],
     "sha256": "ae9b4fb5e60069a7dcde5217ad23ecafb14ae25b103781649df5d28562bc9c24",
-    "canon": "8.txt:372 '난 저기 있는 도사의 사부님인 태을선인이라네' · 8.txt:396 플라워 워프"
+    "canon": "4.txt '이현선인: 부채를 쓰며 도술을 사용한다. 이현선인이 가지고 있는 고유 특성은 꽃'"
+  },
+  "이현선인": {
+    "src": "/assets/npcportrait/npc_ihyun.png",
+    "source": "/assets/npcportrait/_raw/npc_ihyun_raw.png",
+    "crop": [
+      0,
+      0,
+      84,
+      84
+    ],
+    "sha256": "ae9b4fb5e60069a7dcde5217ad23ecafb14ae25b103781649df5d28562bc9c24",
+    "canon": "4.txt '이현선인: 부채를 쓰며 도술을 사용한다. 이현선인이 가지고 있는 고유 특성은 꽃'"
   },
   "아리스텔라 경": {
     "src": "/assets/npcportrait/npc_aristella.png",

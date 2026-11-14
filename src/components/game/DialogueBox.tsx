@@ -55,10 +55,10 @@ const NPC_PORTRAITS: Record<string, { tex: string; tone: string }> = {
   "저택 집사 무르": { tex: "spum_butler", tone: "#d0a8ff" },
   "폐허 학자 테일": { tex: "spum_mage", tone: "#b09aff" },
   "마지막 항해사": { tex: "spum_fisher", tone: "#b09aff" },
-  "종언의 마룡": { tex: "boss_abudditos_idle0", tone: "#fda4af" }, // v1.4.31 — 구형 프레임 경로 유지 (아부디토스는 미아틀라스)
+  "종언의 마룡 아부디토스": { tex: "boss_abudditos_idle0", tone: "#fda4af" }, // v1.4.31 — 구형 프레임 경로 유지 (아부디토스는 미아틀라스)
   "{name}": { tex: "dxp_15tl", tone: "#86efac" }, // 플레이어
   // v1.0.2 (#초상화) — 매핑 누락 화자 보강 (가름은 bossPortrait 토큰 매칭으로도 자동 해결, 여기선 명시 우선)
-  "혈안의 문지기": { tex: "boss_gram_idle0", tone: "#8affc0" }, // 구형 프레임 경로 (가름은 미아틀라스)
+  "헬의 문지기 가름": { tex: "boss_gram_idle0", tone: "#8affc0" }, // 구형 프레임 경로 (가름은 미아틀라스)
   "전사 계열의 시조 '강철의 마르테'": { tex: "spum_knight", tone: "#fbbf24" },
   "궁수 계열의 시조 '바람의 세이렌'": { tex: "spum_elf", tone: "#a7f3d0" },
   "마법사 계열의 시조 '만개한 세이렌'": { tex: "spum_mage", tone: "#c4b5fd" },
@@ -84,7 +84,7 @@ const NPC_PORTRAITS: Record<string, { tex: string; tone: string }> = {
  *  v3.0.25 (#이미지 안불러와짐) — 보스 텍스처는 idle 프레임 분할 파일(boss_*_idle0.png)이므로
  *  기본명(boss_nidhog.png 등)은 404 → 전원 이미지가 깨졌다. 첫 idle 프레임을 초상화로 사용 */
 function bossPortrait(speaker: string): { tex: string; tone: string } | null {
-  /* v1.0.2 (#초상화) — 토큰 매칭 추가: "혈안의 문지기"처럼 수식어가 다른 화자도
+  /* v1.0.2 (#초상화) — 토큰 매칭 추가: "헬의 문지기 가름"처럼 수식어가 다른 화자도
    *  마지막 고유명사(가름) 일치로 보스 스프라이트 자동 매핑 (speakerId 자동 매핑)
    * v1.4.31 (#4) — bossPortraitUrl(): 아틀라스 보스는 전용 초상화(bossport_*.webp),
    *  구형은 idle0 프레임 — tex 키에 확장자/경로 없는 순수 키를 반환한다 */

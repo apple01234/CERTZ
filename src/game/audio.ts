@@ -368,7 +368,7 @@ const STAGE_BGM: Record<string, [string, string, string]> = {
   howlrstone13: ["bgm_hw5_1", "bgm_hw5_1", "bgm_hw5_1"],   // 최후의 일격 — 결전
   howlrstone14: ["bgm_hw5_3", "bgm_hw5_3", "bgm_hw5_3"],   // THE END TIME — 종말
   howlrstone15: ["bgm_hw1_3", "bgm_hw1_3", "bgm_hw1_3"],   // New Beginning — 회복
-  /* 2026-11-14 — 그랜드 플레닛(DLC) 10챕터 전용 필드곡. 종전엔 HUNT_THEME_OF 로 옛 챕터 곡을 빌려
+  /* 2026-11-14 — 그랜드 플래닛(DLC) 10챕터 전용 필드곡. 종전엔 HUNT_THEME_OF 로 옛 챕터 곡을 빌려
    *  프리즈마·노벨·세르니움 30구역이 같은 3곡, 스타게이트·메크, 네오시티·오피니시아가 같은 곡이었다.
    *  쓰이지 않던 옛 곡(포레스트·무스펠·니플·동굴 물소리)을 나눠 챕터끼리 필드곡이 겹치지 않게 한다. */
   dlcstargate: ["bgm_nidavellir_1", "bgm_nidavellir_2", "bgm_nidavellir_3"],

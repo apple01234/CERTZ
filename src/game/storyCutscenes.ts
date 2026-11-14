@@ -58,7 +58,7 @@ export type ChapterIntroSpec = {
  * 챕터별 진입 연출. 챕터마다 팬 속도·줌을 달리해 "또 같은 연출"로 읽히지 않게 한다.
  */
 export const CHAPTER_INTROS: Record<string, ChapterIntroSpec> = {
-  /* ── DLC 1~10 — 그랜드 플레닛 원정. 도시마다 다른 시선 리듬 ── */
+  /* ── DLC 1~10 — 그랜드플래닛 원정. 도시마다 다른 시선 리듬 ── */
   dlcstargate: {
     once: true,
     shots: [

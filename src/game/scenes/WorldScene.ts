@@ -506,7 +506,7 @@ export class WorldScene extends Phaser.Scene {
   private dojangRecent: { t: number; v: number }[] = [];
   private dojangMaxHit = 0;
   private dojangDps = 0;
-  /* ================= v4.0.0 — 원정 업데이트 상태 ================= */
+  /* ================= v4.0.0 — 바르가 업데이트 상태 ================= */
   /* 게이트 디펜스 (웨이브) */
   private gateActive = false;
   private gateWave = 0;
@@ -610,7 +610,7 @@ export class WorldScene extends Phaser.Scene {
   /* ================= v1.0.8 — 무한 콘텐츠 10종 상태 ================= */
   /** 무한 콘텐츠 저장 스냅샷 (탑/티어균열/시련/환생/제작/펫/심연) */
   inf: InfSave = infMerge();
-  /** ① 무한의 탑 진행 상태 */
+  /** ① 심연의 탑 진행 상태 */
   private towerActive = false;
   private towerFloor = 0;
   private towerFrom: StageKey = "village";
@@ -1595,7 +1595,7 @@ export class WorldScene extends Phaser.Scene {
     this.player.fifth2Done = savedPlayer.fifth2Done ?? false;
     /* 답사형(reach) 단계 판정 — 진행 상태 복원 후 판정해야 현재 구역이 카운트된다 */
     this.fifth2Progress({ kind: "reach", key: stageKey });
-    /* ----- v4.0.0 — 원정 업데이트 복원 ----- */
+    /* ----- v4.0.0 — 바르가 업데이트 복원 ----- */
     this.figures = (savedPlayer.figures ?? []).filter((k) => k in FIGURE_MAP);
     this.shards = savedPlayer.shards ?? 0;
     this.gachaTickets = savedPlayer.gachaTickets ?? 0;
@@ -2232,10 +2232,10 @@ export class WorldScene extends Phaser.Scene {
     /* ---------- v3.3.0 (지시 #6) — 무릉도장: 허수아비 + 타이머/기록 UI ---------- */
     if (stageKey === "dojang") this.buildDojang();
 
-    /* ---------- v4.0.0 — 균열 수비전 / 균열 던전 빌드 ---------- */
+    /* ---------- v4.0.0 — 바르가 수비전 / 균열 던전 빌드 ---------- */
     if (stageKey === "gate") this.buildGate();
     if (stageKey === "closet") this.buildCloset();
-    /* ---------- v1.0.8 — 무한의 탑 빌드 (무한 층수) ---------- */
+    /* ---------- v1.0.8 — 심연의 탑 빌드 (무한 층수) ---------- */
     if (stageKey === "tower") this.buildTower();
     if (stageKey === "park") this.buildPark(); // v1.0.18 — 몬스터 파크
     if (stageKey === "praid") {
@@ -2263,7 +2263,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.isInterior) {
       /* 실내 — 출구 문은 interactables로 처리 */
     } else if (this.stageDef.isVillage) {
-      /* vc186b DLC — 세계 구원(아부디토스 격파) 후 본마을에 그랜드 플레닛 게이트를 세운다.
+      /* vc186b DLC — 세계 구원(아부디토스 격파) 후 본마을에 그랜드플래닛 게이트를 세운다.
        *  사용자 지시: "NPC대화후 마을포탈 생성"
        *  → npcDlcTalked(리안과 대화 완료) + cleared(세계 구원) 두 조건이 모두 참일 때만.
        *  기존 9챕터 마을 흐름은 건드리지 않는다(조건 불충족 시 아무것도 안 생김). */
@@ -4294,7 +4294,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /* ═══════════════════════════════════════════════════════════════════════
-   * vc186b DLC — 본마을 「그랜드 플레닛 게이트」
+   * vc186b DLC — 본마을 「그랜드플래닛 게이트」
    *
    * 사용자 지시: "NPC대화후 마을포탈 생성"
    *  1) 세계 구원(cleared) — 아부디토스 격파
@@ -4312,7 +4312,7 @@ export class WorldScene extends Phaser.Scene {
     return !this.isInterior && storyPortalDestination(this.stageDef.key, this) !== null;
   }
 
-  /** 본마을에 그랜드 플레닛 게이트 생성 (조건 충족 시에만 호출됨) */
+  /** 본마을에 그랜드플래닛 게이트 생성 (조건 충족 시에만 호출됨) */
   private spawnDlcPortal() {
     const destination = storyPortalDestination(this.stageDef.key, this);
     if (this.dlcPortal || !destination || this.isInterior) return;
@@ -4372,7 +4372,7 @@ export class WorldScene extends Phaser.Scene {
     /* 유저 지시 — 애델리오나 마을에서 곧바로 1-1 스테이지로 진입한다.
      *  youngprincessv 는 경유지에서 빠졌으므로 목적지로 나올 일이 없다. */
     this.showBanner(destination.startsWith("howlrstone")
-      ? "라일락 월드: 영준 프린세스 — 첫 구역으로 향한다"
+      ? "하울르스톤: 영준 프린세스 — 첫 구역으로 향한다"
       : "그랜드 플레닛 — 제1행성 스타게이트로 향한다");
     this.startTransition(destination, { delay: 520 });
   }
@@ -4907,7 +4907,7 @@ export class WorldScene extends Phaser.Scene {
           { x: cx - 90, y: cy - 90, tex: vSpec.npcB.tex, name: vSpec.npcB.name, dlg: vSpec.npcB.dlg },
         ]
       : [
-          /* vc186b DLC — 세계를 구원한 뒤에는 본마을 주민이 그랜드 플레닛 안내를 한다.
+          /* vc186b DLC — 세계를 구원한 뒤에는 본마을 주민이 그랜드플래닛 안내를 한다.
            *  대화를 끝내면 마을 동쪽에 게이트가 열린다(resumeFromDialogue 훅). */
           {
             x: cx + 210, y: cy + 120, tex: "spum_villager_m", name: "주민",
@@ -6339,7 +6339,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.portal?.active) {
       drawPortalDot(mx(this.portal.x), my(this.portal.y), this.portalActive);
     }
-    // DLC 포탈 (그랜드 플레닛 입구) — 종전 미니맵에 없었다
+    // DLC 포탈 (그랜드플래닛 입구) — 종전 미니맵에 없었다
     if (this.dlcPortal?.active) {
       drawPortalDot(mx(this.dlcPortal.x), my(this.dlcPortal.y), true);
     }
@@ -6738,7 +6738,7 @@ export class WorldScene extends Phaser.Scene {
     }
     /* ---------- v1.0.8 — 무한 콘텐츠 훅 ---------- */
     if (this.towerActive) {
-      /* ① 무한의 탑 — vc142 할당제: 처치 마릿수 누적, 할당 채우면 다음 층 (전멸 불필요) */
+      /* ① 심연의 탑 — vc142 할당제: 처치 마릿수 누적, 할당 채우면 다음 층 (전멸 불필요) */
       if (this.towerBossRef && ref === this.towerBossRef) this.towerBossRef = null;
       this.towerOnKill(false);
     } else if (this.closetActive && this.trialMod) {
@@ -7153,7 +7153,7 @@ export class WorldScene extends Phaser.Scene {
     net.netRankSubmit("dojang", score, getPlayerName(), this.player.lv);
   }
 
-  /* ================= v4.0.0 — 원정 업데이트: 게이트 디펜스/균열 던전/혜택 시스템 ================= */
+  /* ================= v4.0.0 — 바르가 업데이트: 게이트 디펜스/균열 던전/혜택 시스템 ================= */
 
   private today(): string {
     const d = new Date();
@@ -7424,7 +7424,7 @@ export class WorldScene extends Phaser.Scene {
     audio.sfx.reward();
   }
 
-  /* ---------------- 차원 원정대 커맨드 (Panels → EventBus) ---------------- */
+  /* ---------------- 바르가 원정대 커맨드 (Panels → EventBus) ---------------- */
 
   handleIsekai(v: { action: string; key?: string; slot?: number | string; ck?: string; idx?: number; id?: string; code?: string }) {
     if (!this.player) return;
@@ -7680,7 +7680,7 @@ export class WorldScene extends Phaser.Scene {
     };
   }
 
-  /* ---------------- 균열 수비전 (웨이브 디펜스) ---------------- */
+  /* ---------------- 바르가 수비전 (웨이브 디펜스) ---------------- */
 
   enterGate() {
     if (!this.player || this.transitioning) return;
@@ -7702,7 +7702,7 @@ export class WorldScene extends Phaser.Scene {
       this.player.applyRunCard([{ id: "tw", tier: 2, name: "팀워크", desc: tw.label, stat: { atkPct: tw.pct, hpPct: tw.pct } }]);
       notice(tw.label);
     } else {
-      this.showBanner("균열 수비전으로 이동합니다 — 균열의 문을 지켜라!");
+      this.showBanner("바르가 수비전으로 이동합니다 — 균열의 문을 지켜라!");
     }
     this.saveSoon();
     this.emitRpgState();
@@ -7713,7 +7713,7 @@ export class WorldScene extends Phaser.Scene {
     const cx = this.stageW / 2;
     const cy = this.stageH / 2 - 30;
     this.gateCorePos.set(cx, cy);
-    /* 균열의 문의 문 코어 — 발광 균열 문 + 테두리 */
+    /* 바르가 균열의 문 코어 — 발광 균열 문 + 테두리 */
     const door = this.add.rectangle(cx, cy, 84, 120, 0x4a3a6b).setStrokeStyle(4, 0x9d7aff, 0.9).setDepth(4);
     const doorInner = this.add.rectangle(cx, cy - 8, 60, 88, 0x6b5a8a).setDepth(5);
     const knob = this.add.circle(cx + 22, cy, 5, 0xffd76a).setDepth(6);
@@ -7722,7 +7722,7 @@ export class WorldScene extends Phaser.Scene {
     void glow;
     this.tweens.add({ targets: door, scale: 1.03, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     this.add
-      .text(cx, cy - 92, "균열의 문", { fontFamily: "Galmuri11, sans-serif", fontSize: "20px", color: "#d8b0ff", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
+      .text(cx, cy - 92, "바르가 균열", { fontFamily: "Galmuri11, sans-serif", fontSize: "20px", color: "#d8b0ff", stroke: "#1a1020", strokeThickness: 5, fontStyle: "bold" })
       .setOrigin(0.5)
       .setDepth(90);
     /* 코어 HP 바 (월드 좌표) */
@@ -7743,7 +7743,7 @@ export class WorldScene extends Phaser.Scene {
     this.gatePhase = "break";
     this.gateBreakUntil = this.time.now + 2600;
     this.emitGateState();
-    this.showBanner("균열 수비전 시작! 균열에 닿기 전에 몬스터를 처치하라");
+    this.showBanner("바르가 수비전 시작! 균열에 닿기 전에 몬스터를 처치하라");
   }
 
   /* ================= v1.4.3 (유저 리포트 ⑤ 멀티 콘텐츠) — 파티 공동 토벌전 =================
@@ -8013,9 +8013,9 @@ export class WorldScene extends Phaser.Scene {
       this.gateTextAcc2 = 0;
       if (this.gatePhase === "break") {
         const sec = Math.max(0, Math.ceil((this.gateBreakUntil - this.time.now) / 1000));
-        this.gateText?.setText(`균열 수비전  |  다음 웨이브 ${sec}초  |  웨이브 ${this.gateWave}  |  실버 ${this.gateSilver}`);
+        this.gateText?.setText(`바르가 수비전  |  다음 웨이브 ${sec}초  |  웨이브 ${this.gateWave}  |  실버 ${this.gateSilver}`);
       } else {
-        this.gateText?.setText(`균열 수비전  |  웨이브 ${this.gateWave} (${this.gateAlive}마리)  |  실버 ${this.gateSilver}`);
+        this.gateText?.setText(`바르가 수비전  |  웨이브 ${this.gateWave} (${this.gateAlive}마리)  |  실버 ${this.gateSilver}`);
       }
       if (this.gateCoreBar && this.gateCoreBarBg) {
         const pct = Math.max(0, this.gateCoreHp / this.gateCoreMax);
@@ -8190,7 +8190,7 @@ export class WorldScene extends Phaser.Scene {
     else if (waves < 3) lines.push({ text: "바로 철수 — 보상이 없다. 제대로 싸우고 돌아오자!", color: "#ff8a9c" });
     else lines.push({ text: "도중 철수 — 골드 30%만 정산 (별·뽑기권 없음)", color: "#ff8a9c" });
     EventBus.emit("reward:show", {
-      title: mode === "fail" ? "균열 수비전 — 균열 함락" : "균열 수비전 — 철수",
+      title: mode === "fail" ? "바르가 수비전 — 균열 함락" : "바르가 수비전 — 철수",
       lines: lines as RewardPopupState["lines"],
     });
     audio.sfx.reward();
@@ -8247,7 +8247,7 @@ export class WorldScene extends Phaser.Scene {
     this.gotoStage("closet");
   }
 
-  /* v1.0.8 — ① 무한의 탑: 무한 층수 탑등반 (입장 무료 — 층 보상은 심연 코인 중심) */
+  /* v1.0.8 — ① 심연의 탑: 무한 층수 탑등반 (입장 무료 — 층 보상은 심연 코인 중심) */
   enterTower() {
     if (!this.player || this.transitioning) return;
     if (this.stageDef.key === "tower") return;
@@ -8255,7 +8255,7 @@ export class WorldScene extends Phaser.Scene {
     this.towerActive = true;
     this.towerFloor = 1;
     /* vc142 (#4 탑 리워크) — 할당제 안내 */
-    this.showBanner(`무한의 탑 입장 — 층별 지정 마릿수를 처치해 다음 층으로! 10층마다 보스가 기다린다.`);
+    this.showBanner(`심연의 탑 입장 — 층별 지정 마릿수를 처치해 다음 층으로! 10층마다 보스가 기다린다.`);
     this.saveSoon();
     this.gotoStage("tower");
   }
@@ -8288,7 +8288,7 @@ export class WorldScene extends Phaser.Scene {
     if (!trial) this.showBanner(tier > 0 ? `심층 균열 T${tier} — 60초 파밍!` : `「${th.name}」 입장! 60초 동안 ${th.mul ? "골드" : "보물"}을 모아라`);
   }
 
-  /* ================= v1.0.8 — ① 무한의 탑 (무한 층수) ================= */
+  /* ================= v1.0.8 — ① 심연의 탑 (무한 층수) ================= */
 
   private buildTower() {
     this.towerActive = true; // 리셋 블록 이후 빌드 — 여기서 활성화 (closet/gate 패턴)
@@ -11448,7 +11448,7 @@ export class WorldScene extends Phaser.Scene {
 
     /* v3.0.3 — GM 패널 명령 (자유전직/골드/레벨/회복 — 임시 운영자 도구)
      *  v3.3.0 (지시 #3/#6) — 5차 전직(임시) 부여/해제 + 무릉도장 입장 추가
-     *  v4.0.0 — 균열 수비전/균열 던전 입장 + 무료 뽑기 + 티켓 충전 */
+     *  v4.0.0 — 바르가 수비전/균열 던전 입장 + 무료 뽑기 + 티켓 충전 */
     const onGm = async (v: { type: "job" | "gold" | "lv" | "heal" | "ap" | "em" | "fifth" | "dojang" | "gate" | "closet" | "freegacha" | "tickets" | "boss" | "gmitems" | "dlc" | "youngprincess"; value?: number | string }) => {
       const user = await authMe({ requireServer: true });
       if (user?.role !== "admin" || !this.sys.isActive() || !this.player) return;
@@ -11456,7 +11456,7 @@ export class WorldScene extends Phaser.Scene {
       /* ═══ vc236 (지시 #4) — 영프 DLC 해금 ═══
        *  사용자 지시: "GM 패널에서 영프 DLC 해금 기능도 만들어줘"
        *
-       *  기존 `dlc` 명령은 **본편 세계 구원(cleared)** 을 대신 세워 그랜드 플레닛 게이트를
+       *  기존 `dlc` 명령은 **본편 세계 구원(cleared)** 을 대신 세워 그랜드플래닛 게이트를
        *  여는 것이었다. 그런데 영프 편 진입은 `storyEntryAllowed("youngprincess*")` 가
        *  `cleared` 만 보므로 그걸로도 열리지만, **영프 엔딩 플래그(youngPrincessCleared)**
        *  는 세울 방법이 없어 "영프를 끝까지 본 것"으로는 만들 수 없었다.
@@ -11504,7 +11504,7 @@ export class WorldScene extends Phaser.Scene {
         this.save();
         notice(
           on
-            ? "GM — DLC 임시 해금 (그랜드 플레닛 게이트가 열렸다)"
+            ? "GM — DLC 임시 해금 (그랜드플래닛 게이트가 열렸다)"
             : "GM — DLC 해금 취소",
         );
         audio.sfx.portal();
@@ -11570,7 +11570,7 @@ export class WorldScene extends Phaser.Scene {
         /* v3.3.0 (지시 #6) — GM → 무릉도장 입장 */
         this.enterDojang();
       } else if (v.type === "gate") {
-        /* v4.0.0 — GM → 균열 수비전 입장 */
+        /* v4.0.0 — GM → 바르가 수비전 입장 */
         this.enterGate();
       } else if (v.type === "closet") {
         /* v4.0.0 — GM → 균열 던전 입장 */
@@ -11593,7 +11593,7 @@ export class WorldScene extends Phaser.Scene {
         if (!bk) return;
         /* vc292 (지시 #1 "GM 패널에서 몇몇 대부분의 보스들 플레이 안되는 버그") —
          *  종전엔 `CHAPTERS.find(c => c.boss === bk)` 실패 시 조용히 return 했다.
-         *  CHAPTERS 에는 그랜드 플레닛 10챕터만 있어 **28종 중 18종**이
+         *  CHAPTERS 에는 그랜드플래닛 10챕터만 있어 **28종 중 18종**이
          *  (영프 편 11종 + guardian/behemoth/littlestar/jade/reversecore/fabian/snorikaking)
          *  버튼을 눌러도 아무 반응이 없었다.
          *
@@ -11604,7 +11604,7 @@ export class WorldScene extends Phaser.Scene {
          *
          *  → 보스가 **실제로 서 있는 구역**을 3단으로 찾아 그리로 이동한다:
          *     ① STAGES 의 bossKey 역색인(가장 정확 — 재림판 r5/r10/r15 포함)
-         *     ② CHAPTERS(그랜드 플레닛 DLC) ③ HOWLRSTONE 챕터(영프 편)
+         *     ② CHAPTERS(그랜드플래닛 DLC) ③ HOWLRSTONE 챕터(영프 편)
          *  셋 다 없으면 그때만 안내를 띄운다(조용한 실패 금지). */
         const where = gmBossStage(v.value as BossKey);
         if (!where) {
@@ -12129,7 +12129,7 @@ export class WorldScene extends Phaser.Scene {
       this.ticketRefills++;
       if (v.kind === "gate") this.ticketGate++;
       else this.ticketCloset++;
-      notice(`${v.kind === "gate" ? "균열 수비전" : "균열 던전"} 티켓 +1 재충전! (-3💎)`);
+      notice(`${v.kind === "gate" ? "바르가 수비전" : "균열 던전"} 티켓 +1 재충전! (-3💎)`);
       audio.sfx.charge();
       this.saveSoon();
       this.emitRpgState();
@@ -12893,7 +12893,7 @@ export class WorldScene extends Phaser.Scene {
       }
       /* v3.3.0 (지시 #6) — 무릉도장 타이머/기록 UI 진행 */
       if (this.dojangActive) this.tickDojang(dt);
-      /* v4.0.0 — 균열 수비전 웨이브 / 균열 던전 진행 */
+      /* v4.0.0 — 바르가 수비전 웨이브 / 균열 던전 진행 */
       if (this.gateActive) this.tickGate(dt);
       if (this.closetActive) this.tickCloset(dt);
       if (this.parkActive) this.tickPark(dt); // v1.0.18 — 몬스터 파크
@@ -15956,7 +15956,7 @@ export class WorldScene extends Phaser.Scene {
         .catch(() => notice("권한 확인에 실패했다 (관리자 전용)"))
         .finally(() => { this.gmCheckBusy = false; });
     } else if (it.kind === "dlcgate") {
-      /* vc186b DLC — 본마을 그랜드 플레닛 게이트 (E키 상호작용) */
+      /* vc186b DLC — 본마을 그랜드플래닛 게이트 (E키 상호작용) */
       this.enterDlcGate();
     } else if (it.kind === "inn") {
       this.enterInterior("interior_inn");
@@ -17929,7 +17929,7 @@ export class WorldScene extends Phaser.Scene {
         if (b.critAdd) lines.push(`크리티컬 +${b.critAdd}%`);
         return { title: s.title, lines };
       })(),
-      /* ----- v4.0.0 — 원정 업데이트 상태 ----- */
+      /* ----- v4.0.0 — 바르가 업데이트 상태 ----- */
       isekai: {
         figures: [...this.figures],
         shards: this.shards,
@@ -18255,7 +18255,7 @@ export class WorldScene extends Phaser.Scene {
       fifth2Step: this.player.fifth2Step,
       fifth2Count: this.player.fifth2Count,
       fifth2Done: this.player.fifth2Done,
-      /* ----- v4.0.0 — 원정 업데이트 ----- */
+      /* ----- v4.0.0 — 바르가 업데이트 ----- */
       figures: [...this.figures],
       shards: this.shards,
       gachaTickets: this.gachaTickets,

@@ -34,7 +34,7 @@ const BUFF_ICON: Record<string, string> = {
 };
 const RAID_PORTRAIT: Record<string, string> = {
   "수문장 거인 베히모스": UNION_ASSET("raid_behemoth"),
-  "심연의 감시자": UNION_ASSET("raid_nidhogg"),
+  "심연의 감시자 니드호그": UNION_ASSET("raid_nidhogg"),
   "차원의 군주 아비슬로드": UNION_ASSET("raid_abysslord"),
 };
 /** 아티팩트 성장 단계 등급 — 시각적 차이 (프레임/발광/배지) */

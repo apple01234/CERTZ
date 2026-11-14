@@ -18,7 +18,7 @@
       "key": "riel", "name": "리엘", "priority": 1,
       "canon": "4.txt:78 '리엘(도사): 도술을 배워서 도술을 쓸 줄 알고 도술로만 봤을 때 세 손가락 안에 들 만큼 강하다. 리엘의 원력은 초월자의 힘'",
       "prompt": "wise taoist sage man, dark hair with grey streaks tied back, sharp calm eyes, traditional eastern robe with talisman paper charms, wooden staff, mystical blue-white energy, mature composed expression",
-      "mapped_as": ["리엘", "도사"]
+      "mapped_as": ["리엘", "도사", "리엘의 스승"]
     },
     {
       "key": "haru", "name": "하루", "priority": 1,
@@ -111,10 +111,10 @@
       "mapped_as": ["제니퍼"]
     },
     {
-      "key": "ihyun", "name": "태을선인", "priority": 3,
-      "canon": "8.txt:372 '난 저기 있는 도사의 사부님인 태을선인이라네' · 8.txt:396 플라워 워프",
+      "key": "ihyun", "name": "이현", "priority": 3,
+      "canon": "4.txt '이현선인: 부채를 쓰며 도술을 사용한다. 이현선인이 가지고 있는 고유 특성은 꽃'",
       "prompt": "eastern hermit sage, long black hair tied loosely, calm dark eyes, flowing white and pale green traditional robe, holding an ornate folding fan, flower petals floating, serene mysterious",
-      "mapped_as": ["태을선인"]
+      "mapped_as": ["이현", "이현선인"]
     }
   ],
   "_negative": "western realistic face, western oil painting, thick eyebrows, big nose, disney style, photorealistic, 3d render"

@@ -23,7 +23,7 @@ export type FeatureKey =
   | "trade"      // 거래소
   | "bmshop"     // 캐시 상점
   | "pass"       // 시즌 패스
-  | "isekai"     // 차원 원정대
+  | "isekai"     // 바르가 원정대
   | "home";      // 집 꾸미기
 
 export type UnlockDef = {
@@ -41,7 +41,7 @@ export type UnlockDef = {
  *  Lv1~3: 기본 조작만 (가방은 바로, 스킬은 튜토리얼 ⑤와 맞물려 Lv2)
  *  Lv5 상점 / Lv7 퀘스트 / Lv10 스탯 / Lv12 이동 / Lv18 보스 재도전
  *  Lv20 무한 콘텐츠 / Lv25 거래소 / Lv30 캐시상점(첫 과금 노출은 늦게) / Lv35 랭킹
- *  Lv40 유니온 / Lv45 시즌패스 / Lv50 차원 원정대 / Lv1 집(마을 내 집은 처음부터) */
+ *  Lv40 유니온 / Lv45 시즌패스 / Lv50 바르가 원정대 / Lv1 집(마을 내 집은 처음부터) */
 export const UNLOCKS: UnlockDef[] = [
   { key: "bag", lv: 1, name: "가방", lockedHint: "Lv1부터 사용할 수 있어요", openText: "가방이 열렸다! 장비를 확인하고 착용해 보자" },
   { key: "home", lv: 1, name: "집 꾸미기", lockedHint: "Lv1부터 사용할 수 있어요", openText: "내 집이 열렸다! 마을 우측 하단에서 꾸밀 수 있어" },
@@ -51,13 +51,13 @@ export const UNLOCKS: UnlockDef[] = [
   { key: "stat", lv: 10, name: "스탯", lockedHint: "Lv10에 열려요", openText: "스탯 창이 열렸다! 레벨업으로 받은 AP를 분배하자" },
   { key: "warp", lv: 12, name: "지역 이동", lockedHint: "Lv12에 열려요", openText: "지역 이동이 열렸다! 방문한 구역으로 되돌아갈 수 있어" },
   { key: "boss", lv: 18, name: "보스 재도전", lockedHint: "Lv18에 열려요", openText: "보스 재도전이 열렸다! 지난 보스와 다시 싸워 보자" },
-  { key: "content", lv: 20, name: "무한 콘텐츠", lockedHint: "Lv20에 열려요", openText: "무한 콘텐츠가 열렸다! 무한의 탑·시련에 도전하자" },
+  { key: "content", lv: 20, name: "무한 콘텐츠", lockedHint: "Lv20에 열려요", openText: "무한 콘텐츠가 열렸다! 심연의 탑·시련에 도전하자" },
   { key: "trade", lv: 25, name: "거래소", lockedHint: "Lv25에 열려요", openText: "거래소가 열렸다! 다른 모험가와 물건을 사고팔 수 있어" },
   { key: "bmshop", lv: 30, name: "캐시 상점", lockedHint: "Lv30에 열려요", openText: "캐시 상점이 열렸다! 에메랄드로 특별한 아이템을 살 수 있어" },
   { key: "rank", lv: 35, name: "랭킹", lockedHint: "Lv35에 열려요", openText: "랭킹이 열렸다! 다른 모험가와 실력을 겨뤄 보자" },
   { key: "union", lv: 40, name: "유니온", lockedHint: "Lv40에 열려요", openText: "유니온이 열렸다! 캐릭터를 배치해 계정 전체를 강화하자" },
   { key: "pass", lv: 45, name: "시즌 패스", lockedHint: "Lv45에 열려요", openText: "시즌 패스가 열렸다! 미션을 채워 보상을 받자" },
-  { key: "isekai", lv: 50, name: "차원 원정대", lockedHint: "Lv50에 열려요", openText: "차원 원정대가 열렸다! 피규어·룬·성좌를 모아 보자" },
+  { key: "isekai", lv: 50, name: "바르가 원정대", lockedHint: "Lv50에 열려요", openText: "바르가 원정대가 열렸다! 피규어·룬·성좌를 모아 보자" },
 ];
 
 const BY_KEY = new Map<FeatureKey, UnlockDef>(UNLOCKS.map((u) => [u.key, u]));
@@ -159,8 +159,8 @@ export const TUTORIAL_SCRIPTS: Record<FeatureKey, TutPage[]> = {
     { title: "전리품", body: "보스는 전용 장비를 떨어뜨려. 거래소에서 사고팔 수도 있어.", where: "보스 처치 후" },
   ],
   content: [
-    { title: "무한 콘텐츠", body: "스토리와 별개로 계속 도전할 수 있는 콘텐츠야. 무한의 탑·티어 균열·시련이 있어.", where: "더보기 → 콘텐츠" },
-    { title: "무한의 탑", body: "층마다 적이 강해지고 10층마다 보스가 나와. 최고 기록에 도전해 봐.", where: "콘텐츠 → 탑" },
+    { title: "무한 콘텐츠", body: "스토리와 별개로 계속 도전할 수 있는 콘텐츠야. 심연의 탑·티어 균열·시련이 있어.", where: "더보기 → 콘텐츠" },
+    { title: "심연의 탑", body: "층마다 적이 강해지고 10층마다 보스가 나와. 최고 기록에 도전해 봐.", where: "콘텐츠 → 탑" },
     { title: "보상", body: "층을 오를수록 보상이 커져. 여기서만 얻는 재료도 있어.", where: "탑 클리어 후" },
   ],
   trade: [
@@ -187,8 +187,8 @@ export const TUTORIAL_SCRIPTS: Record<FeatureKey, TutPage[]> = {
     { title: "무료/프리미엄", body: "무료 보상만으로도 충분히 받을 수 있어. 프리미엄은 추가 보상이야.", where: "패스 → 보상 줄" },
   ],
   isekai: [
-    { title: "차원 원정대", body: "피규어·배지·룬·성좌를 모아 캐릭터를 강화하는 수집 콘텐츠야.", where: "더보기 → 차원 원정대" },
-    { title: "룬과 성좌", body: "룬은 슬롯에 끼우고, 성좌는 노드를 차례로 열어. 모을수록 강해져.", where: "차원 원정대 → 룬/성좌" },
+    { title: "바르가 원정대", body: "피규어·배지·룬·성좌를 모아 캐릭터를 강화하는 수집 콘텐츠야.", where: "더보기 → 바르가" },
+    { title: "룬과 성좌", body: "룬은 슬롯에 끼우고, 성좌는 노드를 차례로 열어. 모을수록 강해져.", where: "바르가 → 룬/성좌" },
   ],
 };
 
