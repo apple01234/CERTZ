@@ -91,7 +91,8 @@ function bossPortrait(speaker: string): { tex: string; tone: string } | null {
   const tok = (speaker.replace(/[‘’'"』]/g, "").split(/\s+/).pop() ?? "").trim();
   for (const def of Object.values(BOSS_DEFS)) {
     if (def.name === speaker) return { tex: bossPortraitKey(def.tex), tone: "#fda4af" };
-    if (tok.length >= 2 && def.name.endsWith(tok)) return { tex: bossPortraitKey(def.tex), tone: "#fda4af" };
+    /* 2026-11-14 — '전투기록 · 스칼렛' 같은 기록 보스는 자기 그림(드래곤 등)이라 스토리 화자 '스칼렛'에 붙이지 않는다. */
+    if (tok.length >= 2 && def.name.endsWith(tok) && !def.name.startsWith("전투기록 · ")) return { tex: bossPortraitKey(def.tex), tone: "#fda4af" };
   }
   return null;
 }

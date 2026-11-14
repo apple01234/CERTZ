@@ -6,7 +6,6 @@ import { createGameState, type GameState } from "../state/gameState";
 /* vc238 (P4 후속) — 구역당 동시 스폰 상한. `data.ts` 는 명시 목록으로만 재수출하므로
  *  여기서 stages 를 직접 import 한다(리드 지시: data.ts 수정 금지). */
 import { zoneSpawnCap } from "../stages";
-import { HOWLRSTONE_CHAPTERS } from "../howlrstone"; // vc284 — GM 보스 체험 3단 탐색
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_STAGE_STATS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { finaleTargetOrder, finalePlanReach, type FinalePlan } from "../fx/ultFinalePlan";
@@ -43,6 +42,7 @@ import { playAutoCutscene, type CutStep } from "../fx/AutoCutscene"; // v4.9.0 �
 import { CANON_STORY_CHOICES } from "../grandPlanetCanon"; // vc279 — P7c 선택지 정본(id→label)
 import { PixelFxManager } from "../fx/PixelFxManager"; // v4.9.3 — pixelfx 통합 매니저
 import { prefetchUltFx } from "../fx/ultPixelFx"; // 2026-11-14 — 궁극기 pixelfx
+import { gmBossStage } from "../gmBossStage"; // 2026-11-14 — GM 보스 체험 구역(배치 없는 보스 4종 수정)
 import { LILAC_SCENARIOS, lilacScenarioIdAt } from "../lilacScenarios"; // v4.9.0 — 1기 시나리오 데이터
 import { castAnimation, castTexture, cutsceneCharacter } from "../cutsceneCast";
 import { createCastSprite } from "../fx/cutsceneActors";
@@ -2709,17 +2709,18 @@ export class WorldScene extends Phaser.Scene {
     if (!scen) return false;
     const seenKey = `lilacCut_rea1_${scen.id}`;
     if (!tutorial && this.cutsceneSeen.includes(seenKey)) return false;
-    const cliff = this.layout?.authored?.landmarks.find((p) => p.kind === "cliff");
-    const feature = tutorial?.steps ? this.tutorialPoint(80, -45) : cliff && this.layout ? {
-      x: (cliff.cell % this.layout.cols + 0.5) * this.layout.cellW,
-      y: (Math.floor(cliff.cell / this.layout.cols) + 0.5) * this.layout.cellH,
-    } : this.cutsceneActorPosition({ x: this.portalHome.x - 128, y: this.portalHome.y + 48 });
+    /* 2026-11-14 (유저 지시 "맵 보여주는 컷씬" 재신고) — 종전엔 feature 를 지도상의 절벽 랜드마크,
+     *  entry 를 구역 입구로 잡아 카메라가 줌아웃하며 지도를 훑어 날아갔다. 대사·배우는 그대로 두고
+     *  둘 다 플레이어 곁으로 옮겨 카메라가 플레이어 주변을 벗어나지 않게 한다. */
+    const feature = tutorial?.steps ? this.tutorialPoint(80, -45)
+      : this.cutsceneActorPosition({ x: this.player.x + 120, y: this.player.y });
+    const entry = tutorial?.steps ? this.entryHome : { x: this.player.x, y: this.player.y };
     this.resetInputState();
     const started = playAutoCutscene(this, {
       id: scen.id,
       stageW: this.stageW,
       stageH: this.stageH,
-      anchors: { entry: this.entryHome, feature },
+      anchors: { entry, feature },
       steps: scen.steps,
     }, () => {
       if (tutorial) { this.resetInputState(); tutorial.done(); return; }
@@ -11596,7 +11597,7 @@ export class WorldScene extends Phaser.Scene {
          *     ① STAGES 의 bossKey 역색인(가장 정확 — 재림판 r5/r10/r15 포함)
          *     ② CHAPTERS(그랜드플래닛 DLC) ③ HOWLRSTONE 챕터(영프 편)
          *  셋 다 없으면 그때만 안내를 띄운다(조용한 실패 금지). */
-        const where = this.gmBossStageOf(v.value as BossKey);
+        const where = gmBossStage(v.value as BossKey);
         if (!where) {
           notice(`GM — ${bk.name} 의 배치 구역을 찾지 못했습니다`);
           audio.sfx.deny();
@@ -12554,52 +12555,6 @@ export class WorldScene extends Phaser.Scene {
     }
     this.clearBossPostFX();
     EventBus.emit("boss:hide");
-  }
-
-  /**
-   * vc284 — GM 보스 체험: 이 보스가 **실제로 서 있는 구역**을 찾는다.
-   *
-   * 왜 필요한가 (유저 신고 "대부분의 보스 플레이 안됨")
-   * ---------------------------------------------------
-   * 종전 구현은 `CHAPTERS.find(c => c.boss === bk)` 하나만 봤다. 그런데 CHAPTERS 에는
-   * 그랜드 플래닛 10챕터만 있어서, 영프 편(howlrstone) 보스 11종·grandPlanetCanon 보스 5종·
-   * guardian/behemoth 등 **29종 중 19종이 버튼을 눌러도 조용히 return** 했다.
-   *
-   * contest(기록전) 아레나로 보내는 폴백도 틀렸다 — contest 는 700ms 뒤
-   * `beginContestCountdown → startContestRun` 이 서버 출전 정보를 요구하므로, GM 이
-   * 즉석에서 연 판에는 activeBossContest 가 없어 abortContest 로 튕긴다.
-   *
-   * 그래서 배치를 3단으로 찾는다:
-   *   ① STAGES 의 bossKey 역색인 — 가장 정확(재림판 r5/r10/r15 포함)
-   *   ② CHAPTERS(그랜드 플래닛 DLC) 의 boss 필드
-   *   ③ HOWLRSTONE_CHAPTERS(영프 편) 의 boss 필드
-   * 셋 다 없으면 null — 호출부가 안내를 띄운다(조용한 실패 금지).
-   */
-  private gmBossStageOf(bossKey: BossKey): string | null {
-    /* ① STAGES 역색인 — bossKey 가 정확히 일치하는 첫 스테이지 */
-    for (const key of Object.keys(STAGES) as StageKey[]) {
-      const def = STAGES[key];
-      if (def?.boss && def.bossKey === bossKey) return key;
-    }
-    /* ② CHAPTERS(그랜드 플래닛) — boss 필드가 BossKey 형태 */
-    const ch = CHAPTERS.find((c) => c.boss === bossKey);
-    if (ch) {
-      /* 챕터의 보스 구역 = {ch.key}10 (본편 관례) */
-      const stage = `${ch.key}10` as StageKey;
-      if (STAGES[stage]) return stage;
-    }
-    /* ③ 영프 편 — 챕터 보스가 해당 키면 그 챕터의 보스 구역(sub10 관례)으로 */
-    for (const hw of HOWLRSTONE_CHAPTERS) {
-      if (hw.boss !== bossKey) continue;
-      const stage = `${hw.key}10` as StageKey;
-      if (STAGES[stage]) return stage;
-      /* 관례가 다르면 이 챕터의 마지막 서브를 찾는다 */
-      for (let sub = 10; sub >= 1; sub--) {
-        const cand = `${hw.key}${sub}` as StageKey;
-        if (STAGES[cand]?.bossKey === bossKey) return cand;
-      }
-    }
-    return null;
   }
 
   private spawnContestBoss(bossHp: number) {

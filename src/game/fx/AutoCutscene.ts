@@ -133,7 +133,9 @@ export function playAutoCutscene(scene: Phaser.Scene, spec: AutoCutsceneSpec, on
         const focus = step.focus === "entry" || step.focus === "feature" ? anchor(step.focus)
           : step.focus === "player" ? session.scene.player : step.focus ? actors.get(step.focus) : undefined;
         session.pan((focus?.x ?? step.rx * spec.stageW) + (step.offsetX ?? 0),
-          (focus?.y ?? step.ry * spec.stageH) + (step.offsetY ?? 0), Math.max(120, step.panMs ?? 700), step.zoom, next);
+          (focus?.y ?? step.ry * spec.stageH) + (step.offsetY ?? 0), Math.max(120, step.panMs ?? 700),
+          /* 2026-11-14 — 지형(입구·랜드마크)을 비추는 컷은 줌아웃하지 않는다(맵을 훑어 보여주는 연출 제거). */
+          step.focus === "entry" || step.focus === "feature" ? undefined : step.zoom, next);
         break;
       }
       case "enter": {

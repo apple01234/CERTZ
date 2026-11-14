@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { importFromGit } from './git-head-module.mjs';
 import { CHAPTERS, STAGES, NEXT_STAGE, PREV_STAGE, STORY_SEQUENCE, STORY_SEQUENCE_LABEL } from '../src/game/stages.ts';
-import { stageTrack, BGM_ALL_TRACKS, HUNT_THEME_OF, REBIRTH_THEME_OF } from '../src/game/audio.ts';
+import { stageTrack, BGM_ALL_TRACKS, REBIRTH_THEME_OF } from '../src/game/audio.ts';
 import { pythonBin, pythonEnv } from './python.mjs';
 const read = p => fs.readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 /* vc235 — data: URL 은 기준 경로가 없어 stages.ts 의 `./howlrstone` import 를
@@ -98,8 +98,8 @@ for (const ch of CHAPTERS) {
   for (let n = 1; n <= 10; n++) {
     const track = stageTrack(`${ch.key}${n}`);
     tracks.add(track); stages++;
-    const theme = HUNT_THEME_OF[ch.key] ?? ch.key;
-    assert.equal(track, n === 10 ? `bgm_${theme}_boss` : `bgm_${theme}_${Math.ceil(n/3)}`);
+    /* 2026-11-14 — DLC 챕터는 옛 챕터 곡을 빌리지 않고 전용 곡을 쓴다(겹침 금지는 bgm-no-overlap.test.mjs). */
+    assert.equal(track.endsWith('_boss'), n === 10, `${ch.key}${n} ${track}`);
   }
   tracks.add(stageTrack(`${ch.key}v`));
 }

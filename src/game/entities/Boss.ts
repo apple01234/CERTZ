@@ -13,7 +13,12 @@ import { rng, actorStream } from "../sim/deterministic"; // vc183 — 시드 기
  *  종전엔 이 값들이 Boss.ts 안에 흩어져 있어 "예고가 몇 ms 인가"를 기계적으로 확인할 수 없었다. */
 import { phaseAt, telegraphMs, recoveryMs, counterWindowMs, attacksAfter, attackPool } from "./bossPhases";
 /* vc288 — 정본(스토리 기획서)에 근거한 페이즈 형태 이름. 없으면 종전 문구로 폴백한다. */
-import { canonBossOf, canonPhaseIndex } from "./bossDesign";
+import { canonBossOf, canonPhaseIndex, BOSS_RECORD_ALIASES } from "./bossDesign";
+
+/** 2026-11-14 — 전투기록 보스 중 다른 보스와 같은 시트를 쓰는 쪽의 몸 색(그림 6장을 12종이 나눠 쓴다). */
+const RECORD_BODY_TINT: Record<string, number> = {
+  vord: 0xffc890, gram: 0xa8ffd0, surt: 0xffa070, abudditos: 0xff8aa8, jorm: 0x90ffe0, skoll: 0xffe08a,
+};
 import { STORY_ATTACKS, storyPattern, type StoryAttack } from "./storyBossPatterns";
 import { StoryBossMechanics } from "./StoryBossMechanics";
 /**
@@ -134,6 +139,13 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   /* ---- v1.4.9 — 보스 생동감 애니메이션 (호흡·예동·낙하 등장) ---- */
   private baseSX = 1;
+  /** 같은 시트를 공유하는 보스 구분색. 피격·패턴 번쩍임 뒤 clearTint() 가 이 색으로 되돌린다. */
+  private bodyTint = 0;
+  override clearTint(): this {
+    super.clearTint();
+    if (this.bodyTint) this.setTint(this.bodyTint);
+    return this;
+  }
   private baseSY = 1;
   /* vc183 — 시작 타이머도 시드에서 뽑는다. Math.random 이면 같은 판을 재현할 수 없다. */
   private breathT = rng().float(0, 4000);
@@ -207,6 +219,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     }
 
     this.visualKey = def.tex;
+    this.bodyTint = RECORD_BODY_TINT[def.key] ?? 0;
+    if (this.bodyTint) this.setTint(this.bodyTint);
     if (def.tex.startsWith("cast_") || def.tex.startsWith("story_")) this.applyStoryVisual(def.tex);
     this.story = new StoryBossMechanics(this);
 
@@ -718,7 +732,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     if (!this.alive) return;
     this.story?.phaseChanged();
     const visual = canonBossOf(this.def.key)?.phases[this.phase - 1]?.visual;
-    if (visual) this.applyStoryVisual(visual);
+    if (visual && !BOSS_RECORD_ALIASES[this.def.key]) this.applyStoryVisual(visual); // 전투기록 보스는 자기 그림 유지
     /* vc181 (지시 #1·#2) — 페이즈 전환은 보스전의 최대 고비다. 3D 파편/링이
      *  사방으로 터지며 카메라가 풀백하는 연출을 얹어 "지금 뭔가 변했다"를 각인시킨다. */
     void cine3d().play({ preset: "bossPattern", x: this.x, y: this.y, tint: this.phase === 3 ? 0xff4a3a : 0xffa24a, duration: 1300 });

@@ -842,7 +842,9 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
 for (const [key, boss] of Object.entries(BOSS_DEFS)) {
   const design = canonBossOf(key);
   if (!design) continue;
-  boss.tex = design.visual;
+  /* 2026-11-14 — 전투기록 보스 12종은 자기 전용 그림(위 BOSS_DEFS 의 tex)을 유지한다.
+   *  종전엔 스토리 보스 그림까지 빌려 써서 같은 모습의 보스가 2~6종씩 겹쳤다(유저 신고). 이름·패턴은 그대로 기록을 따른다. */
+  if (!BOSS_RECORD_ALIASES[key]) boss.tex = design.visual;
   boss.sig = design.phases[0].patterns[0] as BossAttackKind;
   const pool = (n: number) => [...new Set(design.phases.slice(0, n).flatMap((p) => [...p.patterns]))] as BossAttackKind[];
   boss.patterns = { p1: pool(1), p2: pool(2), p3: pool(3) };
