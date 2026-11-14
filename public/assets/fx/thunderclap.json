@@ -1,0 +1,1454 @@
+{
+ "frames": [
+  {
+   "filename": "thunderclap 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 1",
+   "frame": {
+    "x": 288,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 2",
+   "frame": {
+    "x": 576,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 3",
+   "frame": {
+    "x": 864,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 4",
+   "frame": {
+    "x": 1152,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 5",
+   "frame": {
+    "x": 1440,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 6",
+   "frame": {
+    "x": 0,
+    "y": 156,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 7",
+   "frame": {
+    "x": 288,
+    "y": 156,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 8",
+   "frame": {
+    "x": 576,
+    "y": 156,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 9",
+   "frame": {
+    "x": 864,
+    "y": 156,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 10",
+   "frame": {
+    "x": 1152,
+    "y": 156,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 11",
+   "frame": {
+    "x": 1440,
+    "y": 156,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 12",
+   "frame": {
+    "x": 0,
+    "y": 312,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 13",
+   "frame": {
+    "x": 288,
+    "y": 312,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 14",
+   "frame": {
+    "x": 576,
+    "y": 312,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 15",
+   "frame": {
+    "x": 864,
+    "y": 312,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 16",
+   "frame": {
+    "x": 1152,
+    "y": 312,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 17",
+   "frame": {
+    "x": 1440,
+    "y": 312,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 18",
+   "frame": {
+    "x": 0,
+    "y": 468,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 19",
+   "frame": {
+    "x": 288,
+    "y": 468,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 20",
+   "frame": {
+    "x": 576,
+    "y": 468,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 21",
+   "frame": {
+    "x": 864,
+    "y": 468,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 22",
+   "frame": {
+    "x": 1152,
+    "y": 468,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 23",
+   "frame": {
+    "x": 1440,
+    "y": 468,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 24",
+   "frame": {
+    "x": 0,
+    "y": 624,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 25",
+   "frame": {
+    "x": 288,
+    "y": 624,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 26",
+   "frame": {
+    "x": 576,
+    "y": 624,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 27",
+   "frame": {
+    "x": 864,
+    "y": 624,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 28",
+   "frame": {
+    "x": 1152,
+    "y": 624,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 29",
+   "frame": {
+    "x": 1440,
+    "y": 624,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 30",
+   "frame": {
+    "x": 0,
+    "y": 780,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 31",
+   "frame": {
+    "x": 288,
+    "y": 780,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 32",
+   "frame": {
+    "x": 576,
+    "y": 780,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 33",
+   "frame": {
+    "x": 864,
+    "y": 780,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 34",
+   "frame": {
+    "x": 1152,
+    "y": 780,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 35",
+   "frame": {
+    "x": 1440,
+    "y": 780,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 36",
+   "frame": {
+    "x": 0,
+    "y": 936,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 37",
+   "frame": {
+    "x": 288,
+    "y": 936,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 38",
+   "frame": {
+    "x": 576,
+    "y": 936,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 39",
+   "frame": {
+    "x": 864,
+    "y": 936,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 40",
+   "frame": {
+    "x": 1152,
+    "y": 936,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 41",
+   "frame": {
+    "x": 1440,
+    "y": 936,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 42",
+   "frame": {
+    "x": 0,
+    "y": 1092,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 43",
+   "frame": {
+    "x": 288,
+    "y": 1092,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 44",
+   "frame": {
+    "x": 576,
+    "y": 1092,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 45",
+   "frame": {
+    "x": 864,
+    "y": 1092,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 46",
+   "frame": {
+    "x": 1152,
+    "y": 1092,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 47",
+   "frame": {
+    "x": 1440,
+    "y": 1092,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 48",
+   "frame": {
+    "x": 0,
+    "y": 1248,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 49",
+   "frame": {
+    "x": 288,
+    "y": 1248,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 50",
+   "frame": {
+    "x": 576,
+    "y": 1248,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 51",
+   "frame": {
+    "x": 864,
+    "y": 1248,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 52",
+   "frame": {
+    "x": 1152,
+    "y": 1248,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 53",
+   "frame": {
+    "x": 1440,
+    "y": 1248,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 54",
+   "frame": {
+    "x": 0,
+    "y": 1404,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 55",
+   "frame": {
+    "x": 288,
+    "y": 1404,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 56",
+   "frame": {
+    "x": 576,
+    "y": 1404,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  },
+  {
+   "filename": "thunderclap 57",
+   "frame": {
+    "x": 864,
+    "y": 1404,
+    "w": 288,
+    "h": 156
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 156
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 156
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "thunderclap.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1728,
+   "h": 1560
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "thunderclap",
+    "from": 0,
+    "to": 57,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "lightning/thunderclap",
+   "name": "Thunderclap",
+   "fps": 30,
+   "loop": false,
+   "frames": 58,
+   "frameSize": [
+    288,
+    156
+   ],
+   "pivot": [
+    144,
+    124
+   ],
+   "columns": 6,
+   "act": {
+    "windup": 0.46,
+    "recovery": 0,
+    "onBody": true,
+    "targets": [
+     104
+    ],
+    "hits": [
+     {
+      "t": 0.12,
+      "freeze": 0.13,
+      "shake": 0.3,
+      "amp": 3,
+      "push": 0
+     },
+     {
+      "t": 0.42,
+      "freeze": 0,
+      "shake": 0,
+      "amp": 0,
+      "push": 2,
+      "skin": "shock"
+     },
+     {
+      "t": 1.2,
+      "freeze": 0,
+      "shake": 0,
+      "amp": 0,
+      "push": 0,
+      "skin": null
+     }
+    ],
+    "poses": [
+     {
+      "t": -0.46,
+      "how": "smooth",
+      "pose": {
+       "crouch": 3,
+       "fx": 11,
+       "fy": -21,
+       "bx": 9,
+       "by": -21,
+       "ffx": 7,
+       "fbx": -7
+      }
+     },
+     {
+      "t": -0.18,
+      "how": "smooth",
+      "pose": {
+       "turn": 1.15,
+       "crouch": 5,
+       "lean": -1,
+       "fx": -15,
+       "fy": -33,
+       "bx": 15,
+       "by": -33,
+       "ffx": -7,
+       "fbx": 8
+      }
+     },
+     {
+      "t": 0.08,
+      "how": "smooth",
+      "pose": {
+       "turn": 1.15,
+       "crouch": 6,
+       "lean": -1,
+       "fx": -15,
+       "fy": -33,
+       "bx": 15,
+       "by": -33,
+       "ffx": -7,
+       "fbx": 8
+      }
+     },
+     {
+      "t": 0.12,
+      "how": "snap",
+      "pose": {
+       "turn": 1.15,
+       "y": -2,
+       "crouch": 0,
+       "fx": -1,
+       "fy": -45,
+       "bx": 1,
+       "by": -45,
+       "ffx": -3,
+       "ffy": -5,
+       "fbx": 4,
+       "fby": -5
+      }
+     },
+     {
+      "t": 0.55,
+      "how": "smooth",
+      "pose": {
+       "turn": 1.15,
+       "y": 0,
+       "crouch": 1,
+       "fx": -1,
+       "fy": -45,
+       "bx": 1,
+       "by": -45,
+       "ffx": -3,
+       "ffy": -4,
+       "fbx": 4,
+       "fby": -4
+      }
+     },
+     {
+      "t": 1.05,
+      "how": "smooth",
+      "pose": {
+       "turn": 1,
+       "crouch": 3,
+       "fx": -10,
+       "fy": -28,
+       "bx": 11,
+       "by": -28,
+       "ffx": -4,
+       "fbx": 5
+      }
+     },
+     {
+      "t": 1.7,
+      "how": "smooth",
+      "pose": {
+       "crouch": 3,
+       "fx": 11,
+       "fy": -21,
+       "bx": 9,
+       "by": -21,
+       "ffx": 7,
+       "fbx": -7
+      }
+     }
+    ]
+   }
+  }
+ }
+}

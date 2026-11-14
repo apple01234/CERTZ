@@ -1,0 +1,1359 @@
+{
+ "frames": [
+  {
+   "filename": "spark-arc 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 1",
+   "frame": {
+    "x": 124,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 2",
+   "frame": {
+    "x": 248,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 3",
+   "frame": {
+    "x": 372,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 4",
+   "frame": {
+    "x": 496,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 5",
+   "frame": {
+    "x": 620,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 6",
+   "frame": {
+    "x": 744,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 7",
+   "frame": {
+    "x": 868,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 8",
+   "frame": {
+    "x": 0,
+    "y": 120,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 9",
+   "frame": {
+    "x": 124,
+    "y": 120,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 10",
+   "frame": {
+    "x": 248,
+    "y": 120,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 11",
+   "frame": {
+    "x": 372,
+    "y": 120,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 12",
+   "frame": {
+    "x": 496,
+    "y": 120,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 13",
+   "frame": {
+    "x": 620,
+    "y": 120,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 14",
+   "frame": {
+    "x": 744,
+    "y": 120,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 15",
+   "frame": {
+    "x": 868,
+    "y": 120,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 16",
+   "frame": {
+    "x": 0,
+    "y": 240,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 17",
+   "frame": {
+    "x": 124,
+    "y": 240,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 18",
+   "frame": {
+    "x": 248,
+    "y": 240,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 19",
+   "frame": {
+    "x": 372,
+    "y": 240,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 20",
+   "frame": {
+    "x": 496,
+    "y": 240,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 21",
+   "frame": {
+    "x": 620,
+    "y": 240,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 22",
+   "frame": {
+    "x": 744,
+    "y": 240,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 23",
+   "frame": {
+    "x": 868,
+    "y": 240,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 24",
+   "frame": {
+    "x": 0,
+    "y": 360,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 25",
+   "frame": {
+    "x": 124,
+    "y": 360,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 26",
+   "frame": {
+    "x": 248,
+    "y": 360,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 27",
+   "frame": {
+    "x": 372,
+    "y": 360,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 28",
+   "frame": {
+    "x": 496,
+    "y": 360,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 29",
+   "frame": {
+    "x": 620,
+    "y": 360,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 30",
+   "frame": {
+    "x": 744,
+    "y": 360,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 31",
+   "frame": {
+    "x": 868,
+    "y": 360,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 32",
+   "frame": {
+    "x": 0,
+    "y": 480,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 33",
+   "frame": {
+    "x": 124,
+    "y": 480,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 34",
+   "frame": {
+    "x": 248,
+    "y": 480,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 35",
+   "frame": {
+    "x": 372,
+    "y": 480,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 36",
+   "frame": {
+    "x": 496,
+    "y": 480,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 37",
+   "frame": {
+    "x": 620,
+    "y": 480,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 38",
+   "frame": {
+    "x": 744,
+    "y": 480,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 39",
+   "frame": {
+    "x": 868,
+    "y": 480,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 40",
+   "frame": {
+    "x": 0,
+    "y": 600,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 41",
+   "frame": {
+    "x": 124,
+    "y": 600,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 42",
+   "frame": {
+    "x": 248,
+    "y": 600,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 43",
+   "frame": {
+    "x": 372,
+    "y": 600,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 44",
+   "frame": {
+    "x": 496,
+    "y": 600,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 45",
+   "frame": {
+    "x": 620,
+    "y": 600,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 46",
+   "frame": {
+    "x": 744,
+    "y": 600,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 47",
+   "frame": {
+    "x": 868,
+    "y": 600,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 48",
+   "frame": {
+    "x": 0,
+    "y": 720,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 49",
+   "frame": {
+    "x": 124,
+    "y": 720,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 50",
+   "frame": {
+    "x": 248,
+    "y": 720,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 51",
+   "frame": {
+    "x": 372,
+    "y": 720,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 52",
+   "frame": {
+    "x": 496,
+    "y": 720,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 53",
+   "frame": {
+    "x": 620,
+    "y": 720,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 54",
+   "frame": {
+    "x": 744,
+    "y": 720,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 55",
+   "frame": {
+    "x": 868,
+    "y": 720,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 56",
+   "frame": {
+    "x": 0,
+    "y": 840,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 57",
+   "frame": {
+    "x": 124,
+    "y": 840,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 58",
+   "frame": {
+    "x": 248,
+    "y": 840,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  },
+  {
+   "filename": "spark-arc 59",
+   "frame": {
+    "x": 372,
+    "y": 840,
+    "w": 124,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 124,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 124,
+    "h": 120
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "spark-arc.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 992,
+   "h": 960
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "spark-arc",
+    "from": 0,
+    "to": 59,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "lightning/spark-arc",
+   "name": "Spark arc",
+   "fps": 30,
+   "loop": true,
+   "frames": 60,
+   "frameSize": [
+    124,
+    120
+   ],
+   "pivot": [
+    62,
+    108
+   ],
+   "columns": 8
+  }
+ }
+}

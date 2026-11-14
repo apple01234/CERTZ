@@ -77,6 +77,33 @@ export function loadFxSheet(scene: Phaser.Scene, key: string, dir = "assets/fx")
 }
 
 /**
+ * 플레이 중 시트 한 장을 받아 등록한다(2026-11-14 궁극기 pixelfx).
+ * Phaser 로더를 다시 돌리지 않는다 — stagedAssets 와 같은 이유(Phaser4 재진입 큐 정지)로
+ * 브라우저 Image + fetch 로 받아 textures.addAtlas 에 넣는다. 같은 키를 동시에 불러도 한 번만 받는다.
+ * 실패하면 false — 이펙트가 안 나올 뿐 게임은 멈추지 않는다.
+ */
+const PENDING = new Map<string, Promise<boolean>>();
+export function ensureFxSheet(scene: Phaser.Scene, key: string, dir = "assets/fx"): Promise<boolean> {
+  if (SHEETS.has(key)) return Promise.resolve(true);
+  const game = scene.game;
+  let job = PENDING.get(key);
+  if (!job) {
+    job = (async () => {
+      const meta = await fetch(`${dir}/${key}.json`).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); });
+      if (!game.textures.exists(key)) {
+        const img = new Image();
+        await new Promise<void>((ok, fail) => { img.onload = () => ok(); img.onerror = () => fail(new Error("image")); img.src = `${dir}/${key}.png`; });
+        if (!game.textures.exists(key)) game.textures.addAtlas(key, img, meta);
+      }
+      if (!game.cache.json.exists(`${key}__meta`)) game.cache.json.add(`${key}__meta`, meta);
+      return true;
+    })().catch(() => { PENDING.delete(key); return false; });
+    PENDING.set(key, job);
+  }
+  return job.then(ok => ok && !!registerFxSheet(scene, key));
+}
+
+/**
  * 로더가 끝난 뒤 호출 — atlas JSON 의 meta.pixelfx 를 읽어 프레임/애니를 확정한다.
  * Phaser 의 atlas 는 이미지를 프레임으로 잘라 두지만, fps·loop·pivot 은 별도로 적용해야 한다.
  */

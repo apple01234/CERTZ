@@ -1,0 +1,1249 @@
+{
+ "frames": [
+  {
+   "filename": "mana-burst 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 1",
+   "frame": {
+    "x": 208,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 2",
+   "frame": {
+    "x": 416,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 3",
+   "frame": {
+    "x": 624,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 4",
+   "frame": {
+    "x": 832,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 5",
+   "frame": {
+    "x": 1040,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 6",
+   "frame": {
+    "x": 1248,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 7",
+   "frame": {
+    "x": 0,
+    "y": 150,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 8",
+   "frame": {
+    "x": 208,
+    "y": 150,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 9",
+   "frame": {
+    "x": 416,
+    "y": 150,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 10",
+   "frame": {
+    "x": 624,
+    "y": 150,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 11",
+   "frame": {
+    "x": 832,
+    "y": 150,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 12",
+   "frame": {
+    "x": 1040,
+    "y": 150,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 13",
+   "frame": {
+    "x": 1248,
+    "y": 150,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 14",
+   "frame": {
+    "x": 0,
+    "y": 300,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 15",
+   "frame": {
+    "x": 208,
+    "y": 300,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 16",
+   "frame": {
+    "x": 416,
+    "y": 300,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 17",
+   "frame": {
+    "x": 624,
+    "y": 300,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 18",
+   "frame": {
+    "x": 832,
+    "y": 300,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 19",
+   "frame": {
+    "x": 1040,
+    "y": 300,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 20",
+   "frame": {
+    "x": 1248,
+    "y": 300,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 21",
+   "frame": {
+    "x": 0,
+    "y": 450,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 22",
+   "frame": {
+    "x": 208,
+    "y": 450,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 23",
+   "frame": {
+    "x": 416,
+    "y": 450,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 24",
+   "frame": {
+    "x": 624,
+    "y": 450,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 25",
+   "frame": {
+    "x": 832,
+    "y": 450,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 26",
+   "frame": {
+    "x": 1040,
+    "y": 450,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 27",
+   "frame": {
+    "x": 1248,
+    "y": 450,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 28",
+   "frame": {
+    "x": 0,
+    "y": 600,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 29",
+   "frame": {
+    "x": 208,
+    "y": 600,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 30",
+   "frame": {
+    "x": 416,
+    "y": 600,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 31",
+   "frame": {
+    "x": 624,
+    "y": 600,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 32",
+   "frame": {
+    "x": 832,
+    "y": 600,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 33",
+   "frame": {
+    "x": 1040,
+    "y": 600,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 34",
+   "frame": {
+    "x": 1248,
+    "y": 600,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 35",
+   "frame": {
+    "x": 0,
+    "y": 750,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 36",
+   "frame": {
+    "x": 208,
+    "y": 750,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 37",
+   "frame": {
+    "x": 416,
+    "y": 750,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 38",
+   "frame": {
+    "x": 624,
+    "y": 750,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 39",
+   "frame": {
+    "x": 832,
+    "y": 750,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 40",
+   "frame": {
+    "x": 1040,
+    "y": 750,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 41",
+   "frame": {
+    "x": 1248,
+    "y": 750,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 42",
+   "frame": {
+    "x": 0,
+    "y": 900,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 43",
+   "frame": {
+    "x": 208,
+    "y": 900,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 44",
+   "frame": {
+    "x": 416,
+    "y": 900,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 45",
+   "frame": {
+    "x": 624,
+    "y": 900,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 46",
+   "frame": {
+    "x": 832,
+    "y": 900,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 47",
+   "frame": {
+    "x": 1040,
+    "y": 900,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 48",
+   "frame": {
+    "x": 1248,
+    "y": 900,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 49",
+   "frame": {
+    "x": 0,
+    "y": 1050,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 50",
+   "frame": {
+    "x": 208,
+    "y": 1050,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 51",
+   "frame": {
+    "x": 416,
+    "y": 1050,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 52",
+   "frame": {
+    "x": 624,
+    "y": 1050,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 53",
+   "frame": {
+    "x": 832,
+    "y": 1050,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  },
+  {
+   "filename": "mana-burst 54",
+   "frame": {
+    "x": 1040,
+    "y": 1050,
+    "w": 208,
+    "h": 150
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 150
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 150
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "mana-burst.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1456,
+   "h": 1200
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "mana-burst",
+    "from": 0,
+    "to": 54,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "arcane/mana-burst",
+   "name": "Mana burst",
+   "fps": 30,
+   "loop": false,
+   "frames": 55,
+   "frameSize": [
+    208,
+    150
+   ],
+   "pivot": [
+    104,
+    124
+   ],
+   "columns": 7
+  }
+ }
+}

@@ -1,0 +1,1245 @@
+{
+ "frames": [
+  {
+   "filename": "heavy-landing 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 1",
+   "frame": {
+    "x": 176,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 2",
+   "frame": {
+    "x": 352,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 3",
+   "frame": {
+    "x": 528,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 4",
+   "frame": {
+    "x": 704,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 5",
+   "frame": {
+    "x": 0,
+    "y": 80,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 6",
+   "frame": {
+    "x": 176,
+    "y": 80,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 7",
+   "frame": {
+    "x": 352,
+    "y": 80,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 8",
+   "frame": {
+    "x": 528,
+    "y": 80,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 9",
+   "frame": {
+    "x": 704,
+    "y": 80,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 10",
+   "frame": {
+    "x": 0,
+    "y": 160,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 11",
+   "frame": {
+    "x": 176,
+    "y": 160,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 12",
+   "frame": {
+    "x": 352,
+    "y": 160,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 13",
+   "frame": {
+    "x": 528,
+    "y": 160,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 14",
+   "frame": {
+    "x": 704,
+    "y": 160,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 15",
+   "frame": {
+    "x": 0,
+    "y": 240,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 16",
+   "frame": {
+    "x": 176,
+    "y": 240,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 17",
+   "frame": {
+    "x": 352,
+    "y": 240,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 18",
+   "frame": {
+    "x": 528,
+    "y": 240,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 19",
+   "frame": {
+    "x": 704,
+    "y": 240,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 20",
+   "frame": {
+    "x": 0,
+    "y": 320,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 21",
+   "frame": {
+    "x": 176,
+    "y": 320,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 22",
+   "frame": {
+    "x": 352,
+    "y": 320,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 23",
+   "frame": {
+    "x": 528,
+    "y": 320,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 24",
+   "frame": {
+    "x": 704,
+    "y": 320,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 25",
+   "frame": {
+    "x": 0,
+    "y": 400,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 26",
+   "frame": {
+    "x": 176,
+    "y": 400,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 27",
+   "frame": {
+    "x": 352,
+    "y": 400,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 28",
+   "frame": {
+    "x": 528,
+    "y": 400,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 29",
+   "frame": {
+    "x": 704,
+    "y": 400,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 30",
+   "frame": {
+    "x": 0,
+    "y": 480,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 31",
+   "frame": {
+    "x": 176,
+    "y": 480,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 32",
+   "frame": {
+    "x": 352,
+    "y": 480,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 33",
+   "frame": {
+    "x": 528,
+    "y": 480,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 34",
+   "frame": {
+    "x": 704,
+    "y": 480,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 35",
+   "frame": {
+    "x": 0,
+    "y": 560,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 36",
+   "frame": {
+    "x": 176,
+    "y": 560,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 37",
+   "frame": {
+    "x": 352,
+    "y": 560,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 38",
+   "frame": {
+    "x": 528,
+    "y": 560,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 39",
+   "frame": {
+    "x": 704,
+    "y": 560,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 40",
+   "frame": {
+    "x": 0,
+    "y": 640,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 41",
+   "frame": {
+    "x": 176,
+    "y": 640,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 42",
+   "frame": {
+    "x": 352,
+    "y": 640,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 43",
+   "frame": {
+    "x": 528,
+    "y": 640,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 44",
+   "frame": {
+    "x": 704,
+    "y": 640,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 45",
+   "frame": {
+    "x": 0,
+    "y": 720,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 46",
+   "frame": {
+    "x": 176,
+    "y": 720,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 47",
+   "frame": {
+    "x": 352,
+    "y": 720,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  },
+  {
+   "filename": "heavy-landing 48",
+   "frame": {
+    "x": 528,
+    "y": 720,
+    "w": 176,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 176,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 176,
+    "h": 80
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "heavy-landing.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 880,
+   "h": 800
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "heavy-landing",
+    "from": 0,
+    "to": 48,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "impacts/heavy-landing",
+   "name": "Heavy landing",
+   "fps": 30,
+   "loop": false,
+   "frames": 49,
+   "frameSize": [
+    176,
+    80
+   ],
+   "pivot": [
+    88,
+    60
+   ],
+   "columns": 5,
+   "act": {
+    "windup": 0.26,
+    "recovery": 0,
+    "onBody": false,
+    "targets": [],
+    "hits": [
+     {
+      "t": 0.005,
+      "freeze": 0.13,
+      "shake": 0.32,
+      "amp": 3,
+      "push": 1.2
+     }
+    ],
+    "poses": [
+     {
+      "t": -0.26,
+      "how": "smooth",
+      "pose": {
+       "turn": 0.8,
+       "y": -46,
+       "crouch": -1,
+       "lean": -1,
+       "fx": -9,
+       "fy": -42,
+       "bx": 10,
+       "by": -42,
+       "ffx": 6,
+       "ffy": -8,
+       "fbx": -3,
+       "fby": -3,
+       "toeB": true,
+       "ghost": 1
+      }
+     },
+     {
+      "t": -0.01,
+      "how": "in",
+      "pose": {
+       "turn": 0.8,
+       "y": -6,
+       "crouch": -1,
+       "lean": -1,
+       "fx": -9,
+       "fy": -42,
+       "bx": 10,
+       "by": -42,
+       "ffx": 6,
+       "ffy": -8,
+       "fbx": -3,
+       "fby": -3,
+       "toeB": true,
+       "ghost": 1
+      }
+     },
+     {
+      "t": 0,
+      "how": "snap",
+      "pose": {
+       "y": 0,
+       "crouch": 8,
+       "lean": 5,
+       "fx": 13,
+       "fy": -8,
+       "bx": -6,
+       "by": -23,
+       "ffx": 11,
+       "fbx": -10
+      }
+     },
+     {
+      "t": 0.55,
+      "how": "smooth",
+      "pose": {
+       "y": 0,
+       "crouch": 7,
+       "lean": 5,
+       "fx": 13,
+       "fy": -8,
+       "bx": -6,
+       "by": -23,
+       "ffx": 11,
+       "fbx": -10
+      }
+     },
+     {
+      "t": 0.95,
+      "how": "smooth",
+      "pose": {
+       "y": 0,
+       "crouch": 5,
+       "lean": 3,
+       "fx": 13,
+       "fy": -15,
+       "bx": -5,
+       "by": -20,
+       "ffx": 11,
+       "fbx": -10
+      }
+     },
+     {
+      "t": 1.3,
+      "how": "smooth",
+      "pose": {
+       "crouch": 3,
+       "fx": 11,
+       "fy": -21,
+       "bx": 9,
+       "by": -21,
+       "ffx": 7,
+       "fbx": -7
+      }
+     },
+     {
+      "t": 1.6,
+      "how": "smooth",
+      "pose": {
+       "crouch": 3,
+       "fx": 11,
+       "fy": -21,
+       "bx": 9,
+       "by": -21,
+       "ffx": 7,
+       "fbx": -7
+      }
+     }
+    ]
+   }
+  }
+ }
+}

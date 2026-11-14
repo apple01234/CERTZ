@@ -1,0 +1,2099 @@
+{
+ "frames": [
+  {
+   "filename": "blessing 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 1",
+   "frame": {
+    "x": 80,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 2",
+   "frame": {
+    "x": 160,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 3",
+   "frame": {
+    "x": 240,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 4",
+   "frame": {
+    "x": 320,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 5",
+   "frame": {
+    "x": 400,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 6",
+   "frame": {
+    "x": 480,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 7",
+   "frame": {
+    "x": 560,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 8",
+   "frame": {
+    "x": 640,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 9",
+   "frame": {
+    "x": 720,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 10",
+   "frame": {
+    "x": 800,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 11",
+   "frame": {
+    "x": 880,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 12",
+   "frame": {
+    "x": 0,
+    "y": 128,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 13",
+   "frame": {
+    "x": 80,
+    "y": 128,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 14",
+   "frame": {
+    "x": 160,
+    "y": 128,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 15",
+   "frame": {
+    "x": 240,
+    "y": 128,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 16",
+   "frame": {
+    "x": 320,
+    "y": 128,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 17",
+   "frame": {
+    "x": 400,
+    "y": 128,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 18",
+   "frame": {
+    "x": 480,
+    "y": 128,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 19",
+   "frame": {
+    "x": 560,
+    "y": 128,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 20",
+   "frame": {
+    "x": 640,
+    "y": 128,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 21",
+   "frame": {
+    "x": 720,
+    "y": 128,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 22",
+   "frame": {
+    "x": 800,
+    "y": 128,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 23",
+   "frame": {
+    "x": 880,
+    "y": 128,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 24",
+   "frame": {
+    "x": 0,
+    "y": 256,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 25",
+   "frame": {
+    "x": 80,
+    "y": 256,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 26",
+   "frame": {
+    "x": 160,
+    "y": 256,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 27",
+   "frame": {
+    "x": 240,
+    "y": 256,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 28",
+   "frame": {
+    "x": 320,
+    "y": 256,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 29",
+   "frame": {
+    "x": 400,
+    "y": 256,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 30",
+   "frame": {
+    "x": 480,
+    "y": 256,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 31",
+   "frame": {
+    "x": 560,
+    "y": 256,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 32",
+   "frame": {
+    "x": 640,
+    "y": 256,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 33",
+   "frame": {
+    "x": 720,
+    "y": 256,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 34",
+   "frame": {
+    "x": 800,
+    "y": 256,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 35",
+   "frame": {
+    "x": 880,
+    "y": 256,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 36",
+   "frame": {
+    "x": 0,
+    "y": 384,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 37",
+   "frame": {
+    "x": 80,
+    "y": 384,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 38",
+   "frame": {
+    "x": 160,
+    "y": 384,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 39",
+   "frame": {
+    "x": 240,
+    "y": 384,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 40",
+   "frame": {
+    "x": 320,
+    "y": 384,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 41",
+   "frame": {
+    "x": 400,
+    "y": 384,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 42",
+   "frame": {
+    "x": 480,
+    "y": 384,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 43",
+   "frame": {
+    "x": 560,
+    "y": 384,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 44",
+   "frame": {
+    "x": 640,
+    "y": 384,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 45",
+   "frame": {
+    "x": 720,
+    "y": 384,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 46",
+   "frame": {
+    "x": 800,
+    "y": 384,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 47",
+   "frame": {
+    "x": 880,
+    "y": 384,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 48",
+   "frame": {
+    "x": 0,
+    "y": 512,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 49",
+   "frame": {
+    "x": 80,
+    "y": 512,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 50",
+   "frame": {
+    "x": 160,
+    "y": 512,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 51",
+   "frame": {
+    "x": 240,
+    "y": 512,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 52",
+   "frame": {
+    "x": 320,
+    "y": 512,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 53",
+   "frame": {
+    "x": 400,
+    "y": 512,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 54",
+   "frame": {
+    "x": 480,
+    "y": 512,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 55",
+   "frame": {
+    "x": 560,
+    "y": 512,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 56",
+   "frame": {
+    "x": 640,
+    "y": 512,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 57",
+   "frame": {
+    "x": 720,
+    "y": 512,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 58",
+   "frame": {
+    "x": 800,
+    "y": 512,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 59",
+   "frame": {
+    "x": 880,
+    "y": 512,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 60",
+   "frame": {
+    "x": 0,
+    "y": 640,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 61",
+   "frame": {
+    "x": 80,
+    "y": 640,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 62",
+   "frame": {
+    "x": 160,
+    "y": 640,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 63",
+   "frame": {
+    "x": 240,
+    "y": 640,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 64",
+   "frame": {
+    "x": 320,
+    "y": 640,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 65",
+   "frame": {
+    "x": 400,
+    "y": 640,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 66",
+   "frame": {
+    "x": 480,
+    "y": 640,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 67",
+   "frame": {
+    "x": 560,
+    "y": 640,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 68",
+   "frame": {
+    "x": 640,
+    "y": 640,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 69",
+   "frame": {
+    "x": 720,
+    "y": 640,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 70",
+   "frame": {
+    "x": 800,
+    "y": 640,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 71",
+   "frame": {
+    "x": 880,
+    "y": 640,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 72",
+   "frame": {
+    "x": 0,
+    "y": 768,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 73",
+   "frame": {
+    "x": 80,
+    "y": 768,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 74",
+   "frame": {
+    "x": 160,
+    "y": 768,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 75",
+   "frame": {
+    "x": 240,
+    "y": 768,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 76",
+   "frame": {
+    "x": 320,
+    "y": 768,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 77",
+   "frame": {
+    "x": 400,
+    "y": 768,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 78",
+   "frame": {
+    "x": 480,
+    "y": 768,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 79",
+   "frame": {
+    "x": 560,
+    "y": 768,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 80",
+   "frame": {
+    "x": 640,
+    "y": 768,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 81",
+   "frame": {
+    "x": 720,
+    "y": 768,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 82",
+   "frame": {
+    "x": 800,
+    "y": 768,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 83",
+   "frame": {
+    "x": 880,
+    "y": 768,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 84",
+   "frame": {
+    "x": 0,
+    "y": 896,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 85",
+   "frame": {
+    "x": 80,
+    "y": 896,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 86",
+   "frame": {
+    "x": 160,
+    "y": 896,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 87",
+   "frame": {
+    "x": 240,
+    "y": 896,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 88",
+   "frame": {
+    "x": 320,
+    "y": 896,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  },
+  {
+   "filename": "blessing 89",
+   "frame": {
+    "x": 400,
+    "y": 896,
+    "w": 80,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 80,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 80,
+    "h": 128
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "blessing.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 960,
+   "h": 1024
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "blessing",
+    "from": 0,
+    "to": 89,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "holy/blessing",
+   "name": "Blessing",
+   "fps": 30,
+   "loop": true,
+   "frames": 90,
+   "frameSize": [
+    80,
+    128
+   ],
+   "pivot": [
+    40,
+    108
+   ],
+   "columns": 12,
+   "act": {
+    "windup": 0,
+    "recovery": 0,
+    "onBody": true,
+    "targets": [],
+    "hits": [],
+    "poses": [
+     {
+      "t": 0,
+      "how": "smooth",
+      "pose": {
+       "turn": 1.15,
+       "fx": -13,
+       "fy": -31,
+       "bx": 14,
+       "by": -31,
+       "hy": -1,
+       "ffx": -3,
+       "fbx": 4
+      }
+     },
+     {
+      "t": 0.75,
+      "how": "smooth",
+      "pose": {
+       "turn": 1.15,
+       "fx": -13,
+       "fy": -33,
+       "bx": 14,
+       "by": -33,
+       "hy": -1,
+       "ffx": -3,
+       "fbx": 4
+      }
+     },
+     {
+      "t": 1.5,
+      "how": "smooth",
+      "pose": {
+       "turn": 1.15,
+       "fx": -13,
+       "fy": -35,
+       "bx": 14,
+       "by": -35,
+       "hy": -1,
+       "ffx": -3,
+       "fbx": 4,
+       "crouch": -1
+      }
+     },
+     {
+      "t": 2.25,
+      "how": "smooth",
+      "pose": {
+       "turn": 1.15,
+       "fx": -13,
+       "fy": -33,
+       "bx": 14,
+       "by": -33,
+       "hy": -1,
+       "ffx": -3,
+       "fbx": 4
+      }
+     },
+     {
+      "t": 3,
+      "how": "smooth",
+      "pose": {
+       "turn": 1.15,
+       "fx": -13,
+       "fy": -31,
+       "bx": 14,
+       "by": -31,
+       "hy": -1,
+       "ffx": -3,
+       "fbx": 4
+      }
+     }
+    ]
+   }
+  }
+ }
+}

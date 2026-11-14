@@ -1,0 +1,2107 @@
+{
+ "frames": [
+  {
+   "filename": "quake 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 1",
+   "frame": {
+    "x": 288,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 2",
+   "frame": {
+    "x": 576,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 3",
+   "frame": {
+    "x": 864,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 4",
+   "frame": {
+    "x": 1152,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 5",
+   "frame": {
+    "x": 1440,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 6",
+   "frame": {
+    "x": 0,
+    "y": 104,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 7",
+   "frame": {
+    "x": 288,
+    "y": 104,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 8",
+   "frame": {
+    "x": 576,
+    "y": 104,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 9",
+   "frame": {
+    "x": 864,
+    "y": 104,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 10",
+   "frame": {
+    "x": 1152,
+    "y": 104,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 11",
+   "frame": {
+    "x": 1440,
+    "y": 104,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 12",
+   "frame": {
+    "x": 0,
+    "y": 208,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 13",
+   "frame": {
+    "x": 288,
+    "y": 208,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 14",
+   "frame": {
+    "x": 576,
+    "y": 208,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 15",
+   "frame": {
+    "x": 864,
+    "y": 208,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 16",
+   "frame": {
+    "x": 1152,
+    "y": 208,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 17",
+   "frame": {
+    "x": 1440,
+    "y": 208,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 18",
+   "frame": {
+    "x": 0,
+    "y": 312,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 19",
+   "frame": {
+    "x": 288,
+    "y": 312,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 20",
+   "frame": {
+    "x": 576,
+    "y": 312,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 21",
+   "frame": {
+    "x": 864,
+    "y": 312,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 22",
+   "frame": {
+    "x": 1152,
+    "y": 312,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 23",
+   "frame": {
+    "x": 1440,
+    "y": 312,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 24",
+   "frame": {
+    "x": 0,
+    "y": 416,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 25",
+   "frame": {
+    "x": 288,
+    "y": 416,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 26",
+   "frame": {
+    "x": 576,
+    "y": 416,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 27",
+   "frame": {
+    "x": 864,
+    "y": 416,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 28",
+   "frame": {
+    "x": 1152,
+    "y": 416,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 29",
+   "frame": {
+    "x": 1440,
+    "y": 416,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 30",
+   "frame": {
+    "x": 0,
+    "y": 520,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 31",
+   "frame": {
+    "x": 288,
+    "y": 520,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 32",
+   "frame": {
+    "x": 576,
+    "y": 520,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 33",
+   "frame": {
+    "x": 864,
+    "y": 520,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 34",
+   "frame": {
+    "x": 1152,
+    "y": 520,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 35",
+   "frame": {
+    "x": 1440,
+    "y": 520,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 36",
+   "frame": {
+    "x": 0,
+    "y": 624,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 37",
+   "frame": {
+    "x": 288,
+    "y": 624,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 38",
+   "frame": {
+    "x": 576,
+    "y": 624,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 39",
+   "frame": {
+    "x": 864,
+    "y": 624,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 40",
+   "frame": {
+    "x": 1152,
+    "y": 624,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 41",
+   "frame": {
+    "x": 1440,
+    "y": 624,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 42",
+   "frame": {
+    "x": 0,
+    "y": 728,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 43",
+   "frame": {
+    "x": 288,
+    "y": 728,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 44",
+   "frame": {
+    "x": 576,
+    "y": 728,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 45",
+   "frame": {
+    "x": 864,
+    "y": 728,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 46",
+   "frame": {
+    "x": 1152,
+    "y": 728,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 47",
+   "frame": {
+    "x": 1440,
+    "y": 728,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 48",
+   "frame": {
+    "x": 0,
+    "y": 832,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 49",
+   "frame": {
+    "x": 288,
+    "y": 832,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 50",
+   "frame": {
+    "x": 576,
+    "y": 832,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 51",
+   "frame": {
+    "x": 864,
+    "y": 832,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 52",
+   "frame": {
+    "x": 1152,
+    "y": 832,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 53",
+   "frame": {
+    "x": 1440,
+    "y": 832,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 54",
+   "frame": {
+    "x": 0,
+    "y": 936,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 55",
+   "frame": {
+    "x": 288,
+    "y": 936,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 56",
+   "frame": {
+    "x": 576,
+    "y": 936,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 57",
+   "frame": {
+    "x": 864,
+    "y": 936,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 58",
+   "frame": {
+    "x": 1152,
+    "y": 936,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 59",
+   "frame": {
+    "x": 1440,
+    "y": 936,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 60",
+   "frame": {
+    "x": 0,
+    "y": 1040,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 61",
+   "frame": {
+    "x": 288,
+    "y": 1040,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 62",
+   "frame": {
+    "x": 576,
+    "y": 1040,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 63",
+   "frame": {
+    "x": 864,
+    "y": 1040,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 64",
+   "frame": {
+    "x": 1152,
+    "y": 1040,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 65",
+   "frame": {
+    "x": 1440,
+    "y": 1040,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 66",
+   "frame": {
+    "x": 0,
+    "y": 1144,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 67",
+   "frame": {
+    "x": 288,
+    "y": 1144,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 68",
+   "frame": {
+    "x": 576,
+    "y": 1144,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 69",
+   "frame": {
+    "x": 864,
+    "y": 1144,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 70",
+   "frame": {
+    "x": 1152,
+    "y": 1144,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 71",
+   "frame": {
+    "x": 1440,
+    "y": 1144,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 72",
+   "frame": {
+    "x": 0,
+    "y": 1248,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 73",
+   "frame": {
+    "x": 288,
+    "y": 1248,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 74",
+   "frame": {
+    "x": 576,
+    "y": 1248,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 75",
+   "frame": {
+    "x": 864,
+    "y": 1248,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 76",
+   "frame": {
+    "x": 1152,
+    "y": 1248,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 77",
+   "frame": {
+    "x": 1440,
+    "y": 1248,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 78",
+   "frame": {
+    "x": 0,
+    "y": 1352,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 79",
+   "frame": {
+    "x": 288,
+    "y": 1352,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 80",
+   "frame": {
+    "x": 576,
+    "y": 1352,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 81",
+   "frame": {
+    "x": 864,
+    "y": 1352,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 82",
+   "frame": {
+    "x": 1152,
+    "y": 1352,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 83",
+   "frame": {
+    "x": 1440,
+    "y": 1352,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 84",
+   "frame": {
+    "x": 0,
+    "y": 1456,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 85",
+   "frame": {
+    "x": 288,
+    "y": 1456,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 86",
+   "frame": {
+    "x": 576,
+    "y": 1456,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 87",
+   "frame": {
+    "x": 864,
+    "y": 1456,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 88",
+   "frame": {
+    "x": 1152,
+    "y": 1456,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 89",
+   "frame": {
+    "x": 1440,
+    "y": 1456,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 90",
+   "frame": {
+    "x": 0,
+    "y": 1560,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 91",
+   "frame": {
+    "x": 288,
+    "y": 1560,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 92",
+   "frame": {
+    "x": 576,
+    "y": 1560,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  },
+  {
+   "filename": "quake 93",
+   "frame": {
+    "x": 864,
+    "y": 1560,
+    "w": 288,
+    "h": 104
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 288,
+    "h": 104
+   },
+   "sourceSize": {
+    "w": 288,
+    "h": 104
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "quake.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1728,
+   "h": 1664
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "quake",
+    "from": 0,
+    "to": 93,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "nature/quake",
+   "name": "Quake",
+   "fps": 30,
+   "loop": false,
+   "frames": 94,
+   "frameSize": [
+    288,
+    104
+   ],
+   "pivot": [
+    144,
+    88
+   ],
+   "columns": 6
+  }
+ }
+}

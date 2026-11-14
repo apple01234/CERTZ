@@ -1,0 +1,1632 @@
+{
+ "frames": [
+  {
+   "filename": "scythe-reap 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 1",
+   "frame": {
+    "x": 184,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 2",
+   "frame": {
+    "x": 368,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 3",
+   "frame": {
+    "x": 552,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 4",
+   "frame": {
+    "x": 736,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 5",
+   "frame": {
+    "x": 920,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 6",
+   "frame": {
+    "x": 1104,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 7",
+   "frame": {
+    "x": 0,
+    "y": 116,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 8",
+   "frame": {
+    "x": 184,
+    "y": 116,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 9",
+   "frame": {
+    "x": 368,
+    "y": 116,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 10",
+   "frame": {
+    "x": 552,
+    "y": 116,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 11",
+   "frame": {
+    "x": 736,
+    "y": 116,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 12",
+   "frame": {
+    "x": 920,
+    "y": 116,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 13",
+   "frame": {
+    "x": 1104,
+    "y": 116,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 14",
+   "frame": {
+    "x": 0,
+    "y": 232,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 15",
+   "frame": {
+    "x": 184,
+    "y": 232,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 16",
+   "frame": {
+    "x": 368,
+    "y": 232,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 17",
+   "frame": {
+    "x": 552,
+    "y": 232,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 18",
+   "frame": {
+    "x": 736,
+    "y": 232,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 19",
+   "frame": {
+    "x": 920,
+    "y": 232,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 20",
+   "frame": {
+    "x": 1104,
+    "y": 232,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 21",
+   "frame": {
+    "x": 0,
+    "y": 348,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 22",
+   "frame": {
+    "x": 184,
+    "y": 348,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 23",
+   "frame": {
+    "x": 368,
+    "y": 348,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 24",
+   "frame": {
+    "x": 552,
+    "y": 348,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 25",
+   "frame": {
+    "x": 736,
+    "y": 348,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 26",
+   "frame": {
+    "x": 920,
+    "y": 348,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 27",
+   "frame": {
+    "x": 1104,
+    "y": 348,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 28",
+   "frame": {
+    "x": 0,
+    "y": 464,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 29",
+   "frame": {
+    "x": 184,
+    "y": 464,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 30",
+   "frame": {
+    "x": 368,
+    "y": 464,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 31",
+   "frame": {
+    "x": 552,
+    "y": 464,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 32",
+   "frame": {
+    "x": 736,
+    "y": 464,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 33",
+   "frame": {
+    "x": 920,
+    "y": 464,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 34",
+   "frame": {
+    "x": 1104,
+    "y": 464,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 35",
+   "frame": {
+    "x": 0,
+    "y": 580,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 36",
+   "frame": {
+    "x": 184,
+    "y": 580,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 37",
+   "frame": {
+    "x": 368,
+    "y": 580,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 38",
+   "frame": {
+    "x": 552,
+    "y": 580,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 39",
+   "frame": {
+    "x": 736,
+    "y": 580,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 40",
+   "frame": {
+    "x": 920,
+    "y": 580,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 41",
+   "frame": {
+    "x": 1104,
+    "y": 580,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 42",
+   "frame": {
+    "x": 0,
+    "y": 696,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 43",
+   "frame": {
+    "x": 184,
+    "y": 696,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 44",
+   "frame": {
+    "x": 368,
+    "y": 696,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 45",
+   "frame": {
+    "x": 552,
+    "y": 696,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 46",
+   "frame": {
+    "x": 736,
+    "y": 696,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 47",
+   "frame": {
+    "x": 920,
+    "y": 696,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 48",
+   "frame": {
+    "x": 1104,
+    "y": 696,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 49",
+   "frame": {
+    "x": 0,
+    "y": 812,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 50",
+   "frame": {
+    "x": 184,
+    "y": 812,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 51",
+   "frame": {
+    "x": 368,
+    "y": 812,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 52",
+   "frame": {
+    "x": 552,
+    "y": 812,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 53",
+   "frame": {
+    "x": 736,
+    "y": 812,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 54",
+   "frame": {
+    "x": 920,
+    "y": 812,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 55",
+   "frame": {
+    "x": 1104,
+    "y": 812,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 56",
+   "frame": {
+    "x": 0,
+    "y": 928,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 57",
+   "frame": {
+    "x": 184,
+    "y": 928,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 58",
+   "frame": {
+    "x": 368,
+    "y": 928,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 59",
+   "frame": {
+    "x": 552,
+    "y": 928,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 60",
+   "frame": {
+    "x": 736,
+    "y": 928,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 61",
+   "frame": {
+    "x": 920,
+    "y": 928,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 62",
+   "frame": {
+    "x": 1104,
+    "y": 928,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  },
+  {
+   "filename": "scythe-reap 63",
+   "frame": {
+    "x": 0,
+    "y": 1044,
+    "w": 184,
+    "h": 116
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 184,
+    "h": 116
+   },
+   "sourceSize": {
+    "w": 184,
+    "h": 116
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "scythe-reap.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1288,
+   "h": 1160
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "scythe-reap",
+    "from": 0,
+    "to": 63,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "melee/scythe-reap",
+   "name": "Scythe reap",
+   "fps": 30,
+   "loop": false,
+   "frames": 64,
+   "frameSize": [
+    184,
+    116
+   ],
+   "pivot": [
+    84,
+    98
+   ],
+   "columns": 7,
+   "act": {
+    "windup": 0.56,
+    "recovery": 0,
+    "onBody": false,
+    "targets": [
+     66
+    ],
+    "hits": [
+     {
+      "t": 0.14,
+      "freeze": 0.12,
+      "shake": 0.16,
+      "amp": 2,
+      "push": 2.4,
+      "skin": "shadow"
+     }
+    ],
+    "poses": [
+     {
+      "t": -0.56,
+      "how": "smooth",
+      "pose": {
+       "crouch": 3,
+       "fx": 11,
+       "fy": -22,
+       "bx": 7,
+       "by": -16,
+       "ffx": 7,
+       "fbx": -7,
+       "weapon": "scythe",
+       "x": 2,
+       "sa": -1.5
+      }
+     },
+     {
+      "t": -0.26,
+      "how": "smooth",
+      "pose": {
+       "crouch": 4,
+       "fx": 17,
+       "fy": -27,
+       "bx": 7,
+       "by": -16,
+       "ffx": 11,
+       "fbx": -8,
+       "weapon": "scythe",
+       "x": 2,
+       "sa": -0.45,
+       "two": true,
+       "lean": 4
+      }
+     },
+     {
+      "t": 0.08,
+      "how": "smooth",
+      "pose": {
+       "crouch": 5,
+       "fx": 17,
+       "fy": -27,
+       "bx": 7,
+       "by": -16,
+       "ffx": 11,
+       "fbx": -8,
+       "weapon": "scythe",
+       "x": 2,
+       "sa": -0.45,
+       "two": true,
+       "lean": 4
+      }
+     },
+     {
+      "t": 0.2,
+      "how": "smooth",
+      "pose": {
+       "crouch": 5,
+       "fx": 16,
+       "fy": -23,
+       "bx": 7,
+       "by": -16,
+       "ffx": 11,
+       "fbx": -8,
+       "weapon": "scythe",
+       "x": 2,
+       "sa": 0.1,
+       "two": true,
+       "lean": 3,
+       "yaw": 0.8,
+       "ghost": 1
+      }
+     },
+     {
+      "t": 0.3,
+      "how": "smooth",
+      "pose": {
+       "crouch": 6,
+       "fx": 15,
+       "fy": -23,
+       "bx": 7,
+       "by": -16,
+       "ffx": 11,
+       "fbx": -8,
+       "weapon": "scythe",
+       "x": 1,
+       "sa": 0.2,
+       "two": true,
+       "lean": 3,
+       "yaw": 1.9,
+       "ghost": 1
+      }
+     },
+     {
+      "t": 0.42,
+      "how": "smooth",
+      "pose": {
+       "crouch": 6,
+       "fx": 15,
+       "fy": -24,
+       "bx": 7,
+       "by": -16,
+       "ffx": 11,
+       "fbx": -10,
+       "weapon": "scythe",
+       "x": 0,
+       "sa": 0.3,
+       "two": true,
+       "yaw": 3.14,
+       "lean": 4,
+       "toeB": true
+      }
+     },
+     {
+      "t": 0.92,
+      "how": "smooth",
+      "pose": {
+       "crouch": 5,
+       "fx": 15,
+       "fy": -24,
+       "bx": 7,
+       "by": -16,
+       "ffx": 11,
+       "fbx": -10,
+       "weapon": "scythe",
+       "x": 0,
+       "sa": 0.3,
+       "two": true,
+       "yaw": 3.14,
+       "lean": 4,
+       "toeB": true
+      }
+     },
+     {
+      "t": 1.3,
+      "how": "smooth",
+      "pose": {
+       "crouch": 4,
+       "fx": 11,
+       "fy": -22,
+       "bx": 7,
+       "by": -16,
+       "ffx": 7,
+       "fbx": -7,
+       "weapon": "scythe",
+       "x": 1,
+       "sa": -1.5,
+       "yaw": 1.4
+      }
+     },
+     {
+      "t": 1.7,
+      "how": "smooth",
+      "pose": {
+       "crouch": 3,
+       "fx": 11,
+       "fy": -22,
+       "bx": 7,
+       "by": -16,
+       "ffx": 7,
+       "fbx": -7,
+       "weapon": "scythe",
+       "x": 2,
+       "sa": -1.5
+      }
+     }
+    ]
+   }
+  }
+ }
+}

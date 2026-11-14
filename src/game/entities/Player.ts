@@ -28,6 +28,7 @@ import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUl
 import { DEATH_SLASH_CFG, runDeathSlashCinematic } from "../fx/DeathSlash"; // vc153 — 도적 제2궁극기 「사(死)의 일섬」 3D 시네마틱
 import { playUltLayers } from "../fx/ultLayers"; // vc183 — 극딜 3단계 연출 레이어(암전·이펙트·카메라)
 import { runUltFinale } from "../fx/ultFinale"; // vc204 (#10) — 직업별 고유 마무리
+import { playUltFx } from "../fx/ultPixelFx"; // 2026-11-14 — 궁극기 pixelfx (시전·종결)
 import { finaleTargetOrder, ultimateFinalePlan } from "../fx/ultFinalePlan";
 import * as audio from "../audio";
 import { netAction } from "../net"; // v4.1.0 — 파티원 공격/스킬 동기화
@@ -4489,6 +4490,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     void cine3d().play({ preset: "ultimate", x: this.x, y: this.y, tint: hex, duration: 1750, fam: this.ultKeyFor3D() });
     /* v1.4.0 (Task 3-1 — 유저 지시 #13) — 직업별 고유 VFX2 시그니처 연출 (8직업 1:1 매핑) */
     spawnUltFlourish(this.scene, this.x, this.y, key5, hex);
+    playUltFx(this.scene, key5, 1, "cast", this.x, this.y, this.facing.x < 0); // 2026-11-14 — pixelfx 시전
     /* vc183 — 극딜 3단계 연출(암전 → 후면오라/지면룬/전면폭발 → 히트스톱·흔들림·줌).
      *  계열별 강도표(ultLayers.ts)로 전사는 묵직, 도적은 짧고 날카롭게 자동 분기된다. */
     /* v1.4.41 (#3) — 연출 길이를 시전 시간에 비례시킨다.
@@ -6314,6 +6316,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.tweens.add({ targets: ring, scale: 3.8, alpha: 0, duration: 760, ease: "Cubic.out", onComplete: () => ring.destroy() });
     this.scene.spawnBurstAt(this.x, this.y, 36, 0xb06aff);
     this.scene.vfx3dFx("spiral", this.x, this.y, 0xb06aff, 1.1);
+    playUltFx(this.scene, key5, 2, "cast", this.x, this.y, this.facing.x < 0); // 2026-11-14 — pixelfx 시전
     /* vc181 (지시 #1·#2) — 제2궁극기는 3D 나선 카메라 워크 (1차보다 길고 웅장하게) */
     void cine3d().play({ preset: "ultimate2", x: this.x, y: this.y, tint: hex, duration: 2400, fam: this.ultKeyFor3D() });
     /* vc183 — 제2궁극기(120초)는 극딜의 정점: 암전·연출을 1차보다 강하게(scale 1.15) */
@@ -9643,6 +9646,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnBurstAt(this.x, this.y, finale ? 40 : 18, hex);
           this.scene.impactFX.shake(finale ? 220 : 60, finale ? 0.012 : 0.004);
           if (finale && paid) this.scene.spawnShockwave(this.x, this.y, hex, 2.2, 480, 0.55);
+          if (last) playUltFx(this.scene, resolveSkill5Of(this.cls), slot, "finale", this.x, this.y); // 2026-11-14 — pixelfx 종결(남은 예산 전액)
         } catch { /* 연출 실패가 판정을 막지 않는다 */ }
       });
     }

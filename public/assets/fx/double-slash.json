@@ -1,0 +1,794 @@
+{
+ "frames": [
+  {
+   "filename": "double-slash 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 1",
+   "frame": {
+    "x": 164,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 2",
+   "frame": {
+    "x": 328,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 3",
+   "frame": {
+    "x": 492,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 4",
+   "frame": {
+    "x": 656,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 5",
+   "frame": {
+    "x": 0,
+    "y": 108,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 6",
+   "frame": {
+    "x": 164,
+    "y": 108,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 7",
+   "frame": {
+    "x": 328,
+    "y": 108,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 8",
+   "frame": {
+    "x": 492,
+    "y": 108,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 9",
+   "frame": {
+    "x": 656,
+    "y": 108,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 10",
+   "frame": {
+    "x": 0,
+    "y": 216,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 11",
+   "frame": {
+    "x": 164,
+    "y": 216,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 12",
+   "frame": {
+    "x": 328,
+    "y": 216,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 13",
+   "frame": {
+    "x": 492,
+    "y": 216,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 14",
+   "frame": {
+    "x": 656,
+    "y": 216,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 15",
+   "frame": {
+    "x": 0,
+    "y": 324,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 16",
+   "frame": {
+    "x": 164,
+    "y": 324,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 17",
+   "frame": {
+    "x": 328,
+    "y": 324,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 18",
+   "frame": {
+    "x": 492,
+    "y": 324,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 19",
+   "frame": {
+    "x": 656,
+    "y": 324,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 20",
+   "frame": {
+    "x": 0,
+    "y": 432,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 21",
+   "frame": {
+    "x": 164,
+    "y": 432,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 22",
+   "frame": {
+    "x": 328,
+    "y": 432,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 23",
+   "frame": {
+    "x": 492,
+    "y": 432,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  },
+  {
+   "filename": "double-slash 24",
+   "frame": {
+    "x": 656,
+    "y": 432,
+    "w": 164,
+    "h": 108
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 164,
+    "h": 108
+   },
+   "sourceSize": {
+    "w": 164,
+    "h": 108
+   },
+   "duration": 33
+  }
+ ],
+ "meta": {
+  "app": "https://github.com/patch-gg/pixelfx",
+  "version": "1",
+  "image": "double-slash.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 820,
+   "h": 540
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "double-slash",
+    "from": 0,
+    "to": 24,
+    "direction": "forward"
+   }
+  ],
+  "pixelfx": {
+   "id": "melee/double-slash",
+   "name": "Double slash",
+   "fps": 30,
+   "loop": false,
+   "frames": 25,
+   "frameSize": [
+    164,
+    108
+   ],
+   "pivot": [
+    44,
+    92
+   ],
+   "columns": 5,
+   "act": {
+    "windup": 0.42,
+    "recovery": 0.12,
+    "onBody": false,
+    "targets": [
+     62
+    ],
+    "hits": [
+     {
+      "t": 0.06,
+      "freeze": 0.05,
+      "shake": 0.08,
+      "amp": 1,
+      "push": 1.4
+     },
+     {
+      "t": 0.16,
+      "freeze": 0.14,
+      "shake": 0.2,
+      "amp": 2,
+      "push": 2.8
+     }
+    ],
+    "poses": [
+     {
+      "t": -0.42,
+      "how": "smooth",
+      "pose": {
+       "crouch": 3,
+       "fx": 12,
+       "fy": -21,
+       "bx": 9,
+       "by": -21,
+       "ffx": 7,
+       "fbx": -7,
+       "weapon": "sword",
+       "sa": -0.85,
+       "x": -7
+      }
+     },
+     {
+      "t": -0.18,
+      "how": "smooth",
+      "pose": {
+       "crouch": 4,
+       "fx": -7,
+       "fy": -35,
+       "bx": 9,
+       "by": -25,
+       "ffx": 9,
+       "fbx": -8,
+       "weapon": "sword",
+       "sa": -2.65,
+       "x": -7,
+       "lean": -4,
+       "armsFront": true
+      }
+     },
+     {
+      "t": -0.04,
+      "how": "smooth",
+      "pose": {
+       "crouch": 5,
+       "fx": -7,
+       "fy": -35,
+       "bx": 9,
+       "by": -25,
+       "ffx": 9,
+       "fbx": -8,
+       "weapon": "sword",
+       "sa": -2.65,
+       "x": -7,
+       "lean": -4,
+       "armsFront": true
+      }
+     },
+     {
+      "t": 0,
+      "how": "snap",
+      "pose": {
+       "crouch": 2,
+       "fx": 16,
+       "fy": -37,
+       "bx": -7,
+       "by": -24,
+       "ffx": 11,
+       "fbx": -9,
+       "weapon": "sword",
+       "sa": -1.45,
+       "x": 0,
+       "lean": 3,
+       "ghost": 1
+      }
+     },
+     {
+      "t": 0.06,
+      "how": "snap",
+      "pose": {
+       "crouch": 6,
+       "fx": 22,
+       "fy": -20,
+       "bx": -8,
+       "by": -24,
+       "ffx": 13,
+       "fbx": -10,
+       "weapon": "sword",
+       "sa": 0.62,
+       "x": 3,
+       "lean": 6,
+       "toeB": true
+      }
+     },
+     {
+      "t": 0.14,
+      "how": "smooth",
+      "pose": {
+       "crouch": 6,
+       "fx": 20,
+       "fy": -17,
+       "bx": -8,
+       "by": -24,
+       "ffx": 13,
+       "fbx": -10,
+       "weapon": "sword",
+       "sa": 0.85,
+       "x": 4,
+       "lean": 5,
+       "toeB": true,
+       "ghost": 1
+      }
+     },
+     {
+      "t": 0.17,
+      "how": "snap",
+      "pose": {
+       "crouch": 3,
+       "fx": 22,
+       "fy": -28,
+       "bx": -8,
+       "by": -18,
+       "ffx": 13,
+       "fbx": -10,
+       "weapon": "sword",
+       "sa": 0.1,
+       "x": 5,
+       "lean": 5,
+       "toeB": true,
+       "ghost": 1
+      }
+     },
+     {
+      "t": 0.21,
+      "how": "snap",
+      "pose": {
+       "crouch": 1,
+       "fx": 19,
+       "fy": -37,
+       "bx": -8,
+       "by": -18,
+       "ffx": 13,
+       "fbx": -10,
+       "weapon": "sword",
+       "sa": -0.95,
+       "x": 6,
+       "lean": 6,
+       "toeB": true,
+       "fby": -6
+      }
+     },
+     {
+      "t": 0.5,
+      "how": "smooth",
+      "pose": {
+       "crouch": 3,
+       "fx": 18,
+       "fy": -36,
+       "bx": -8,
+       "by": -19,
+       "ffx": 12,
+       "fbx": -10,
+       "weapon": "sword",
+       "sa": -1.05,
+       "x": 6,
+       "lean": 3,
+       "toeB": true
+      }
+     },
+     {
+      "t": 0.92,
+      "how": "smooth",
+      "pose": {
+       "crouch": 3,
+       "fx": 12,
+       "fy": -21,
+       "bx": 9,
+       "by": -21,
+       "ffx": 7,
+       "fbx": -7,
+       "weapon": "sword",
+       "sa": -0.85,
+       "x": -7
+      }
+     }
+    ]
+   }
+  }
+ }
+}

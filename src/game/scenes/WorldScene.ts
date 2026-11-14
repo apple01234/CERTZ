@@ -42,6 +42,7 @@ import { buildSeenList } from "../cutsceneSeen"; // vc270 — 본 컷신은 맵 
 import { playAutoCutscene, type CutStep } from "../fx/AutoCutscene"; // v4.9.0 — 메이플식 자동 컷씬
 import { CANON_STORY_CHOICES } from "../grandPlanetCanon"; // vc279 — P7c 선택지 정본(id→label)
 import { PixelFxManager } from "../fx/PixelFxManager"; // v4.9.3 — pixelfx 통합 매니저
+import { prefetchUltFx } from "../fx/ultPixelFx"; // 2026-11-14 — 궁극기 pixelfx
 import { LILAC_SCENARIOS, lilacScenarioIdAt } from "../lilacScenarios"; // v4.9.0 — 1기 시나리오 데이터
 import { castAnimation, castTexture, cutsceneCharacter } from "../cutsceneCast";
 import { createCastSprite } from "../fx/cutsceneActors";
@@ -1436,6 +1437,10 @@ export class WorldScene extends Phaser.Scene {
     if (savedPlayer.playerName) setPlayerName(savedPlayer.playerName);
     // 전직 클래스 복원 (v1.7 — 구 세이브 null 호환)
     this.player.applySavedClass(savedPlayer.cls);
+    /* 2026-11-14 — 궁극기 pixelfx: 현재 직업 시트 4장만 미리 받는다(궁극기 직업이 아니면 아무것도 안 함).
+     *  ponytail: 플레이 중 전직·직업 전환 직후 첫 시전은 이펙트가 빠질 수 있다 — 그 시전이 받기를 걸고
+     *  다음 시전·다음 지역부터 나온다. 필요해지면 applyClass/switchClass 에도 같은 호출을 단다. */
+    prefetchUltFx(this, this.player.cls);
     /* v1.0.18 — 시작 클래스 복원 + 마이그레이션:
      *  startCls 없는 구 세이브는 현재 cls 체인의 1차키로 역산해 자동 채운다 (환생 복귀 보장).
      *  cls가 null인 구 세이브(시련 중)는 pendingJobClass를 시작 클래스로 채택한다. */

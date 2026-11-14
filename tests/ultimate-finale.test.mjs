@@ -182,11 +182,11 @@ const targets=Array.from({length:snapshots?3:count},(_,id)=>({id,active:true,ali
     resolveSkill5Of:k=>k,SKILL5B_INFO:Object.fromEntries(classes.map(k=>[k,{name:k}])),familyOf:family,
     ult5bHoldOf:()=>10000,ult5HoldOf:()=>10000,finaleTargetOrder:order,ultimateFinalePlan:plan,
     cine3d:()=>({play:noop}),runUltFinale:api.runUltFinale,
-    ...Object.fromEntries(['spawnUltIntroSig','spawnPentacle','playUltLayers','playUltCinematic','spawnRingPop','spawnFlarePop'].map(k=>[k,noop])),
+    ...Object.fromEntries(['spawnUltIntroSig','spawnPentacle','playUltLayers','playUltCinematic','spawnRingPop','spawnFlarePop','playUltFx'].map(k=>[k,noop])),
     Math:Object.assign(Object.create(Math),{random:()=>0.5})};
   const Player=vm.runInNewContext(methodSource+';ExtractedPlayer;',context);
   const actor=Object.assign(new Player(),{scene,cls,x:100,y:200,state:'idle',skill5bUnlocked:true,skill5bCd:0,skill5bMax:120000,
-    mp:1000,maxMp:1000,hp:500,maxHp:1000,iframes:0,atkTotal:100,ultSlot:0,hitSet:new Set(),recentDmgLog:[{t:0,v:log}],awayScratch:new Vector(),
+    mp:1000,maxMp:1000,hp:500,maxHp:1000,iframes:0,atkTotal:100,ultSlot:0,hitSet:new Set(),recentDmgLog:[{t:0,v:log}],awayScratch:new Vector(),facing:new Vector(1,0),
     setVelocity:noop,netEmitAction:noop,clsHex:()=>0xffffff,ultKeyFor3D:()=>cls,recalcSpeed:noop,
     setPosition(x,y){this.x=x;this.y=y;return this;},aimDirFree:()=>new Vector(Math.cos(aim),Math.sin(aim)),
     nearestTargets(n){const active=targets.filter(t=>t.active);return active.slice(0,n);},
