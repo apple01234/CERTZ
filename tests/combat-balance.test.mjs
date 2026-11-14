@@ -40,6 +40,20 @@ test('영프 편 잡몹: 원킬도 노가다도 아니다', () => {
   assert.ok(story[0].mobHtk <= 9, `1-1: ${story[0].mobHtk}타`);
 });
 
+test('영프 편 잡몹 위협: 튀는 구역 없이 12~60대 안이다', () => {
+  /* 2026-11-14 — 조정 전: 2-2·3-3·5-2 는 122~586대(앞 장 잡몹 혼입), 10~12장은 73~89대(약한 유령 위주). */
+  for (const r of story.filter(r => r.hitsToDie && !r.key.startsWith('howlrstone1x'))) {
+    assert.ok(r.hitsToDie >= 12 && r.hitsToDie <= 60, `${r.key}: 표준 육성이 ${r.hitsToDie}대에 죽는다 (12~60)`);
+  }
+});
+
+test('성장 궤적: 영프 한 장에서 15레벨 넘게 오르지 않는다', () => {
+  /* 2026-11-14 — 조정 전: 5장 +14(Lv28→42), 14장 +24(Lv106→130) — 전투 없는 6·15장 몫을 몰아 줬다. */
+  for (const c of trajectory().filter(c => c.chapter.startsWith('howlrstone'))) {
+    assert.ok(c.exitLv - c.enterLv <= 15, `${c.chapter}: Lv${c.enterLv}→${c.exitLv}`);
+  }
+});
+
 test('그랜드 플레닛 잡몹: 절벽 없이 완만하게 오른다', () => {
   for (const r of dlc.filter(r => r.mobHtk)) {
     assert.ok(r.mobHtk >= 4 && r.mobHtk <= 100, `${r.key}: 중앙값 ${r.mobHtk}타 (4~100)`);
@@ -85,4 +99,14 @@ test('골드 상점 성장의 책은 Lv100 요구치까지만 비례한다', asy
   const src = fs.readFileSync('src/game/entities/Player.ts', 'utf8');
   assert.match(src, /GOLD_BOOK_LEVEL_CAP = 100/);
   assert.match(src, /key === "exp_book_s" \? expToNext\(Math\.min\(this\.lv, GOLD_BOOK_LEVEL_CAP\)\)/);
+});
+
+test('4차 10직업의 스킬 효율이 같다(공격력 보너스 × 스킬 배율 ÷ 쿨타임 배율)', async () => {
+  /* 2026-11-14 — 조정 전: 데드아이 1.77 ~ 해왕 2.22 (약 25% 차이). */
+  const { ULT_CLASSES, classDef } = await import('../src/game/classes.ts');
+  for (const k of ULT_CLASSES) {
+    const d = classDef(k);
+    const eff = (1 + d.atkPct / 100) * d.skillMult / d.cdMult;
+    assert.ok(Math.abs(eff - 2) <= 0.02, `${k}: ${eff.toFixed(3)}`);
+  }
 });

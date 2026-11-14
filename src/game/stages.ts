@@ -296,7 +296,7 @@ type ChapterSpec = {
 };
 
 /* 보상 밸런스 (사용자 지시 #6 — 골드 과다 지급 수정: 기존 기준 ×0.8) */
-const G = 0.8;
+const G = 0.64; // 2026-11-14 — 퀘스트 골드 −20% (유저 지시 "골드가 너무 많음", 종전 0.8)
 
 export const CHAPTERS: ChapterSpec[] = [
   /* ══════════════════════════════════════════════════════════════════════════
@@ -848,7 +848,9 @@ for (const [key, boss] of Object.entries(BOSS_DEFS)) {
   boss.sig = design.phases[0].patterns[0] as BossAttackKind;
   const pool = (n: number) => [...new Set(design.phases.slice(0, n).flatMap((p) => [...p.patterns]))] as BossAttackKind[];
   boss.patterns = { p1: pool(1), p2: pool(2), p3: pool(3) };
-  if (BOSS_RECORD_ALIASES[key]) boss.name = `전투기록 · ${design.name}`;
+  /* 2026-11-14 (유저 신고 "스칼렛인데 왜 드래곤임") — 전투기록 보스는 옛 전용 그림을 쓰므로 이름도 그 그림의 옛 보스 이름을 쓴다
+   *  (종전 '전투기록 · 스칼렛' 이 드래곤 그림으로 나왔다). 패턴은 기록(스토리 보스)을 따른다. */
+  if (BOSS_RECORD_ALIASES[key]) boss.name = `전투기록 · ${boss.name}`;
 }
 
 /** 챕터별 난이도 배율 (인덱스 = 장번호-2 → forest(2장)부터) */
@@ -876,7 +878,10 @@ for (const [key, boss] of Object.entries(BOSS_DEFS)) {
  *  같은 타수를 내려면 계수가 달라야 한다. 손으로 매끈하게 고치지 말고 측정 스크립트로 다시 뽑을 것.
  *  측정·검증: scripts/measure-combat-balance.mjs, tests/combat-balance.test.mjs. */
 const CH_HP = [1.45, 1.9, 3.6, 4.7, 6.5, 9.5, 14, 20, 28, 47.3, 37.2, 54.3, 52, 61.3, 79.4, 133, 92, 240, 194]; // vc186b — DLC 3챕터 + vc192 나머지 7행성 // 1챕터 1.45 — Lv20까지 1챕터에 머무는데 적 HP가 낮아 1.1타(즉사)였다
-const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5, 7.38, 6.23, 7.13, 7.03, 8.22, 8.89, 14.3, 10.5, 31.9, 18.8]; // vc186b — DLC 3챕터 + vc192 나머지 7행성 // 유저 피드백: 공격력은 현행 유지
+/* 2026-11-14 (유저 지시 "난이도 — 튀는 구간만 고르게") — 스왈로우 14.3 → 12, 노벨 31.9 → 15.
+ *  노벨은 오피니시아(10.5)·세르니움(18.8) 사이에서 혼자 3배로 튀어 표준 육성이 3~4대에 죽었다(이웃 행성 8~10대).
+ *  스왈로우도 다음 행성 오피니시아보다 높았다. 조정 후 두 행성 모두 8.6대 → 7대로 고르게 어려워진다. */
+const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5, 7.38, 6.23, 7.13, 7.03, 8.22, 8.89, 12, 10.5, 15, 18.8]; // vc186b — DLC 3챕터 + vc192 나머지 7행성 // 유저 피드백: 공격력은 현행 유지
 /* v1.2.2 — 챕터 EXP 계수 재조정 (레벨 곡선 정합)
  *  문제: expTable.ts는 메이플 공식(지수 성장)인데 적 EXP 계수는 1→9.2로 거의 평평했다.
  *        레벨업에 필요한 처치 수가 **25마리 ~ 2,105,941마리**(편차 84,780배)로 벌어져
@@ -1029,9 +1034,9 @@ export const BOSS_STAGE_STATS: Record<StageKey, { hp: number; atk?: number }> = 
   howlrstone7x3: { hp: 110000 },
   howlrstone7x5: { hp: 117000 },
   howlrstone8x4: { hp: 143000 },
-  howlrstone10x2: { hp: 218000 },
-  howlrstone11x4: { hp: 285000 },
-  howlrstone12x4: { hp: 344000 },
+  howlrstone10x2: { hp: 218000, atk: 173 }, // 2026-11-14 — 장 공격 배율 상향(잡몹)과 무관하게 종전 보스 공격력 고정
+  howlrstone11x4: { hp: 285000, atk: 187 }, // 〃
+  howlrstone12x4: { hp: 344000, atk: 213 }, // 〃
   howlrstone13x4: { hp: 413000 },
   howlrstone14x5: { hp: 497000 },
   dlcstargate10: { hp: 646000, atk: 453 },
@@ -1048,6 +1053,19 @@ export const BOSS_STAGE_STATS: Record<StageKey, { hp: number; atk?: number }> = 
 
 /** 구역별 성장 배율 — 적 HP/ATK/EXP/골드 (사용자 지시 #6/#9 밸런스)
  *  v1.0.19 (A-3) — 신규 스테이지(scaleMul 보유)는 전용 배율 우선, 기존 챕터는 기존 곡선 유지 */
+/** 2026-11-14 (유저 지시 "난이도 — 튀는 구간만 고르게") — 구역 안 최약체 보정.
+ *  앞 장의 잡몹(개구리 공격 12·쥐 17·늪짐승 20)이 중반 구역에 섞여 피해가 거의 1이었다(영프 2-2·3-3·5-2).
+ *  같은 구역 최강 몬스터 대비 공격 85%·체력 50% 아래인 몬스터만 그만큼 끌어올린다(이미 고른 구역은 1배 — 변화 없음).
+ *  방어력이 공격력에서 빠지는 구조라 50% 로는 피해가 1~2에 머물렀다(실측 후 85%). */
+export const STAGE_FLOOR = { atk: 0.85, hp: 0.5 } as const;
+export function stageEnemyFloor(key: StageKey, enemyKey: EnemyKey): { hp: number; atk: number } {
+  const e = ENEMIES[enemyKey];
+  const mobs = (STAGES[key]?.enemies ?? []).map((g) => ENEMIES[g.key]).filter(Boolean);
+  if (!e || !mobs.length) return { hp: 1, atk: 1 };
+  const maxAtk = Math.max(...mobs.map((m) => m.atk)), maxHp = Math.max(...mobs.map((m) => m.hp));
+  return { hp: Math.max(1, (maxHp * STAGE_FLOOR.hp) / e.hp), atk: Math.max(1, (maxAtk * STAGE_FLOOR.atk) / e.atk) };
+}
+
 export function stageScale(key: StageKey, playerLv?: number): { hp: number; atk: number; exp: number; gold: number } {
   const own = STAGES[key]?.scaleMul;
   if (own) return { ...own };
@@ -2417,5 +2435,22 @@ for (const [chapter, plan] of Object.entries(CHAPTER_STORY_PLAN)) {
       }
     }
     if (!stage.enemies.length) stage.repeat = undefined;
+  }
+}
+
+/* 2026-11-14 (유저 지시 "레벨업 — 급상승 구간만 고르게") — 전투 없는 6·15장 앞의 5·14장이 그 몫까지 몰아 줘서
+ *  한 장에 14~24레벨이 올랐다(실측 5장 Lv28→42, 14장 Lv106→130). 5장 경험치 배율(9.18)은 다음 전투 장인 7장(6.89)보다도 높았다.
+ *  앞 장의 몬스터·퀘스트 경험치를 keep 배로 줄이고, 빈 장의 이야기 진행(이동) 퀘스트가 routeExp 씩 준다.
+ *  keep·routeExp 는 scripts/measure-combat-balance.mjs trajectory 로 맞췄다 — 다음 전투 장 입장 레벨(Lv42·Lv130)은 종전과 같다. */
+for (const { from, to, keep, routeExp } of [
+  { from: "howlrstone5", to: "howlrstone6", keep: 0.4, routeExp: 5300 },
+  { from: "howlrstone14", to: "howlrstone15", keep: 0.4, routeExp: 1_940_000 },
+]) {
+  for (const [key, stage] of Object.entries(STAGES)) {
+    if (key.startsWith(`${from}x`)) {
+      if (stage.scaleMul) stage.scaleMul = { ...stage.scaleMul, exp: stage.scaleMul.exp * keep };
+      for (const q of stage.quests) if (q.expReward) q.expReward = Math.round(q.expReward * keep);
+    }
+    if (key.startsWith(`${to}x`)) for (const q of stage.quests) if (q.type === "reach") q.expReward = routeExp;
   }
 }

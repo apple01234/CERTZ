@@ -10,7 +10,8 @@ const read = p => fs.readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 /* vc235 — data: URL 은 기준 경로가 없어 stages.ts 의 `./howlrstone` import 를
  *  해석하지 못했다. HEAD 소스를 임시 파일로 물질화해 import 한다. */
 const before = await importFromGit('src/game/stages.ts');
-const combat = chapters => chapters.map(({title,subtitle,intro,bossDone,beats,...rest})=>rest);
+/* 2026-11-14 — 유저 지시 "골드가 너무 많음"으로 퀘스트 골드 계수 G 를 의도적으로 낮췄다(반복 의뢰 골드 −20%). 그 값만 비교에서 뺀다. */
+const combat = chapters => chapters.map(({title,subtitle,intro,bossDone,beats,repeat,...rest})=>({...rest, repeat: repeat && {...repeat, gold: undefined}}));
 assert.deepEqual(combat(CHAPTERS), combat(before.CHAPTERS), 'map IDs, combat, equipment travel and balance remain compatible');
 for (const ch of CHAPTERS.filter(c=>!c.dlc)) {
   assert.ok(ch.title.startsWith('수련 원정'));

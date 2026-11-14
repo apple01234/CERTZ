@@ -5,7 +5,7 @@ import { DECOR_BUDGET, decorSetFor, pickByTag, isSolidDecor, decorCollisionBound
 import { createGameState, type GameState } from "../state/gameState";
 /* vc238 (P4 후속) — 구역당 동시 스폰 상한. `data.ts` 는 명시 목록으로만 재수출하므로
  *  여기서 stages 를 직접 import 한다(리드 지시: data.ts 수정 금지). */
-import { zoneSpawnCap } from "../stages";
+import { zoneSpawnCap, stageEnemyFloor } from "../stages";
 import { DMG_PCT, BM_STOCK, STAGES, DIALOGUES, ITEMS, SHOP_STOCK, NEXT_STAGE, PREV_STAGE, STAGE_SHORT, STAGE_THEME, BOSS_DEFS, BOSS_DIFFS, BOSS_STAGE_STATS, BOSS_DIFF_ORDER, bossEmeraldOf, BOSS_DROP_ITEMS, ENEMIES, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, GOLD_DROP_SCALE, stageScale, stageIntro, resolveStage, chapterSpec, parseStage, JOBSTORY, CHAPTER_VILLAGE_NPC, starTier, STAR_TIER_COLORS, TRADE_PRICES, tradeValue, POT_GRADE_META, potLineText, SET_GEAR, FRAGMENT_META, FRAGMENT_CHAPTERS, CHEST_TABLES, PACK_CONTENTS, STORE_PACK_CONTENTS, dailyDeals, DAILY_DEAL_OFF, CHAPTERS, closetThemeOf, CLOSET_THEMES, ELEM_REACTION_META, QUEST_EXP_MUL, type BmGrant, type ClosetTheme, type StageKey, type StageDef, type ItemKey, type EnemyDef, type EnemyKey, type BossDef, type BossKey, type QuestDef, type BuffKey, type PetKey, type CosmeticKey, type JobStoryDef, type BossDiffKey, type ElemKey, type ElemReactionKey } from "../data";
 import { familyOf, isClassKey, classLabel, SKILL_ICONS, type FamilyKey } from "../classes";
 import { finaleTargetOrder, finalePlanReach, type FinalePlan } from "../fx/ultFinalePlan";
@@ -2179,10 +2179,7 @@ export class WorldScene extends Phaser.Scene {
         /* v3.0 (#7) — 굴 레이아웃의 개방 셀 안에만 스폰 (입구 셀 회피 + 플레이어 380px 거리)
          * vc277 — 구역이 있으면 그 구역 셀 안에서만 뽑는다. */
         const p = this.openPointRng(rng, { minDist: 380, avoidEntry: true, zone });
-        const e = new Enemy(this, p.x, p.y, group.key, {
-          /* v3.0 (#8) — 몬스터 경험치 +35% (레벨업 속도 개선, 곡선 완화와 합산) */
-          hp: sc.hp, atk: sc.atk, exp: sc.exp * 1.35, gold: sc.gold,
-        });
+        const e = new Enemy(this, p.x, p.y, group.key, this.fieldEnemyOpts(group.key));
         /* vc235 — pixelfx "spawn.enemy" 연결 (정의만 되고 호출 0이었다).
          *  적이 나타나는 순간이 전투 리듬의 시작점이라 여기 붙인다.
          *  스로틀·동시상한은 PixelFxManager 가 관리하므로 대량 스폰도 안전하다. */
@@ -9417,6 +9414,17 @@ export class WorldScene extends Phaser.Scene {
 
   /* v1.0.13 피드백#3 — opts 전달 추가: 탑 리스폰이 spawnTowerFloor와 동일한 층 배율 절대 스탯을
    *  유지하게 한다 (미지정이면 기존 동작 그대로 — 정의 기본 스탯 + 정예 배율). */
+  /** 필드 몬스터 능력치 배율 — 첫 배치와 재생성이 같은 값을 쓴다.
+   *  v3.0 (#8) — 몬스터 경험치 +35%. 2026-11-14 — 구역 안 최약체 보정(stageEnemyFloor).
+   *  2026-11-14 버그 수정: 종전 재생성은 opts 없이 만들어 **기본 능력치**로 나왔다
+   *  (실측 영프 14장 지옥견 체력 3,021 → 190, 경험치 45,193 → 100). */
+  private fieldEnemyOpts(key: EnemyKey, respawn = false) {
+    const sc = stageScale(this.stageDef.key, this.player?.lv);
+    const floor = stageEnemyFloor(this.stageDef.key, key);
+    /* 재생성 골드는 종전처럼 기본값 — 배율을 붙이면 몬스터 골드 수입이 약 7배가 된다(유저 지시 "골드가 너무 많음"). */
+    return { hp: sc.hp * floor.hp, atk: sc.atk * floor.atk, exp: sc.exp * 1.35, gold: respawn ? 1 : sc.gold };
+  }
+
   private respawnEnemy(key: EnemyKey, x: number, y: number, tries: number, opts?: ConstructorParameters<typeof Enemy>[4]) {
     if (!this.scene.isActive() || this.player.state === "dead") {
       return; // 씬 전환/사망 중은 스킵 (다음 킬에서 다시 예약됨)
@@ -9450,12 +9458,13 @@ export class WorldScene extends Phaser.Scene {
     /* v1.0.13 피드백#3 — 옵션 지정(탑 층 배율) 리스폰은 정예 배율과 절대 스탯이 충돌하므로 정예 제외 */
     const eliteOk = !opts && !this.fieldEliteRef && !this.boss?.active && !this.stageDef.isVillage && !this.isInterior;
     const spawnElite = eliteOk && Math.random() < 0.045;
-    const e = spawnElite
+    const field = opts ? null : this.fieldEnemyOpts(key, true);
+    const e = spawnElite && field
       ? new Enemy(this, x, y, key, {
-          hp: 3.2, atk: 1.45, exp: 5, gold: 4, scale: 1.35, tint: 0xffd76a,
+          hp: 3.2 * field.hp, atk: 1.45 * field.atk, exp: 5 * field.exp, gold: 4 * field.gold, scale: 1.35, tint: 0xffd76a,
           displayName: `정예 ${ENEMIES[key].name}`,
         })
-      : new Enemy(this, x, y, key, opts);
+      : new Enemy(this, x, y, key, opts ?? field ?? undefined);
     if (spawnElite) {
       this.fieldEliteRef = e;
       this.showBanner("정예 몬스터 출현!");

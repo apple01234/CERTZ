@@ -259,7 +259,7 @@ export type HowlrstoneChapterSpec = {
 };
 
 /** 보상 계수 — 본편 `G` 와 동일 규칙. */
-const G = 0.8;
+const G = 0.64; // 2026-11-14 — 퀘스트 골드 −20% (유저 지시 "골드가 너무 많음", 종전 0.8)
 
 /**
  * 영프 편 챕터 5개 = 1기 15화.
@@ -538,7 +538,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
     ],
     repeat: {need: 34, gold: Math.round(300 * G), exp: 300, title: "[반복] 성채 정찰", desc: "어둠의 성채가 계속 군대를 만들어낸다 — 계속 베어내야 한다."},
     lvGate: {enter: 66, mid: 71},
-    scaleMul: {hp: 16.9, atk: 1.73, exp: 55.66, gold: 3.6999999999999997},
+    /* 2026-11-14 (유저 지시 "난이도 — 튀는 구간만 고르게") — 공격 배율 상향. 약한 유령 위주라 표준 육성이 73~89대 맞아야 죽었다(9장 30대·13장 40대). */
+    scaleMul: {hp: 16.9, atk: 2.6, exp: 55.66, gold: 3.6999999999999997},
   },
   {
     key: "howlrstone11",
@@ -561,7 +562,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
     ],
     repeat: {need: 34, gold: Math.round(300 * G), exp: 300, title: "[반복] 성채 정찰", desc: "어둠의 성채가 계속 군대를 만들어낸다 — 계속 베어내야 한다."},
     lvGate: {enter: 75, mid: 80},
-    scaleMul: {hp: 17.1, atk: 1.85, exp: 72.86, gold: 4},
+    /* 2026-11-14 (유저 지시 "난이도 — 튀는 구간만 고르게") — 공격 배율 상향. 약한 유령 위주라 표준 육성이 73~89대 맞아야 죽었다(9장 30대·13장 40대). */
+    scaleMul: {hp: 17.1, atk: 2.5, exp: 72.86, gold: 4},
   },
   {
     key: "howlrstone12",
@@ -585,7 +587,8 @@ export const HOWLRSTONE_CHAPTERS: HowlrstoneChapterSpec[] = [
     ],
     repeat: {need: 34, gold: Math.round(300 * G), exp: 300, title: "[반복] 성채 정찰", desc: "어둠의 성채가 계속 군대를 만들어낸다 — 계속 베어내야 한다."},
     lvGate: {enter: 85, mid: 90},
-    scaleMul: {hp: 20.1, atk: 1.9699999999999998, exp: 172.5, gold: 4.3},
+    /* 2026-11-14 (유저 지시 "난이도 — 튀는 구간만 고르게") — 공격 배율 상향. 약한 유령 위주라 표준 육성이 73~89대 맞아야 죽었다(9장 30대·13장 40대). */
+    scaleMul: {hp: 20.1, atk: 2.5, exp: 172.5, gold: 4.3},
   },
   {
     key: "howlrstone13",

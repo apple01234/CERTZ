@@ -230,9 +230,10 @@ export const REBIRTH_ABYSS = 50;
 
 /** 재료 드롭 확률 (필드/던전 적 처치) — 타워/균열에서 1.6배 */
 export const MAT_CHANCES: { key: string; name: string; chance: number }[] = [
-  { key: "mat_mana", name: "마나 결정", chance: 0.055 },
-  { key: "mat_heart", name: "몬스터 심장", chance: 0.042 },
-  { key: "mat_mithril", name: "미스릴 가루", chance: 0.03 },
+  /* 2026-11-14 (유저 지시 "드랍이 너무 적음") — 재료 드롭 ×1.5 (종전 0.055 / 0.042 / 0.03). */
+  { key: "mat_mana", name: "마나 결정", chance: 0.083 },
+  { key: "mat_heart", name: "몬스터 심장", chance: 0.063 },
+  { key: "mat_mithril", name: "미스릴 가루", chance: 0.045 },
 ];
 export type CraftRecipe = {
   id: string;

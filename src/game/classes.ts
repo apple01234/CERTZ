@@ -389,7 +389,7 @@ const WARBRINGER: ClassDef = {
   color: "#ff3c1c", hex: 0xff3c1c,
   atkPct: 34, critAdd: 10, defAdd: 5, hpAdd: 300, mpAdd: 0, speedPct: 5,
   bossDmgPct: 18, mobDmgPct: 4,
-  cdMult: 0.9, skillMult: 1.25,
+  cdMult: 0.9, skillMult: 1.34, // 2026-11-14 — 직업 간 스킬 효율 통일(종전 1.25)
   desc: "전쟁 그 자체. 세계를 가르는 일격.",
 };
 const CRUSADER: ClassDef = {
@@ -398,7 +398,7 @@ const CRUSADER: ClassDef = {
   color: "#ffe29a", hex: 0xffe29a,
   atkPct: 26, critAdd: 8, defAdd: 20, hpAdd: 400, mpAdd: 40, speedPct: 5,
   bossDmgPct: 12, mobDmgPct: 6,
-  cdMult: 0.9, skillMult: 1.42,  // vc239 — 1.32→1.42 (4차 최하위 -13.7% 교정)
+  cdMult: 0.9, skillMult: 1.43, // 2026-11-14 — 직업 간 스킬 효율 통일(종전 1.42)  // vc239 — 1.32→1.42 (4차 최하위 -13.7% 교정)
   desc: "불굴의 성벽이 심판의 검을 든다.",
 };
 const DEADEYE: ClassDef = {
@@ -407,7 +407,7 @@ const DEADEYE: ClassDef = {
   color: "#1cff5c", hex: 0x1cff5c,
   atkPct: 20, critAdd: 30, defAdd: 0, hpAdd: 120, mpAdd: 40, speedPct: 10,
   bossDmgPct: 18, mobDmgPct: 6,
-  cdMult: 0.85, skillMult: 1.25,
+  cdMult: 0.85, skillMult: 1.42, // 2026-11-14 — 직업 간 스킬 효율 통일(종전 1.25)
   desc: "모든 화살은 신의 심판이 된다.",
 };
 const SKYLORD: ClassDef = {
@@ -416,7 +416,7 @@ const SKYLORD: ClassDef = {
   color: "#ccffe8", hex: 0xccffe8,
   atkPct: 15, critAdd: 12, defAdd: 0, hpAdd: 160, mpAdd: 80, speedPct: 20,
   bossDmgPct: 2, mobDmgPct: 18,
-  cdMult: 0.75, skillMult: 1.2,
+  cdMult: 0.75, skillMult: 1.3, // 2026-11-14 — 직업 간 스킬 효율 통일(종전 1.2)
   desc: "바람이 그의 명령을 기다린다.",
 };
 const ARCLORD: ClassDef = {
@@ -425,7 +425,7 @@ const ARCLORD: ClassDef = {
   color: "#5c7cff", hex: 0x5c7cff,
   atkPct: 35, critAdd: 8, defAdd: 0, hpAdd: 100, mpAdd: 120, speedPct: 0,
   bossDmgPct: 16, mobDmgPct: 8,
-  cdMult: 0.85, skillMult: 1.35,
+  cdMult: 0.85, skillMult: 1.26, // 2026-11-14 — 직업 간 스킬 효율 통일(종전 1.35)
   desc: "한 발의 마법이 지평선을 지운다.",
 };
 const ETERNAL: ClassDef = {
@@ -438,7 +438,7 @@ const ETERNAL: ClassDef = {
   /* v1.4.30 (#7 이터널 실성능 강화) — skillMult 1.2→1.4·atkPct 18→24:
    *  특화는 사냥(mob)+보스 골고루 — 지속전 강점(짧은 쿨·CC·힐)이 실제 화력으로 이어지게. */
   bossDmgPct: 14, mobDmgPct: 14,
-  cdMult: 0.7, skillMult: 1.22, // vc239 — 1.4→1.22 (4차 과강 +19% 교정)
+  cdMult: 0.7, skillMult: 1.13, // 2026-11-14 — 직업 간 스킬 효율 통일(종전 1.22) // vc239 — 1.4→1.22 (4차 과강 +19% 교정)
   desc: "모든 마법이 그의 이름 앞에 무릎 꿇는다.",
 };
 const SHADOWLORD: ClassDef = {
@@ -447,7 +447,7 @@ const SHADOWLORD: ClassDef = {
   color: "#a86aff", hex: 0xa86aff,
   atkPct: 25, critAdd: 25, defAdd: 0, hpAdd: 150, mpAdd: 60, speedPct: 15,
   bossDmgPct: 18, mobDmgPct: 2,
-  cdMult: 0.7, skillMult: 1.13, // vc239 — 과강 +19.6% 교정
+  cdMult: 0.7, skillMult: 1.12, // 2026-11-14 — 직업 간 스킬 효율 통일(종전 1.13) // vc239 — 과강 +19.6% 교정
   desc: "그림자가 그를 따라 세계를 덮는다.",
 };
 const BLADEMASTER: ClassDef = {
@@ -456,7 +456,7 @@ const BLADEMASTER: ClassDef = {
   color: "#ffaaff", hex: 0xffaaff,
   atkPct: 22, critAdd: 18, defAdd: 8, hpAdd: 220, mpAdd: 60, speedPct: 15,
   bossDmgPct: 8, mobDmgPct: 10,
-  cdMult: 0.75, skillMult: 1.25,
+  cdMult: 0.75, skillMult: 1.23, // 2026-11-14 — 직업 간 스킬 효율 통일(종전 1.25)
   desc: "단검 두 자루로 신을 벤다.",
 };
 
@@ -469,7 +469,7 @@ const SEAKING: ClassDef = {
   color: "#fff0b8", hex: 0xfff0b8,
   atkPct: 28, critAdd: 10, defAdd: 8, hpAdd: 240, mpAdd: 120, speedPct: 12,
   bossDmgPct: 20, mobDmgPct: 14,
-  cdMult: 0.78, skillMult: 1.35,
+  cdMult: 0.78, skillMult: 1.22, // 2026-11-14 — 직업 간 스킬 효율 통일(종전 1.35)
   desc: "해일이 그의 손끝에서 시작된다. 함께 싸우는 자 모두가 강해진다.",
 };
 /* 드레드노트 — 무쌍 포격: 전장을 지우는 화력 */
@@ -479,7 +479,7 @@ const DREADNOUGHT: ClassDef = {
   color: "#ff6a3d", hex: 0xff6a3d,
   atkPct: 34, critAdd: 14, defAdd: 0, hpAdd: 180, mpAdd: 60, speedPct: 6,
   bossDmgPct: 26, mobDmgPct: 8,
-  cdMult: 0.85, skillMult: 1.30, // vc239 — 1.45→1.30 (4차 최상위 +13.5% 교정)
+  cdMult: 0.85, skillMult: 1.27, // 2026-11-14 — 직업 간 스킬 효율 통일(종전 1.30) // vc239 — 1.45→1.30 (4차 최상위 +13.5% 교정)
   desc: "한 발의 포성이 전장을 침묵시킨다.",
 };
 
