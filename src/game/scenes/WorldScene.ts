@@ -6266,7 +6266,8 @@ export class WorldScene extends Phaser.Scene {
     const gw = cam.width < 900 ? 128 / z : 156 / z;
     const gh = cam.width < 900 ? 72 / z : 88 / z;
     const cx = cam.width / 2;
-    const mmBottom = cam.width < 700 ? 56 : 14;
+    /* 2026-11-15 — 세로 화면은 하단 버튼 줄(스킬·공격·돌진)과 그 위로 올린 [자동+물약] 줄(합계 약 240px)이 미니맵 자리를 덮는다 → 그 위로 올린다. */
+    const mmBottom = cam.height > cam.width ? 250 : cam.width < 700 ? 56 : 14;
     const cy = cam.height / 2 + (cam.height - mmBottom - gh * z * 0.5 - cam.height / 2) / z;
     mm.clear();
     /* v1.1.0 (#7) — 어두운 맵(암전 챕터/카오스 보스전)에서도 지도가 잘 보이게:
