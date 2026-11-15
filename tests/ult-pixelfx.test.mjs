@@ -79,3 +79,12 @@ test('이터널 2차 궁극기 설명이 실제 동작(시간 역행 + 피해 �
   assert.match(SKILL5B_INFO.eternal.desc, /재현/);
   assert.doesNotMatch(SKILL5B_INFO.eternal.desc, /블랙홀|지옥의 문/);
 });
+
+test('원격 플레이어 궁극기에도 그 직업 pixelfx 가 시전·종결로 뜬다', () => {
+  const ws = readFileSync('src/game/scenes/WorldScene.ts', 'utf8');
+  const fx = ws.slice(ws.indexOf('private playRemoteSkillFx('));
+  const ult = fx.slice(fx.indexOf('if (kind === "s5" || kind === "s5b") {'), fx.indexOf('if (fam === "ranger")'));
+  assert.match(ult, /playUltFx\(this, key5, slot, "cast", x, y, !flip\)/);
+  assert.match(ult, /slot === 1 \? ult5HoldOf\(key5, fam\) : ult5bHoldOf\(key5, fam\)/);
+  assert.match(ult, /playUltFx\(this, key5, slot, "finale", x, y, !flip\)/);
+});

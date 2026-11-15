@@ -41,7 +41,8 @@ import { buildSeenList } from "../cutsceneSeen"; // vc270 — 본 컷신은 맵 
 import { playAutoCutscene, type CutStep } from "../fx/AutoCutscene"; // v4.9.0 — 메이플식 자동 컷씬
 import { CANON_STORY_CHOICES } from "../grandPlanetCanon"; // vc279 — P7c 선택지 정본(id→label)
 import { PixelFxManager } from "../fx/PixelFxManager"; // v4.9.3 — pixelfx 통합 매니저
-import { prefetchUltFx } from "../fx/ultPixelFx"; // 2026-11-14 — 궁극기 pixelfx
+import { prefetchUltFx, playUltFx } from "../fx/ultPixelFx"; // 2026-11-14 — 궁극기 pixelfx
+import { ult5HoldOf, ult5bHoldOf } from "../ultHold";
 import { gmBossStage } from "../gmBossStage"; // 2026-11-14 — GM 보스 체험 구역(배치 없는 보스 4종 수정)
 import { LILAC_SCENARIOS, lilacScenarioIdAt } from "../lilacScenarios"; // v4.9.0 — 1기 시나리오 데이터
 import { castAnimation, castTexture, cutsceneCharacter } from "../cutsceneCast";
@@ -61,7 +62,7 @@ import { createSimRunner, SIM_STEP_MS } from "../sim/fixedStep"; // vc183 — 20
 import { keyLabel, loadKeyMap, loadMoveScheme, moveKeysFor, type KeyMap, type GameAction, type MoveScheme } from "../keymap";
 import {
   classDef, canJobNow, nextJobLevel, freeJobOption, FREE_JOB_COST, chainOf, FIFTH_LEVEL,
-  resolveSkill1Of, resolveSkill2Of, SKILL3_KIND, SKILL4_KIND,
+  resolveSkill1Of, resolveSkill2Of, resolveSkill5Of, SKILL3_KIND, SKILL4_KIND,
   type ClassKey,
 } from "../classes";
 import * as net from "../net";
@@ -14238,6 +14239,15 @@ export class WorldScene extends Phaser.Scene {
     if (kind === "s5" || kind === "s5b") {
       try { this.cameras.main.flash(140, 220, 200, 255); } catch { /* 무시 */ }
       this.doShake(260, 0.005);
+      /* 2026-11-15 — 원격에도 그 직업의 궁극기 pixelfx 를 띄운다(시전은 즉시, 종결은 로컬과 같은 시전 시간 뒤).
+       *  시트는 필요할 때 받는다(못 받았으면 1.5초 안 도착분만 재생). 판정·피해 없음. */
+      {
+        const key5 = resolveSkill5Of(cls);
+        const slot = kind === "s5" ? 1 : 2;
+        playUltFx(this, key5, slot, "cast", x, y, !flip);
+        const hold = slot === 1 ? ult5HoldOf(key5, fam) : ult5bHoldOf(key5, fam);
+        this.time.delayedCall(hold, () => { if (this.sys.isActive()) playUltFx(this, key5, slot, "finale", x, y, !flip); });
+      }
       if (fam === "ranger") {
         /* 천강 — 하늘에서 화살비 + 부채꼴 연사 */
         for (let i = 0; i < 10; i++) {
