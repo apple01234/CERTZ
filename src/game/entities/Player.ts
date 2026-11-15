@@ -28,7 +28,7 @@ import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUl
 import { DEATH_SLASH_CFG, runDeathSlashCinematic } from "../fx/DeathSlash"; // vc153 — 도적 제2궁극기 「사(死)의 일섬」 3D 시네마틱
 import { playUltLayers } from "../fx/ultLayers"; // vc183 — 극딜 3단계 연출 레이어(암전·이펙트·카메라)
 import { runUltFinale } from "../fx/ultFinale"; // vc204 (#10) — 직업별 고유 마무리
-import { playUltFx } from "../fx/ultPixelFx"; // 2026-11-14 — 궁극기 pixelfx (시전·종결)
+import { playUltFx, prefetchUltFx, hasUltFx } from "../fx/ultPixelFx"; // 2026-11-14 — 궁극기 pixelfx (시전·종결)
 import { finaleTargetOrder, ultimateFinalePlan } from "../fx/ultFinalePlan";
 import * as audio from "../audio";
 import { netAction } from "../net"; // v4.1.0 — 파티원 공격/스킬 동기화
@@ -4460,7 +4460,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const budget = this.startUltBudget(1, ult5HoldOf(key5, familyOf(this.cls)), hex);
     /* 장판 틱(dps×0.5)도 예산에서 꺼낸다 — 장판을 까는 직업만 총 피해가 늘지 않게. */
     const field = (cfg: Parameters<typeof this.scene.spawnField>[0]) => {
-      if (cfg.dps > 0) budget.tag(Math.max(1, Math.round(cfg.dps * 0.5)));
       return this.scene.spawnField(cfg);
     };
     const rd = (m: number, forceCrit = false) => {
@@ -4468,11 +4467,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.ultSlot = 1;
       try {
         const r = this.rollDamage(m, true, forceCrit);
-        return { dmg: budget.tag(r.dmg), crit: r.crit };
+        return { dmg: r.dmg, crit: r.crit };
       } finally {
         this.ultSlot = prev;
       }
     };
+    /* 2026-11-15 — 궁극기 타격 식별은 피해량 값이 아니라 **이 시전**이다(Player.inUlt). 이 시전이 예약하는
+     *  지연 실행·타이머·트윈 콜백은 실행될 때 이 예산을 다시 켠다. 시전 중 기본공격은 예산과 무관하다. */
+    const ultLater = (ms: number, fn: () => void) => this.scene.time.delayedCall(ms, () => this.inUlt(budget, fn));
+    const ultEvent = (cfg: Phaser.Types.Time.TimerEventConfig) => this.scene.time.addEvent(this.ultTimerCfg(budget, cfg));
+    const ultTween = (cfg: Phaser.Types.Tweens.TweenBuilderConfig) => this.scene.tweens.add(this.ultTweenCfg(budget, cfg));
+    const prevUltCtx = this.ultCtx;
+    this.ultCtx = budget;
+    try {
 
     /* 공통 인트로 — 시간 정지 + 차원 균열 + 궁극기 발동 안내 */
     this.scene.sfxSkill("timestop", 1.06);
@@ -4487,10 +4494,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     /* vc181 (지시 #1·#2) — 3D 시네마틱: 궁극기 발동 순간 three.js 레이어가 올라와
      *  실제 GLB 메시(해골·고리·톱니)를 3D 카메라 워크로 보여준다.
      *  실패해도 2D 연출은 그대로 남으므로 게임 진행에 영향 없음. */
-    void cine3d().play({ preset: "ultimate", x: this.x, y: this.y, tint: hex, duration: 1750, fam: this.ultKeyFor3D() });
+    /* 2026-11-15 — pixelfx 시전 이펙트가 있는 직업은 3D 인트로를 줄이고, 시전 이펙트를 인트로가 걷힌 뒤에 띄운다.
+     *  3D 레이어(DOM)가 캔버스 위를 1.75초 덮어 시전 이펙트가 통째로 가려졌다(외부 평가 지적). */
+    const castFx = hasUltFx(key5);
+    const introMs = castFx ? 800 : 1750;
+    void cine3d().play({ preset: "ultimate", x: this.x, y: this.y, tint: hex, duration: introMs, fam: this.ultKeyFor3D() });
     /* v1.4.0 (Task 3-1 — 유저 지시 #13) — 직업별 고유 VFX2 시그니처 연출 (8직업 1:1 매핑) */
     spawnUltFlourish(this.scene, this.x, this.y, key5, hex);
-    playUltFx(this.scene, key5, 1, "cast", this.x, this.y, this.facing.x < 0); // 2026-11-14 — pixelfx 시전
+    { const cx = this.x, cy = this.y, flip = this.facing.x < 0; ultLater(castFx ? introMs : 0, () => playUltFx(this.scene, key5, 1, "cast", cx, cy, flip)); } // pixelfx 시전 — 3D 인트로 뒤
     /* vc183 — 극딜 3단계 연출(암전 → 후면오라/지면룬/전면폭발 → 히트스톱·흔들림·줌).
      *  계열별 강도표(ultLayers.ts)로 전사는 묵직, 도적은 짧고 날카롭게 자동 분기된다. */
     /* v1.4.41 (#3) — 연출 길이를 시전 시간에 비례시킨다.
@@ -4508,14 +4519,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     });
     const ring = this.scene.add.circle(this.x, this.y, 34)
       .setStrokeStyle(3, hex, 0.95).setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
-    this.scene.tweens.add({ targets: ring, scale: 3.4, alpha: 0, duration: 700, ease: "Cubic.out", onComplete: () => ring.destroy() });
+    ultTween({ targets: ring, scale: 3.4, alpha: 0, duration: 700, ease: "Cubic.out", onComplete: () => ring.destroy() });
     this.scene.spawnBurstAt(this.x, this.y, 34, hex);
 
     switch (key5) {
       /* 워브링어 — 천멸극: 참격 9연속 + 광역 출혈 + 분노의 대붕괴 종결일격 */
       case "warbringer": {
         for (let i = 0; i < 9; i++) {
-          this.scene.time.delayedCall(260 + i * 210, () => {
+          ultLater(260 + i * 210, () => {
             if (this.state === "dead") return;
             const dir = this.aimDirFree().normalize();
             const ox = this.x + dir.x * (i % 2 === 0 ? 52 : -52);
@@ -4534,7 +4545,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 일격 — 분노의 대붕괴 */
-        this.scene.time.delayedCall(260 + 9 * 210 + 120, () => {
+        ultLater(260 + 9 * 210 + 120, () => {
           if (this.state === "dead") return;
           this.scene.spawnCrack(this.x, this.y);
           this.scene.spawnPillar(this.x, this.y, hex, 300);
@@ -4563,7 +4574,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         /* vc183 (극딜 문서) — 성기사: 망치 낙하 충격파로 범위 내 적 기절(Stun).
          *  보스는 applyStun 내부에서 최대 1.4초 경직으로 자동 캡된다. */
         this.applyStatusTo(this.getAllTargetsIn(320), { stunMs: 1600 });        for (let i = 0; i < 9; i++) {
-          this.scene.time.delayedCall(280 + i * 200, () => {
+          ultLater(280 + i * 200, () => {
             if (this.state === "dead") return;
             const t = this.nearestTargets(4, 700)[i % 4];
             const px = t ? t.x : this.x + (Math.random() - 0.5) * 460;
@@ -4583,7 +4594,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 — 성검 강림 (전장 전체 정화 + 자신 완전 회복) */
-        this.scene.time.delayedCall(280 + 9 * 200 + 140, () => {
+        ultLater(280 + 9 * 200 + 140, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xffffff, 320);
           this.scene.spawnPurifyRing(this.x, this.y, 560, 0xffe9a0);
@@ -4618,7 +4629,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         /* vc183 (극딜 문서) — 저격수 "방어력 무시 관통"은 이 게임에 방어력 스탯이 없어
          *  수치로 옮길 대상이 없다. 대신 문서의 "직선 관통" 정체성을 피해 배율로 반영한다. */
         for (let i = 0; i < 32; i++) {
-          this.scene.time.delayedCall(240 + i * 80, () => {
+          ultLater(240 + i * 80, () => {
             if (this.state === "dead") return;
             const t = this.nearestTargets(1, 820)[0];
             if (!t) return;
@@ -4635,7 +4646,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
         /* 종결 — 신의 저격선 3연사 (광역 관통) */
         for (let b = 0; b < 3; b++) {
-          this.scene.time.delayedCall(240 + 32 * 80 + 120 + b * 220, () => {
+          ultLater(240 + 32 * 80 + 120 + b * 220, () => {
             if (this.state === "dead") return;
             const dir = this.aimDirFree().normalize();
             this.scene.spawnSnipeBeam(this.x, this.y - 8, this.x + dir.x * 1400, this.y + dir.y * 1400, 0xffd76a);
@@ -4660,7 +4671,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
         /* vc183 (극딜 문서) — 환영 궁수: 토네이도가 적 이동속도를 70% 감속(×0.3) */
         this.applyStatusTo(this.getAllTargetsIn(420), { slowMult: 0.3, slowMs: 6000 });        for (let i = 0; i < 14; i++) {
-          this.scene.time.delayedCall(240 + i * 130, () => {
+          ultLater(240 + i * 130, () => {
             if (this.state === "dead") return;
             const t = this.nearestTargets(1, 900)[0];
             const base = t
@@ -4675,12 +4686,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 — 연쇄 낙뢰 (전장을 씻는다) */
-        this.scene.time.delayedCall(240 + 14 * 130 + 140, () => {
+        ultLater(240 + 14 * 130 + 140, () => {
           if (this.state === "dead") return;
           const marks = this.nearestTargets(6, 800);
           const list = marks.length > 0 ? marks : [];
           list.forEach((t, i) => {
-            this.scene.time.delayedCall(i * 110, () => {
+            ultLater(i * 110, () => {
               if (this.state === "dead" || !t.active) return;
               this.scene.spawnPillar(t.x, t.y, 0xaed8ff, 240);
               this.scene.spawnBurstAt(t.x, t.y, 24, 0xaed8ff);
@@ -4711,7 +4722,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         /* vc183 (극딜 문서) — 원소 대마도사: 초신성 폭발 시 빙결. 게임에는 freeze 상태가
          *  없으므로 기절(Stun)로 대체한다 — 체감(행동 불가)이 동일하고 코드 경로도 하나로 유지된다. */
         this.applyStatusTo(this.getAllTargetsIn(380), { stunMs: 1500 });        for (let i = 0; i < 12; i++) {
-          this.scene.time.delayedCall(280 + i * 190, () => {
+          ultLater(280 + i * 190, () => {
             if (this.state === "dead") return;
             const t = this.nearestTargets(3, 680)[i % 3];
             const px = t ? t.x + (Math.random() - 0.5) * 70 : this.x + (Math.random() - 0.5) * 560;
@@ -4730,7 +4741,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 — 마나 붕괴 3중 폭발 (잔여 MP를 전부 태운다 — 비례 대미지) */
-        this.scene.time.delayedCall(280 + 12 * 190 + 140, () => {
+        ultLater(280 + 12 * 190 + 140, () => {
           if (this.state === "dead") return;
           const ratio = Phaser.Math.Clamp(this.mp / Math.max(1, this.maxMp), 0, 1);
           this.mp = 0; // 오버로드 — 잔여 MP 전부 소모
@@ -4758,21 +4769,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               .setDepth(60)
               .setScale(0.85)
               .setRotation(Math.random() * Math.PI);
-            this.scene.tweens.add({
+            ultTween({
               targets: circle,
               x: cx, y: cy, scale: 1.6, rotation: circle.rotation + 2.6, alpha: { from: 1, to: 0.85 },
               duration: 560,
               ease: "Cubic.easeOut",
               onComplete: () => {
                 this.scene.spawnBurstAt(circle.x, circle.y, 22, 0x8ab0ff);
-                this.scene.tweens.add({
+                ultTween({
                   targets: circle, alpha: 0, scale: 2.1, duration: 230,
                   onComplete: () => circle.destroy(),
                 });
               },
             });
             for (const frac of [0.5, 1]) {
-              this.scene.time.delayedCall(560 * frac + 30, () => {
+              ultLater(560 * frac + 30, () => {
                 if (this.state === "dead") return;
                 const hx = this.x + Math.cos(cAng) * cDist * frac;
                 const hy = this.y + Math.sin(cAng) * cDist * frac;
@@ -4833,7 +4844,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.cameras.main.flash(200, 200, 190, 255);
         this.scene.spawnPickupText(this.x, this.y - 66, "시간이 붕괴된다...", "#d8ccff");
         for (let i = 0; i < 7; i++) {
-          this.scene.time.delayedCall(300 + i * 220, () => {
+          ultLater(300 + i * 220, () => {
             if (this.state === "dead") return;
             const t = this.nearestTargets(4, 700)[i % 4];
             const px = t ? t.x : this.x + (Math.random() - 0.5) * 480;
@@ -4850,7 +4861,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               if (crit) this.scene.sfxCrit();
               e.takeDamage(dmg, away, 400, crit);
               /* 잔상 — 같은 피해가 두 번 울린다 (상시) */
-              this.scene.time.delayedCall(170, () => {
+              ultLater(170, () => {
                 if (!e.active) return;
                 const { dmg: echo } = rd(2.2);
                 e.takeDamage(echo, away, 120, false);
@@ -4859,7 +4870,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 — 영겁의 균열 */
-        this.scene.time.delayedCall(300 + 7 * 220 + 150, () => {
+        ultLater(300 + 7 * 220 + 150, () => {
           if (this.state === "dead") return;
           this.scene.spawnCrack(this.x, this.y);
           this.scene.spawnPillar(this.x, this.y, 0xd8ccff, 300);
@@ -4888,7 +4899,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "shadowlord": {
         const marks = this.nearestTargets(10, 780);
         marks.forEach((t, i) => {
-          this.scene.time.delayedCall(260 + i * 160, () => {
+          ultLater(260 + i * 160, () => {
             if (this.state === "dead" || !t.active) return;
             const ang = Math.random() * Math.PI * 2;
             this.setPosition(t.x - Math.cos(ang) * 26, t.y - Math.sin(ang) * 26);
@@ -4902,14 +4913,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         });
         /* 그림자 분신 3기 — 살아남은 적을 추적해 자폭 */
         for (let c = 0; c < 3; c++) {
-          this.scene.time.delayedCall(260 + marks.length * 160 + 100 + c * 200, () => {
+          ultLater(260 + marks.length * 160 + 100 + c * 200, () => {
             if (this.state === "dead") return;
             const t = this.nearestTargets(1, 700)[0];
-            if (t) { budget.tag(Math.round(this.atkTotal * 3.4)); this.scene.fireShadowClone(t, 0x8a4aff, 3.4); }
+            if (t) this.scene.fireShadowClone(t, 0x8a4aff, 3.4);
           });
         }
         /* 종결 — 심연 뉴클리어 */
-        this.scene.time.delayedCall(260 + marks.length * 160 + 760, () => {
+        ultLater(260 + marks.length * 160 + 760, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0x8a4aff, 290);
           this.scene.spawnBurstAt(this.x, this.y, 80, 0x8a4aff);
@@ -4983,7 +4994,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
          *  window 실시간 타이머는 최후 유출 방지 백스톱(30초)만 둔다. */
         const ovAt = (ms: number, f: () => void) => {
           /* 게임 시간 기반 스케줄 — 씬이 죽으면 함께 정리된다 (유출 없음) */
-          const te = this.scene.time.delayedCall(ms, () => { if (!ovGone) { try { f(); } catch { /* 오버레이 실패는 전투에 영향 없음 */ } } });
+          const te = ultLater(ms, () => { if (!ovGone) { try { f(); } catch { /* 오버레이 실패는 전투에 영향 없음 */ } } });
           ovCalls.push(te);
         };
         /* 최후 백스톱 — 어떤 경우에도 DOM 유출 없게 (실시간 30초) */
@@ -5033,7 +5044,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             kanji.style.opacity = "0.38";
             kanji.style.transform = "translate(-50%,-50%) scale(1.06)";
           }
-          if (blackRect) this.scene.tweens.add({ targets: blackRect, alpha: 0, duration: 240, ease: "Quad.easeOut" });
+          if (blackRect) ultTween({ targets: blackRect, alpha: 0, duration: 240, ease: "Quad.easeOut" });
         });
         const ovCleanup = () => {
           if (ovGone) return; // #13 — 하드 정리 뒤에는 소산 불필요 (제거된 요소 재제어 방지)
@@ -5076,7 +5087,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         /* ── 50베기 예약 ── */
         let hitKeep = false; // 종결 플래시 동안 콤보 잔류 (테스트 관측창 + 연출 만족감)
         for (let i = 0; i < CUTS; i++) {
-          ovCalls.push(this.scene.time.delayedCall(starts[i], () => {
+          ovCalls.push(ultLater(starts[i], () => {
             if (ovGone) return;
             if (this.state === "dead") { ovHardCleanup(); return; } // #13 — 사망 즉시 전면 수거 (연출 유령 방지)
             /* 대상 순환 — 죽었으면 살아있는 다음 대상으로 넘어간다 */
@@ -5122,16 +5133,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
         /* 종결 — 교차하는 쌍검 극의 일격 (50베기 정점 직후) */
         /* #11 — 종결 직전 순간 암전: 마지막 베기 직후 즉시 컷to 블랙 → ≈140ms 뒤 종결과 함께 섬광 */
-        ovCalls.push(this.scene.time.delayedCall(totalMs + 30, () => {
+        ovCalls.push(ultLater(totalMs + 30, () => {
           if (ovGone) return;
           if (blackRect) blackRect.setAlpha(1);
         }));
-        ovCalls.push(this.scene.time.delayedCall(totalMs + 170, () => {
+        ovCalls.push(ultLater(totalMs + 170, () => {
           if (ovGone) return;
           if (this.state === "dead") { ovHardCleanup(); return; } // #13 — 사망 종결도 잔존 없이 즉시 수거
           /* #11 — 섬광 컷: 암전 해제와 동시에 붉은 플래시 (기존 flash 재사용) */
           if (blackRect) {
-            this.scene.tweens.add({
+            ultTween({
               targets: blackRect, alpha: 0, duration: 150, ease: "Quad.easeOut",
               onComplete: () => { if (blackRect && !ovGone) { try { blackRect.destroy(); } catch { /* 무시 */ } blackRect = null; } },
             });
@@ -5195,14 +5206,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
          *  실재하는 물/파도 계열 키가 없어 가장 가까운 heavy 계열로 대체한다. */
         this.scene.sfxSkill("heavydash", 0.82);
         for (let i = 0; i < 9; i++) {
-          this.scene.time.delayedCall(200 + i * 145, () => {
+          ultLater(200 + i * 145, () => {
             if (this.state === "dead") return;
             /* 파도 전진선 — i 단계마다 전방으로 밀려간다 (월드 단위) */
             const px = this.x + dir.x * (90 + i * 78);
             const py = this.y + (i % 2 === 0 ? 10 : -10);
             const wave = this.scene.add.rectangle(px, py, 34, 190, 0x6fe0f5, 0.72)
               .setDepth(14).setBlendMode(Phaser.BlendModes.ADD);
-            this.scene.tweens.add({
+            ultTween({
               targets: wave, scaleX: 2.1, alpha: 0, duration: 320,
               onComplete: () => { try { wave.destroy(); } catch { /* 무시 */ } },
             });
@@ -5220,7 +5231,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 역류 — 바닷물이 되돌아오며 전장을 삼킨다 */
-        this.scene.time.delayedCall(200 + 9 * 145 + 180, () => {
+        ultLater(200 + 9 * 145 + 180, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x + dir.x * 260, this.y, 0x4fd2e8, 300);
           this.scene.spawnBurstAt(this.x + dir.x * 260, this.y, 64, 0x8ae6ff);
@@ -5259,7 +5270,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.sfxSkill("quake", 0.85); /* vc272 — "cannon" 무음 → quake */
         for (let si = 0; si < stages.length; si++) {
           const st = stages[si];
-          this.scene.time.delayedCall(st.delay, () => {
+          ultLater(st.delay, () => {
             if (this.state === "dead") return;
             /* 착탄 예고 — 먼저 읽히게 */
             for (let i = 0; i < st.n; i++) {
@@ -5268,7 +5279,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               const py = this.y + Math.sin(ang) * st.r * 0.7;
               /* 예고 링 → 실제 폭발 */
               this.scene.spawnShockwave(px, py, 0xffa040, 0.6, 140, 2.0);
-              this.scene.time.delayedCall(140 + si * 20, () => {
+              ultLater(140 + si * 20, () => {
                 if (this.state === "dead") return;
                 this.scene.spawnBurstAt(px, py, 16 + si * 6, 0xffb060);
                 this.scene.spawnShockwave(px, py, 0xffcc80, 1.4 + si * 0.3, 220, 2.4);
@@ -5286,7 +5297,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 — 방사형 대충격파 + 연기 잔류 */
-        this.scene.time.delayedCall(1300 + 320, () => {
+        ultLater(1300 + 320, () => {
           if (this.state === "dead") return;
           this.scene.cameras.main.flash(240, 255, 190, 120);
           this.scene.spawnPillar(this.x, this.y, 0xffa040, 340);
@@ -5312,7 +5323,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* 전사 계열 — 천멸: 대붕괴 검격. 하늘에서 6연속 초거대 참격 + 종결 일격 */
       case "warrior": {
         for (let i = 0; i < 6; i++) {
-          this.scene.time.delayedCall(260 + i * 230, () => {
+          ultLater(260 + i * 230, () => {
             if (this.state === "dead") return;
             const dir = this.aimDirFree().normalize();
             const ox = this.x + dir.x * (i % 2 === 0 ? 46 : -46);
@@ -5330,7 +5341,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 일격 — 대붕괴 */
-        this.scene.time.delayedCall(260 + 6 * 230 + 120, () => {
+        ultLater(260 + 6 * 230 + 120, () => {
           if (this.state === "dead") return;
           this.scene.spawnCrack(this.x, this.y);
           this.scene.spawnPillar(this.x, this.y, hex, 260);
@@ -5352,7 +5363,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* 궁수 계열 — 천강: 무한 화살비. 유도 26연발 + 관통 12발 + 화염 필드 */
       case "ranger": {
         for (let i = 0; i < 26; i++) {
-          this.scene.time.delayedCall(240 + i * 85, () => {
+          ultLater(240 + i * 85, () => {
             if (this.state === "dead") return;
             const t = this.nearestTargets(1, 760)[0];
             if (!t) return;
@@ -5369,7 +5380,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 관통 화우 12발 */
-        this.scene.time.delayedCall(240 + 26 * 85 + 100, () => {
+        ultLater(240 + 26 * 85 + 100, () => {
           if (this.state === "dead") return;
           const base = Math.atan2(this.aimDirFree().y, this.aimDirFree().x);
           for (let i = 0; i < 12; i++) {
@@ -5396,7 +5407,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* 마법 계열 — 종막: 아르카나 대폭발. 운석 8발 + 종막 폭발 */
       case "mage": {
         for (let i = 0; i < 8; i++) {
-          this.scene.time.delayedCall(280 + i * 240, () => {
+          ultLater(280 + i * 240, () => {
             if (this.state === "dead") return;
             const t = this.nearestTargets(3, 620)[i % 3];
             const px = t ? t.x + (Math.random() - 0.5) * 60 : this.x + (Math.random() - 0.5) * 480;
@@ -5415,7 +5426,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종막 폭발 — 화면 전체급 */
-        this.scene.time.delayedCall(280 + 8 * 240 + 140, () => {
+        ultLater(280 + 8 * 240 + 140, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xffffff, 300);
           this.scene.spawnBurstAt(this.x, this.y, 80, hex);
@@ -5444,7 +5455,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "pirate": {
         /* 1단 — 거대 해일: 화면 가로 전체를 좌→우로 관통하는 물기둥 3연속 */
         for (let w = 0; w < 3; w++) {
-          this.scene.time.delayedCall(280 + w * 420, () => {
+          ultLater(280 + w * 420, () => {
             if (this.state === "dead") return;
             const wy = this.y - 10 + (w - 1) * 46;
             /* 해일 본체 — 넓은 사각 물벽이 화면을 가로지른다 */
@@ -5452,7 +5463,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               .setDepth(14).setBlendMode(Phaser.BlendModes.ADD);
             const foam = this.scene.add.rectangle(-80, wy - (75 + w * 11), 120, 8, 0xbfe8ff, 0.85)
               .setDepth(15).setBlendMode(Phaser.BlendModes.ADD);
-            this.scene.tweens.add({ targets: [wave, foam], x: this.scene.scale.width + 120, duration: 780, ease: "Sine.inOut", onComplete: () => { wave.destroy(); foam.destroy(); } });
+            ultTween({ targets: [wave, foam], x: this.scene.scale.width + 120, duration: 780, ease: "Sine.inOut", onComplete: () => { wave.destroy(); foam.destroy(); } });
             this.scene.sfxSkill("wind", 0.9 + w * 0.06);
             this.scene.doShake?.(140, 0.005);
             /* 관통 판정 — 해일 라인 근처의 적 전부 */
@@ -5466,11 +5477,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 2단 — 뇌운 낙뢰: 전장 상공에 뇌운이 걷히고 8방향 낙뢰가 쏟아진다 */
-        this.scene.time.delayedCall(280 + 3 * 420 + 200, () => {
+        ultLater(280 + 3 * 420 + 200, () => {
           if (this.state === "dead") return;
           this.scene.cameras.main.flash(150, 130, 190, 255);
           for (let i = 0; i < 8; i++) {
-            this.scene.time.delayedCall(i * 150, () => {
+            ultLater(i * 150, () => {
               if (this.state === "dead") return;
               const t2 = this.nearestTargets(1, 720)[0];
               const px = t2 ? t2.x + (Math.random() - 0.5) * 90 : this.x + (Math.random() - 0.5) * 520;
@@ -5478,7 +5489,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               /* 낙뢰 기둥 — 하늘에서 바닥까지 */
               const bolt = this.scene.add.rectangle(px, py - 110, 9, 230, 0xcfe8ff, 0.9)
                 .setDepth(15).setBlendMode(Phaser.BlendModes.ADD);
-              this.scene.tweens.add({ targets: bolt, alpha: 0, duration: 240, onComplete: () => bolt.destroy() });
+              ultTween({ targets: bolt, alpha: 0, duration: 240, onComplete: () => bolt.destroy() });
               this.scene.spawnBurstAt(px, py, 18, 0xa8d8ff);
               this.scene.sfxSkill("thunder", 0.78 + (i % 3) * 0.08);
               this.scene.doShake?.(90, 0.006);
@@ -5492,7 +5503,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             });
           }
           /* 종결 — 대양이 잠잠해질 때의 만조 폭발 */
-          this.scene.time.delayedCall(8 * 150 + 260, () => {
+          ultLater(8 * 150 + 260, () => {
             if (this.state === "dead") return;
             this.scene.spawnPillar(this.x, this.y, 0x5ab8ff, 260);
             this.scene.spawnBurstAt(this.x, this.y, 70, 0x8ad0ff);
@@ -5519,7 +5530,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       default: {
         const marks = this.nearestTargets(8, 720);
         marks.forEach((t, i) => {
-          this.scene.time.delayedCall(260 + i * 180, () => {
+          ultLater(260 + i * 180, () => {
             if (this.state === "dead" || !t.active) return;
             /* 점멸 참수 — 적 옆으로 순이동 */
             const ang = Math.random() * Math.PI * 2;
@@ -5533,7 +5544,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         });
         /* 심연 종결 폭발 */
-        this.scene.time.delayedCall(260 + marks.length * 180 + 140, () => {
+        ultLater(260 + marks.length * 180 + 140, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0x8a4aff, 270);
           this.scene.spawnBurstAt(this.x, this.y, 70, 0x8a4aff);
@@ -5568,7 +5579,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const lost = 1 - this.hp / Math.max(1, this.maxHp);
         const hits = 4 + Math.round(lost * 8);
         for (let i = 0; i < hits; i++) {
-          this.scene.time.delayedCall(220 + i * (180 - lost * 90), () => {
+          ultLater(220 + i * (180 - lost * 90), () => {
             if (this.state === "dead") return;
             const dir = this.aimDirFree().normalize();
             const ox = this.x + dir.x * (i % 2 === 0 ? 48 : -48);
@@ -5584,7 +5595,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
           });
         }
-        this.scene.time.delayedCall(220 + hits * 190 + 140, () => {
+        ultLater(220 + hits * 190 + 140, () => {
           if (this.state === "dead") return;
           this.scene.spawnCrack(this.x, this.y);
           this.scene.spawnPillar(this.x, this.y, 0xd83030, 320);
@@ -5608,9 +5619,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const RAD = 300;
         const dome = this.scene.add.circle(this.x, this.y, RAD)
           .setStrokeStyle(6, 0xffd76a, 0.9).setDepth(12).setBlendMode(Phaser.BlendModes.ADD);
-        this.scene.tweens.add({ targets: dome, scale: 1.06, alpha: 0.55, duration: 420, yoyo: true, repeat: 3, onComplete: () => dome.destroy() });
+        ultTween({ targets: dome, scale: 1.06, alpha: 0.55, duration: 420, yoyo: true, repeat: 3, onComplete: () => dome.destroy() });
         for (let i = 0; i < 6; i++) {
-          this.scene.time.delayedCall(200 + i * 300, () => {
+          ultLater(200 + i * 300, () => {
             if (this.state === "dead") return;
             this.scene.spawnShockwave(this.x, this.y, 0xffd76a, 1.5, 420, 0.7);
             this.scene.impactFX.shake(70, 0.005);
@@ -5622,7 +5633,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
           });
         }
-        this.scene.time.delayedCall(200 + 6 * 300, () => {
+        ultLater(200 + 6 * 300, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xffd76a, 280);
           this.scene.spawnBurstAt(this.x, this.y, 60, 0xffd76a);
@@ -5640,7 +5651,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* ── 워로드: 3연 도약 강타 + 십자 균열 ── */
       case "warlord": {
         for (let i = 0; i < 3; i++) {
-          this.scene.time.delayedCall(300 + i * 420, () => {
+          ultLater(300 + i * 420, () => {
             if (this.state === "dead") return;
             const dir = this.aimDirFree().normalize();
             const jump = 130;
@@ -5659,7 +5670,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
           });
         }
-        this.scene.time.delayedCall(300 + 3 * 420 + 200, () => {
+        ultLater(300 + 3 * 420 + 200, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xffb060, 340);
           this.scene.cameras.main.flash(160, 255, 190, 120);
@@ -5677,7 +5688,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* ── 팔라딘: 빛기둥 9개 순차 낙하 + 자신 회복 (양면 구조) ── */
       case "paladin": {
         for (let i = 0; i < 9; i++) {
-          this.scene.time.delayedCall(260 + i * 170, () => {
+          ultLater(260 + i * 170, () => {
             if (this.state === "dead") return;
             const ang = (i / 9) * Math.PI * 2;
             const dist = i === 8 ? 0 : 190;
@@ -5695,7 +5706,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
           });
         }
-        this.scene.time.delayedCall(260 + 9 * 170, () => {
+        ultLater(260 + 9 * 170, () => {
           if (this.state === "dead") return;
           const heal = Math.round(this.maxHp * 0.18);
           this.hp = Math.min(this.maxHp, this.hp + heal);
@@ -5713,7 +5724,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (tgt) {
           const line = this.scene.add.line(0, 0, this.x, this.y, tgt.x, tgt.y, 0xff4040, 0.85)
             .setOrigin(0, 0).setDepth(12).setLineWidth(2).setBlendMode(Phaser.BlendModes.ADD);
-          this.scene.time.delayedCall(1200, () => {
+          ultLater(1200, () => {
             if (!line.scene) return;
             line.destroy();
             if (this.state === "dead") return;
@@ -5732,7 +5743,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* ── 윈드러너: 이동형 + 경로 화살 잔류 ── */
       case "windrunner": {
         for (let i = 0; i < 8; i++) {
-          this.scene.time.delayedCall(200 + i * 150, () => {
+          ultLater(200 + i * 150, () => {
             if (this.state === "dead") return;
             this.scene.spawnBurstAt(this.x, this.y, 18, 0x60e0ff);
             this.scene.sfxSkill("arrow", 0.9);
@@ -5745,7 +5756,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 시전 중 이동 가능 — 잠시 idle 로 되돌려 이동 입력을 살린다 */
-        this.scene.time.delayedCall(420, () => {
+        ultLater(420, () => {
           if (this.state === "attack") this.state = "idle";
         });
         break;
@@ -5756,8 +5767,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const tgts = [...this.getAllTargetsIn(760)];
         tgts.forEach((t, i) => {
           const mark = this.scene.add.circle(t.x, t.y - 40, 7, 0xff6060, 0.95).setDepth(14);
-          this.scene.tweens.add({ targets: mark, scale: 1.8, alpha: 0.3, duration: 260, yoyo: true, repeat: 2, onComplete: () => mark.destroy() });
-          this.scene.time.delayedCall(420 + i * 90, () => {
+          ultTween({ targets: mark, scale: 1.8, alpha: 0.3, duration: 260, yoyo: true, repeat: 2, onComplete: () => mark.destroy() });
+          ultLater(420 + i * 90, () => {
             if (this.state === "dead") return;
             this.scene.spawnSlash(t.x, t.y, new Phaser.Math.Vector2(0, 1), i % 2 === 0, 1.6, 0xff6060);
             this.scene.spawnBurstAt(t.x, t.y, 20, 0xff6060);
@@ -5777,11 +5788,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         for (let i = 0; i < chain.length; i++) {
           const t = chain[i];
           const prev = i === 0 ? { x: this.x, y: this.y } : chain[i - 1];
-          this.scene.time.delayedCall(220 + i * 110, () => {
+          ultLater(220 + i * 110, () => {
             if (this.state === "dead") return;
             const bolt = this.scene.add.line(0, 0, prev.x, prev.y, t.x, t.y, 0x80d8ff, 0.95)
               .setOrigin(0, 0).setDepth(13).setLineWidth(3).setBlendMode(Phaser.BlendModes.ADD);
-            this.scene.tweens.add({ targets: bolt, alpha: 0, duration: 220, onComplete: () => bolt.destroy() });
+            ultTween({ targets: bolt, alpha: 0, duration: 220, onComplete: () => bolt.destroy() });
             this.scene.spawnBurstAt(t.x, t.y, 22, 0x80d8ff);
             this.scene.sfxSkill("thunder", 0.9);
             const away = this.awayScratch.set(t.x - prev.x, t.y - prev.y).normalize();
@@ -5796,7 +5807,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* ── 스톰브링어: 뇌운 + 무작위 낙뢰 + 종결 뇌격 ── */
       case "stormbringer": {
         for (let i = 0; i < 14; i++) {
-          this.scene.time.delayedCall(300 + i * 220, () => {
+          ultLater(300 + i * 220, () => {
             if (this.state === "dead") return;
             const ang = Math.random() * Math.PI * 2;
             const dist = 80 + Math.random() * 300;
@@ -5814,7 +5825,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
           });
         }
-        this.scene.time.delayedCall(300 + 14 * 220 + 200, () => {
+        ultLater(300 + 14 * 220 + 200, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xb0e0ff, 460);
           this.scene.spawnBurstAt(this.x, this.y, 90, 0xb0e0ff);
@@ -5834,7 +5845,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* ── 아크메이지: 운석 8발 + 원소 종막 ── */
       case "archmage": {
         for (let i = 0; i < 8; i++) {
-          this.scene.time.delayedCall(280 + i * 160, () => {
+          ultLater(280 + i * 160, () => {
             if (this.state === "dead") return;
             const ang = (i / 8) * Math.PI * 2;
             const dist = 60 + (i % 3) * 90;
@@ -5852,7 +5863,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
           });
         }
-        this.scene.time.delayedCall(280 + 8 * 160 + 180, () => {
+        ultLater(280 + 8 * 160 + 180, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xd0a0ff, 420);
           this.scene.spawnBurstAt(this.x, this.y, 86, 0xd0a0ff);
@@ -5874,7 +5885,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const frozen = [...this.getAllTargetsIn(600)];
         let accum = 0;
         for (let i = 0; i < 5; i++) {
-          this.scene.time.delayedCall(300 + i * 320, () => {
+          ultLater(300 + i * 320, () => {
             if (this.state === "dead") return;
             this.scene.spawnBurstAt(this.x, this.y, 24, 0xffe080);
             this.scene.sfxSkill("timestop", 0.86);
@@ -5888,13 +5899,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
           });
         }
-        this.scene.time.delayedCall(300 + 5 * 320 + 200, () => {
+        ultLater(300 + 5 * 320 + 200, () => {
           if (this.state === "dead") return;
           this.scene.cameras.main.flash(220, 255, 250, 200);
           this.scene.impactFX.shake(420, 0.016);
           this.scene.spawnPillar(this.x, this.y, 0xffe080, 400);
           this.scene.sfxSkill("superhit", 0.8);
-          const bonus = budget.tag(Math.max(1, Math.round(accum * 0.5)));
+          const bonus = Math.max(1, Math.round(accum * 0.5));
           for (const e of this.getAllTargetsIn(600)) {
             if (!e.active) continue;
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
@@ -5908,12 +5919,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "chronicle": {
         const swipe = this.scene.add.rectangle(this.x, this.y - 600, 900, 1400, 0xf0e0b0, 0.28)
           .setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
-        this.scene.tweens.add({
+        ultTween({
           targets: swipe, y: this.y + 600, duration: 520, ease: "Sine.inOut",
           onComplete: () => swipe.destroy(),
         });
         for (let i = 0; i < 3; i++) {
-          this.scene.time.delayedCall(320 + i * 380, () => {
+          ultLater(320 + i * 380, () => {
             if (this.state === "dead") return;
             this.scene.spawnBurstAt(this.x, this.y, 30, 0xf0e0b0);
             this.scene.sfxSkill("manaburst", 0.88);
@@ -5933,7 +5944,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "assassin": {
         this.scene.cameras.main.flash(120, 40, 0, 60);
         for (let i = 0; i < 6; i++) {
-          this.scene.time.delayedCall(200 + i * 160, () => {
+          ultLater(200 + i * 160, () => {
             if (this.state === "dead") return;
             for (const e of this.getAllTargetsIn(520)) {
               if (!e.active) continue;
@@ -5958,7 +5969,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* ── 스워시버클러: 18연격 전방위 난무 ── */
       case "swashbuckler": {
         for (let i = 0; i < 18; i++) {
-          this.scene.time.delayedCall(180 + i * 68, () => {
+          ultLater(180 + i * 68, () => {
             if (this.state === "dead") return;
             const ang = (i / 18) * Math.PI * 2;
             const r = 90;
@@ -5982,7 +5993,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* ── 나이트블레이드: 무적 기습 + 첫 타 강화 ── */
       case "nightblade": {
         this.setAlpha(0.25);
-        this.scene.time.delayedCall(620, () => {
+        ultLater(620, () => {
           this.setAlpha(1);
           if (this.state === "dead") return;
           const t = this.getAllTargetsIn(560)[0];
@@ -6007,7 +6018,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (foe) {
           const away = this.awayScratch.set(foe.x - this.x, foe.y - this.y).normalize();
           for (let i = 0; i < 6; i++) {
-            this.scene.time.delayedCall(240 + i * 170, () => {
+            ultLater(240 + i * 170, () => {
               if (this.state === "dead" || !foe.active) return;
               this.scene.spawnSlash(foe.x, foe.y, away, i % 2 === 0, 2.0 + i * 0.1, 0xffe0a0);
               this.scene.impactFX.shake(90, 0.008);
@@ -6024,7 +6035,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* ── 레이더: 화염 확산 장판 ── */
       case "raider": {
         for (let i = 0; i < 7; i++) {
-          this.scene.time.delayedCall(260 + i * 240, () => {
+          ultLater(260 + i * 240, () => {
             if (this.state === "dead") return;
             const ang = (i / 7) * Math.PI * 2;
             const dist = 60 + i * 42;
@@ -6048,7 +6059,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "corsair": {
         for (let i = 0; i < 16; i++) {
           const ang = (i / 16) * Math.PI * 2;
-          this.scene.time.delayedCall(280 + i * 55, () => {
+          ultLater(280 + i * 55, () => {
             if (this.state === "dead") return;
             const px = this.x + Math.cos(ang) * 260;
             const py = this.y + Math.sin(ang) * 260;
@@ -6062,7 +6073,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
           });
         }
-        this.scene.time.delayedCall(280 + 16 * 55 + 200, () => {
+        ultLater(280 + 16 * 55 + 200, () => {
           if (this.state === "dead") return;
           this.scene.cameras.main.flash(180, 255, 170, 80);
           this.scene.impactFX.shake(460, 0.020);
@@ -6082,7 +6093,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "stormcaptain": {
         const dirX = Math.cos(this.aimDirFree().angle());
         for (let i = 0; i < 8; i++) {
-          this.scene.time.delayedCall(260 + i * 210, () => {
+          ultLater(260 + i * 210, () => {
             if (this.state === "dead") return;
             const px = this.x + dirX * (i * 90 - 280);
             const py = this.y;
@@ -6110,7 +6121,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           pts.push({ x: this.x + Math.cos(ang) * dist, y: this.y + Math.sin(ang) * dist });
         }
         pts.forEach((p, i) => {
-          this.scene.time.delayedCall(260 + i * 200, () => {
+          ultLater(260 + i * 200, () => {
             if (this.state === "dead") return;
             this.scene.spawnBurstAt(p.x, p.y, 34, 0xffb040);
             this.scene.spawnShockwave(p.x, p.y, 0xffb040, 1.3, 360, 0.8);
@@ -6124,7 +6135,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
           });
         });
-        this.scene.time.delayedCall(260 + 10 * 200 + 180, () => {
+        ultLater(260 + 10 * 200 + 180, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xffd060, 440);
           this.scene.cameras.main.flash(220, 255, 220, 140);
@@ -6146,7 +6157,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const hx = Math.cos(ang0);
         const hy = Math.sin(ang0);
         for (let i = 0; i < 9; i++) {
-          this.scene.time.delayedCall(280 + i * 180, () => {
+          ultLater(280 + i * 180, () => {
             if (this.state === "dead") return;
             const px = this.x + hx * (300 - i * 75);
             const py = this.y + hy * (300 - i * 75);
@@ -6167,7 +6178,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* ── 드레드노트: 궤도 포격 3단 폭발 + 방사 충격파 ── */
       case "dreadnought": {
         for (let i = 0; i < 3; i++) {
-          this.scene.time.delayedCall(320 + i * 460, () => {
+          ultLater(320 + i * 460, () => {
             if (this.state === "dead") return;
             this.scene.spawnPillar(this.x, this.y, 0xff8040, 380 + i * 90);
             this.scene.spawnCrack(this.x, this.y);
@@ -6193,10 +6204,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
      *  유저 지적: "궁극기가 뒤에 부분 바뀐게 다 똑같잖아".
      *  vc273 — 마무리는 본타가 끝난 뒤 scheduleUltFinale 로 재생한다(아래 본문 참조). */
     this.scheduleUltFinale();
+    } finally {
+      this.ultCtx = prevUltCtx;
+    }
   }
 
   /** vc273 — 실제 마무리 연출. 본타가 모두 끝난 시점에 호출된다. */
   private runUltFinaleNow() {
+    const finaleBudget = this.ultPool; // 1차 궁극기 시전의 예산(종결 직전까지 열려 있다)
     /* vc204 (#9) — 조작 잠금 타이머는 없다(시전 중 state 는 idle 유지). HUD만 갱신한다. */
     this.scene.emitHud();
     /* vc204 (지시서 #10) — 직업별 **고유 마무리** 본문.
@@ -6211,8 +6226,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       x: this.x, y: this.y, hex: this.clsHex(), cls: this.cls,
       slot: 1,
       aimAngle: this.aimDirFree().angle(),
-      roll: (mul) => { const r = this.rollDamage(mul, false); this.ultPool?.tag(r.dmg); return r; },
-      hitAt: (bx, by, d, crit, reach, geometry) => {
+      roll: (mul) => this.rollDamage(mul, false),
+      hitAt: (bx, by, d, crit, reach, geometry) => this.inUlt(finaleBudget, () => {
         /* vc206 (지시 #4 "궁극기 이펙트에 히트박스 없음(즉, 공격안됨)")
          *  종전엔 getAllTargetsIn(220) — **플레이어 위치 고정** 반경 220px 로 후보를 모은 뒤
          *  마무리 지점(bx,by)에서 다시 220px 를 검사했다. 그런데 ULT_FINALE 의 reach 는
@@ -6228,7 +6243,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           if (crit) this.scene.sfxCrit();
           e.takeDamage(d, away, 560, crit);
         }
-      },
+      }),
       lite: this.scene.fxLevel === 0,
     });
   }
@@ -6274,7 +6289,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const budget = this.startUltBudget(2, ult5bHoldOf(key5, familyOf(this.cls)), hex); // 2026-11-13 — 1차와 같은 고정 예산
     /* 장판 틱(dps×0.5)도 예산에서 꺼낸다 — 장판을 까는 직업만 총 피해가 늘지 않게. */
     const field = (cfg: Parameters<typeof this.scene.spawnField>[0]) => {
-      if (cfg.dps > 0) budget.tag(Math.max(1, Math.round(cfg.dps * 0.5)));
       return this.scene.spawnField(cfg);
     };
     // vc195 — 위 useSkill5 와 동일한 이유로 try/finally 복원.
@@ -6284,11 +6298,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.ultSlot = 2;
       try {
         const r = this.rollDamage(m, true, forceCrit);
-        return { dmg: budget.tag(r.dmg), crit: r.crit };
+        return { dmg: r.dmg, crit: r.crit };
       } finally {
         this.ultSlot = prev;
       }
     };
+    /* 2026-11-15 — 궁극기 타격 식별은 피해량 값이 아니라 **이 시전**이다(Player.inUlt). 이 시전이 예약하는
+     *  지연 실행·타이머·트윈 콜백은 실행될 때 이 예산을 다시 켠다. 시전 중 기본공격은 예산과 무관하다. */
+    const ultLater = (ms: number, fn: () => void) => this.scene.time.delayedCall(ms, () => this.inUlt(budget, fn));
+    const ultEvent = (cfg: Phaser.Types.Time.TimerEventConfig) => this.scene.time.addEvent(this.ultTimerCfg(budget, cfg));
+    const ultTween = (cfg: Phaser.Types.Tweens.TweenBuilderConfig) => this.scene.tweens.add(this.ultTweenCfg(budget, cfg));
+    const prevUltCtx = this.ultCtx;
+    this.ultCtx = budget;
+    try {
 
     // Slot 2 changes only the existing final hit's target shape, never its roll,
     // delay, knockback or primary attacks. Snapshot plans/aim for the whole cast.
@@ -6313,12 +6335,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (familyOf(this.cls) === "mage") spawnPentacle(this.scene, this.x, this.y, 0xd8a0ff, { scale: 2.4, duration: 950, spin: true });
     const ring = this.scene.add.circle(this.x, this.y, 34)
       .setStrokeStyle(3, 0xc08aff, 0.95).setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
-    this.scene.tweens.add({ targets: ring, scale: 3.8, alpha: 0, duration: 760, ease: "Cubic.out", onComplete: () => ring.destroy() });
+    ultTween({ targets: ring, scale: 3.8, alpha: 0, duration: 760, ease: "Cubic.out", onComplete: () => ring.destroy() });
     this.scene.spawnBurstAt(this.x, this.y, 36, 0xb06aff);
     this.scene.vfx3dFx("spiral", this.x, this.y, 0xb06aff, 1.1);
-    playUltFx(this.scene, key5, 2, "cast", this.x, this.y, this.facing.x < 0); // 2026-11-14 — pixelfx 시전
+
     /* vc181 (지시 #1·#2) — 제2궁극기는 3D 나선 카메라 워크 (1차보다 길고 웅장하게) */
-    void cine3d().play({ preset: "ultimate2", x: this.x, y: this.y, tint: hex, duration: 2400, fam: this.ultKeyFor3D() });
+    /* 2026-11-15 — 1차와 같이: pixelfx 직업은 3D 인트로를 줄이고 시전 이펙트를 그 뒤에 띄운다(가림 방지). */
+    const castFx2 = hasUltFx(key5);
+    const introMs2 = castFx2 ? 1000 : 2400;
+    void cine3d().play({ preset: "ultimate2", x: this.x, y: this.y, tint: hex, duration: introMs2, fam: this.ultKeyFor3D() });
+    { const cx = this.x, cy = this.y, flip = this.facing.x < 0; ultLater(castFx2 ? introMs2 : 0, () => playUltFx(this.scene, key5, 2, "cast", cx, cy, flip)); } // pixelfx 시전 — 3D 인트로 뒤
     /* vc183 — 제2궁극기(120초)는 극딜의 정점: 암전·연출을 1차보다 강하게(scale 1.15) */
     /* v1.4.41 (#3) — 2차 궁극기(쿨 120초)는 1차(60초)보다 길게. 연출 6초대 유지. */
     playUltLayers(this.scene, this.x, this.y, 0xb06aff, key5, {
@@ -6338,7 +6364,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "warbringer": {
         const ox = this.x, oy = this.y; // 진앙은 시전 위치에 고정
         for (let i = 0; i < 6; i++) {
-          this.scene.time.delayedCall(300 + i * 360, () => {
+          ultLater(300 + i * 360, () => {
             if (this.state === "dead") return;
             const reach = 170 + i * 90;
             this.scene.spawnCrack(ox, oy);
@@ -6355,7 +6381,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 — 대지 융기: 진앙 둘레 8곳이 솟고 중앙이 무너진다 */
-        this.scene.time.delayedCall(300 + 6 * 360 + 200, () => {
+        ultLater(300 + 6 * 360 + 200, () => {
           if (this.state === "dead") return;
           for (let k = 0; k < 8; k++) {
             const a = (Math.PI * 2 * k) / 8;
@@ -6388,7 +6414,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         field({ x: this.x, y: this.y, radius: 230, dur: 8000, dps: Math.max(14, Math.round(this.atkTotal * 1.1)), kind: "light", owner: "player", heal: true, selfHealPerTick: Math.max(4, Math.round(this.maxHp * 0.01)) });
         this.scene.spawnPickupText(this.x, this.y - 70, "천국의 문이 열린다 — 8초 무적 성역!", "#ffe9a0");
         for (let i = 0; i < 12; i++) {
-          this.scene.time.delayedCall(300 + i * 640, () => {
+          ultLater(300 + i * 640, () => {
             if (this.state === "dead") return;
             const t = this.nearestTargets(4, 760)[i % 4];
             const px = t ? t.x : this.x + (Math.random() - 0.5) * 520;
@@ -6407,7 +6433,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 — 성역 닫힘: 완전 회복 + 방어 대버프 + 정화 종결기 */
-        this.scene.time.delayedCall(300 + 12 * 640 + 150, () => {
+        ultLater(300 + 12 * 640 + 150, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xffffff, 320);
           this.scene.spawnPurifyRing(this.x, this.y, 560, 0xffffff);
@@ -6442,7 +6468,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnHitSpark(t.x, t.y - 8);
         }
         for (let r = 0; r < 4; r++) {
-          this.scene.time.delayedCall(500 + r * 520, () => {
+          ultLater(500 + r * 520, () => {
             if (this.state === "dead") return;
             this.scene.sfxSkill("snipe", 0.92 + r * 0.06);
             this.scene.impactFX.shake(90, 0.008);
@@ -6453,7 +6479,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               const arr = this.scene.add.image(sx, sy, "x2_arrow_green")
                 .setRotation(Math.atan2(t.y - 8 - sy, t.x - sx)).setDepth(12).setBlendMode(Phaser.BlendModes.ADD)
                 .setScale(1.6).setTint(0x9dffc4);
-              this.scene.tweens.add({ targets: arr, x: t.x, y: t.y - 8, alpha: 0.25, duration: 90, ease: "Linear", onComplete: () => arr.destroy() });
+              ultTween({ targets: arr, x: t.x, y: t.y - 8, alpha: 0.25, duration: 90, ease: "Linear", onComplete: () => arr.destroy() });
               this.scene.spawnRuneRing(t.x, t.y, 0x7dffb0);
               const away = this.awayScratch.set(t.x - this.x, t.y - this.y).normalize();
               const { dmg, crit } = rd(2.4);
@@ -6463,7 +6489,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 — 표식 폭발: 살아 있는 표식 대상만, 확정 치명 */
-        this.scene.time.delayedCall(500 + 4 * 520 + 220, () => {
+        ultLater(500 + 4 * 520 + 220, () => {
           if (this.state === "dead") return;
           this.scene.cameras.main.flash(160, 200, 255, 210);
           this.scene.impactFX.shake(460, 0.022);
@@ -6483,7 +6509,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* 스카이로드 — 천풍전격: 회오리 군단 12기 + 낙뢰 폭풍 10연 + 대기권 종결 토네이도 */
       case "skylord": {
         for (let i = 0; i < 12; i++) {
-          this.scene.time.delayedCall(260 + i * 200, () => {
+          ultLater(260 + i * 200, () => {
             if (this.state === "dead") return;
             const t = this.nearestTargets(1, 900)[0];
             const base = t ? Math.atan2(t.y - this.y, t.x - this.x) : Math.random() * Math.PI * 2;
@@ -6496,7 +6522,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         for (let b = 0; b < 10; b++) {
-          this.scene.time.delayedCall(260 + 12 * 200 + b * 220, () => {
+          ultLater(260 + 12 * 200 + b * 220, () => {
             if (this.state === "dead") return;
             const t = this.nearestTargets(3, 820)[b % 3] ?? this.nearestTargets(1, 820)[0];
             if (!t || !t.active) return;
@@ -6512,7 +6538,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 — 대기권 돌파: 하늘이 무너지는 초대형 토네이도 + 신속 대버프 */
-        this.scene.time.delayedCall(260 + 12 * 200 + 10 * 220 + 140, () => {
+        ultLater(260 + 12 * 200 + 10 * 220 + 140, () => {
           if (this.state === "dead") return;
           const t = this.nearestTargets(1, 800)[0];
           const cx = t ? t.x : this.x;
@@ -6544,7 +6570,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
        *  종결은 시전자 위로 천뢰 기둥 + 짧은 기절. MP 는 건드리지 않는다. */
       case "arclord": {
         for (let i = 0; i < 8; i++) {
-          this.scene.time.delayedCall(300 + i * 260, () => {
+          ultLater(300 + i * 260, () => {
             if (this.state === "dead") return;
             const first = this.nearestTargets(1, 820)[0];
             if (!first) return;
@@ -6563,7 +6589,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             g.lineStyle(3, 0xcfe0ff, 0.95).beginPath().moveTo(first.x, first.y - 10);
             for (const t of chain) g.lineTo(t.x + (Math.random() - 0.5) * 16, t.y - 10);
             g.strokePath();
-            this.scene.tweens.add({ targets: g, alpha: 0, duration: 180, onComplete: () => g.destroy() });
+            ultTween({ targets: g, alpha: 0, duration: 180, onComplete: () => g.destroy() });
             for (const t of chain) {
               spawnFlarePop(this.scene, t.x, t.y - 10, "vf_lightning", { tint: 0xcfe0ff, scale: 1.1, duration: 320 });
               const { dmg, crit } = rd(3.0);
@@ -6573,7 +6599,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 — 천뢰: 시전자 위로 떨어지는 거대 번개 기둥 */
-        this.scene.time.delayedCall(300 + 8 * 260 + 200, () => {
+        ultLater(300 + 8 * 260 + 200, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xffffff, 380);
           this.scene.spawnCrack(this.x, this.y);
@@ -6612,7 +6638,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.spawnHealFx(this.x, this.y, 0xb0a0ff);
         this.scene.spawnPickupText(this.x, this.y - 84, `시간 역행 회복 +${healed}`, "#d8ccff");
         /* 재현 종결 — 최근 6초간 굴린 피해 로그의 합 ×2가 한 번에 터진다 */
-        this.scene.time.delayedCall(1400, () => {
+        ultLater(1400, () => {
           if (this.state === "dead") return;
           const now = this.scene.time.now;
           let sum = 0;
@@ -6636,7 +6662,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
            *    · 새 적이 스폰되면 → 배열이 늘어 **원래 대상이 아닌 적까지 맞는다**
            *  대상 수와 목록을 루프 밖에서 한 번만 확정한다. */
           const reproTargets = finaleTargets(this.x, this.y, 620);
-          const share = budget.tag(Math.max(1, Math.round(reenact / Math.max(1, reproTargets.length))));
+          const share = Math.max(1, Math.round(reenact / Math.max(1, reproTargets.length)));
           for (const e of reproTargets) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
             /* 재현 배분 — 로그 합을 전 대상에 균등 분배(단일 보스에겐 전액) */
@@ -6660,7 +6686,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.driveFx?.gvVoidSpike(cx, cy, 0xc090ff, 2.0);
         this.scene.cameras.main.flash(260, 30, 0, 60);
         for (let i = 0; i < 10; i++) {
-          this.scene.time.delayedCall(300 + i * 240, () => {
+          ultLater(300 + i * 240, () => {
             if (this.state === "dead") return;
             const ang = i * 0.9;
             const dir = new Phaser.Math.Vector2(-Math.sin(ang), Math.cos(ang)); // 달 둘레 접선 방향
@@ -6676,7 +6702,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 — 달의 붕괴: 끌려온 적을 한 번에 터뜨린다 */
-        this.scene.time.delayedCall(300 + 10 * 240 + 260, () => {
+        ultLater(300 + 10 * 240 + 260, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(cx, cy, 0x8a4aff, 320);
           this.scene.spawnBurstAt(cx, cy, 86, 0x8a4aff);
@@ -6775,7 +6801,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
         /* ── 2) 회전 난무 — 3연 참격 + 마찰 스파크 + 중첩 출혈 ── */
         let spinAcc = 0;
-        const spinEvt = this.scene.time.addEvent({
+        const spinEvt = ultEvent({
           delay: SPIN_TICK,
           loop: true,
           callback: () => {
@@ -6818,7 +6844,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         });
 
         /* ── 3) 종결 — 사슬로 끌어모은 뒤 폭쇄 (중첩 비례) ── */
-        this.scene.time.delayedCall(SPIN_MS + 500, () => {
+        ultLater(SPIN_MS + 500, () => {
           if (this.state === "dead") { try { chainGfx.destroy(); } catch { /* 무시 */ } return; }
           spinEvt.remove();
 
@@ -6835,7 +6861,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.cameras.main.flash(120, 180, 110, 255);
 
           /* 폭쇄 — 중첩에 비례한 마무리 */
-          this.scene.time.delayedCall(220, () => {
+          ultLater(220, () => {
             try { chainGfx.destroy(); } catch { /* 무시 */ }
             if (this.state === "dead") return;
             this.scene.spawnSpinSlash(this.x, this.y, 2);
@@ -6869,8 +6895,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
       /* ══════════════════════════════════════════════════════════════════
        * vc195 — 기획서 §4.9 시킹 제2궁극기 「해신: 침묵의 심연」
-      /* ══════════════════════════════════════════════════════════════════
-       * vc195 — 기획서 §4.9 시킹 제2궁극기 「해신: 침묵의 심연」
        *
        *  전장을 수몰시켜 적을 감속시킨 뒤 6초 압박, 물이 빠지며 수압 종결.
        *  종전엔 case 가 없어 default 로 떨어졌다.
@@ -6884,7 +6908,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         /* 수면 상승 — 전장 오버레이 (가독성 상한 0.30) */
         const flood = this.scene.add.rectangle(this.x, this.y, 1400, 900, 0x2f9fd8, 0.30)
           .setDepth(6).setBlendMode(Phaser.BlendModes.ADD);
-        this.scene.tweens.add({ targets: flood, alpha: 0.10, duration: 6000, ease: "Quad.easeIn" });
+        ultTween({ targets: flood, alpha: 0.10, duration: 6000, ease: "Quad.easeIn" });
         /* 감속·수압 필드 */
         field({
           x: this.x, y: this.y, radius: 320, dur: 6000,
@@ -6903,7 +6927,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
          *  [해결] 파도를 14회로 늘리고 간격을 800ms 로 잡아 약 11초 지속시킨다.
          *   동시에 물결이 밀려오는 방향성을 주기 위해 좌→우로 훑는다. */
         for (let i = 0; i < 14; i++) {
-          this.scene.time.delayedCall(300 + i * 800, () => {
+          ultLater(300 + i * 800, () => {
             if (this.state === "dead") return;
             /* 좌→우 파도 진행 — 매회 x 오프셋을 이동시켜 '밀려온다'로 읽히게 */
             const sweep = -300 + (i / 13) * 600;
@@ -6912,7 +6936,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종료 — 물이 빠지며 수압 종결 (스냅샷 대상 재검사) */
-        this.scene.time.delayedCall(6000, () => {
+        ultLater(6000, () => {
           if (this.state === "dead") return;
           try { flood.destroy(); } catch { /* 무시 */ }
           this.scene.cameras.main.flash(260, 140, 220, 255);
@@ -6952,7 +6976,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         /* 조준선 도색 — 0.6초 예고 */
         const reticle = this.scene.add.rectangle(wx0, wy0, spanX * 2, 2, 0xffcc66, 0.75).setDepth(12);
         const reticle2 = this.scene.add.rectangle(wx0, wy0, 2, spanY * 2, 0xffcc66, 0.75).setDepth(12);
-        this.scene.tweens.add({
+        ultTween({
           targets: [reticle, reticle2], alpha: 0.2, duration: 300, yoyo: true, repeat: 3,
           onComplete: () => { try { reticle.destroy(); reticle2.destroy(); } catch { /* 무시 */ } },
         });
@@ -6960,13 +6984,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         for (let i = 0; i < 22; i++) {
           /* vc234 (#3) — 12회 × 170ms(2.9초)는 시전 시간 60초 대비 너무 짧아
            *  후딜이 통째로 비었다. 22회 × 380ms ≈ 9초로 늘려 포격이 이어지게 한다. */
-          this.scene.time.delayedCall(600 + i * 380, () => {
+          ultLater(600 + i * 380, () => {
             if (this.state === "dead") return;
             const px = wx0 + (Math.random() - 0.5) * spanX * 2;
             const py = wy0 + (Math.random() - 0.5) * spanY * 2;
             /* 예고 — 바닥에 작은 링 */
             this.scene.spawnShockwave(px, py, 0xffcc66, 0.5, 130, 0.7);
-            this.scene.time.delayedCall(130, () => {
+            ultLater(130, () => {
               if (this.state === "dead") return;
               this.scene.spawnBurstAt(px, py, 14, 0xffb060);
               this.scene.spawnShockwave(px, py, 0xffa040, 1.1, 200, 0.7);
@@ -6983,11 +7007,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 마지막 초대형 탄환 — 사전 경고 후 대충격파 */
-        this.scene.time.delayedCall(600 + 22 * 380 + 200, () => {
+        ultLater(600 + 22 * 380 + 200, () => {
           if (this.state === "dead") return;
           this.scene.spawnShockwave(wx0, wy0, 0xffe0b0, 5.0, 620, 0.9);
           this.scene.cameras.main.flash(280, 255, 200, 140);
-          this.scene.time.delayedCall(220, () => {
+          ultLater(220, () => {
             if (this.state === "dead") return;
             this.scene.spawnPillar(wx0, wy0, 0xffa040, 420);
             this.scene.spawnBurstAt(wx0, wy0, 110, 0xffcf90);
@@ -7013,7 +7037,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* 전사 계열 — 천멸이격: 낙검 4자루 + 지평선 참격 종결 */
       case "warrior": {
         for (let i = 0; i < 4; i++) {
-          this.scene.time.delayedCall(280 + i * 420, () => {
+          ultLater(280 + i * 420, () => {
             if (this.state === "dead") return;
             const t = this.nearestTargets(1, 860)[0];
             const px = t ? t.x + (Math.random() - 0.5) * 90 : this.x + (Math.random() - 0.5) * 520;
@@ -7033,7 +7057,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 — 지평선 참격 */
-        this.scene.time.delayedCall(280 + 4 * 420 + 150, () => {
+        ultLater(280 + 4 * 420 + 150, () => {
           if (this.state === "dead") return;
           const dir = this.aimDirFree().normalize();
           this.scene.spawnSlash(this.x + dir.x * 50, this.y, dir, false, 5.4, hex);
@@ -7058,7 +7082,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       /* 궁수 계열 — 천강이격: 8초 화우제(유도 화살 56연) + 강철 폭풍 5연사 종결 */
       case "ranger": {
         for (let v = 0; v < 14; v++) {
-          this.scene.time.delayedCall(280 + v * 560, () => {
+          ultLater(280 + v * 560, () => {
             if (this.state === "dead") return;
             for (let a = 0; a < 4; a++) {
               const t = this.nearestTargets(1, 820)[0];
@@ -7076,7 +7100,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 — 강철 폭풍 5연사 (전장 관통) */
-        this.scene.time.delayedCall(280 + 14 * 560 + 140, () => {
+        ultLater(280 + 14 * 560 + 140, () => {
           if (this.state === "dead") return;
           const base = Math.atan2(this.aimDirFree().y, this.aimDirFree().x);
           for (let i = 0; i < 5; i++) {
@@ -7105,7 +7129,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         field({ x: bx, y: by, radius: 260, dur: 5200, dps: Math.max(20, Math.round(this.atkTotal * 1.5)), kind: "light", owner: "player" });
         /* 끌어당김 — 220ms마다 주위 적을 균열 중심으로 끌고 와 피해 */
         for (let i = 0; i < 22; i++) {
-          this.scene.time.delayedCall(320 + i * 220, () => {
+          ultLater(320 + i * 220, () => {
             if (this.state === "dead") return;
             for (const e of this.getAllTargetsIn(520)) {
               const toC = new Phaser.Math.Vector2(bx - e.x, by - e.y);
@@ -7120,7 +7144,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 — 균열 붕괴: 잿더미 없이 소멸 */
-        this.scene.time.delayedCall(320 + 22 * 220 + 160, () => {
+        ultLater(320 + 22 * 220 + 160, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(bx, by, 0xffffff, 320);
           this.scene.spawnCrack(bx, by);
@@ -7145,12 +7169,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
        *  v1.2.4까지 case "pirate"가 없어 도적 폴백(사(死)의 일섬)으로 떨어졌다. */
       case "pirate": {
         /* 1단 — 바다가 수직으로 갈라진다: 화면 중앙 세로 균열 + 충격 */
-        this.scene.time.delayedCall(280, () => {
+        ultLater(280, () => {
           if (this.state === "dead") return;
           this.scene.cameras.main.flash(160, 120, 190, 255);
           const rift = this.scene.add.rectangle(this.x, this.scene.scale.height / 2, 26, this.scene.scale.height * 1.4, 0x9ad8ff, 0.55)
             .setDepth(14).setBlendMode(Phaser.BlendModes.ADD);
-          this.scene.tweens.add({ targets: rift, alpha: 0, scaleX: 0.2, duration: 1400, ease: "Cubic.in", onComplete: () => rift.destroy() });
+          ultTween({ targets: rift, alpha: 0, scaleX: 0.2, duration: 1400, ease: "Cubic.in", onComplete: () => rift.destroy() });
           this.scene.spawnCrack(this.x, this.y);
           this.scene.doShake?.(420, 0.012);
           this.scene.sfxSkill("thunder", 0.6);
@@ -7165,14 +7189,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         /* 2단 — 침몰한 함대의 포성이 되돌아온다: 8초간 광역 폭격 (설명 문구 그대로) */
         const BARRAGE_MS = 8000, BARRAGE_N = 22;
         for (let i = 0; i < BARRAGE_N; i++) {
-          this.scene.time.delayedCall(700 + (i * BARRAGE_MS) / BARRAGE_N, () => {
+          ultLater(700 + (i * BARRAGE_MS) / BARRAGE_N, () => {
             if (this.state === "dead") return;
             const t2 = this.nearestTargets(3, 760)[i % 3];
             const px = t2 ? t2.x + (Math.random() - 0.5) * 110 : this.x + (Math.random() - 0.5) * 560;
             const py = t2 ? t2.y + (Math.random() - 0.5) * 80 : this.y + (Math.random() - 0.5) * 260;
             /* 낙하 포탄 — 위에서 떨어져 터진다 */
             const shell = this.scene.add.rectangle(px, py - 190, 7, 16, 0x2a2a38, 1).setDepth(15);
-            this.scene.tweens.add({ targets: shell, y: py, duration: 180, ease: "Quad.in", onComplete: () => {
+            ultTween({ targets: shell, y: py, duration: 180, ease: "Quad.in", onComplete: () => {
               shell.destroy();
               this.scene.spawnBurstAt(px, py, 22, 0xffb86a);
               this.scene.spawnPillar(px, py, 0xffd0a0, 150);
@@ -7189,7 +7213,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 — 종말의 대포격: 남은 화약을 한 번에 (분열 지점 중심) */
-        this.scene.time.delayedCall(700 + BARRAGE_MS + 320, () => {
+        ultLater(700 + BARRAGE_MS + 320, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xffc08a, 320);
           this.scene.spawnBurstAt(this.x, this.y, 90, 0xffa86a);
@@ -7241,7 +7265,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           };
           runDeathSlashCinematic(
             { x: this.x, y: this.y, scene: this.scene, flipX: this.flipX },
-            strike,
+            () => this.inUlt(budget, strike),
             () => {
               /* 유저 스펙 ⑤ — 복귀: 위치/HP/출혈 상태는 시네마틱이 건드리지 않았으므로 그대로. 입력 해제
                *  (세이브는 씬 주기 저장/다음 전투 이벤트에서 반영 — save는 씬 전용) */
@@ -7254,14 +7278,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           for (const e of marked) {
             (e as Enemy).applyStun?.(1200);
             const r = this.scene.add.circle(e.x, e.y, 16).setStrokeStyle(2, 0xc08aff, 0.9).setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
-            this.scene.tweens.add({ targets: r, scale: 0.4, alpha: 0, duration: 900, onComplete: () => r.destroy() });
+            ultTween({ targets: r, scale: 0.4, alpha: 0, duration: 900, onComplete: () => r.destroy() });
           }
           this.scene.spawnPickupText(this.x, this.y - 70, `처형 각인 ×${marked.length}`, "#c08aff");
           /* v1.0.16 (O9) — getAllTargetsIn이 스크래치 버퍼를 반환하므로, delayedCall 클로저에서
            *  나중에 참조할 값은 반드시 복사해 둔다(안 하면 다른 스킬 호출이 버퍼를 덮어써 오염). */
           const seq = marked.slice(0, 8);
           seq.slice(0, 8).forEach((t, i) => {
-            this.scene.time.delayedCall(340 + i * 260, () => {
+            ultLater(340 + i * 260, () => {
               if (this.state === "dead" || !t.active) return;
               const ang = Math.random() * Math.PI * 2;
               this.setPosition(t.x - Math.cos(ang) * 26, t.y - Math.sin(ang) * 26);
@@ -7273,7 +7297,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             });
           });
           /* 종결 — 심연 소화기 */
-          this.scene.time.delayedCall(340 + Math.min(seq.length, 8) * 260 + 160, () => {
+          ultLater(340 + Math.min(seq.length, 8) * 260 + 160, () => {
             if (this.state === "dead") return;
             this.scene.spawnPillar(this.x, this.y, 0x8a4aff, 290);
             this.scene.spawnBurstAt(this.x, this.y, 78, 0x8a4aff);
@@ -7316,7 +7340,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         /* 태운 체력이 곧 화력 — 최대 12배까지 */
         const power = Math.min(12, 3 + (burn / Math.max(1, this.maxHp)) * 12);
         for (let i = 0; i < 6; i++) {
-          this.scene.time.delayedCall(260 + i * 240, () => {
+          ultLater(260 + i * 240, () => {
             if (this.state === "dead") return;
             this.scene.spawnCrack(this.x, this.y);
             this.scene.spawnShockwave(this.x, this.y, 0xff3030, 1.5, 420, 0.85);
@@ -7342,15 +7366,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const WALL_R = 340, WALL_MS = 4000;
         const wall = this.scene.add.circle(this.x, this.y, WALL_R)
           .setStrokeStyle(10, 0xa8d8ff, 0.95).setDepth(12).setBlendMode(Phaser.BlendModes.ADD);
-        this.scene.tweens.add({
+        ultTween({
           targets: wall, alpha: { from: 0, to: 0.7 }, duration: 220,
-          onComplete: () => this.scene.tweens.add({ targets: wall, alpha: 0.35, duration: WALL_MS - 400, onComplete: () => wall.destroy() }),
+          onComplete: () => ultTween({ targets: wall, alpha: 0.35, duration: WALL_MS - 400, onComplete: () => wall.destroy() }),
         });
         this.scene.cameras.main.flash(150, 160, 210, 255);
         this.scene.sfxSkill("warcry", 0.82);
         /* 방벽 유지 중 5회 파동 — 적을 계속 밀어내고 도발 */
         for (let i = 0; i < 5; i++) {
-          this.scene.time.delayedCall(300 + i * 760, () => {
+          ultLater(300 + i * 760, () => {
             if (this.state === "dead") return;
             this.scene.spawnShockwave(this.x, this.y, 0xa8d8ff, 2.0, 520, 0.8);
             this.scene.sfxSkill("warcry", 0.86);
@@ -7362,7 +7386,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 종결 — 방벽 폭발 */
-        this.scene.time.delayedCall(300 + 5 * 760, () => {
+        ultLater(300 + 5 * 760, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xa8d8ff, 420);
           this.scene.spawnBurstAt(this.x, this.y, 80, 0xa8d8ff);
@@ -7386,7 +7410,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         for (let dir = 0; dir < 3; dir++) {
           const ang = (dir / 3) * Math.PI * 2 - Math.PI / 2;
           for (let i = 0; i < 5; i++) {
-            this.scene.time.delayedCall(280 + dir * 120 + i * 170, () => {
+            ultLater(280 + dir * 120 + i * 170, () => {
               if (this.state === "dead") return;
               /* 군세가 바깥에서 안으로 밀려온다 */
               const dist = 420 - i * 78;
@@ -7404,7 +7428,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             });
           }
         }
-        this.scene.time.delayedCall(280 + 5 * 170 + 300, () => {
+        ultLater(280 + 5 * 170 + 300, () => {
           if (this.state === "dead") return;
           this.scene.spawnCrack(this.x, this.y);
           this.scene.spawnPillar(this.x, this.y, 0xffd080, 460);
@@ -7429,9 +7453,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           .setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
         const beam2 = this.scene.add.rectangle(this.x + 90, this.y - 120, 5, 260, 0xfff4c0, 0.7)
           .setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
-        this.scene.tweens.add({ targets: [beam1, beam2], alpha: 0, duration: 2400, onComplete: () => { beam1.destroy(); beam2.destroy(); } });
+        ultTween({ targets: [beam1, beam2], alpha: 0, duration: 2400, onComplete: () => { beam1.destroy(); beam2.destroy(); } });
         let tick = 0;
-        const iv = this.scene.time.addEvent({
+        const iv = ultEvent({
           delay: 420, repeat: 6,
           callback: () => {
             if (this.state === "dead") { iv.remove(); return; }
@@ -7461,7 +7485,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "sniper": {
         const tlist = [...this.getAllTargetsIn(900)];
         for (let i = 0; i < 12; i++) {
-          this.scene.time.delayedCall(300 + i * 140, () => {
+          ultLater(300 + i * 140, () => {
             if (this.state === "dead") return;
             const t = tlist.length ? tlist[i % tlist.length] : null;
             /* 화면 밖에서 날아오는 궤적 — 발사 지점은 보이지 않는다 */
@@ -7472,7 +7496,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             const ty = t?.y ?? this.y + (Math.random() - 0.5) * 300;
             const trail = this.scene.add.line(0, 0, fx, fy, tx, ty, 0xff5050, 0.8)
               .setOrigin(0, 0).setDepth(13).setLineWidth(2).setBlendMode(Phaser.BlendModes.ADD);
-            this.scene.tweens.add({ targets: trail, alpha: 0, duration: 260, onComplete: () => trail.destroy() });
+            ultTween({ targets: trail, alpha: 0, duration: 260, onComplete: () => trail.destroy() });
             this.scene.spawnBurstAt(tx, ty, 24, 0xff5050);
             this.scene.hitStop(60);
             this.scene.sfxSkill("snipe", 0.88);
@@ -7491,7 +7515,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         /* 이동 궤적을 기록 */
         const path: { x: number; y: number }[] = [];
         let rec = 0;
-        const recIv = this.scene.time.addEvent({
+        const recIv = ultEvent({
           delay: 90, repeat: 60,
           callback: () => {
             rec++;
@@ -7500,13 +7524,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           },
         });
         /* 경로를 따라 바람 화살이 되돌아온다 */
-        this.scene.time.delayedCall(1800, () => {
+        ultLater(1800, () => {
           recIv.remove();
           if (this.state === "dead") return;
           const step = Math.max(1, Math.floor(path.length / 14));
           for (let i = 0; i < 14; i++) {
             const p = path[Math.min(path.length - 1, i * step)];
-            this.scene.time.delayedCall(200 + i * 110, () => {
+            ultLater(200 + i * 110, () => {
               if (this.state === "dead") return;
               this.scene.spawnBurstAt(p.x, p.y, 18, 0x80f0ff);
               this.scene.spawnShockwave(p.x, p.y, 0x80f0ff, 1.0, 300, 0.8);
@@ -7538,8 +7562,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
         spots.forEach((s, i) => {
           const ring = this.scene.add.circle(s.x, s.y, 26).setStrokeStyle(2, 0xffa0a0, 0.9).setDepth(13);
-          this.scene.tweens.add({ targets: ring, scale: 0.3, alpha: 0.2, duration: 700, onComplete: () => ring.destroy() });
-          this.scene.time.delayedCall(760 + i * 180, () => {
+          ultTween({ targets: ring, scale: 0.3, alpha: 0.2, duration: 700, onComplete: () => ring.destroy() });
+          ultLater(760 + i * 180, () => {
             if (this.state === "dead") return;
             this.scene.spawnPillar(s.x, s.y, 0xffa0a0, 300);
             this.scene.spawnBurstAt(s.x, s.y, 34, 0xffa0a0);
@@ -7561,7 +7585,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         for (let orb = 0; orb < 3; orb++) {
           const startAng = (orb / 3) * Math.PI * 2;
           for (let step = 0; step < 8; step++) {
-            this.scene.time.delayedCall(300 + orb * 130 + step * 150, () => {
+            ultLater(300 + orb * 130 + step * 150, () => {
               if (this.state === "dead") return;
               const ang = startAng + step * 0.5;
               const r = 300 - step * 34; /* 나선으로 수축 */
@@ -7580,7 +7604,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           }
         }
         /* 집결 후 일괄 폭발 */
-        this.scene.time.delayedCall(300 + 3 * 130 + 8 * 150 + 260, () => {
+        ultLater(300 + 3 * 130 + 8 * 150 + 260, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xa0f0b0, 480);
           this.scene.spawnBurstAt(this.x, this.y, 88, 0xa0f0b0);
@@ -7604,12 +7628,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         /* 뿌리 → 하늘로 솟는 기둥. 3초간 유지되며 안의 적을 계속 감전 */
         const col = this.scene.add.rectangle(this.x, this.y - 260, 46, 620, 0x90c0ff, 0.5)
           .setDepth(13).setBlendMode(Phaser.BlendModes.ADD);
-        this.scene.tweens.add({
+        ultTween({
           targets: col, alpha: { from: 0.9, to: 0.15 }, duration: 3000,
           onComplete: () => col.destroy(),
         });
         for (let i = 0; i < 10; i++) {
-          this.scene.time.delayedCall(280 + i * 300, () => {
+          ultLater(280 + i * 300, () => {
             if (this.state === "dead") return;
             this.scene.spawnPillar(this.x, this.y, 0xa0d8ff, 560);
             this.scene.spawnBurstAt(this.x, this.y, 24, 0xa0d8ff);
@@ -7641,7 +7665,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           { tint: 0xa08060, sfx: "quake" },
         ];
         ELEMS.forEach((el, k) => {
-          this.scene.time.delayedCall(300 + k * 620, () => {
+          ultLater(300 + k * 620, () => {
             if (this.state === "dead") return;
             this.scene.cameras.main.flash(120, (el.tint >> 16) & 255, (el.tint >> 8) & 255, el.tint & 255);
             this.scene.sfxSkill(el.sfx, 0.86);
@@ -7660,7 +7684,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         });
         /* 융합 폭발 */
-        this.scene.time.delayedCall(300 + 4 * 620 + 260, () => {
+        ultLater(300 + 4 * 620 + 260, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xffffff, 520);
           this.scene.spawnBurstAt(this.x, this.y, 110, 0xffffff);
@@ -7685,7 +7709,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
          *  4개 속성 섬광을 역순으로 재생해 "기록 재생" 판타지를 구현한다. */
         const seq = [0x80d0ff, 0xffd070, 0xc080ff, 0x80ffb0];
         for (let i = 0; i < 12; i++) {
-          this.scene.time.delayedCall(300 + i * 220, () => {
+          ultLater(300 + i * 220, () => {
             if (this.state === "dead") return;
             const tint = seq[i % seq.length];
             const ang = (i / 12) * Math.PI * 2;
@@ -7715,13 +7739,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const share = Math.max(1, Math.round(lostHp * 0.18));
         const book = this.scene.add.rectangle(this.x, this.y, 320, 420, 0xf0e0b0, 0.22)
           .setDepth(13).setBlendMode(Phaser.BlendModes.ADD).setAngle(-8);
-        this.scene.tweens.add({
+        ultTween({
           targets: book, angle: 8, alpha: 0.05, duration: 1400, ease: "Sine.inOut",
           onComplete: () => book.destroy(),
         });
         this.scene.sfxSkill("manaburst", 0.8);
         for (let i = 0; i < 4; i++) {
-          this.scene.time.delayedCall(320 + i * 340, () => {
+          ultLater(320 + i * 340, () => {
             if (this.state === "dead") return;
             this.scene.spawnBurstAt(this.x, this.y, 34, 0xf0e0b0);
             this.scene.impactFX.shake(120, 0.008);
@@ -7741,7 +7765,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "assassin": {
         this.setAlpha(0.15);
         this.scene.sfxSkill("ambush", 0.85);
-        this.scene.time.delayedCall(900, () => {
+        ultLater(900, () => {
           this.setAlpha(1);
           if (this.state === "dead") return;
           const t = this.getAllTargetsIn(600)[0];
@@ -7769,7 +7793,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "swashbuckler": {
         const N = 40; /* 100연격을 40판정으로 압축(모바일) — 피해 배율로 보정 */
         for (let i = 0; i < N; i++) {
-          this.scene.time.delayedCall(200 + i * 34, () => {
+          ultLater(200 + i * 34, () => {
             if (this.state === "dead") return;
             const ang = (i / N) * Math.PI * 2 * 3;
             const r = 70 + (i % 4) * 28;
@@ -7785,7 +7809,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
         /* 마지막 한 번은 8배 */
-        this.scene.time.delayedCall(200 + N * 34 + 120, () => {
+        ultLater(200 + N * 34 + 120, () => {
           if (this.state === "dead") return;
           this.scene.spawnShockwave(this.x, this.y, 0xfff0a0, 2.4, 460, 0.95);
           this.scene.cameras.main.flash(220, 255, 245, 180);
@@ -7806,13 +7830,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       case "nightblade": {
         const veil = this.scene.add.rectangle(this.x, this.y, 1400, 900, 0x0a0018, 0.55)
           .setDepth(14).setBlendMode(Phaser.BlendModes.MULTIPLY);
-        this.scene.tweens.add({
+        ultTween({
           targets: veil, alpha: 0, duration: 2600, ease: "Sine.in",
           onComplete: () => veil.destroy(),
         });
         this.scene.sfxSkill("ambush", 0.8);
         for (let i = 0; i < 8; i++) {
-          this.scene.time.delayedCall(300 + i * 240, () => {
+          ultLater(300 + i * 240, () => {
             if (this.state === "dead") return;
             const t = this.getAllTargetsIn(700)[i % Math.max(1, this.getAllTargetsIn(700).length)];
             const tx = t?.x ?? this.x + (Math.random() - 0.5) * 400;
@@ -7842,14 +7866,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const arena = this.scene.add.circle(this.x, this.y, 260)
           .setStrokeStyle(4, 0xc0c0c0, 0.85).setDepth(13);
         const fill = this.scene.add.circle(this.x, this.y, 260, 0x202020, 0.35).setDepth(12);
-        this.scene.tweens.add({ targets: [arena, fill], alpha: 0, duration: 3200, onComplete: () => { arena.destroy(); fill.destroy(); } });
+        ultTween({ targets: [arena, fill], alpha: 0, duration: 3200, onComplete: () => { arena.destroy(); fill.destroy(); } });
         /* 최강 적 선정 — HP 최대 */
         const cands = [...this.getAllTargetsIn(600)].sort((a, b) => b.hp - a.hp);
         const foe = cands[0];
         if (foe) {
           const away = this.awayScratch.set(foe.x - this.x, foe.y - this.y).normalize();
           for (let i = 0; i < 8; i++) {
-            this.scene.time.delayedCall(320 + i * 200, () => {
+            ultLater(320 + i * 200, () => {
               if (this.state === "dead" || !foe.active) return;
               this.scene.spawnSlash(foe.x, foe.y, away, i % 2 === 0, 2.4 + i * 0.12, 0xffffff);
               this.scene.impactFX.shake(80, 0.008);
@@ -7860,7 +7884,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             });
           }
           /* 처치 시 남은 적 전원 공포(= 넉백) */
-          this.scene.time.delayedCall(320 + 8 * 200 + 200, () => {
+          ultLater(320 + 8 * 200 + 200, () => {
             if (this.state === "dead") return;
             if (!foe.active) {
               this.scene.spawnBurstAt(this.x, this.y, 60, 0xffffff);
@@ -7883,14 +7907,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const hy = Math.sin(ang0);
         this.scene.sfxSkill("flame", 0.82);
         for (let i = 0; i < 10; i++) {
-          this.scene.time.delayedCall(280 + i * 170, () => {
+          ultLater(280 + i * 170, () => {
             if (this.state === "dead") return;
             const dist = -260 + i * 96;
             const px = this.x + hx * dist;
             const py = this.y + hy * dist;
             /* 지면 화염 장판 */
             const flame = this.scene.add.circle(px, py, 90, 0xff6020, 0.5).setDepth(11);
-            this.scene.tweens.add({ targets: flame, alpha: 0, scale: 1.3, duration: 2400, onComplete: () => flame.destroy() });
+            ultTween({ targets: flame, alpha: 0, scale: 1.3, duration: 2400, onComplete: () => flame.destroy() });
             this.scene.spawnBurstAt(px, py, 26, 0xff6020);
             this.scene.sfxSkill("flame", 0.9);
             for (const e of this.targetsAround(px, py, 160)) {
@@ -7915,14 +7939,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           const sx = this.x + Math.cos(ang) * 340;
           const sy = this.y + Math.sin(ang) * 340;
           /* 함선 등장 */
-          this.scene.time.delayedCall(280 + ship * 90, () => {
+          ultLater(280 + ship * 90, () => {
             if (this.state === "dead") return;
             this.scene.spawnBurstAt(sx, sy, 40, 0xffc070);
             this.scene.sfxSkill("quake", 0.86);
           });
           /* 함포 3연사 */
           for (let vol = 0; vol < 3; vol++) {
-            this.scene.time.delayedCall(680 + ship * 90 + vol * 420, () => {
+            ultLater(680 + ship * 90 + vol * 420, () => {
               if (this.state === "dead") return;
               /* 자기 방향에서 중앙을 향해 */
               const tgtAng = ang + Math.PI + (Math.random() - 0.5) * 0.5;
@@ -7930,7 +7954,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               const ty = this.y + Math.sin(tgtAng) * (120 + Math.random() * 220);
               const trail = this.scene.add.line(0, 0, sx, sy, tx, ty, 0xffc070, 0.75)
                 .setOrigin(0, 0).setDepth(13).setLineWidth(3).setBlendMode(Phaser.BlendModes.ADD);
-              this.scene.tweens.add({ targets: trail, alpha: 0, duration: 200, onComplete: () => trail.destroy() });
+              ultTween({ targets: trail, alpha: 0, duration: 200, onComplete: () => trail.destroy() });
               this.scene.spawnPillar(tx, ty, 0xffc070, 200);
               this.scene.spawnBurstAt(tx, ty, 30, 0xffc070);
               this.scene.impactFX.shake(120, 0.010);
@@ -7957,7 +7981,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.scene.cameras.main.flash(160, 160, 230, 255);
         /* 눈이 플레이어를 따라 이동하며 지나간 자리를 휩쓴다 */
         let ticks = 0;
-        const iv = this.scene.time.addEvent({
+        const iv = ultEvent({
           delay: 260, repeat: Math.floor(EYE_MS / 260),
           callback: () => {
             if (this.state === "dead") { eye.destroy(); eyeFill.destroy(); this.setAlpha(1); iv.remove(); return; }
@@ -7991,16 +8015,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
         /* 설치 연출 */
         spots.forEach((s, i) => {
-          this.scene.time.delayedCall(240 + i * 24, () => {
+          ultLater(240 + i * 24, () => {
             if (this.state === "dead") return;
             const keg = this.scene.add.circle(s.x, s.y, 8, 0xffb040, 0.95).setDepth(12);
-            this.scene.tweens.add({ targets: keg, alpha: 0.5, duration: 240, yoyo: true, onComplete: () => keg.destroy() });
+            ultTween({ targets: keg, alpha: 0.5, duration: 240, yoyo: true, onComplete: () => keg.destroy() });
           });
         });
         /* 연쇄 점화 */
         this.scene.sfxSkill("flame", 0.8);
         spots.forEach((s, i) => {
-          this.scene.time.delayedCall(900 + i * 90, () => {
+          ultLater(900 + i * 90, () => {
             if (this.state === "dead") return;
             this.scene.spawnBurstAt(s.x, s.y, 26, 0xffb040);
             this.scene.spawnShockwave(s.x, s.y, 0xffb040, 1.2, 340, 0.8);
@@ -8015,7 +8039,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         });
         /* 최종 화염 기둥 */
-        this.scene.time.delayedCall(900 + N * 90 + 200, () => {
+        ultLater(900 + N * 90 + 200, () => {
           if (this.state === "dead") return;
           this.scene.spawnPillar(this.x, this.y, 0xffd060, 520);
           this.scene.cameras.main.flash(240, 255, 220, 140);
@@ -8030,88 +8054,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         });
         break;
       }
-
-      /* ── 시킹: 해신 — 수몰 (이속 저하 + 수압 일괄) ── */
-      case "seaking": {
-        this.scene.sfxSkill("wind2", 0.78);
-        this.scene.cameras.main.flash(200, 80, 160, 220);
-        /* 수면이 차오른다 */
-        const water = this.scene.add.rectangle(this.x, this.y, 1600, 1200, 0x3070b0, 0)
-          .setDepth(10).setBlendMode(Phaser.BlendModes.ADD);
-        this.scene.tweens.add({ targets: water, alpha: 0.4, duration: 600 });
-        const victims = [...this.getAllTargetsIn(700)];
-        /* 3초간 물속 — 지속 피해 */
-        for (let i = 0; i < 8; i++) {
-          this.scene.time.delayedCall(700 + i * 320, () => {
-            if (this.state === "dead") return;
-            this.scene.spawnBurstAt(this.x, this.y, 18, 0x60b0e0);
-            this.scene.sfxSkill("wind2", 0.9);
-            for (const e of victims) {
-              if (!e.active) continue;
-              const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
-              const { dmg, crit } = rd(1.6);
-              e.takeDamage(dmg, away, 60, crit);
-            }
-          });
-        }
-        /* 물이 빠지며 수압 일괄 피해 */
-        this.scene.time.delayedCall(700 + 8 * 320, () => {
-          if (this.state === "dead") return;
-          this.scene.tweens.add({ targets: water, alpha: 0, duration: 700, onComplete: () => water.destroy() });
-          this.scene.spawnShockwave(this.x, this.y, 0x60b0e0, 3.0, 700, 0.95);
-          this.scene.cameras.main.flash(220, 120, 190, 255);
-          this.scene.impactFX.shake(520, 0.022);
-          this.scene.sfxSkill("superhit", 0.86);
-          for (const e of victims) {
-            if (!e.active) continue;
-            const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();
-            const { dmg, crit } = rd(7.2);
-            if (crit) this.scene.sfxCrit();
-            e.takeDamage(dmg, away, 620, crit);
-          }
-        });
-        break;
-      }
-
-      /* ── 드레드노트: 종말 — 12발 순차 포격 (마지막이 화면 절반) ── */
-      case "dreadnought": {
-        this.scene.sfxSkill("warcry", 0.76);
-        this.scene.cameras.main.flash(200, 255, 140, 80);
-        const N = 12;
-        for (let i = 0; i < N; i++) {
-          this.scene.time.delayedCall(320 + i * 300, () => {
-            if (this.state === "dead") return;
-            const isLast = i === N - 1;
-            const scale = isLast ? 2.6 : 1;
-            const ang = Math.random() * Math.PI * 2;
-            const dist = isLast ? 0 : 80 + Math.random() * 320;
-            const px = this.x + Math.cos(ang) * dist;
-            const py = this.y + Math.sin(ang) * dist;
-            this.scene.spawnPillar(px, py, 0xff8040, isLast ? 620 : 340);
-            this.scene.spawnCrack(px, py);
-            this.scene.spawnShockwave(px, py, 0xff8040, scale * 1.8, isLast ? 720 : 420, 0.9);
-            this.scene.spawnBurstAt(px, py, isLast ? 110 : 44, 0xff8040);
-            this.scene.cameras.main.flash(isLast ? 280 : 140, 255, 160, 90);
-            this.scene.impactFX.shake(isLast ? 620 : 300, isLast ? 0.030 : 0.014);
-            this.scene.sfxSkill("quake", 0.9);
-            if (isLast) this.scene.sfxSkill("superhit", 0.9);
-            const range = isLast ? 620 : 240;
-            for (const e of this.targetsAround(px, py, range)) {
-              const away = this.awayScratch.set(e.x - px, e.y - py).normalize();
-              const { dmg, crit } = rd(isLast ? 9.0 : 2.4);
-              if (crit) this.scene.sfxCrit();
-              e.takeDamage(dmg, away, isLast ? 700 : 420, crit);
-            }
-          });
-        }
-        break;
-      }
     }
 
     /* vc149 (#12) — 제2궁극기 여운: 전 직업 공통 30초 잔존 필드.
      *  '지속딜이면 30초 이상' 피드백 반영 — 발화형이라도 잔여 검기/마나가 30초간
      *  남아 지속 딜링 + 존재감을 보장한다 (계열별 필드 속성 상이). */
-    this.scene.time.delayedCall(1500, () => {
+    ultLater(1500, () => {
       if (this.state === "dead") return;
       const fam = familyOf(this.cls);
       const kind = fam === "warrior" ? "fire" : fam === "mage" ? "time" : fam === "thief" ? "poison" : "light";
@@ -8129,7 +8077,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
      *  본타는 280 + i*430 (i<5) 이므로 마지막 타격은 2,000ms 다. 그 뒤 300ms 여유를 둔다.
      *  여운 필드(30초)는 별개 delayedCall 이라 이 변경과 무관하게 유지된다. */
     const ult5bFinaleAt = 280 + 4 * 430 + 300;
-    this.scene.time.delayedCall(ult5bFinaleAt, () => {
+    ultLater(ult5bFinaleAt, () => {
       if (this.state === "dead") return;
       runUltFinale(this.scene, {
         x: residueX, y: residueY, hex, cls: this.cls, slot: 2,
@@ -8143,6 +8091,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     /* vc204 (#9) — 조작 잠금 타이머 제거(1차와 동일).
      *  cineLock 은 도적 「사(死)의 일섬」 3D 시네마틱 전용으로만 남는다. */
     this.scene.emitHud();
+    } finally {
+      this.ultCtx = prevUltCtx;
+    }
   }
 
   /** GM 자유전직 — 검증 없이 어떤 클래스로든 즉시 전직 (HP/MP 가산 재계산) */
@@ -8164,6 +8115,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.skill5bCd = 0; // vc146 (#2) — 제2궁극기 쿨 리셋
     this.recalcSpeed();
     this.scene.emitHud();
+    prefetchUltFx(this.scene, this.cls); // 2026-11-15 — 전직 즉시 새 직업의 궁극기 시트를 받는다(첫 시전 이펙트 누락 방지)
     return true;
   }
 
@@ -8336,6 +8288,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.mp = this.maxMp;
     this.recalcSpeed();
     this.scene.emitHud();
+    prefetchUltFx(this.scene, this.cls); // 2026-11-15 — 전직 즉시 새 직업의 궁극기 시트를 받는다(첫 시전 이펙트 누락 방지)
     return true;
   }
 
@@ -8354,6 +8307,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.mp = Math.min(this.mp, this.maxMp);
     this.recalcSpeed();
     this.scene.emitHud();
+    prefetchUltFx(this.scene, this.cls); // 2026-11-15 — 전직 즉시 새 직업의 궁극기 시트를 받는다(첫 시전 이펙트 누락 방지)
     return true;
   }
 
@@ -9597,9 +9551,32 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     return true;
   }
 
-  /** 진행 중인 1차·2차 궁극기의 표적당 피해 예산 (없으면 null) — combat/ultWaves.ts */
+  /** 진행 중인 1차 궁극기의 표적당 피해 예산 (없으면 null) — 종결 연출(runUltFinaleNow)이 쓴다. combat/ultWaves.ts */
   ultPool: UltBudget<Enemy | Boss> | null = null;
-  ultPool2: UltBudget<Enemy | Boss> | null = null;
+  /** 지금 실행 중인 코드가 속한 궁극기 시전의 예산. 있을 때만 적 피해가 예산 인출로 바뀐다(WorldScene.notePlayerHit). */
+  ultCtx: UltBudget<Enemy | Boss> | null = null;
+
+  /** 궁극기 시전 b 의 코드로서 fn 을 실행한다(중첩 안전). b 가 null 이면 궁극기 밖으로 취급한다. */
+  inUlt<T>(b: UltBudget<Enemy | Boss> | null, fn: () => T): T {
+    const prev = this.ultCtx;
+    this.ultCtx = b;
+    try { return fn(); } finally { this.ultCtx = prev; }
+  }
+
+  private ultTimerCfg(b: UltBudget<Enemy | Boss>, cfg: Phaser.Types.Time.TimerEventConfig): Phaser.Types.Time.TimerEventConfig {
+    const cb = cfg.callback;
+    if (!cb) return cfg;
+    return { ...cfg, callback: (...a: unknown[]) => this.inUlt(b, () => (cb as (...x: unknown[]) => unknown).apply(cfg.callbackScope, a)) };
+  }
+
+  private ultTweenCfg(b: UltBudget<Enemy | Boss>, cfg: Phaser.Types.Tweens.TweenBuilderConfig): Phaser.Types.Tweens.TweenBuilderConfig {
+    const out: Record<string, unknown> = { ...cfg };
+    for (const k of ["onStart", "onUpdate", "onYoyo", "onRepeat", "onLoop", "onComplete", "onStop"] as const) {
+      const fn = cfg[k];
+      if (typeof fn === "function") out[k] = (...a: unknown[]) => this.inUlt(b, () => (fn as (...x: unknown[]) => unknown)(...a));
+    }
+    return out as Phaser.Types.Tweens.TweenBuilderConfig;
+  }
 
   /** 궁극기 한 번의 표적당 총 피해 — 직업·시전 시간과 무관하다(치명타는 기대값으로 포함). */
   private ultBudgetOf(slot: 1 | 2): number {
@@ -9618,11 +9595,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const n = plan.at.length;
     const budget = createUltBudget<Enemy | Boss>(n, this.ultBudgetOf(slot));
     const release = () => {
+      budget.close();
       if (slot === 1 && this.ultPool === budget) this.ultPool = null;
-      if (slot === 2 && this.ultPool2 === budget) this.ultPool2 = null;
     };
-    if (slot === 1) this.ultPool = budget; else this.ultPool2 = budget;
-    /* 종결 뒤에도 잠시 붙잡아 둔다 — 늦게 도착한 투사체가 예산 밖 피해(굴린 값 그대로)를 넣지 못하게. */
+    if (slot === 1) this.ultPool = budget;
+    /* 종결 뒤에도 잠시 열어 둔다 — 늦게 도착한 투사체가 예산 밖 피해(굴린 값 그대로)를 넣지 못하게. 닫힌 뒤(잔존 장판 등)는 굴린 값 그대로. */
     this.scene.time.delayedCall(holdMs + 15000, release);
     for (let wi = 0; wi < n; wi++) {
       this.scene.time.delayedCall(plan.at[wi], () => {
@@ -9632,7 +9609,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         let paid = false;
         budget.paying(() => {
           for (const e of targets) {
-            if (!e.active) continue;
+            /* 방어막(피해 무효) 중인 표적에게는 이번 wave 를 지급하지 않는다 — 몫은 다음 wave 로 넘어간다. */
+            if (!e.active || (e as { ultShielded?: boolean }).ultShielded) continue;
             const amount = budget.payout(wi, e);
             if (amount <= 0) continue;
             paid = true;

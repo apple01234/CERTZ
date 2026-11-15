@@ -845,6 +845,8 @@ export class WorldScene extends Phaser.Scene {
     /** v3.0.7 — 크로니컬 시간왜곡: 필드가 자신의 HP를 틱마다 회복 (플레이어 소유 장판 한정) */
     geometry?: { plan: FinalePlan; angle: number };
     selfHealPerTick?: number;
+    /** 이 장판을 만든 궁극기 시전(있으면 틱 피해가 그 예산에서 나간다) */
+    ult?: Player["ultCtx"];
   }[] = [];
 
   /* ----- v3.0.3: 무기 스프라이트 (활/지팡이/단검 — 손에 들고 다니는 장비 비주얼) ----- */
@@ -10418,10 +10420,8 @@ export class WorldScene extends Phaser.Scene {
   notePlayerHit(dmg: number, target?: Enemy | Boss): number {
     if (!Number.isFinite(dmg)) return dmg;
     const p = this.player;
-    if (target && p) {
-      const a = p.ultPool ? p.ultPool.draw(target, dmg) : dmg;
-      dmg = a !== dmg || !p.ultPool2 ? a : p.ultPool2.draw(target, dmg);
-    }
+    /* 2026-11-15 — 피해량 값이 아니라 "지금 실행 중인 궁극기 시전"으로 식별한다(Player.ultCtx). */
+    if (target && p?.ultCtx) dmg = p.ultCtx.draw(target, dmg);
     if (dmg > this.statBestHit) this.statBestHit = Math.round(dmg);
     return dmg;
   }
@@ -15067,6 +15067,7 @@ export class WorldScene extends Phaser.Scene {
     p.setRotation(cfg.rot ? cfg.angle + (cfg.texRot ?? 0) : 0);
     p.setData("rot", cfg.rot === true); // v3.0.12 — 유도 중 회전 갱신용 플래그
     p.setData("dmg", cfg.dmg);
+    p.setData("ult", this.player?.ultCtx ?? null); // 궁극기가 쏜 투사체면 맞힐 때 그 시전의 예산에서 나간다
     p.setData("crit", cfg.crit);
     p.setData("pierce", cfg.pierce);
     p.setData("knock", cfg.knock);
@@ -15253,6 +15254,9 @@ export class WorldScene extends Phaser.Scene {
     const hitOnce = new Set<Enemy | Boss>();
     let life = cfg.life;
     let t = 0;
+    /* 만든 시전을 기억한다 — 궁극기가 만든 회오리면 맞힐 때 그 예산에서 나간다. */
+    const ult = this.player?.ultCtx ?? null;
+    const hit = (fn: () => void) => (this.player ? this.player.inUlt(ult, fn) : fn());
     const tick = this.time.addEvent({
       delay: 100,
       repeat: Math.ceil(cfg.life / 100),
@@ -15270,7 +15274,7 @@ export class WorldScene extends Phaser.Scene {
               if (d <= cfg.radius * 1.1) {
                 hitOnce.add(e);
                 const away = new Phaser.Math.Vector2(e.x - g.x, e.y - g.y).normalize();
-                e.takeDamage(Math.max(1, Math.round(cfg.dmg * 0.9)), away, 340, cfg.crit);
+                hit(() => e.takeDamage(Math.max(1, Math.round(cfg.dmg * 0.9)), away, 340, cfg.crit));
               }
             }
             g.destroy();
@@ -15295,7 +15299,7 @@ export class WorldScene extends Phaser.Scene {
             const ny = Phaser.Math.Clamp(e.y + (g.y - e.y) * cfg.pull * 0.3, 40, wb.height - 40);
             (e as unknown as { body?: Phaser.Physics.Arcade.Body }).body?.reset?.(nx, ny);
             if (Math.random() < 0.7) {
-              e.takeDamage(Math.max(1, Math.round(cfg.dmg * 0.3)), new Phaser.Math.Vector2(vx, vy).normalize(), 40, cfg.crit);
+              hit(() => e.takeDamage(Math.max(1, Math.round(cfg.dmg * 0.3)), new Phaser.Math.Vector2(vx, vy).normalize(), 40, cfg.crit));
             }
           }
         }
@@ -15406,14 +15410,17 @@ export class WorldScene extends Phaser.Scene {
         ) * 0.5;
         const hitR = projR + bodyR + 8;
         if (Phaser.Math.Distance.Between(p.x, p.y, e.x, e.y) <= hitR) {
+          /* 궁극기가 쏜 투사체면 맞힐 때 그 시전의 예산에서 나간다(Player.inUlt). */
+          const pUlt = (p.getData("ult") ?? null) as Player["ultCtx"];
+          const pHit = (fn: () => void) => (this.player ? this.player.inUlt(pUlt, fn) : fn());
           pierce--;
           p.setData("pierce", pierce);
-          e.takeDamage(
+          pHit(() => e.takeDamage(
             p.getData("dmg") as number,
             dir,
             p.getData("knock") as number,
             p.getData("crit") as boolean
-          );
+          ));
           this.onMeleeConnect(1, "skill");
           this.spawnBurstAt(p.x, p.y, 4, (p.getData("tint") as number) ?? 0xffffff);
           /* v3.0.6 — 아크 볼트 착탄 폭발: 첫 명중 지점에서 광역 폭발 (4차+ 2차 폭발) */
@@ -15429,7 +15436,7 @@ export class WorldScene extends Phaser.Scene {
               const d2 = Phaser.Math.Distance.Between(p.x, p.y, e2.x, e2.y);
               if (d2 <= exR) {
                 const away = new Phaser.Math.Vector2(e2.x - p.x, e2.y - p.y).normalize();
-                e2.takeDamage(blastDmg, away, 240, p.getData("crit") as boolean);
+                pHit(() => e2.takeDamage(blastDmg, away, 240, p.getData("crit") as boolean));
               }
             }
             if (p.getData("explodeSecondary") === true) {
@@ -15441,7 +15448,7 @@ export class WorldScene extends Phaser.Scene {
                   const d3 = Phaser.Math.Distance.Between(sx, sy, e3.x, e3.y);
                   if (d3 <= exR * 0.85) {
                     const away = new Phaser.Math.Vector2(e3.x - sx, e3.y - sy).normalize();
-                    e3.takeDamage(Math.round(blastDmg * 0.7), away, 200, false);
+                    pHit(() => e3.takeDamage(Math.round(blastDmg * 0.7), away, 200, false));
                   }
                 }
               });
@@ -15557,6 +15564,7 @@ export class WorldScene extends Phaser.Scene {
       dur: cfg.dur, dps: cfg.dps, kind: cfg.kind, owner: cfg.owner,
       tickAcc: 0, heal: cfg.heal, slow: cfg.slow, stun: cfg.stun,
       selfHealPerTick: cfg.selfHealPerTick, geometry: cfg.geometry,
+      ult: cfg.owner === "player" ? this.player?.ultCtx ?? null : null,
     });
   }
 
@@ -15590,7 +15598,8 @@ export class WorldScene extends Phaser.Scene {
           /* v1.0.16 — 장판 틱마다 대상 수만큼 Vector2를 새로 만들던 것을 재사용 버퍼로 교체.
            *  takeDamage가 away를 보관하지 않고 즉시 normalize한 값만 쓰므로 공유해도 안전하다. */
           const away = this.fieldAwayVec.set(e.x - f.x, e.y - f.y).normalize();
-          e.takeDamage(dmgTick, away, 40, false);
+          if (this.player) this.player.inUlt(f.ult ?? null, () => e.takeDamage(dmgTick, away, 40, false));
+          else e.takeDamage(dmgTick, away, 40, false);
           const now = this.time.now;
           if (f.slow) (e as Enemy).applySlow?.(0.45, 1200);
           if (f.stun) (e as Enemy).applyStun?.(600);
@@ -15702,6 +15711,7 @@ export class WorldScene extends Phaser.Scene {
     const sx = this.player.x;
     const sy = this.player.y;
     const clone = this.add.image(sx, sy, "hero_idle0").setDepth(14).setTint(tint).setAlpha(0.85);
+    const ult = this.player.ultCtx; // 궁극기가 부른 분신이면 그 시전의 예산에서 나간다
     this.tweens.add({
       targets: clone,
       x: target.x, y: target.y,
@@ -15709,7 +15719,8 @@ export class WorldScene extends Phaser.Scene {
       onComplete: () => {
         this.spawnBurstAt(target.x, target.y, 18, tint);
         const away = new Phaser.Math.Vector2(1, 0);
-        target.takeDamage(Math.round(this.player!.atkTotal * dmgMul), away, 240, false);
+        const strike = () => target.takeDamage(Math.round(this.player!.atkTotal * dmgMul), away, 240, false);
+        if (this.player) this.player.inUlt(ult, strike); else strike();
         clone.destroy();
       },
     });

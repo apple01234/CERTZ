@@ -102,7 +102,9 @@ assert.equal(order(plan('deadeye',1),100,200,0,100,500),-1);
 // Execute the actual Player callback against inside/outside targets. The broad
 // phase intentionally returns both; only narrow phase can reject the latter.
 const playerSrc = readFileSync(new URL('../src/game/entities/Player.ts',import.meta.url),'utf8');
-const callback = /hitAt: (\(bx, by, d, crit, reach, geometry\) => \{[\s\S]*?\n      \}),/.exec(playerSrc)?.[1];
+/* 2026-11-15 — hitAt 은 시전 예산을 다시 켠다(this.inUlt(finaleBudget, () => {...})). 판정 본문만 꺼내 검사한다. */
+const cbm = /hitAt: (\(bx, by, d, crit, reach, geometry\) => )this\.inUlt\(finaleBudget, \(\) => (\{[\s\S]*?\n      \})\),/.exec(playerSrc);
+const callback = cbm && cbm[1] + cbm[2];
 assert.ok(callback, 'Player slot 1 geometry callback wired');
 // Extract the entire real method using the TS AST, never a source-presence probe.
 const playerAst = ts.createSourceFile('Player.ts', playerSrc, ts.ScriptTarget.Latest, true);
@@ -183,6 +185,7 @@ const targets=Array.from({length:snapshots?3:count},(_,id)=>({id,active:true,ali
     ult5bHoldOf:()=>10000,ult5HoldOf:()=>10000,finaleTargetOrder:order,ultimateFinalePlan:plan,
     cine3d:()=>({play:noop}),runUltFinale:api.runUltFinale,
     ...Object.fromEntries(['spawnUltIntroSig','spawnPentacle','playUltLayers','playUltCinematic','spawnRingPop','spawnFlarePop','playUltFx'].map(k=>[k,noop])),
+    hasUltFx:()=>false, // 2026-11-15 — pixelfx 유무로 3D 인트로 길이만 바뀐다(판정 무관)
     Math:Object.assign(Object.create(Math),{random:()=>0.5})};
   const Player=vm.runInNewContext(methodSource+';ExtractedPlayer;',context);
   const actor=Object.assign(new Player(),{scene,cls,x:100,y:200,state:'idle',skill5bUnlocked:true,skill5bCd:0,skill5bMax:120000,
@@ -198,7 +201,9 @@ const targets=Array.from({length:snapshots?3:count},(_,id)=>({id,active:true,ali
     getAllTargetsIn(radius){return targets.filter(t=>t.active&&Math.hypot(t.x-this.x,t.y-this.y)<=radius);},
     targetsAround(x,y,radius){const found=targets.filter(t=>t.active&&(returnAll||Math.hypot(t.x-x,t.y-y)<=radius));if(now===contract.at)finalCandidates.push(...found.map(t=>t.id));return found;},
     /* 2026-11-13 — 표적당 예산은 tests/ult-waves.test.mjs 가 고정한다. 여기선 판정 형태만 본다. */
-    startUltBudget(){return {tag:d=>d};},
+    startUltBudget(){return {};},
+    /* 2026-11-15 — 시전 단위 식별 헬퍼. 여기선 판정 형태만 보므로 그대로 실행한다. */
+    inUlt(b,fn){return fn();}, ultTimerCfg(b,c){return c;}, ultTweenCfg(b,c){return c;}, ultCtx:null,
     rollDamage(m,skill,forceCrit=false){assert.equal(this.ultSlot,2,'slot multiplier context');assert.equal(skill,true);rolls.push({at:now,m,forceCrit});return {dmg:m*500,crit:forceCrit};}});
   // Earlier attacks run normally; targets are placed independently immediately
   // before the real final callback. Rotation uses translated world coordinates.

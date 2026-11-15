@@ -94,8 +94,10 @@ export function waveIntensity(index: number, total: number): number {
  *    합쳐서 예산의 DIRECT_SHARE 를 넘지 못한다 — 타수가 4든 125든 같다.
  *  · 나머지는 시전 시간(hold) 전체에 깔린 wave 가 지급하고, 마지막 wave 가 남은 전액을 준다(종결).
  *  ⇒ 시전 시간이 긴 직업은 천천히, 짧은 직업은 몰아서 — 총량은 같다.
- * 궁극기 타격 식별은 "tag 한 값과 같은 피해"다(값에 꼬리표를 달 수 없다). 시전 중 기본공격이
- *  우연히 같은 값이면 그 한 대가 예산 인출로 바뀐다 — 총량은 여전히 예산 이하다. */
+ * 궁극기 타격 식별 (2026-11-15) — **시전 단위**다. 종전엔 "tag 한 값과 같은 피해"로 골라
+ *  시전 중 기본공격이 우연히 같은 값이면 예산 인출로 바뀌었다. 이제 Player.ultCtx(지금 실행 중인
+ *  궁극기 코드의 예산)가 있을 때만 인출한다. 궁극기가 만든 지연 실행·장판·투사체는 만들 때의
+ *  예산을 들고 가서 맞힐 때 다시 켠다(Player.inUlt). 피해량 값은 보지 않는다. */
 export const ULT_BUDGET_MULT = 28;
 export const DIRECT_SHARE = 0.5;
 export const DIRECT_DRAW = 0.12;
@@ -110,10 +112,11 @@ export function waveWeight(index: number, total: number): number {
 }
 
 export type UltBudget<T extends object = object> = {
-  /** 궁극기 타격으로 굴린 값을 등록한다(그대로 돌려준다). */
-  tag(dmg: number): number;
-  /** 표적이 피해를 받기 직전 호출 — 등록된 값이면 예산 인출액으로 바꿔 돌려준다. */
+  /** 이 시전의 직접 타격이 표적에게 피해를 넣기 직전 호출 — 예산 인출액을 돌려준다.
+   *  wave 지급 중이거나 시전이 닫혔으면(close) 받은 값을 그대로 돌려준다. */
   draw(target: T, dmg: number): number;
+  /** 시전 종료 — 이후 늦게 도착한 타격(잔존 장판 등)은 예산과 무관하게 굴린 값 그대로 들어간다. */
+  close(): void;
   /** i 번째 wave 가 이 표적에게 줄 피해. 마지막 wave 는 남은 전액. */
   payout(index: number, target: T): number;
   /** 이미 한 번이라도 맞은 표적들 — wave 가 범위 밖이어도 끝까지 지급한다. */
@@ -123,7 +126,7 @@ export type UltBudget<T extends object = object> = {
 };
 
 export function createUltBudget<T extends object = object>(waves: number, perTarget: number): UltBudget<T> {
-  const tags = new Set<number>();
+  let closed = false;
   const left = new Map<T, { direct: number; rest: number }>();
   let next = 0; // 아직 지급하지 않은 첫 wave
   let inPayout = false;
@@ -140,9 +143,8 @@ export function createUltBudget<T extends object = object>(waves: number, perTar
     return st;
   };
   return {
-    tag(dmg) { tags.add(dmg); return dmg; },
     draw(target, dmg) {
-      if (inPayout || !tags.has(dmg)) return dmg;
+      if (inPayout || closed) return dmg;
       const st = of(target);
       const out = Math.max(0, Math.min(Math.round(st.direct * DIRECT_DRAW), st.rest));
       st.direct -= out; st.rest -= out;
@@ -158,6 +160,7 @@ export function createUltBudget<T extends object = object>(waves: number, perTar
       return amount;
     },
     targets() { return [...left.keys()]; },
+    close() { closed = true; },
     paying(fn) {
       inPayout = true;
       try { fn(); } finally { inPayout = false; }

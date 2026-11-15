@@ -118,6 +118,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private vxStep = 0;
   /* vc153 — 어둠 동굴 보스 개편 상태 */
   private shieldInvuln = false; // ShieldCast 상태유지 중 피해 무효
+  /** 궁극기 wave 가 이 보스를 건너뛸지 — 방어막 중엔 지급을 다음 wave 로 미룬다. */
+  get ultShielded(): boolean { return this.shieldInvuln; }
   private shieldAura: Phaser.GameObjects.Image | null = null; // 방어막 오라 (정리 보장 대상)
   /* vc288 — 방어막 남은 시간 게이지. 시간제 무적의 종료 시점을 보여 준다. */
   private shieldGauge: Phaser.GameObjects.Graphics | null = null;
@@ -2123,12 +2125,13 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   takeDamage(dmg: number, dir: Phaser.Math.Vector2, knock: number, crit = false) {
     if (!this.alive) return;
-    dmg = this.scene.notePlayerHit?.(dmg, this) ?? dmg; // 최고 타격 기록 + 궁극기 예산 인출
-    /* vc153 — 어둠 동굴 방어막: ShieldCast 상태유지 중 피해 무효 (사양표 ⑤) */
+    /* vc153 — 어둠 동굴 방어막: ShieldCast 상태유지 중 피해 무효 (사양표 ⑤)
+     *  2026-11-15 — 무효 판정을 궁극기 예산 인출보다 먼저 한다. 막힌 타격이 예산을 깎지 않게. */
     if (this.shieldInvuln) {
       this.scene.spawnPickupText?.(this.x, this.y - 60, "무효", "#8ad4ff");
       return;
     }
+    dmg = this.scene.notePlayerHit?.(dmg, this) ?? dmg; // 최고 타격 기록 + 궁극기 예산 인출
     /* v1.4.30 (#2 사냥/보스 밸런스) — 보스 특화 직업(전사·데드아이·아크로드·섀도우로드 등)
      *  체인 합산 bossDmgPct만큼 보스에게 주는 피해 증가 */
     const spec = this.scene.playerRef ? (this.scene.playerRef as unknown as { bossDmgBonus?: number }).bossDmgBonus ?? 0 : 0;
