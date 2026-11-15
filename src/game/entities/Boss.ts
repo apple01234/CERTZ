@@ -21,6 +21,7 @@ const RECORD_BODY_TINT: Record<string, number> = {
 };
 import { STORY_ATTACKS, storyPattern, type StoryAttack } from "./storyBossPatterns";
 import { StoryBossMechanics } from "./StoryBossMechanics";
+import { prefetchBossFx, playBossPatternFx, releaseBossFx } from "../fx/bossPatternFx"; // 2026-11-15 — 보스 패턴 pixelfx
 /**
  * 보스 (3종 — 스테이지별 정의 주입):
  *  guardian: 심연의 수호자 (요정 숲) / behemoth: 침몰의 선장 (왕국 선박의 왕국) / abysslord: 심연의 군주 (심연의 왕좌)
@@ -173,6 +174,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     const src = bossSourceFrame(def.tex);
     super(scene, x, y, src.key, src.frame);
     this.def = def;
+    prefetchBossFx(scene, def.patterns); // 이 보스가 쓰는 패턴의 pixelfx 시트만 미리 받는다(연출 전용)
     /* vc183 (지시 — 적에게도 방어력) — 보스 기본 방어력.
      *  보스는 잡몹보다 단단해야 "체력이 많은 벽"이 아니라 "때려도 덜 박히는 벽"이 된다.
      *  정액 25 + 비율 10%를 기본으로 주고, BossDef 에 값이 있으면 그쪽이 우선한다.
@@ -835,6 +837,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       kind = Phaser.Utils.Array.GetRandom(candidates);
     }
     this.lastAttack = kind;
+    /* 2026-11-15 — 패턴 pixelfx: 예고는 지금, 발동은 예고 시간 뒤(판정과 무관한 연출) */
+    playBossPatternFx(this.scene, kind, this, player, Phaser.Math.Clamp(this.displayHeight / 150, 1, 1.8));
     if ((STORY_ATTACKS as readonly string[]).includes(kind)) {
       const k = kind as StoryAttack;
       const duration = storyPattern(k, { x: this.x, y: this.y, phase: this.phase, key: this.def.key }, player).duration;
@@ -2295,6 +2299,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   }
 
   destroyPool() {
+    try { releaseBossFx(this.scene, this.def.patterns, this.scene.player?.cls); } catch { /* 연출 시트 정리 실패는 무시 */ }
     this.recoveryLabel?.destroy(); this.recoveryLabel = null;
     this.story?.destroy(); this.story = null;
     this.volleyTimer?.remove();

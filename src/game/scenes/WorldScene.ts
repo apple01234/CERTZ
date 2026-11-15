@@ -42,6 +42,7 @@ import { playAutoCutscene, type CutStep } from "../fx/AutoCutscene"; // v4.9.0 �
 import { CANON_STORY_CHOICES } from "../grandPlanetCanon"; // vc279 — P7c 선택지 정본(id→label)
 import { PixelFxManager } from "../fx/PixelFxManager"; // v4.9.3 — pixelfx 통합 매니저
 import { prefetchUltFx, playUltFx } from "../fx/ultPixelFx"; // 2026-11-14 — 궁극기 pixelfx
+import { sweepBossFx } from "../fx/bossPatternFx"; // 2026-11-15 — 보스 패턴 pixelfx
 import { ult5HoldOf, ult5bHoldOf } from "../ultHold";
 import { gmBossStage } from "../gmBossStage"; // 2026-11-14 — GM 보스 체험 구역(배치 없는 보스 4종 수정)
 import { LILAC_SCENARIOS, lilacScenarioIdAt } from "../lilacScenarios"; // v4.9.0 — 1기 시나리오 데이터
@@ -1444,6 +1445,7 @@ export class WorldScene extends Phaser.Scene {
      *  ponytail: 플레이 중 전직·직업 전환 직후 첫 시전은 이펙트가 빠질 수 있다 — 그 시전이 받기를 걸고
      *  다음 시전·다음 지역부터 나온다. 필요해지면 applyClass/switchClass 에도 같은 호출을 단다. */
     prefetchUltFx(this, this.player.cls);
+    sweepBossFx(this, this.player.cls, this.boss?.def.patterns); // 2026-11-15 — 지난 지역 보스 패턴 시트 정리
     /* v1.0.18 — 시작 클래스 복원 + 마이그레이션:
      *  startCls 없는 구 세이브는 현재 cls 체인의 1차키로 역산해 자동 채운다 (환생 복귀 보장).
      *  cls가 null인 구 세이브(시련 중)는 pendingJobClass를 시작 클래스로 채택한다. */

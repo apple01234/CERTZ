@@ -34,6 +34,11 @@ export const ULT_PIXELFX: Record<string, Pair> = {
 const LOOP_MS = { cast: 1600, finale: 2200 } as const;
 const SCALE = { cast: 1.2, finale: 1.6 } as const;
 
+/** 이 직업의 궁극기 시트 4장(없으면 빈 배열) — 보스 패턴 시트를 내릴 때 겹치는 것을 남기려고 쓴다. */
+export function ultSheetsOf(cls: string | null | undefined): string[] {
+  return sheetsOf(cls);
+}
+
 function sheetsOf(cls: string | null | undefined): string[] {
   const p = cls ? ULT_PIXELFX[cls] : undefined;
   return p ? [p.s5.cast, p.s5.finale, p.s5b.cast, p.s5b.finale] : [];
