@@ -12,7 +12,7 @@ A = "public/assets"
 
 # ---------- 1) 타일 베벨 ----------
 TILES = ["tile_grass", "tile_dark", "tile_magma", "tile_snow", "tile_cave",
-         "tile_abyss", "tile_hel", "tile_ice", "tile_stone"]
+         "tile_abyss", "tile_duskrealm", "tile_ice", "tile_stone"]
 
 def bevel(path: str):
     im = np.array(Image.open(path).convert("RGB")).astype(np.float32)

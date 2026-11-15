@@ -1,14 +1,14 @@
 /* Story canon audit — dumps chapter plan + beats + quests + dialogue presence as JSON. */
-import { HOWLRSTONE_CHAPTERS } from '../../src/game/howlrstone.ts';
+import { LILACWORLD_CHAPTERS } from '../../src/game/lilacworld.ts';
 import { CHAPTER_STORY_PLAN } from '../../src/game/chapterStoryPlan.ts';
 import { DIALOGUES } from '../../src/game/data.ts';
 import { CHAPTERS } from '../../src/game/stages.ts';
 
-const out = { howlrstone: [], main: [] };
+const out = { lilacworld: [], main: [] };
 
-for (const ch of HOWLRSTONE_CHAPTERS) {
+for (const ch of LILACWORLD_CHAPTERS) {
   const plan = CHAPTER_STORY_PLAN[ch.key];
-  out.howlrstone.push({
+  out.lilacworld.push({
     key: ch.key,
     episodes: ch.episodes,
     planTitle: plan?.title ?? null,

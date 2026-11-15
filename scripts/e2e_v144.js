@@ -176,7 +176,7 @@ const { chromium } = require("playwright");
   }
   await p.evaluate(() => {
     const sc = window.__SERTZ__.game.scene.getScene("world");
-    sc.monsterKills["boss_vord"] = 1;
+    sc.monsterKills["boss_riftwarden"] = 1;
     window.__SERTZ_EB__.emit("rpg:bossReplay", { ch: "r5", lv: "easy" });
   });
   let rbState = null;
@@ -191,7 +191,7 @@ const { chromium } = require("playwright");
     if (rbState && rbState.stage === "r5" && !rbState.hasBoss) await p.mouse.click(640, 500);
   }
   ok("[재림] r5 보스 재도전 진입 (병합 후에도 정상)", !!rbState && rbState.stage === "r5", rbState ? `stage=${rbState.stage}` : "씬 없음");
-  ok("[재림] 재림 보스(베오르드) 스폰", !!rbState && rbState.hasBoss && /재림한 .*베오르드/.test(rbState.bossName ?? "") && rbState.replayActive, rbState ? `name=${rbState.bossName}` : "-");
+  ok("[재림] 재림 보스(재림의 파수꾼) 스폰", !!rbState && rbState.hasBoss && /재림한 .*재림의 파수꾼/.test(rbState.bossName ?? "") && rbState.replayActive, rbState ? `name=${rbState.bossName}` : "-");
 
   for (let i = 0; i < 20; i++) {
     const d = await p.evaluate(() => window.__SERTZ__?.game?.scene?.getScene("world")?.dialoguing);

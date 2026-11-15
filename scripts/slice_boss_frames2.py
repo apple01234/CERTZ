@@ -25,50 +25,50 @@ N_FRAMES = 6
 
 TEXMAP = {
     "guardian": "boss", "behemoth": "boss2", "abysslord": "boss3",
-    "nidhog": "boss_nidhog", "surt": "boss_surt", "fenrir": "boss_fenrir",
-    "skoll": "boss_skoll", "gram": "boss_gram", "abudditos": "boss_abudditos",
-    "vord": "boss_vord", "jorm": "boss_jorm", "nagr": "boss_nagr",
+    "blackwyrm": "boss_blackwyrm", "flamegiant": "boss_flamegiant", "greedwolf": "boss_greedwolf",
+    "twinwolf": "boss_twinwolf", "warden": "boss_warden", "doomwyrm": "boss_doomwyrm",
+    "riftwarden": "boss_riftwarden", "unionserpent": "boss_unionserpent", "angelknight": "boss_angelknight",
 }
 
 # 보스별 기하 설정: 실제 시트의 행 수 (검토 기반)
 N_ROWS = {
-    "nidhog": 4, "jorm": 4, "surt": 5, "skoll": 5,
-    "gram": 5, "nagr": 4, "guardian": 4, "abysslord": 4,
-    "behemoth": 4, "abudditos": 3, "vord": 3,
+    "blackwyrm": 4, "unionserpent": 4, "flamegiant": 5, "twinwolf": 5,
+    "warden": 5, "angelknight": 4, "guardian": 4, "abysslord": 4,
+    "behemoth": 4, "doomwyrm": 3, "riftwarden": 3,
 }
 
 # 재빌드 제외 (기존 아트 유지)
-SKIP = {"fenrir"}
+SKIP = {"greedwolf"}
 
 # 행 경계 수동 오버라이드 (검토 몽타주 기반 — 자동 검출이 깨지는 시트용)
 ROWS_OVERRIDE = {
-    "surt": [0, 230, 445, 665, 925, 1024],
-    "skoll": [0, 232, 455, 672, 890, 1024],
-    "nagr": [0, 265, 530, 795, 1024],
-    "vord": [0, 335, 665, 1024],
+    "flamegiant": [0, 230, 445, 665, 925, 1024],
+    "twinwolf": [0, 232, 455, 672, 890, 1024],
+    "angelknight": [0, 265, 530, 795, 1024],
+    "riftwarden": [0, 335, 665, 1024],
     "behemoth": [0, 330, 660, 880, 1024],
 }
 
 # 행별 셀 수 수동 오버라이드 (프레임 접촉으로 x-투영 실패 시 균등 분할)
 COLS_OVERRIDE = {
-    "nagr": {0: 6, 1: 6, 2: 6, 3: 6},
-    "vord": {0: 4, 1: 4, 2: 4},
+    "angelknight": {0: 6, 1: 6, 2: 6, 3: 6},
+    "riftwarden": {0: 4, 1: 4, 2: 4},
     "behemoth": {0: 4, 1: 4, 2: 4, 3: 4},
 }
 
 # 행→애니 매핑 (행 인덱스, None=폴백) — 몽타주 검토 기반 확정
 ROWMAP = {
-    "nidhog":     {"idle": 0, "walk": 1, "atk": 2, "die": None, "sp1": 3, "sp2": 3, "sp3": 2},
-    "jorm":       {"idle": 0, "walk": 1, "atk": 2, "die": None, "sp1": 3, "sp2": 3, "sp3": 3},
+    "blackwyrm":     {"idle": 0, "walk": 1, "atk": 2, "die": None, "sp1": 3, "sp2": 3, "sp3": 2},
+    "unionserpent":       {"idle": 0, "walk": 1, "atk": 2, "die": None, "sp1": 3, "sp2": 3, "sp3": 3},
     "behemoth":   {"idle": 0, "walk": 1, "atk": 2, "die": None, "sp1": 3, "sp2": 2, "sp3": 3},
-    "surt":       {"idle": 0, "walk": 1, "atk": 2, "die": 4, "sp1": 3, "sp2": 2, "sp3": 1},
-    "skoll":      {"idle": 0, "walk": 1, "atk": 2, "die": None, "sp1": 4, "sp2": 3, "sp3": 4},
-    "gram":       {"idle": 0, "walk": 1, "atk": 2, "die": None, "sp1": 4, "sp2": 3, "sp3": 4},
-    "nagr":       {"idle": 0, "walk": 1, "atk": 2, "die": None, "sp1": 2, "sp2": 3, "sp3": 1},
+    "flamegiant":       {"idle": 0, "walk": 1, "atk": 2, "die": 4, "sp1": 3, "sp2": 2, "sp3": 1},
+    "twinwolf":      {"idle": 0, "walk": 1, "atk": 2, "die": None, "sp1": 4, "sp2": 3, "sp3": 4},
+    "warden":       {"idle": 0, "walk": 1, "atk": 2, "die": None, "sp1": 4, "sp2": 3, "sp3": 4},
+    "angelknight":       {"idle": 0, "walk": 1, "atk": 2, "die": None, "sp1": 2, "sp2": 3, "sp3": 1},
     "guardian":   {"idle": 0, "walk": None, "atk": 2, "die": None, "sp1": 1, "sp2": 3, "sp3": 2},
     "abysslord":  {"idle": 0, "walk": 1, "atk": 2, "die": None, "sp1": 3, "sp2": 3, "sp3": 3},
-    "abudditos":  {"idle": 0, "walk": 1, "atk": 2, "die": None, "sp1": 2, "sp2": 1, "sp3": 2},
-    "vord":       {"idle": 0, "walk": 1, "atk": 2, "die": None, "sp1": 1, "sp2": 2, "sp3": 0},
+    "doomwyrm":  {"idle": 0, "walk": 1, "atk": 2, "die": None, "sp1": 2, "sp2": 1, "sp3": 2},
+    "riftwarden":       {"idle": 0, "walk": 1, "atk": 2, "die": None, "sp1": 1, "sp2": 2, "sp3": 0},
 }
 
 # (행, 셀) 제외 — 이펙트 전용 셀 등 (검토 후 보강)

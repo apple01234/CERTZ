@@ -31,17 +31,17 @@ const ZERO = { atkPct: 0, critAdd: 0, defPct: 0, hpPct: 0, cdrPct: 0, elemDmgPct
 /* ── 2. 원소 → fire/frost/storm (ElemKey 실제 값만) ── */
 {
   /* 세트 장비: 프리픽스 오프셋 버그로 setOfItem 이 null 이므로 SET_GEAR 직접 조회를 쓴다 */
-  eq("화염 세트 무기 → fire + blade", countSynergyTags([{ key: "sfw_muspelheim" }]), { fire: 1, blade: 1 });
-  eq("서리 세트 방어구 → frost + guard", countSynergyTags([{ key: "sfa_niflheim" }]), { frost: 1, guard: 1 });
-  eq("전기 세트 장신구 → storm + vitality", countSynergyTags([{ key: "sfr_nidavellir" }]), { storm: 1, vitality: 1 });
+  eq("화염 세트 무기 → fire + blade", countSynergyTags([{ key: "sfw_emberland" }]), { fire: 1, blade: 1 });
+  eq("서리 세트 방어구 → frost + guard", countSynergyTags([{ key: "sfa_frostland" }]), { frost: 1, guard: 1 });
+  eq("전기 세트 장신구 → storm + vitality", countSynergyTags([{ key: "sfr_forgehall" }]), { storm: 1, vitality: 1 });
   /* 대응 태그가 없는 원소는 원소 태그를 만들지 않는다 (억지 매핑 금지) */
   eq("자연 원소 → 원소 태그 없음", countSynergyTags([{ key: "sfw_forest" }]), { blade: 1 });
-  eq("빛 원소 → 원소 태그 없음", countSynergyTags([{ key: "sfw_alfheim" }]), { blade: 1 });
+  eq("빛 원소 → 원소 태그 없음", countSynergyTags([{ key: "sfw_fairyglade" }]), { blade: 1 });
   /* 명시된 elem 이 세트 유도보다 우선한다 */
   eq("elem 명시 우선", countSynergyTags([{ key: "sfw_forest", elem: "ice" }]), { frost: 1, blade: 1 });
   /* elem/setKey 직접 지정 경로 */
   eq("elem 직접 지정", countSynergyTags([{ key: "weapon_1", elem: "electric" }]), { storm: 1, blade: 1 });
-  eq("setKey 직접 지정", countSynergyTags([{ key: "x", setKey: "muspelheim" }]), { fire: 1 });
+  eq("setKey 직접 지정", countSynergyTags([{ key: "x", setKey: "emberland" }]), { fire: 1 });
 }
 
 /* ── 3. 종류 → blade/guard/vitality ── */
@@ -56,7 +56,7 @@ const ZERO = { atkPct: 0, critAdd: 0, defPct: 0, hpPct: 0, cdrPct: 0, elemDmgPct
 /* ── 4. 누적 + 단계 발동까지 실제로 이어지는지 ── */
 {
   const gear = [
-    { key: "sfw_muspelheim" }, // fire, blade
+    { key: "sfw_emberland" }, // fire, blade
     { key: "weapon_2" },       // blade
     { key: "weapon_3" },       // blade
   ];
@@ -88,7 +88,7 @@ const ZERO = { atkPct: 0, critAdd: 0, defPct: 0, hpPct: 0, cdrPct: 0, elemDmgPct
 
 /* ── 6. 결정론 ── */
 {
-  const gear = [{ key: "sfw_muspelheim" }, { key: "sfa_hel" }, { key: "sfr_cave" }];
+  const gear = [{ key: "sfw_emberland" }, { key: "sfa_duskrealm" }, { key: "sfr_cave" }];
   const a = countSynergyTags(gear);
   const b = countSynergyTags(gear);
   eq("같은 입력 → 같은 출력", a, b);
@@ -101,7 +101,7 @@ const ZERO = { atkPct: 0, critAdd: 0, defPct: 0, hpPct: 0, cdrPct: 0, elemDmgPct
 /* ── 7. 태그 정의와 어긋나지 않는지 (6태그 전부 실제 태그) ── */
 {
   const counts = countSynergyTags([
-    { key: "sfw_muspelheim" }, { key: "sfa_niflheim" }, { key: "sfr_nidavellir" },
+    { key: "sfw_emberland" }, { key: "sfa_frostland" }, { key: "sfr_forgehall" },
   ]);
   for (const tag of Object.keys(counts)) {
     ok(`유효 태그: ${tag}`, tag in SYNERGY_TAGS);

@@ -5,12 +5,13 @@
  *  - 구역 5 = 정예 토벌(미드 보스급), 구역 10 = 챕터 보스 결전
  *  - 이전 작업분(v1.5) 스토리 데이터(대사/보스/몬스터/퀘스트) 전부 이관 + 복귀 차원문 체인
  */
+import { rekeyLegacy } from "./legacyKeys";
 import {
-  HOWLRSTONE_CHAPTERS,
-  HOWLRSTONE_BOSSES,
-  type HowlrstoneBossKey,
-  type HowlrstoneChapterSpec,
-} from "./howlrstone";
+  LILACWORLD_CHAPTERS,
+  LILACWORLD_BOSSES,
+  type LilacworldBossKey,
+  type LilacworldChapterSpec,
+} from "./lilacworld";
 /* vc237 — 구역별 걷는 대사 세트(3개 순환 폐지). 순수 데이터라 순환 import 없음. */
 import { hasStageDialogue } from "./stageDialogue";
 import { CHAPTER_STORY_PLAN, chapterEncounter } from "./chapterStoryPlan";
@@ -28,16 +29,16 @@ export type ChapterKey =
    *   대공전함 다크스왈로해브니스,별빛속 바다 오션코멘, 순력과 혼력의 대립점 오피니시아,
    *   비밀의 화원 노벨 플로스, 신의도시 세르니움" */
   | "dlcreverse" | "dlcneocity" | "dlcmech" | "dlcswallow" | "dlcopinicia" | "dlcnovel" | "dlcsernium"
-  /* vc231 — 영준 프린세스 편(하울르스톤) 5챕터. 기획서 1기 15화 원문 기반.
+  /* vc231 — 영준 프린세스 편(영프) 5챕터. 기획서 1기 15화 원문 기반.
    *  본편(DLC 포함) 계약을 건드리지 않기 위해 `CHAPTERS` 에 넣지 않고
-   *  `howlrstone.ts` 의 `HOWLRSTONE_CHAPTERS` 에서 생성한다(회귀 0). */
+   *  `lilacworld.ts` 의 `LILACWORLD_CHAPTERS` 에서 생성한다(회귀 0). */
   /* vc235 — 영프 편을 원문 1기 15화에 맞춰 **15챕터**로 확장(1화=1챕터).
-   *  챕터가 두 자리가 되면서 스테이지 키는 `howlrstone{장}x{구역}` 형식을 쓴다. */
-  | "howlrstone1" | "howlrstone2" | "howlrstone3" | "howlrstone4" | "howlrstone5"
-  | "howlrstone6" | "howlrstone7" | "howlrstone8" | "howlrstone9" | "howlrstone10"
-  | "howlrstone11" | "howlrstone12" | "howlrstone13" | "howlrstone14" | "howlrstone15";
+   *  챕터가 두 자리가 되면서 스테이지 키는 `lilacworld{장}x{구역}` 형식을 쓴다. */
+  | "lilacworld1" | "lilacworld2" | "lilacworld3" | "lilacworld4" | "lilacworld5"
+  | "lilacworld6" | "lilacworld7" | "lilacworld8" | "lilacworld9" | "lilacworld10"
+  | "lilacworld11" | "lilacworld12" | "lilacworld13" | "lilacworld14" | "lilacworld15";
 
-/** 스테이지 키 — "village" | howlrstone{N}x{M} | dlc* (구 세이브 키는 resolveStage 가 village 로 폴백) */
+/** 스테이지 키 — "village" | lilacworld{N}x{M} | dlc* (구 세이브 키는 resolveStage 가 village 로 폴백) */
 export type StageKey = string;
 
 /** 표시 전용 순서. 본편 1장=village, 2~10장=기존 9개 필드. 저장키/인덱스 보존. */
@@ -45,14 +46,14 @@ export const STORY_SEQUENCE = [
   /* vc231 — 영프 편 콘텐츠 투입. 이 status 가 "not-implemented" 를 벗어나는 순간
    *  `storyProgression.MIDDLE_CHAPTER_IMPLEMENTED` 가 true 가 되어
    *  "영프 엔딩을 봐야 그랜드 플래닛이 열린다" 로 게이트가 정상 잠긴다(vc230 설계 그대로). */
-  { id: "howlrstone", title: "라일락 월드", chapters: [1, 15], status: "implemented" },
+  { id: "lilacworld", title: "라일락 월드", chapters: [1, 15], status: "implemented" },
   { id: "grandplanet", title: "그랜드 플레닛", status: "existing-dlc" },
 ] as const;
 export const STORY_SEQUENCE_LABEL = "라일락 월드 1기 → 그랜드 플레닛";
 
 export type EnemyKey =
   | "wolf" | "minion" | "spider" | "golem" | "frostwolf" | "icegolem" | "wraith"
-  | "swampbeast" | "emberwolf" | "firespirit" | "runegolem" | "helhound"
+  | "swampbeast" | "emberwolf" | "firespirit" | "runegolem" | "duskhound"
   /* v3.0.2 — 50 Monsters Pack (isaiah658, CC0) 신규 종 9종: 챕터별 다양화 */
   | "x2_frog" | "x2_rat" | "x2_bat" | "x2_firebird" | "x2_frostfly"
   | "x2_snail" | "x2_stonegolem" | "x2_darkhound" | "x2_reeffish"
@@ -135,10 +136,10 @@ export const QUEST_EXP_MUL = 12;
 
 export type BossKey =
   | "guardian" | "behemoth" | "abysslord"
-  | "nidhog" | "surt" | "fenrir" | "skoll" | "gram" | "abudditos"
-  | "vord" | "jorm" | "nagr"
-  /* vc231 — 영프 편 보스 5종. 정의는 `howlrstone.ts` 의 HOWLRSTONE_BOSSES. */
-  | HowlrstoneBossKey | GrandPlanetBossKey;
+  | "blackwyrm" | "flamegiant" | "greedwolf" | "twinwolf" | "warden" | "doomwyrm"
+  | "riftwarden" | "unionserpent" | "angelknight"
+  /* vc231 — 영프 편 보스 5종. 정의는 `lilacworld.ts` 의 LILACWORLD_BOSSES. */
+  | LilacworldBossKey | GrandPlanetBossKey;
 
 /* ================= v3.0.28 (#보스난이도) — 메이플식 보스 난이도 =================
  *  이지 / 노말 / 하드 / 카오스 4단계. 스토리 보스·재림 보스 공통 적용.
@@ -165,16 +166,16 @@ export const BOSS_DIFFS: Record<
 export const BOSS_DIFF_ORDER: BossDiffKey[] = ["easy", "normal", "hard", "chaos"];
 
 /* vc153 (#신규9) — 재림 보스 에메랄드 차등 지급.
- *  기존: 난이도 고정(이지2/노말5/하드9/카오스30)이라 수르트도 나그라파르도 카오스 30개로 동일 —
+ *  기존: 난이도 고정(이지2/노말5/하드9/카오스30)이라 화염의 거인도 재림의 천사기사도 카오스 30개로 동일 —
  *  유저 지적 "카오스 보스도 보스마다 난이도가 다를텐데 왜 전부 30개??".
  *  개편: 난이도 기본치 × 보스 가중치(0.45~2.2) — 보스 기본 exp(320~2600)로 강함 계층화.
- *  예) 카오스: 심연의 수호자 14 · 수르트 19 · 펜리르 22 · 가름 26 · 아부디토스 34 · 나그라파르 66 */
+ *  예) 카오스: 심연의 수호자 14 · 화염의 거인 19 · 탐욕의 늑대 22 · 혈안의 문지기 26 · 종언의 마룡 34 · 재림의 천사기사 66 */
 export function bossEmeraldOf(bossKey: BossKey, diff: BossDiffKey): number {
   const b = BOSS_DEFS[bossKey];
   const d = BOSS_DIFFS[diff];
   if (!d) return 5;
   if (!b) return d.emerald;
-  const minExp = 320, maxExp = 2600; // guardian(최약) ~ nagr(최강) 스펙트럼
+  const minExp = 320, maxExp = 2600; // guardian(최약) ~ angelknight(최강) 스펙트럼
   const t = Math.min(1, Math.max(0, (b.exp - minExp) / (maxExp - minExp)));
   const w = 0.45 + t * 1.75; // 0.45~2.2
   return Math.max(1, Math.round(d.emerald * w));
@@ -189,14 +190,14 @@ export type BossAttackKind =
   | "tentacleslam" | "inkflood" | "shadowcopies" | "cursefield" | "bloodseal" | "corruption" | "rosecore" | "jadeclones" | "ringpush"
   | "spiral" | "beam" | "blink" | "quake" | "counter"
   /* vc142 (#6) — 보스 고유 VX 패턴 (유저 에셋 FX — 보스마다 전부 다른 공격) */
-  | "firepillars" // 수르트 — 추적 화염기둥 3연속
-  | "frostnova" // 베헤모스·스콜 — 빙결 신성 2겹
-  | "thunderfall" // 나그라파르 — 추적 낙뢰 4연속
-  | "poisonfield" // 니드호그·요르문간드 — 맹독 장판
-  | "holymantle" // 아부디토스 — 마룡 성역 대폭발
-  | "crystalburst" // 심연군주·베오르드 — 결정 8방향 산개
-  | "blinkslash" // 가름 — 점멸 3연 참격
-  /* vc153 — 스바르트알프헤임 보스 개편 (유저 제공 애니 사양표: Idle/Move Loop · GreenSlash/Vanish/ShieldCast/MagicBurst/PortalTeleport Once) */
+  | "firepillars" // 화염의 거인 — 추적 화염기둥 3연속
+  | "frostnova" // 베헤모스·얼음 늑대 — 빙결 신성 2겹
+  | "thunderfall" // 재림의 천사기사 — 추적 낙뢰 4연속
+  | "poisonfield" // 탐식의 흑룡·연합을 삼키는 뱀 — 맹독 장판
+  | "holymantle" // 종언의 마룡 — 마룡 성역 대폭발
+  | "crystalburst" // 심연군주·재림의 파수꾼 — 결정 8방향 산개
+  | "blinkslash" // 혈안의 문지기 — 점멸 3연 참격
+  /* vc153 — 어둠 동굴 보스 개편 (유저 제공 애니 사양표: Idle/Move Loop · GreenSlash/Vanish/ShieldCast/MagicBurst/PortalTeleport Once) */
   | "greenslash" // 녹색 참격 — 근접 2연 베기
   | "vanish" // 소멸 — 투명화 후 재배치
   | "shieldcast" // 방어막 시전 — 무적 상태유지 → 마력 폭발 반격
@@ -216,7 +217,7 @@ export type BossDef = {
   introDialogue: string;
   patterns: { p1: BossAttackKind[]; p2: BossAttackKind[]; p3: BossAttackKind[] };
   summonKey?: EnemyKey;
-  /** v4.1.4 — 돌진 연속 횟수(기본 1). 펜리르 2 / 스콜&하티 3 — 쌍랑·늑대의 정체성 */
+  /** v4.1.4 — 돌진 연속 횟수(기본 1). 탐욕의 늑대 2 / 교만의 쌍랑 3 — 쌍랑·늑대의 정체성 */
   chargeChain?: number;
   /** v1.4.12 (#18 보스 반대 방향 버그) — 원본 아트가 왼쪽을 바라보면 true (기본 false = 오른쪽 기준).
    *  플레이어 정면 판정이 이 플래그를 존중해 뒷돌기 버그를 없앤다. */
@@ -296,7 +297,7 @@ type ChapterSpec = {
 };
 
 /* 보상 밸런스 (사용자 지시 #6 — 골드 과다 지급 수정: 기존 기준 ×0.8) */
-const G = 0.8;
+const G = 0.64; // 2026-11-14 — 퀘스트 골드 −20% (유저 지시 "골드가 너무 많음", 종전 0.8)
 
 export const CHAPTERS: ChapterSpec[] = [
   /* ══════════════════════════════════════════════════════════════════════════
@@ -309,14 +310,14 @@ export const CHAPTERS: ChapterSpec[] = [
    *              이곳에서의 메인 테마는 윤지왕자와 유진으로 원래 고향 '신의도시 세르니움'이다"
    * 기획서 12행 행성 순서: 스타게이트 → 프라이즈프리즈마 → … → 오션코멘 → … → 세르니움
    *
-   * 위 9챕터(라일락 월드)는 **한 글자도 수정하지 않는다**. 아부디토스를 잡고
+   * 위 9챕터(라일락 월드)는 **한 글자도 수정하지 않는다**. 종언의 마룡를 잡고
    * 세계를 구원한 뒤에만 열리는 추가 스토리로 붙인다.
    * ══════════════════════════════════════════════════════════════════════════ */
   {
     key: "dlcstargate", num: 11, dlc: true,
     title: "DLC 1 — 제1행성 스타게이트",
     subtitle: "그랜드플래닛 · 세계를 구원한 자에게 열린 첫 번째 별",
-    intro: "intro", boss: "nidhog", bossDone: "guardianDone",
+    intro: "intro", boss: "blackwyrm", bossDone: "guardianDone",
     width: 2000, height: 1120, groundTint: 0x5f6fd8, groundTex: "tile_nebula", pathTex: "tile_stone", bg: "#070a1c",
     flowers: 4, trees: 3, rocks: 10,
     /* 기획서 1079~: 별모양 행성, 문지기 리틀스타, 장미가 행성의 동력원, 뒤틀린 지면 */
@@ -337,7 +338,7 @@ export const CHAPTERS: ChapterSpec[] = [
     key: "dlcprisma", num: 12, dlc: true,
     title: "DLC 2 — 제2행성 프라이즈 프리즈마",
     subtitle: "그랜드플래닛 · 마법공학의 도시, 위험한 실험",
-    intro: "intro", boss: "surt", bossDone: "kingdomDone",
+    intro: "intro", boss: "flamegiant", bossDone: "kingdomDone",
     width: 2200, height: 1200, groundTint: 0x8f6fd8, groundTex: "tile_desert", pathTex: "tile_sand", bg: "#120a22",
     flowers: 6, trees: 5, rocks: 12,
     /* 기획서 1126~: 마법공학의 도시. 시장 제이드가 위험한 실험을 한다는 소문 */
@@ -358,17 +359,17 @@ export const CHAPTERS: ChapterSpec[] = [
     key: "dlcocean", num: 13, dlc: true,
     title: "DLC 3 — 별빛속 바다 오션코멘",
     subtitle: "그랜드플래닛 · 꿈이 가라앉은 바다, 신의도시로 가는 마지막 길",
-    intro: "intro", boss: "vord", bossDone: "victory",
+    intro: "intro", boss: "riftwarden", bossDone: "victory",
     width: 2100, height: 1150, groundTint: 0x3f7fd8, groundTex: "tile_ice", pathTex: "tile_snow", bg: "#06121e",
     flowers: 3, trees: 2, rocks: 8,
     /* 기획서 12행 행성7 '별빛속 바다 오션코멘' + 유메(꿈의 지배자) 모티프 */
-    enemies: [{ key: "x2_reeffish", count: 4 }, { key: "minion", count: 4 }, { key: "wraith", count: 3 }, { key: "x2_frostfly", count: 3 }, { key: "x3_necromancer", count: 3 }, { key: "helhound", count: 3 }],
+    enemies: [{ key: "x2_reeffish", count: 4 }, { key: "minion", count: 4 }, { key: "wraith", count: 3 }, { key: "x2_frostfly", count: 3 }, { key: "x3_necromancer", count: 3 }, { key: "duskhound", count: 3 }],
     main: "x2_reeffish",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "do1", type: "hunt", title: "별빛 산호의 물고기", desc: "꿈이 스며든 바다 — 산호 물고기 20마리를 쫓아내라.", need: 20, targetKey: "x2_reeffish", targetLabel: "산호 물고기", reward: Math.round(6800 * G), expReward: 9200 } },
       { sub: 4, dialogue: "", quest: { id: "do2", type: "collect", title: "가라앉은 별의 조각", desc: "바다 밑에 잠든 별의 조각을 건져 올려라.", targetLabel: "보석의 흔적", reward: Math.round(7200 * G), expReward: 9800 } },
       { sub: 6, dialogue: "", quest: { id: "do3", type: "hunt", title: "꿈을 삼킨 유령", desc: "잠든 자의 꿈을 삼키는 유령 22체를 정화하라.", need: 22, targetKey: "wraith", targetLabel: "꿈의 유령", reward: Math.round(7800 * G), expReward: 10600 } },
-      { sub: 8, dialogue: "", quest: { id: "do4", type: "hunt", title: "심해의 사냥개", desc: "바다 밑에서 올라온 사냥개 18마리를 베어라.", need: 18, targetKey: "helhound", targetLabel: "심해 사냥개", reward: Math.round(8400 * G), expReward: 11400 } },
+      { sub: 8, dialogue: "", quest: { id: "do4", type: "hunt", title: "심해의 사냥개", desc: "바다 밑에서 올라온 사냥개 18마리를 베어라.", need: 18, targetKey: "duskhound", targetLabel: "심해 사냥개", reward: Math.round(8400 * G), expReward: 11400 } },
       { sub: 9, dialogue: "", quest: { id: "do5", type: "collect", title: "[사연] 오션코멘의 노래", desc: "바다가 부르는 노래의 마지막 소절을 기록해라.", targetLabel: "보석의 흔적", reward: Math.round(8900 * G), expReward: 12000 } },
       { sub: 10, dialogue: "", quest: { id: "do6", type: "hunt", title: "[기믹] 꿈의 주술사", desc: "꿈과 현실의 경계를 무너뜨리는 주술사 14명을 처치하라.", need: 14, targetKey: "x3_necromancer", targetLabel: "꿈의 주술사", reward: Math.round(9800 * G), expReward: 13400 } },
     ],
@@ -390,7 +391,7 @@ export const CHAPTERS: ChapterSpec[] = [
     key: "dlcreverse", num: 14, dlc: true,
     title: "DLC 4 — 리버스 사이버",
     subtitle: "그랜드플래닛 · 지하선로의 도시, 안개와 무법자들",
-    intro: "intro", boss: "jorm", bossDone: "kingdomDone",
+    intro: "intro", boss: "unionserpent", bossDone: "kingdomDone",
     width: 2100, height: 1150, groundTint: 0x6a7d9c, groundTex: "tile_ash", pathTex: "tile_blood", bg: "#0a0e16",
     flowers: 0, trees: 0, rocks: 12,
     /* 기획서 1200~: 지하선로 필수 이동, 안전구역 밖은 브로커·갱, 세비지 플레이스, 드론·전투로봇 */
@@ -411,18 +412,18 @@ export const CHAPTERS: ChapterSpec[] = [
     key: "dlcneocity", num: 15, dlc: true,
     title: "DLC 5 — 네오시티",
     subtitle: "그랜드플래닛 · 컴퍼니가 만든 세계, 다섯 개의 부호",
-    intro: "intro", boss: "nagr", bossDone: "kingdomDone",
+    intro: "intro", boss: "angelknight", bossDone: "kingdomDone",
     width: 2200, height: 1200, groundTint: 0x4f6fd8, groundTex: "tile_stone", pathTex: "tile_vault", bg: "#060a1a",
     flowers: 0, trees: 0, rocks: 10,
     /* 기획서 1326~: 다크 플래닛 컴퍼니가 만들고 통제하는 행성. 완전히 다른 세계.
      * 5부호: 힘·용기·지혜·운명·선택 (힘·생명·마법·시간·빛의 초월자를 모방) */
-    enemies: [{ key: "wraith", count: 4 }, { key: "x3_necromancer", count: 4 }, { key: "helhound", count: 3 }, { key: "x2_darkhound", count: 3 }, { key: "minion", count: 3 }, { key: "x3_bigzombie", count: 3 }],
+    enemies: [{ key: "wraith", count: 4 }, { key: "x3_necromancer", count: 4 }, { key: "duskhound", count: 3 }, { key: "x2_darkhound", count: 3 }, { key: "minion", count: 3 }, { key: "x3_bigzombie", count: 3 }],
     main: "wraith",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "dn1", type: "hunt", title: "5부호의 시련 — 힘", desc: "힘의 부호를 지키는 유령 22체를 쓰러뜨려라.", need: 22, targetKey: "wraith", targetLabel: "힘의 수호자", reward: Math.round(17000 * G), expReward: 24000 } },
       { sub: 4, dialogue: "", quest: { id: "dn2", type: "hunt", title: "5부호의 시련 — 용기", desc: "용기의 부호를 지키는 사냥개 20마리를 베어라.", need: 20, targetKey: "x2_darkhound", targetLabel: "용기의 수호자", reward: Math.round(17800 * G), expReward: 25200 } },
       { sub: 6, dialogue: "", quest: { id: "dn3", type: "hunt", title: "5부호의 시련 — 지혜", desc: "지혜의 부호를 지키는 주술사 18명을 침묵시켜라.", need: 18, targetKey: "x3_necromancer", targetLabel: "지혜의 수호자", reward: Math.round(18800 * G), expReward: 26500 } },
-      { sub: 8, dialogue: "", quest: { id: "dn4", type: "hunt", title: "5부호의 시련 — 운명", desc: "운명의 부호를 지키는 심해 사냥개 20마리를 정화하라.", need: 20, targetKey: "helhound", targetLabel: "운명의 수호자", reward: Math.round(19800 * G), expReward: 28000 } },
+      { sub: 8, dialogue: "", quest: { id: "dn4", type: "hunt", title: "5부호의 시련 — 운명", desc: "운명의 부호를 지키는 심해 사냥개 20마리를 정화하라.", need: 20, targetKey: "duskhound", targetLabel: "운명의 수호자", reward: Math.round(19800 * G), expReward: 28000 } },
       { sub: 9, dialogue: "", quest: { id: "dn5", type: "collect", title: "[사연] 컴퍼니의 홀로그램 지도", desc: "지도에 없던 행성 — 컴퍼니가 만든 세계의 증거를 확보하라.", targetLabel: "보석의 흔적", reward: Math.round(20800 * G), expReward: 29500 } },
       { sub: 10, dialogue: "", quest: { id: "dn6", type: "hunt", title: "[기믹] 5부호의 시련 — 선택", desc: "선택의 부호를 지키는 대좀비 16마리 — 마지막 시련이다.", need: 16, targetKey: "x3_bigzombie", targetLabel: "선택의 수호자", reward: Math.round(23400 * G), expReward: 33000 } },
     ],
@@ -453,8 +454,8 @@ export const CHAPTERS: ChapterSpec[] = [
     key: "dlcswallow", num: 17, dlc: true,
     title: "DLC 7 — 대공전함 다크스왈로해브니스",
     subtitle: "그랜드플래닛 · 하늘을 삼키는 전함",
-    intro: "intro", boss: "fenrir", bossDone: "kingdomDone",
-    width: 2200, height: 1150, groundTint: 0x5a4a6a, groundTex: "tile_deep", pathTex: "tile_hel", bg: "#0e0814",
+    intro: "intro", boss: "greedwolf", bossDone: "kingdomDone",
+    width: 2200, height: 1150, groundTint: 0x5a4a6a, groundTex: "tile_deep", pathTex: "tile_duskrealm", bg: "#0e0814",
     flowers: 0, trees: 0, rocks: 8,
     enemies: [{ key: "x2_bat", count: 4 }, { key: "minion", count: 4 }, { key: "x2_firebird", count: 3 }, { key: "x3_imp", count: 3 }, { key: "wraith", count: 3 }, { key: "x3_orcwarrior", count: 3 }],
     main: "x2_bat",
@@ -473,7 +474,7 @@ export const CHAPTERS: ChapterSpec[] = [
     key: "dlcopinicia", num: 18, dlc: true,
     title: "DLC 8 — 오피니시아",
     subtitle: "그랜드플래닛 · 순력과 혼력의 대립점, 5대 가문의 도시",
-    intro: "intro", boss: "skoll", bossDone: "kingdomDone",
+    intro: "intro", boss: "twinwolf", bossDone: "kingdomDone",
     width: 2200, height: 1200, groundTint: 0xc0a060, groundTex: "tile_amber", pathTex: "tile_desert", bg: "#141008",
     flowers: 6, trees: 5, rocks: 10,
     /* 기획서 1033~ 요약: 5대 가문(카르리온·아리아노·엘리자베스·오르페우스·셀리나).
@@ -496,7 +497,7 @@ export const CHAPTERS: ChapterSpec[] = [
     key: "dlcnovel", num: 19, dlc: true,
     title: "DLC 9 — 비밀의 화원 노벨 플로스",
     subtitle: "그랜드플래닛 · 아무도 모르는 정원",
-    intro: "intro", boss: "gram", bossDone: "kingdomDone",
+    intro: "intro", boss: "warden", bossDone: "kingdomDone",
     width: 2100, height: 1150, groundTint: 0xa8e0a0, groundTex: "tile_moss", pathTex: "tile_garden", bg: "#0a1408",
     flowers: 14, trees: 12, rocks: 6,
     enemies: [{ key: "x3_swampy", count: 4 }, { key: "x2_frog", count: 4 }, { key: "x3_goblin", count: 3 }, { key: "spider", count: 3 }, { key: "x2_snail", count: 3 }, { key: "x3_chort", count: 3 }],
@@ -516,14 +517,14 @@ export const CHAPTERS: ChapterSpec[] = [
     key: "dlcsernium", num: 20, dlc: true,
     title: "DLC 10 — 신의도시 세르니움",
     subtitle: "그랜드플래닛 · 마지막 행성, 고향이자 종착점",
-    intro: "intro", boss: "abudditos", bossDone: "kingdomDone",
+    intro: "intro", boss: "doomwyrm", bossDone: "kingdomDone",
     width: 2300, height: 1250, groundTint: 0xd8c890, groundTex: "tile_vault", pathTex: "tile_amber", bg: "#1a1408",
     flowers: 8, trees: 6, rocks: 8,
     /* 기획서 1048~ 요약: 도착 — 리안 왕자 편 장로들은 환영, 황실은 냉담.
      *  아버지 왕이 병사하고 섭정이 왕좌를 찬탈. 제3의 세력(생명의 초월자)이 침공 예고.
      *  검의 성전 — 태양과 달의 두 검이 하나로 모일 때(솔루나 이클립스 페이티니소드) 진정한 힘.
      *  제르(생명의 초월자)가 왕을 흡수, 스칼렛이 각성해 막고, 도사가 6단계 힘을 소진. */
-    enemies: [{ key: "wraith", count: 4 }, { key: "helhound", count: 4 }, { key: "x3_bigzombie", count: 3 }, { key: "x3_necromancer", count: 3 }, { key: "x2_darkhound", count: 3 }, { key: "minion", count: 3 }],
+    enemies: [{ key: "wraith", count: 4 }, { key: "duskhound", count: 4 }, { key: "x3_bigzombie", count: 3 }, { key: "x3_necromancer", count: 3 }, { key: "x2_darkhound", count: 3 }, { key: "minion", count: 3 }],
     main: "wraith",
     beats: [
       { sub: 2, dialogue: "", quest: { id: "dse1", type: "hunt", title: "냉담한 황실", desc: "찬탈자에게 붙은 근위병 24명을 제압하라.", need: 24, targetKey: "wraith", targetLabel: "찬탈자 근위병", reward: Math.round(96000 * G), expReward: 132000 } },
@@ -548,7 +549,7 @@ export const CHAPTERS: ChapterSpec[] = [
  *  결과: 비율 편차 2.15배 → 1.04배.
  *  생성: tools/rebalance-exp.py (재현 가능) */
 export const ENEMIES: Record<EnemyKey, EnemyDef> = {
-  wolf: { key: "wolf", name: "하울르스톤 늑대", hp: 58, atk: 13, speed: 132, aggro: 300, exp: 30, gold: [5, 8], def: 2, defPct: 0.02, dropHp: 0.3, dropMp: 0.2, profile: { charge: { cd: 3600, speed: 430, time: 420 } } },
+  wolf: { key: "wolf", name: "잿빛 늑대", hp: 58, atk: 13, speed: 132, aggro: 300, exp: 30, gold: [5, 8], def: 2, defPct: 0.02, dropHp: 0.3, dropMp: 0.2, profile: { charge: { cd: 3600, speed: 430, time: 420 } } },
   minion: { key: "minion", name: "심연 하수인", hp: 78, atk: 18, speed: 108, aggro: 320, exp: 41, gold: [9, 13], def: 3, defPct: 0.03, dropHp: 0.32, dropMp: 0.24, profile: { apply: { kind: "bleed", chance: 0.4, dps: 4, dur: 3500 } } },
   spider: { key: "spider", name: "동굴 거미", hp: 88, atk: 19, speed: 122, aggro: 320, exp: 46, gold: [10, 14], def: 3, defPct: 0.03, dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "poison", chance: 0.45, dps: 5, dur: 4500 }, fieldOnDeath: { kind: "poison", dps: 5, dur: 3500, radius: 80 } } },
   golem: { key: "golem", name: "수정 골렘", hp: 148, atk: 24, speed: 78, aggro: 260, exp: 77, gold: [14, 21], def: 18, defPct: 0.1, dropHp: 0.34, dropMp: 0.26, profile: { charge: { cd: 5200, speed: 330, time: 620 } } },
@@ -559,7 +560,7 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
   emberwolf: { key: "emberwolf", name: "불꽃 늑대", hp: 150, atk: 31, speed: 150, aggro: 340, exp: 78, gold: [14, 21], def: 4, defPct: 0.03, dropHp: 0.3, dropMp: 0.22, profile: { charge: { cd: 3300, speed: 470, time: 400 }, fieldOnDeath: { kind: "fire", dps: 7, dur: 3500, radius: 85 } } },
   firespirit: { key: "firespirit", name: "화염 정령", hp: 175, atk: 34, speed: 92, aggro: 300, exp: 92, gold: [17, 24], def: 6, defPct: 0.05, dropHp: 0.34, dropMp: 0.26, profile: { ranged: { projAnim: "fx-fireball", projSpeed: 330, range: 280, cd: 2100 } } },
   runegolem: { key: "runegolem", name: "룬 골렘", hp: 210, atk: 37, speed: 72, aggro: 260, exp: 110, gold: [19, 28], def: 26, defPct: 0.12, dropHp: 0.34, dropMp: 0.26, profile: { ranged: { projAnim: "fx-magicorb", projSpeed: 280, range: 260, cd: 2600 }, apply: { kind: "slow", chance: 0.35, dps: 0, dur: 2000 } } },
-  helhound: { key: "helhound", name: "헬 하운드", hp: 190, atk: 36, speed: 148, aggro: 360, exp: 100, gold: [18, 25], def: 5, defPct: 0.04, dropHp: 0.32, dropMp: 0.26, profile: { charge: { cd: 3000, speed: 480, time: 380 }, apply: { kind: "bleed", chance: 0.45, dps: 6, dur: 4000 } } },
+  duskhound: { key: "duskhound", name: "황혼 하운드", hp: 190, atk: 36, speed: 148, aggro: 360, exp: 100, gold: [18, 25], def: 5, defPct: 0.04, dropHp: 0.32, dropMp: 0.26, profile: { charge: { cd: 3000, speed: 480, time: 380 }, apply: { kind: "bleed", chance: 0.45, dps: 6, dur: 4000 } } },
   /* v3.0.2 — 신규 종 9종 (챕터 배율은 stageScale이 곱함) */
   x2_frog: { key: "x2_frog", name: "독개구리", hp: 52, atk: 12, speed: 116, aggro: 300, exp: 27, gold: [5, 9], def: 1, defPct: 0.01, dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "poison", chance: 0.4, dps: 4, dur: 4000 }, fieldOnDeath: { kind: "poison", dps: 4, dur: 3000, radius: 70 } } },
   x2_rat: { key: "x2_rat", name: "궁전 뒷쥐", hp: 84, atk: 17, speed: 156, aggro: 320, exp: 43, gold: [9, 14], def: 2, defPct: 0.02, dropHp: 0.3, dropMp: 0.22, profile: { apply: { kind: "bleed", chance: 0.35, dps: 3, dur: 3000 } } },
@@ -604,6 +605,12 @@ export const ENEMIES: Record<EnemyKey, EnemyDef> = {
 
 /* ================= 보스 정의 (v1.5 데이터 이관 + 챕터 보강) ================= */
 
+/** 목적격 조사: 받침 있으면 "을", 없으면 "를" (보스 이름이 바뀌어도 의뢰문이 맞게). */
+export const objJosa = (s: string) => {
+  const c = s.charCodeAt(s.length - 1) - 0xac00;
+  return s + (c >= 0 && c < 11172 && c % 28 ? "을" : "를");
+};
+
 export const BOSS_DEFS: Record<BossKey, BossDef> = {
   guardian: {
     key: "guardian", name: "심연의 수호자",
@@ -621,7 +628,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
   },
   behemoth: {
     key: "behemoth", name: "침몰의 선장",
-    /* vc204 — 챕터3 '쿠소디아 — 선박의 왕국 · 늪지대'.
+    /* vc204 — 챕터3 '왕국 — 선박의 왕국 · 늪지대'.
      *  스프라이트(tex: boss2 = atl_boss2)는 원본 아트 주석부터 "연합 거점 해적선"이라
      *  배 그림이 맞다. 종전 이름 '눈보라의 거수'가 테마(선박의 왕국)와 어긋나
      *  "챕터 테마에 맞는 보스가 아님"으로 보였다. 이름만 테마에 맞춘다(능력/수치는 불변). */
@@ -641,7 +648,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     key: "abysslord", name: "심연의 군주",
     hp: 8500, atk: 38, speed: 98, exp: 800, gold: 420,
     tex: "boss3", orbTint: 0xff5a7a, introDialogue: "bossIntroLord",
-    /* vc153 — 스바르트알프헤임 보스 개편: 시그니처 greenslash · 성향 1.05 */
+    /* vc153 — 어둠 동굴 보스 개편: 시그니처 greenslash · 성향 1.05 */
     sig: "greenslash",
     aggr: 1.05,
     /* vc153 애니 사양표 매핑 — ①Idle(Loop) ②Move(Loop) ③GreenSlash(Once) ④Vanish(Once)
@@ -654,10 +661,10 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     },
     summonKey: "wraith",
   },
-  nidhog: {
-    key: "nidhog", name: "탐식의 드래곤 니드호그",
+  blackwyrm: {
+    key: "blackwyrm", name: "탐식의 흑룡",
     hp: 3600, atk: 26, speed: 90, exp: 380, gold: 260,
-    tex: "boss_nidhog", orbTint: 0x7dff9a, introDialogue: "bossIntroNidhog",
+    tex: "boss_blackwyrm", orbTint: 0x7dff9a, introDialogue: "bossIntroBlackwyrm",
     /* v1.4.12 (#20 보스 정체성) — vc142: 시그니처 beam → 맹독 장판으로 교체 (탐식 독 드래곤) */
     sig: "poisonfield",
     aggr: 0.95,
@@ -668,10 +675,10 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     },
     summonKey: "swampbeast",
   },
-  surt: {
-    key: "surt", name: "화염의 거인 수르트",
+  flamegiant: {
+    key: "flamegiant", name: "화염의 거인",
     hp: 5400, atk: 33, speed: 88, exp: 560, gold: 340,
-    tex: "boss_surt", orbTint: 0xffa05a, introDialogue: "bossIntroSurt",
+    tex: "boss_flamegiant", orbTint: 0xffa05a, introDialogue: "bossIntroFlamegiant",
     /* v1.4.12 (#20 보스 정체성) — vc142: 시그니처 zones → 추적 화염기둥으로 교체 (화염의 거인) */
     sig: "firepillars",
     aggr: 0.9,
@@ -681,10 +688,10 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
       p3: ["slam", "charge", "volley", "zones", "ring", "beam", "quake", "firepillars"],
     },
   },
-  fenrir: {
-    key: "fenrir", name: "탐욕의 늑대 펜리르",
+  greedwolf: {
+    key: "greedwolf", name: "탐욕의 늑대",
     hp: 7400, atk: 36, speed: 96, exp: 640, gold: 380,
-    tex: "boss_fenrir", orbTint: 0xc08aff, introDialogue: "bossIntroFenrir",
+    tex: "boss_greedwolf", orbTint: 0xc08aff, introDialogue: "bossIntroGreedwolf",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 charge · 성향 0.85 */
     sig: "charge",
     aggr: 0.85,
@@ -696,11 +703,11 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
       p3: ["slam", "charge", "volley", "zones", "ring", "blink", "frostnova"],
     },
   },
-  skoll: {
-    key: "skoll", name: "교만의 쌍랑 스콜&하티", /* vc142 보스 디자인 교체 — 유저 제공 쌍랑 아틀라스(얼음 늑대 스콜+화염 늑대 하티) 반영 (구 표기: 교만의 얼음 봉황) */
-    /* vc143 (#2 후반 보스 대폭 상향) — 8장 스콜 HP 8600→12000 · ATK 39→42 */
+  twinwolf: {
+    key: "twinwolf", name: "교만의 쌍랑", /* vc142 보스 디자인 교체 — 유저 제공 쌍랑 아틀라스(얼음 늑대 얼음 늑대+화염 늑대 화염 늑대) 반영 (구 표기: 교만의 얼음 봉황) */
+    /* vc143 (#2 후반 보스 대폭 상향) — 8장 얼음 늑대 HP 8600→12000 · ATK 39→42 */
     hp: 12000, atk: 42, speed: 100, exp: 720, gold: 420,
-    tex: "boss_skoll", orbTint: 0xffd97a, introDialogue: "bossIntroSkoll",
+    tex: "boss_twinwolf", orbTint: 0xffd97a, introDialogue: "bossIntroTwinwolf",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 blink · 성향 0.9 */
     sig: "blink",
     aggr: 0.9,
@@ -713,27 +720,27 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     },
     summonKey: "runegolem",
   },
-  gram: {
-    key: "gram", name: "혈안의 문지기 가름", /* v4.1.3 (#신화고증) — 구 표기 "대지의 괴물 그람": 그람(Gram)은 시구르드의 검이다. 헬의 대문을 지키는 존재는 사냥개 가름(Garmr) */
-    /* vc143 (#2 후반 보스 대폭 상향) — 9장 가름 HP 10600→20000 · ATK 42→48 */
+  warden: {
+    key: "warden", name: "혈안의 문지기", /* v4.1.3 (#신화고증) — 구 표기 "대지의 괴물 혈안의 문지기": 혈안의 문지기(Gram)은 시구르드의 검이다. 명계의 대문을 지키는 존재는 사냥개 혈안의 문지기(Garmr) */
+    /* vc143 (#2 후반 보스 대폭 상향) — 9장 혈안의 문지기 HP 10600→20000 · ATK 42→48 */
     hp: 20000, atk: 48, speed: 86, exp: 860, gold: 480,
-    tex: "boss_gram", orbTint: 0x8affc0, introDialogue: "bossIntroGram",
+    tex: "boss_warden", orbTint: 0x8affc0, introDialogue: "bossIntroWarden",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 counter · 성향 1.0 */
     sig: "counter",
     aggr: 1.0,
-    /* 헬의 문지기 — 반격 카운터(창을 놓치면 문이 닫힌다) + 그림자 급습 + vc142 점멸 3연 참격 */
+    /* 명계의 문지기 — 반격 카운터(창을 놓치면 문이 닫힌다) + 그림자 급습 + vc142 점멸 3연 참격 */
     patterns: {
       p1: ["slam", "charge", "volley", "zones"],
       p2: ["slam", "charge", "volley", "ring", "zones", "counter", "blink", "blinkslash"],
       p3: ["slam", "charge", "volley", "ring", "zones", "summon", "counter", "blink", "quake", "blinkslash"],
     },
-    summonKey: "helhound",
+    summonKey: "duskhound",
   },
-  abudditos: {
-    key: "abudditos", name: "종언의 마룡 아부디토스", /* v4.1.3 (#신화고증) — 구 표기 "니드그림"을 세계관 근원인 아부디토스로 통일 */
-    /* vc143 (#2 후반 보스 대폭 상향) — 10장 아부디토스 HP 14500→34000 · ATK 46→54 */
+  doomwyrm: {
+    key: "doomwyrm", name: "종언의 마룡", /* v4.1.3 (#신화고증) — 구 표기 "종언의 마룡"을 세계관 근원인 종언의 마룡로 통일 */
+    /* vc143 (#2 후반 보스 대폭 상향) — 10장 종언의 마룡 HP 14500→34000 · ATK 46→54 */
     hp: 34000, atk: 54, speed: 100, exp: 1200, gold: 650,
-    tex: "boss_abudditos", orbTint: 0xff3a6a, introDialogue: "bossIntroAbudditos",
+    tex: "boss_doomwyrm", orbTint: 0xff3a6a, introDialogue: "bossIntroDoomwyrm",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 ring · 성향 0.8 */
     sig: "ring",
     aggr: 0.8,
@@ -744,17 +751,17 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
       p2: ["volley", "charge", "ring", "zones", "summon", "beam", "spiral", "blink", "holymantle"],
       p3: ["slam", "charge", "volley", "ring", "zones", "summon", "beam", "spiral", "blink", "quake", "counter", "holymantle", "firepillars"],
     },
-    summonKey: "helhound",
+    summonKey: "duskhound",
   },
   /* v1.0.19 (A-3 신규 스테이지 15종) — 재림 지역 보스 3종.
    *  기존 보스 정의는 전부 유지 — 신규 3종은 기존 텍스처(휴먼 리소스 제로)를 재활용하되
    *  이름·색조·패턴 구성을 다르게 해 별개의 적으로 기능한다. */
-  vord: {
-    key: "vord", name: "재림의 파수꾼 베오르드",
-    /* vc143 (#2 후반 보스 대폭 상향) — 재림 r5 베오르드 HP 16800→42000 · ATK 50→58 */
+  riftwarden: {
+    key: "riftwarden", name: "재림의 파수꾼",
+    /* vc143 (#2 후반 보스 대폭 상향) — 재림 r5 재림의 파수꾼 HP 16800→42000 · ATK 50→58 */
     hp: 42000, atk: 58, speed: 92, exp: 1500, gold: 800,
-    /* vc148 (#보스그리드) — tex boss2(유령선) 공유 → 전용 흑룡 아틀라스 (bsw_vord 8열×7행 재슬라이싱) */
-    tex: "boss_vord", orbTint: 0xffb05a, introDialogue: "bossIntroAbudditos",
+    /* vc148 (#보스그리드) — tex boss2(유령선) 공유 → 전용 흑룡 아틀라스 (bsw_riftwarden 8열×7행 재슬라이싱) */
+    tex: "boss_riftwarden", orbTint: 0xffb05a, introDialogue: "bossIntroDoomwyrm",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 quake · 성향 1.0 */
     sig: "quake",
     aggr: 1.0,
@@ -766,14 +773,14 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     },
     summonKey: "x3_orcwarrior",
   },
-  jorm: {
-    /* vc267 (P7a 정본 감사) — 표시 이름만 교체. key:"jorm" 은 세이브·스테이지 참조라 유지.
-     * '요르문간드'는 정본 8개에 없는 북유럽 신화 고유명이라 정본 세계관(연합을 삼키는 뱀)으로 다시 지었다. */
-    key: "jorm", name: "연합를 먹는 뱀 가르간",
-    /* vc143 (#2 후반 보스 대폭 상향) — 재림 r10 요르문간드 HP 21500→60000 · ATK 55→64 */
+  unionserpent: {
+    /* vc267 (P7a 정본 감사) — 표시 이름만 교체. key:"unionserpent" 은 세이브·스테이지 참조라 유지.
+     * '연합을 삼키는 뱀'는 정본 8개에 없는 북유럽 신화 고유명이라 정본 세계관(연합을 삼키는 뱀)으로 다시 지었다. */
+    key: "unionserpent", name: "연합을 삼키는 뱀",
+    /* vc143 (#2 후반 보스 대폭 상향) — 재림 r10 연합을 삼키는 뱀 HP 21500→60000 · ATK 55→64 */
     hp: 60000, atk: 64, speed: 104, exp: 1900, gold: 980,
-    /* v5.0.1 — 유저 제공 시트(박쥐날개 황금뿔 드래곤)로 boss_jorm 독립 (nidhog 공유 해제) */
-    tex: "boss_jorm", orbTint: 0x9affd0, introDialogue: "bossIntroAbudditos",
+    /* v5.0.1 — 유저 제공 시트(박쥐날개 황금뿔 드래곤)로 boss_unionserpent 독립 (blackwyrm 공유 해제) */
+    tex: "boss_unionserpent", orbTint: 0x9affd0, introDialogue: "bossIntroDoomwyrm",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 beam · 성향 0.9 */
     sig: "beam",
     aggr: 0.9,
@@ -786,12 +793,12 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
     },
     summonKey: "x2_reeffish",
   },
-  nagr: {
-    key: "nagr", name: "재림의 종언 나그라파르",
-    /* vc143 (#2 후반 보스 대폭 상향) — 재림 r15 나그라파르 HP 30000→95000 · ATK 62→72 */
+  angelknight: {
+    key: "angelknight", name: "재림의 천사기사",
+    /* vc143 (#2 후반 보스 대폭 상향) — 재림 r15 재림의 천사기사 HP 30000→95000 · ATK 62→72 */
     hp: 95000, atk: 72, speed: 108, exp: 2600, gold: 1400,
-    /* v1.4.31 (#4 보스 개편) — 발할라 천사기사 전용 아트 아틀라스 적용 (기존 아부디토스 재사용 해제) */
-    tex: "boss_nagr", orbTint: 0xffd76a, introDialogue: "bossIntroAbudditos",
+    /* v1.4.31 (#4 보스 개편) — 천상 천사기사 전용 아트 아틀라스 적용 (기존 종언의 마룡 재사용 해제) */
+    tex: "boss_angelknight", orbTint: 0xffd76a, introDialogue: "bossIntroDoomwyrm",
     /* v1.4.12 (#20 보스 정체성) — 시그니처 spiral · 성향 0.8 */
     sig: "spiral",
     aggr: 0.8,
@@ -807,7 +814,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
   /* ══════════════════════════════════════════════════════════════════════════
    * vc231 — 영프 편 보스 5종 (기획서 1기 15화)
    *
-   * 정의 원본은 `howlrstone.ts` 의 `HOWLRSTONE_BOSSES` 다. 여기서는 그 데이터를
+   * 정의 원본은 `lilacworld.ts` 의 `LILACWORLD_BOSSES` 다. 여기서는 그 데이터를
    * `BossDef` 형태로 펼쳐 넣는다 — 보스 스폰/패턴/BGM/드롭 경로가 기존 보스와
    * 똑같이 동작하도록 `BOSS_DEFS` 레지스트리에 반드시 올라와야 하기 때문.
    *
@@ -815,7 +822,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
    * ══════════════════════════════════════════════════════════════════════════ */
   ...GRAND_PLANET_BOSSES,
   ...Object.fromEntries(
-    Object.values(HOWLRSTONE_BOSSES).map((b) => [
+    Object.values(LILACWORLD_BOSSES).map((b) => [
       b.key,
       {
         key: b.key as BossKey,
@@ -833,7 +840,7 @@ export const BOSS_DEFS: Record<BossKey, BossDef> = {
         summonKey: b.summonKey as EnemyKey | undefined,
       } satisfies BossDef,
     ]),
-  ) as Record<HowlrstoneBossKey, BossDef>,
+  ) as Record<LilacworldBossKey, BossDef>,
 };
 
 /* ================= 스테이지 생성기 ================= */
@@ -848,7 +855,9 @@ for (const [key, boss] of Object.entries(BOSS_DEFS)) {
   boss.sig = design.phases[0].patterns[0] as BossAttackKind;
   const pool = (n: number) => [...new Set(design.phases.slice(0, n).flatMap((p) => [...p.patterns]))] as BossAttackKind[];
   boss.patterns = { p1: pool(1), p2: pool(2), p3: pool(3) };
-  if (BOSS_RECORD_ALIASES[key]) boss.name = `전투기록 · ${design.name}`;
+  /* 2026-11-14 (유저 신고 "스칼렛인데 왜 드래곤임") — 전투기록 보스는 옛 전용 그림을 쓰므로 이름도 그 그림의 옛 보스 이름을 쓴다
+   *  (종전 '전투기록 · 스칼렛' 이 드래곤 그림으로 나왔다). 패턴은 기록(스토리 보스)을 따른다. */
+  if (BOSS_RECORD_ALIASES[key]) boss.name = `전투기록 · ${boss.name}`;
 }
 
 /** 챕터별 난이도 배율 (인덱스 = 장번호-2 → forest(2장)부터) */
@@ -876,7 +885,10 @@ for (const [key, boss] of Object.entries(BOSS_DEFS)) {
  *  같은 타수를 내려면 계수가 달라야 한다. 손으로 매끈하게 고치지 말고 측정 스크립트로 다시 뽑을 것.
  *  측정·검증: scripts/measure-combat-balance.mjs, tests/combat-balance.test.mjs. */
 const CH_HP = [1.45, 1.9, 3.6, 4.7, 6.5, 9.5, 14, 20, 28, 47.3, 37.2, 54.3, 52, 61.3, 79.4, 133, 92, 240, 194]; // vc186b — DLC 3챕터 + vc192 나머지 7행성 // 1챕터 1.45 — Lv20까지 1챕터에 머무는데 적 HP가 낮아 1.1타(즉사)였다
-const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5, 7.38, 6.23, 7.13, 7.03, 8.22, 8.89, 14.3, 10.5, 31.9, 18.8]; // vc186b — DLC 3챕터 + vc192 나머지 7행성 // 유저 피드백: 공격력은 현행 유지
+/* 2026-11-14 (유저 지시 "난이도 — 튀는 구간만 고르게") — 스왈로우 14.3 → 12, 노벨 31.9 → 15.
+ *  노벨은 오피니시아(10.5)·세르니움(18.8) 사이에서 혼자 3배로 튀어 표준 육성이 3~4대에 죽었다(이웃 행성 8~10대).
+ *  스왈로우도 다음 행성 오피니시아보다 높았다. 조정 후 두 행성 모두 8.6대 → 7대로 고르게 어려워진다. */
+const CH_ATK = [1, 1.18, 1.45, 1.78, 2.2, 2.7, 3.35, 4.1, 5, 7.38, 6.23, 7.13, 7.03, 8.22, 8.89, 12, 10.5, 15, 18.8]; // vc186b — DLC 3챕터 + vc192 나머지 7행성 // 유저 피드백: 공격력은 현행 유지
 /* v1.2.2 — 챕터 EXP 계수 재조정 (레벨 곡선 정합)
  *  문제: expTable.ts는 메이플 공식(지수 성장)인데 적 EXP 계수는 1→9.2로 거의 평평했다.
  *        레벨업에 필요한 처치 수가 **25마리 ~ 2,105,941마리**(편차 84,780배)로 벌어져
@@ -906,10 +918,10 @@ export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: nu
   /* v2.9 — 챕터 마을(Xv)도 챕터 소속으로 파싱 */
   const v = /^([a-z]+)v$/.exec(key);
   if (v) return { ch: v[1] as ChapterKey, sub: 0 };
-  /* vc235 — 영프 편은 `howlrstone{장}x{구역}` (예 howlrstone15x4).
+  /* vc235 — 영프 편은 `lilacworld{장}x{구역}` (예 lilacworld15x4).
    *  챕터가 두 자리라 붙여쓰기는 모호해진다("1장12구역" vs "11장2구역").
    *  본편/DLC 는 기존 형식 그대로 둔다. */
-  const hw = /^(howlrstone(?:[1-9]|1[0-5]))x([1-9]|10)$/.exec(key);
+  const hw = /^(lilacworld(?:[1-9]|1[0-5]))x([1-9]|10)$/.exec(key);
   if (hw) return { ch: hw[1] as ChapterKey, sub: parseInt(hw[2], 10) };
   const m = /^(dlcstargate|dlcprisma|dlcocean|dlcreverse|dlcneocity|dlcmech|dlcswallow|dlcopinicia|dlcnovel|dlcsernium)([1-9]|10)$/.exec(key);
   if (!m) return { ch: "village", sub: 0 };
@@ -926,18 +938,18 @@ export function chapterSpec(key: StageKey): ChapterSpec | null {
  *
  * `chapterSpec()` 은 `CHAPTERS`(본편+DLC)만 본다. 영프 편은 그 배열에 없으므로
  * 별도 조회가 필요하다 — 인트로/보스 접근 대사, 챕터 카드 등에서 쓴다.
- * 인자는 스테이지 키(`howlrstone11`)든 챕터 키(`howlrstone1`)든 받는다.
+ * 인자는 스테이지 키(`lilacworld11`)든 챕터 키(`lilacworld1`)든 받는다.
  */
-export function howlrstoneSpec(key: StageKey): HowlrstoneChapterSpec | null {
-  const exact = HOWLRSTONE_CHAPTERS.find((c) => c.key === key);
+export function lilacworldSpec(key: StageKey): LilacworldChapterSpec | null {
+  const exact = LILACWORLD_CHAPTERS.find((c) => c.key === key);
   if (exact) return exact;
-  /* 스테이지 키(`howlrstone1x1`) → 챕터 키(`howlrstone1`).
-   *  vc235 — 챕터가 두 자리가 되면서 `x` 구분자를 쓴다. 붙여쓰기(`howlrstone15x4`
-   *  를 `howlrstone15`+`4` 로) 파싱도 함께 지원해 구 세이브 키를 살린다. */
-  const m = /^(howlrstone(?:[1-9]|1[0-5]))x(?:[1-9]|10)$/.exec(key);
-  if (m) return HOWLRSTONE_CHAPTERS.find((c) => c.key === m[1]) ?? null;
-  const legacy = /^(howlrstone[1-5])\d{1,2}$/.exec(key);
-  return legacy ? (HOWLRSTONE_CHAPTERS.find((c) => c.key === legacy[1]) ?? null) : null;
+  /* 스테이지 키(`lilacworld1x1`) → 챕터 키(`lilacworld1`).
+   *  vc235 — 챕터가 두 자리가 되면서 `x` 구분자를 쓴다. 붙여쓰기(`lilacworld15x4`
+   *  를 `lilacworld15`+`4` 로) 파싱도 함께 지원해 구 세이브 키를 살린다. */
+  const m = /^(lilacworld(?:[1-9]|1[0-5]))x(?:[1-9]|10)$/.exec(key);
+  if (m) return LILACWORLD_CHAPTERS.find((c) => c.key === m[1]) ?? null;
+  const legacy = /^(lilacworld[1-5])\d{1,2}$/.exec(key);
+  return legacy ? (LILACWORLD_CHAPTERS.find((c) => c.key === legacy[1]) ?? null) : null;
 }
 
 /** vc238 (P4 — 유저 지시 "후반으로 갈수록 처치형 퀘스트 요구량이 분명하게 증가") — 곡선 재설계.
@@ -975,7 +987,7 @@ const QUEST_NEED_CURVE: readonly [level: number, need: number][] = [
  * vc238 (P4 후속) — 사냥 퀘스트 요구량의 **절대 하한**.
  *
  * [왜 필요한가] 유저 목표표의 초반 구간은 "20~50" 인데, 하드코딩 beat 퀘스트가
- *  8~16 을 쓰고 있어 하한 미만이었다(`howlrstone1x3` = 16). 재림(r1~15)도 12 고정.
+ *  8~16 을 쓰고 있어 하한 미만이었다(`lilacworld1x3` = 16). 재림(r1~15)도 12 고정.
  *  목표표는 밸런스 계약이므로 하한을 코드로 강제한다.
  *  상한은 두지 않는다 — 후반은 곡선이 알아서 올린다. */
 export const HUNT_NEED_FLOOR = 20;
@@ -1002,7 +1014,7 @@ export function questNeedByLv(lv: number): number {
 }
 
 /** vc142 (#5) — 후반 몬스터 HP ×10: 유저 지시 "후반만 4스테이지 쯤 부터 몬스터 체력좀 10배 씩 정도 늘려".
- *  후반 4개 챕터(7 스바르트알프헤임 · 8 니다벨리르 · 9 헬 · 10 심층 수련장)의 4구역부터 적용
+ *  후반 4개 챕터(7 어둠 동굴 · 8 대장간 광산 · 9 명계 · 10 심층 수련장)의 4구역부터 적용
  *  (구역 1~3은 진입 완충 유지). 공격력/경험치/골드 곡선은 현행 유지 — 체력만 상향. */
 const LATE_HP_CHAPTERS: ChapterKey[] = ["dlcstargate", "dlcprisma", "dlcocean", "dlcreverse", "dlcneocity", "dlcmech", "dlcswallow", "dlcopinicia", "dlcnovel", "dlcsernium"];
 /* 2026-11-12 전 구간 재조정 — 구역 4에서 HP 가 한 번에 ×4 되던 절벽을 구역당 ×1.2 경사로 바꿨다.
@@ -1011,7 +1023,7 @@ const LATE_HP_RAMP = 1.2;
 
 /* ================= 2026-11-12 — 본편 보스 구역의 노말 실효 스탯 =================
  *  [왜] 보스 HP 는 `base × 1.25 × (구역 배율 × 1.6) × 난이도(노말 4.5)` 로 계산돼 왔다.
- *   디오는 "실효 19,800 · 약 105초" 로 설계됐는데(howlrstone.ts 주석) 실제로는 178,200 이었고,
+ *   디오는 "실효 19,800 · 약 105초" 로 설계됐는데(lilacworld.ts 주석) 실제로는 178,200 이었고,
  *   그랜드 플레닛은 잡몹용 지수 배율이 그대로 곱해져 마지막 행성 보스가 약 246억 HP 였다.
  *  [지금] 본편 진행 보스는 "노말에서 실제로 나오는 HP/ATK" 를 이 표에 직접 적는다.
  *   spawnBoss 가 이 값에 난이도 비율(이지/하드/카오스 ÷ 노말)만 곱한다. 재림·GM 체험·탑·
@@ -1024,16 +1036,16 @@ const LATE_HP_RAMP = 1.2;
  *   (종전 4대) HP 를 20% 낮췄다(480~1,200타).
  *  측정·검증: scripts/measure-combat-balance.mjs, tests/combat-balance.test.mjs. */
 export const BOSS_STAGE_STATS: Record<StageKey, { hp: number; atk?: number }> = {
-  howlrstone2x3: { hp: 19800 },
-  howlrstone5x4: { hp: 71200 },
-  howlrstone7x3: { hp: 110000 },
-  howlrstone7x5: { hp: 117000 },
-  howlrstone8x4: { hp: 143000 },
-  howlrstone10x2: { hp: 218000 },
-  howlrstone11x4: { hp: 285000 },
-  howlrstone12x4: { hp: 344000 },
-  howlrstone13x4: { hp: 413000 },
-  howlrstone14x5: { hp: 497000 },
+  lilacworld2x3: { hp: 19800 },
+  lilacworld5x4: { hp: 71200 },
+  lilacworld7x3: { hp: 110000 },
+  lilacworld7x5: { hp: 117000 },
+  lilacworld8x4: { hp: 143000 },
+  lilacworld10x2: { hp: 218000, atk: 173 }, // 2026-11-14 — 장 공격 배율 상향(잡몹)과 무관하게 종전 보스 공격력 고정
+  lilacworld11x4: { hp: 285000, atk: 187 }, // 〃
+  lilacworld12x4: { hp: 344000, atk: 213 }, // 〃
+  lilacworld13x4: { hp: 413000 },
+  lilacworld14x5: { hp: 497000 },
   dlcstargate10: { hp: 646000, atk: 453 },
   dlcprisma10: { hp: 832000, atk: 497 },
   dlcocean10: { hp: 1032000, atk: 540 },
@@ -1048,6 +1060,19 @@ export const BOSS_STAGE_STATS: Record<StageKey, { hp: number; atk?: number }> = 
 
 /** 구역별 성장 배율 — 적 HP/ATK/EXP/골드 (사용자 지시 #6/#9 밸런스)
  *  v1.0.19 (A-3) — 신규 스테이지(scaleMul 보유)는 전용 배율 우선, 기존 챕터는 기존 곡선 유지 */
+/** 2026-11-14 (유저 지시 "난이도 — 튀는 구간만 고르게") — 구역 안 최약체 보정.
+ *  앞 장의 잡몹(개구리 공격 12·쥐 17·늪짐승 20)이 중반 구역에 섞여 피해가 거의 1이었다(영프 2-2·3-3·5-2).
+ *  같은 구역 최강 몬스터 대비 공격 85%·체력 50% 아래인 몬스터만 그만큼 끌어올린다(이미 고른 구역은 1배 — 변화 없음).
+ *  방어력이 공격력에서 빠지는 구조라 50% 로는 피해가 1~2에 머물렀다(실측 후 85%). */
+export const STAGE_FLOOR = { atk: 0.85, hp: 0.5 } as const;
+export function stageEnemyFloor(key: StageKey, enemyKey: EnemyKey): { hp: number; atk: number } {
+  const e = ENEMIES[enemyKey];
+  const mobs = (STAGES[key]?.enemies ?? []).map((g) => ENEMIES[g.key]).filter(Boolean);
+  if (!e || !mobs.length) return { hp: 1, atk: 1 };
+  const maxAtk = Math.max(...mobs.map((m) => m.atk)), maxHp = Math.max(...mobs.map((m) => m.hp));
+  return { hp: Math.max(1, (maxHp * STAGE_FLOOR.hp) / e.hp), atk: Math.max(1, (maxAtk * STAGE_FLOOR.atk) / e.atk) };
+}
+
 export function stageScale(key: StageKey, playerLv?: number): { hp: number; atk: number; exp: number; gold: number } {
   const own = STAGES[key]?.scaleMul;
   if (own) return { ...own };
@@ -1290,7 +1315,7 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
     wolf: "늑대", minion: "심연 하수인", spider: "동굴 거미", golem: "수정 골렘",
     frostwolf: "서리 늑대", icegolem: "얼음 골렘", wraith: "심연 유령",
     swampbeast: "능대", emberwolf: "불꽃 늑대", firespirit: "화염 정령",
-    runegolem: "룬 골렘", helhound: "헬 하운드",
+    runegolem: "룬 골렘", duskhound: "황혼 하운드",
     x2_frog: "독개구리", x2_rat: "궁전 뒷쥐", x2_bat: "황혼 박쥐", x2_firebird: "잿불 새",
     x2_frostfly: "서리 날도요", x2_snail: "동굴 달팽이", x2_stonegolem: "장벽 돌골렘",
     x2_darkhound: "그늘 이리", x2_reeffish: "심연 암초물고기",
@@ -1372,7 +1397,7 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
       id: `${prefix}-boss`,
       type: "boss",
       title: BOSS_DEFS[spec.boss].name,
-      desc: `${spec.title}의 주인 — ${BOSS_DEFS[spec.boss].name}를 처치해라!`,
+      desc: `${spec.title}의 주인 — ${objJosa(BOSS_DEFS[spec.boss].name)} 처치해라!`,
       targetLabel: BOSS_DEFS[spec.boss].name,
       reward: Math.round(320 * CH_QGOLD[spec.num - 2] * 0.7 * G),
       expReward: Math.round(420 * CH_XP[spec.num - 2]),
@@ -1381,8 +1406,8 @@ function buildQuests(spec: ChapterSpec, sub: number, prefix: string): QuestDef[]
     quests.push({
       id: `${prefix}-next`,
       type: "reach",
-      title: "다음 해역으로",
-      desc: "열린 차원문에 닿아 다음 해역으로 이동해라.",
+      title: "다음 지역으로",
+      desc: "열린 차원문에 닿아 다음 지역으로 이동해라.",
       targetLabel: "차원문",
       dialogue: spec.bossDone,
     });
@@ -1577,8 +1602,9 @@ const VILLAGE: StageDef = {
       type: "reach",
       /* v3.0.26 (#75) — "서쪽 숲의 신전으로" 제목이 실존하지 않는 '서쪽 숲'을 가리켜
        *  유저가 마을 서쪽을 헤매는 혼동 수정. 실제 목적지는 동쪽 차원문 너머 '숲의 신전'(2-1). */
-      title: "숲의 신전으로",
-      desc: "마을 NPC 3명과 인사해 레벨 3을 달성했다 — 마을 동쪽 차원문을 지나 첫 사냥터 '숲의 신전'(2-1)에 도착해라.",
+      /* 2026-11-14 — 옛 첫 사냥터 '숲의 신전'은 삭제됐다. 차원문의 실제 목적지(NEXT_STAGE.village = 영프 1-1)를 가리킨다. */
+      title: "라일락과 만난 절벽으로",
+      desc: "마을 NPC 3명과 인사해 레벨 3을 달성했다 — 마을 동쪽 차원문을 지나 첫 구역 '라일락과 만난 절벽'(1-1)에 도착해라.",
       targetLabel: "동쪽 차원문",
     },
   ],
@@ -1625,7 +1651,7 @@ for (let ci = 0; ci < CHAPTERS.length; ci++) {
 }
 
 STAGES.youngprincessv = {
-  key: "youngprincessv", name: "하울르스톤: 영준 프린세스 — 시작 마을",
+  key: "youngprincessv", name: "영준 프린세스 — 시작 마을",
   subtitle: "본편 이후의 세계 — 영프 엔딩 후 이 마을에서 그랜드 플레닛으로",
   width: 1500, height: 860, groundTint: 0xffffff,
   flowerCount: 6, treeCount: 6, rockCount: 2,
@@ -1637,23 +1663,23 @@ PREV_STAGE.youngprincessv = "village";
 PREV_STAGE.dlcstargatev = "youngprincessv";
 
 /* ══════════════════════════════════════════════════════════════════════════
- * vc231 — 영준 프린세스 편(하울르스톤) 5챕터 × 10구역 (기획서 1기 15화)
+ * vc231 — 영준 프린세스 편(영프) 5챕터 × 10구역 (기획서 1기 15화)
  *
  * `CHAPTERS` 배열에는 넣지 않는다. 그 배열은 `tests/story-portraits-audio.test.mjs`
  * 가 "기존 챕터/인덱스/대사/밸런스 보존"으로 불변식을 걸어 둔 계약이고,
  * 거기에 챕터를 끼우면 num 기반 인덱스(CH_EXP[num-2], ELITE_TITLE[num-2])가
  * 전부 어긋나 기존 밸런스가 회귀한다.
  *
- * 대신 `howlrstone.ts` 의 데이터로 여기서 직접 스테이지를 만든다.
+ * 대신 `lilacworld.ts` 의 데이터로 여기서 직접 스테이지를 만든다.
  *  · 밸런스는 각 챕터의 전용 `scaleMul` — `stageScale()` 이 우선 사용하므로
  *    기존 곡선(CH_HP/CH_ATK/CH_EXP)을 건드리지 않는다.
- *  · 체인은 `youngprincessv` 마을 → howlrstone11 … howlrstone510 → `dlcstargate1`.
+ *  · 체인은 `youngprincessv` 마을 → lilacworld11 … lilacworld510 → `dlcstargate1`.
  *    즉 "본편 → 영프 편 → 그랜드 플래닛" 이 끊김 없이 이어진다.
  * ══════════════════════════════════════════════════════════════════════════ */
 {
-  const hwKeys: ChapterKey[] = HOWLRSTONE_CHAPTERS.map((c) => c.key);
-  for (let ci = 0; ci < HOWLRSTONE_CHAPTERS.length; ci++) {
-    const spec = HOWLRSTONE_CHAPTERS[ci];
+  const hwKeys: ChapterKey[] = LILACWORLD_CHAPTERS.map((c) => c.key);
+  for (let ci = 0; ci < LILACWORLD_CHAPTERS.length; ci++) {
+    const spec = LILACWORLD_CHAPTERS[ci];
     /* vc235 — 챕터당 스테이지 수가 가변(spec.stages, 4~5개). 키는 `장x구역`.
      *  마지막 구역이 보스전이고, 보스가 없는 장은 일반 토벌로 끝난다. */
     const stageCount = spec.stages;
@@ -1744,22 +1770,22 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
 
       /* ══ vc263c (버그 #2·#11) — 보스 스테이지에 보스 퀘스트 강제 주입 ══
        *
-       * [증상] howlrstone3(크라켄·해롤드) 등에서 "퀘스트 완료 못함" 신고.
-       *        howlrstone7/8/10/14 는 보스전 자체가 시작되지 않았다.
+       * [증상] lilacworld3(크라켄·해롤드) 등에서 "퀘스트 완료 못함" 신고.
+       *        lilacworld7/8/10/14 는 보스전 자체가 시작되지 않았다.
        *
        * [원인] 이 생성기는 `buildQuests()` 를 쓰지 않고 위에서 quests 를 직접 채우는데,
        *        보스 퀘스트 주입(`if (sub === 10 && spec.boss)`)이 **본편 전용 규칙**이라
        *        영프 편(최대 5구역)에는 해당 사항이 없었다. 게다가:
-       *          · howlrstone7/8/10/14 : 보스 구역(sub5)에 beat 가 없어 레벨게이트/자동토벌만
+       *          · lilacworld7/8/10/14 : 보스 구역(sub5)에 beat 가 없어 레벨게이트/자동토벌만
        *            들어갔다 → quests 에 type:"boss" 가 없어 spawnBoss() 호출 경로가 없음.
        *            (WorldScene 은 currentQuest().type === "boss" 일 때만 보스를 스폰한다)
-       *          · howlrstone3 : beat 로 넣은 boss 퀘스트가 sub4 에 있는데 보스 스테이지는
+       *          · lilacworld3 : beat 로 넣은 boss 퀘스트가 sub4 에 있는데 보스 스테이지는
        *            sub5 라, sub4 에서 보스가 스폰되고(이 구역엔 bossKey 가 없어
        *            BOSS_DEFS["guardian"] 폴백 = 엉뚱한 보스) sub5 는 보스 없이 진행 불가.
        *
        * [해결] 보스 스테이지(isBoss)면 데이터에 있든 없든 boss 퀘스트를 **마지막에 보장**하고,
        *        보스 격파 후 나가는 reach 퀘스트까지 붙인다. 중복 주입은 타입 검사로 막는다.
-       *        (howlrstone3 의 sub4 보스 beat 는 아래에서 일반 토벌로 강등된다) */
+       *        (lilacworld3 의 sub4 보스 beat 는 아래에서 일반 토벌로 강등된다) */
       if (isBoss) {
         const bossName = BOSS_DEFS[spec.boss as BossKey]?.name ?? spec.boss;
         /* 보스 스테이지가 아닌 구역에 박혀 있는 boss/reach 퀘스트는 스폰 경로를 오염시킨다. */
@@ -1768,7 +1794,7 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
           id: `${spec.key.slice(-1)}${sub}-boss`,
           type: "boss",
           title: bossName,
-          desc: `${spec.title}의 주인 — ${bossName}를 처치해라!`,
+          desc: `${spec.title}의 주인 — ${objJosa(bossName)} 처치해라!`,
           targetLabel: bossName,
           reward: Math.round(320 * spec.scaleMul.gold * G),
           expReward: Math.round(420 * spec.scaleMul.exp),
@@ -1776,8 +1802,8 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
         quests.push({
           id: `${spec.key.slice(-1)}${sub}-next`,
           type: "reach",
-          title: "다음 해역으로",
-          desc: "열린 차원문에 닿아 다음 해역으로 이동해라.",
+          title: "다음 지역으로",
+          desc: "열린 차원문에 닿아 다음 지역으로 이동해라.",
           targetLabel: "차원문",
           dialogue: spec.bossDone,
         });
@@ -1786,7 +1812,7 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
       /* vc238 (P4) — 영프 편 반복 의뢰 요구량. 챕터 진행도(0~1)의 제곱으로 22 → 1000.
        *  제곱을 쓰는 이유: 중반까지 완만하고 후반에 가속해야 "후반으로 갈수록 분명하게 증가"가 된다.
        *  `spec.repeat.need`(28~36) 리터럴은 하한으로만 유지한다(회귀 방지). */
-      const hwProgress = HOWLRSTONE_CHAPTERS.length > 1 ? ci / (HOWLRSTONE_CHAPTERS.length - 1) : 0;
+      const hwProgress = LILACWORLD_CHAPTERS.length > 1 ? ci / (LILACWORLD_CHAPTERS.length - 1) : 0;
       const hwRepNeed = Math.max(
         spec.repeat.need,
         Math.round((22 + (1000 - 22) * hwProgress * hwProgress) / 5) * 5,
@@ -1832,32 +1858,32 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
       /* 체인: 영프 내부는 순차, 마지막 구역 다음은 그랜드 플래닛 첫 구역.
        *  vc235 — 스테이지 수가 챕터마다 다르므로(4~5) `sub < 10` 하드코딩을
        *  spec.stages 로 바꾸고, 키도 `장x구역` 형식에 맞춘다.
-       *  (종전엔 마지막 다음이 존재하지 않는 `howlrstone155` 를 가리켰다) */
+       *  (종전엔 마지막 다음이 존재하지 않는 `lilacworld155` 를 가리켰다) */
       const stageKeyOf = (chIdx: number, subNo: number) =>
-        `${HOWLRSTONE_CHAPTERS[chIdx].key}x${subNo}`;
+        `${LILACWORLD_CHAPTERS[chIdx].key}x${subNo}`;
       NEXT_STAGE[key] =
         sub < stageCount
           ? stageKeyOf(ci, sub + 1)
-          : ci < HOWLRSTONE_CHAPTERS.length - 1
+          : ci < LILACWORLD_CHAPTERS.length - 1
             ? stageKeyOf(ci + 1, 1)
             : "dlcstargate1";
       PREV_STAGE[key] =
         sub > 1
           ? stageKeyOf(ci, sub - 1)
           : ci > 0
-            ? stageKeyOf(ci - 1, HOWLRSTONE_CHAPTERS[ci - 1].stages)
+            ? stageKeyOf(ci - 1, LILACWORLD_CHAPTERS[ci - 1].stages)
             : "youngprincessv";
     }
   }
   /* 영프 마을 → 영프 편 1-1. (예전엔 null 이라 막다른 길이었다 — vc230 미해결분) */
-  NEXT_STAGE.youngprincessv = `${HOWLRSTONE_CHAPTERS[0].key}x1`;
+  NEXT_STAGE.youngprincessv = `${LILACWORLD_CHAPTERS[0].key}x1`;
   /* 유저 지시 — "애델리오나 마을 → 1-1 스테이지" 직행.
-   *  종전 체인은 village → youngprincessv(별도 시작 마을) → howlrstone1x1 이었다.
+   *  종전 체인은 village → youngprincessv(별도 시작 마을) → lilacworld1x1 이었다.
    *  기획상 애델리오나 마을 다음은 1-1 이므로 경유 마을을 건너뛴다.
    *  youngprincessv 스테이지 정의는 남긴다 — grandPlanetCanon 이 복귀 지점으로
    *  참조하고, 구 세이브가 이 키를 들고 있을 수 있다(아래 마이그레이션 참조). */
-  NEXT_STAGE.village = `${HOWLRSTONE_CHAPTERS[0].key}x1`;
-  PREV_STAGE[`${HOWLRSTONE_CHAPTERS[0].key}x1`] = "village";
+  NEXT_STAGE.village = `${LILACWORLD_CHAPTERS[0].key}x1`;
+  PREV_STAGE[`${LILACWORLD_CHAPTERS[0].key}x1`] = "village";
   void hwKeys;
 }
 
@@ -2073,7 +2099,7 @@ STAGE_SHORT.park = "몬스터 파크";
  *
  *  · 각 스테이지: 고유 테마(색감/지형/컨셉) + 고유 몬스터 구성 + 고유 클리어 보상
  *  · 난이도 곡선: abyss10(hp 15.5·atk 5.0) 이후부터 순차 상승 (scaleMul 전용 배율)
- *  · 보스 스테이지 3종: 재림5 베오르드 / 재림10 요르문간드 / 재림15 나그라파르
+ *  · 보스 스테이지 3종: 재림5 재림의 파수꾼 / 재림10 연합을 삼키는 뱀 / 재림15 재림의 천사기사
  *  · 목록은 이 블록의 REBIRTH_STAGES 상수 한 곳에서 관리 — 기존(CHAPTERS)과 분리
  */
 type RebirthSpec = {
@@ -2131,7 +2157,7 @@ const REBIRTH_STAGES: RebirthSpec[] = [
     /* [vc288 — 보스맵 격리] 재림 보스맵도 일반몹을 깔지 않는다(요구사항 8.2).
      *  종전엔 오크 18마리가 함께 스폰돼 보스 패턴이 가려졌다. */
     enemies: [], main: "x3_orcwarrior",
-    bossKey: "vord",
+    bossKey: "riftwarden",
     mul: { hp: 26, atk: 7.1, exp: 14.8, gold: 7.6 }, reward: { gold: 700, exp: 2600 },
   },
   {
@@ -2154,7 +2180,7 @@ const REBIRTH_STAGES: RebirthSpec[] = [
   },
   {
     key: "r9", name: "재림 9 — 그림자 미궁", subtitle: "길을 삼키는 어둠의 정원",
-    groundTex: "tile_hel", pathTex: "tile_path_dark", bg: "#0c0614", groundTint: 0x6a5a8a, flowers: 0, trees: 8, rocks: 8,
+    groundTex: "tile_duskrealm", pathTex: "tile_path_dark", bg: "#0c0614", groundTint: 0x6a5a8a, flowers: 0, trees: 8, rocks: 8,
     enemies: [{ key: "wraith", count: 9 }, { key: "x3_necromancer", count: 6 }, { key: "x2_bat", count: 5 }], main: "wraith",
     elite: { key: "x3_necromancer", name: "미궁의 지배자 그림 강령사" },
     mul: { hp: 36, atk: 8.4, exp: 19.6, gold: 9.6 }, reward: { gold: 740, exp: 3050 },
@@ -2163,8 +2189,8 @@ const REBIRTH_STAGES: RebirthSpec[] = [
     key: "r10", name: "재림 10 — 뱀의 소용돌이", subtitle: "연합를 감은 뱀이 기다린다",
     groundTex: "tile_abyss", pathTex: "tile_path_dark", bg: "#0e0618", groundTint: 0x5a4a7a, flowers: 0, trees: 0, rocks: 14,
     /* [vc288] 재림 보스맵 — 일반몹 없음. */
-    enemies: [], main: "helhound",
-    bossKey: "jorm",
+    enemies: [], main: "duskhound",
+    bossKey: "unionserpent",
     mul: { hp: 39, atk: 8.7, exp: 20.8, gold: 10.1 }, reward: { gold: 1000, exp: 3600 },
   },
   {
@@ -2188,7 +2214,7 @@ const REBIRTH_STAGES: RebirthSpec[] = [
   },
   {
     key: "r14", name: "재림 14 — 종언의 문", subtitle: "마지막 문 너머가 숨을 쉰다",
-    groundTex: "tile_hel", pathTex: "tile_path_dark", bg: "#100514", groundTint: 0x8a5a7a, flowers: 0, trees: 4, rocks: 14,
+    groundTex: "tile_duskrealm", pathTex: "tile_path_dark", bg: "#100514", groundTint: 0x8a5a7a, flowers: 0, trees: 4, rocks: 14,
     enemies: [{ key: "x3_bigzombie", count: 8 }, { key: "x3_maskedorc", count: 7 }, { key: "x3_wogol", count: 5 }], main: "x3_bigzombie",
     mul: { hp: 52, atk: 9.6, exp: 25.6, gold: 12.1 }, reward: { gold: 980, exp: 4050 },
   },
@@ -2197,7 +2223,7 @@ const REBIRTH_STAGES: RebirthSpec[] = [
     groundTex: "tile_abyss", pathTex: "tile_path_dark", bg: "#120616", groundTint: 0x6a4a5a, flowers: 0, trees: 0, rocks: 16,
     /* [vc288] 재림 보스맵 — 일반몹 없음. */
     enemies: [], main: "x3_bigzombie",
-    bossKey: "nagr",
+    bossKey: "angelknight",
     mul: { hp: 56, atk: 9.9, exp: 27, gold: 12.7 }, reward: { gold: 1500, exp: 5200 },
   },
 ];
@@ -2236,7 +2262,7 @@ function buildRebirthStage(spec: RebirthSpec): StageDef {
       id: `${spec.key}-boss`,
       type: "boss",
       title: BOSS_DEFS[spec.bossKey].name,
-      desc: `재림의 수호자 — ${BOSS_DEFS[spec.bossKey].name}를 처치해라!`,
+      desc: `재림의 수호자 — ${objJosa(BOSS_DEFS[spec.bossKey].name)} 처치해라!`,
       targetLabel: BOSS_DEFS[spec.bossKey].name,
       reward: Math.round(spec.reward.gold * 1.6),
       expReward: Math.round(spec.reward.exp * 1.6),
@@ -2299,15 +2325,18 @@ PREV_STAGE[REBIRTH_STAGES[0].key] = "village";
  *  `forest3` 처럼 지역명+번호 키는 이 맵을 거치지 않아도 최종 폴백(`village`)으로
  *  안전하게 떨어진다. 세이브 필드는 추가하지 않는다. */
 export const LEGACY_STAGE_FALLBACK: Record<string, StageKey> = {
-  forest: "village", kingdom: "village", alfheim: "village",
-  muspelheim: "village", niflheim: "village", cave: "village",
-  nidavellir: "village", hel: "village", abyss: "village",
+  forest: "village", kingdom: "village", fairyglade: "village",
+  emberland: "village", frostland: "village", cave: "village",
+  forgehall: "village", duskrealm: "village", abyss: "village",
 };
 
 /** 유효 스테이지 키 검증 (+구 세이브 폴백) */
 export function resolveStage(key: string): StageKey {
   if (STAGES[key]) return key;
   if (LEGACY_STAGE_FALLBACK[key]) return LEGACY_STAGE_FALLBACK[key];
+  /* 이름을 바꾸기 전의 옛 스테이지 키 — 이전 버전 접속자·오래된 링크 대비 (legacyKeys.ts) */
+  const renamed = rekeyLegacy(key);
+  if (renamed !== key) return resolveStage(renamed);
   return "village";
 }
 
@@ -2318,14 +2347,14 @@ export function stageIntro(key: StageKey): string {
   if (!spec) {
     /* vc231 — 영프 편은 CHAPTERS 밖이라 여기서 별도 처리한다.
      *  1구역 = 챕터 인트로, 5구역 = 정예 경고, 10구역 = 보스 접근, 나머지 = 걷는 대사. */
-    const hw = howlrstoneSpec(parseStage(key).ch as StageKey);
+    const hw = lilacworldSpec(parseStage(key).ch as StageKey);
     if (hw) {
       const { sub } = parseStage(key);
       if (sub === 1) return hw.intro;
       const n = hw.key.slice(-1);
-      if (sub === 5) return `howlEliteWarn${n}`;
-      if (sub === 10) return `howlBossApproach${n}`;
-      return `howlWalk${n}_${((sub - 2) % 3) + 1}`;
+      if (sub === 5) return `lwEliteWarn${n}`;
+      if (sub === 10) return `lwBossApproach${n}`;
+      return `lwWalk${n}_${((sub - 2) % 3) + 1}`;
     }
     const rb = /^r(\d+)$/.exec(key);
     if (rb) {
@@ -2362,7 +2391,7 @@ for (const spec of CHAPTERS) {
  *  15챕터 × 4~5구역(`장x구역` 키)으로 바뀌어 등록이 비었다.
  *  이게 없으면 "지형 테마 필요" 로 스테이지가 지면 없이 뜬다.
  *  (STAGE_THEME 선언 뒤에서 돌려야 TDZ 오류가 없다) */
-for (const spec of HOWLRSTONE_CHAPTERS) {
+for (const spec of LILACWORLD_CHAPTERS) {
   for (let sub = 1; sub <= spec.stages; sub++) {
     STAGE_THEME[`${spec.key}x${sub}`] = { ground: spec.groundTex, path: spec.pathTex, bg: spec.bg };
   }
@@ -2372,7 +2401,7 @@ for (const spec of REBIRTH_STAGES) {
   STAGE_THEME[spec.key] = { ground: spec.groundTex, path: spec.pathTex, bg: spec.bg };
 }
 /* vc231 — 영프 편 5챕터 × 10구역 지형 테마 (STAGE_THEME 선언 이후에 등록 — TDZ 회피) */
-for (const spec of HOWLRSTONE_CHAPTERS) {
+for (const spec of LILACWORLD_CHAPTERS) {
   for (let sub = 1; sub <= 10; sub++) {
     STAGE_THEME[`${spec.key}${sub}`] = { ground: spec.groundTex, path: spec.pathTex, bg: spec.bg };
   }
@@ -2382,7 +2411,7 @@ for (const spec of HOWLRSTONE_CHAPTERS) {
 /** Bind existing stage IDs to the approved story places; keep rewards, level curves and save keys. */
 for (const [chapter, plan] of Object.entries(CHAPTER_STORY_PLAN)) {
   for (const [i, place] of plan.places.entries()) {
-    const key = chapter.startsWith("howlrstone") ? `${chapter}x${i + 1}` : `${chapter}${i + 1}`;
+    const key = chapter.startsWith("lilacworld") ? `${chapter}x${i + 1}` : `${chapter}${i + 1}`;
     const stage = STAGES[key];
     if (!stage) continue;
     const previousBoss = stage.boss;
@@ -2392,7 +2421,7 @@ for (const [chapter, plan] of Object.entries(CHAPTER_STORY_PLAN)) {
     STAGE_SHORT[key] = place.title;
     STAGE_THEME[key] = { ground: `terrain_${place.floor}`, path: `terrain_${place.path}`, bg: place.border === "water" ? "#245365" : place.role === "cliff" ? "#426b80" : ["road", "garden", "sanctuary", "village", "camp"].includes(place.role) ? "#344c44" : "#292638" };
     stage.boss = !!encounter; stage.bossKey = encounter ?? undefined;
-    const spec = chapter.startsWith("howlrstone") ? HOWLRSTONE_CHAPTERS.find(c => c.key === chapter) : CHAPTERS.find(c => c.key === chapter);
+    const spec = chapter.startsWith("lilacworld") ? LILACWORLD_CHAPTERS.find(c => c.key === chapter) : CHAPTERS.find(c => c.key === chapter);
     if (spec) Object.assign(stage, stageSize(spec.width, spec.height, i + 1, encounter ? i + 1 : -1, !!encounter));
     if (encounter) {
       stage.enemies = [];
@@ -2406,7 +2435,7 @@ for (const [chapter, plan] of Object.entries(CHAPTER_STORY_PLAN)) {
       stage.quests = stage.quests.filter(q => q.type !== "boss");
       if (previousBoss || !stage.quests.length) stage.quests = [{ id: `${key}-route`, type: "reach", title: `${place.title} 통과`, desc: "이 장소의 길을 따라 다음 장소로 향하자.", targetLabel: "차원문" }];
       // Rebuilding and tending the wounded are not turned into obligatory monster massacres.
-      if (chapter === "howlrstone15" || chapter === "howlrstone6") {
+      if (chapter === "lilacworld15" || chapter === "lilacworld6") {
         stage.enemies = [];
         stage.quests = [{ id: stage.quests[0]?.id ?? `${key}-route`, type: "reach", title: place.title, desc: "동료의 이야기를 듣고 다음 장소로 가자.", targetLabel: "차원문" }];
       } else {
@@ -2417,5 +2446,22 @@ for (const [chapter, plan] of Object.entries(CHAPTER_STORY_PLAN)) {
       }
     }
     if (!stage.enemies.length) stage.repeat = undefined;
+  }
+}
+
+/* 2026-11-14 (유저 지시 "레벨업 — 급상승 구간만 고르게") — 전투 없는 6·15장 앞의 5·14장이 그 몫까지 몰아 줘서
+ *  한 장에 14~24레벨이 올랐다(실측 5장 Lv28→42, 14장 Lv106→130). 5장 경험치 배율(9.18)은 다음 전투 장인 7장(6.89)보다도 높았다.
+ *  앞 장의 몬스터·퀘스트 경험치를 keep 배로 줄이고, 빈 장의 이야기 진행(이동) 퀘스트가 routeExp 씩 준다.
+ *  keep·routeExp 는 scripts/measure-combat-balance.mjs trajectory 로 맞췄다 — 다음 전투 장 입장 레벨(Lv42·Lv130)은 종전과 같다. */
+for (const { from, to, keep, routeExp } of [
+  { from: "lilacworld5", to: "lilacworld6", keep: 0.4, routeExp: 5300 },
+  { from: "lilacworld14", to: "lilacworld15", keep: 0.4, routeExp: 1_940_000 },
+]) {
+  for (const [key, stage] of Object.entries(STAGES)) {
+    if (key.startsWith(`${from}x`)) {
+      if (stage.scaleMul) stage.scaleMul = { ...stage.scaleMul, exp: stage.scaleMul.exp * keep };
+      for (const q of stage.quests) if (q.expReward) q.expReward = Math.round(q.expReward * keep);
+    }
+    if (key.startsWith(`${to}x`)) for (const q of stage.quests) if (q.type === "reach") q.expReward = routeExp;
   }
 }

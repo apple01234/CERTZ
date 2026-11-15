@@ -3,10 +3,10 @@
 // 전투 밸런스 실측 — "표준 육성" 캐릭터가 각 구역 몬스터/보스를 몇 대에 잡고 몇 대에 죽는지.
 // 표준 육성 = 전사, AP 전부 주스탯, 강화·잠재·세트·유니온 0, 그 레벨에 낄 수 있는 골드 상점 최고 무기/방어구.
 // (실제 유저는 이보다 강하다 — 여기 수치는 "가장 약한 정상 유저" 기준의 상한/하한이다.)
-import { STAGES, ENEMIES, BOSS_DEFS, BOSS_DIFFS, BOSS_STAGE_STATS, QUEST_EXP_MUL, stageScale, chapterSpec, parseStage } from '../src/game/stages.ts';
+import { STAGES, ENEMIES, BOSS_DEFS, BOSS_DIFFS, BOSS_STAGE_STATS, QUEST_EXP_MUL, stageScale, stageEnemyFloor, chapterSpec, parseStage } from '../src/game/stages.ts';
 import { expToNext } from '../src/game/expTable.ts';
 import { ITEMS } from '../src/game/data.ts';
-import { HOWLRSTONE_CHAPTERS } from '../src/game/howlrstone.ts';
+import { LILACWORLD_CHAPTERS } from '../src/game/lilacworld.ts';
 import { mitigateEnemyDamage } from '../src/game/combat/defense.ts';
 
 const gear = (kind, stat, lv) => Math.max(0, ...Object.values(ITEMS)
@@ -25,8 +25,10 @@ export function measure(key, lv) {
   const mobs = def.enemies.map(g => ENEMIES[g.key]).filter(Boolean);
   const row = { key, lv, pAtk: p.atk, pHp: p.hp };
   if (mobs.length) {
-    const htk = mobs.map(e => (e.hp * sc.hp) / (mitigateEnemyDamage(p.atk, e) * CRIT)).sort((a, b) => a - b);
-    const dmgIn = mobs.map(e => Math.max(1, Math.round(e.atk * sc.atk) - p.def)).sort((a, b) => a - b);
+    // 2026-11-14 — 게임과 같이 구역 안 최약체 보정(stageEnemyFloor)을 반영한다.
+    const fl = e => stageEnemyFloor(key, e.key);
+    const htk = mobs.map(e => (e.hp * sc.hp * fl(e).hp) / (mitigateEnemyDamage(p.atk, e) * CRIT)).sort((a, b) => a - b);
+    const dmgIn = mobs.map(e => Math.max(1, Math.round(e.atk * sc.atk * fl(e).atk) - p.def)).sort((a, b) => a - b);
     row.mobHtk = +htk[htk.length >> 1].toFixed(1);            // 중앙값 몬스터를 기본공격 몇 대에 잡나
     row.mobHtkMax = +htk[htk.length - 1].toFixed(1);
     row.hitsToDie = +(p.hp / dmgIn[dmgIn.length >> 1]).toFixed(1); // 중앙값 몬스터에게 몇 대 맞으면 죽나
@@ -44,7 +46,7 @@ export function measure(key, lv) {
 /** 본편 진행 순서의 장 목록(영프 15장 → 그랜드 플레닛 10행성). */
 export function chapters() {
   return [
-    ...HOWLRSTONE_CHAPTERS.map(c => ({ name: c.key, gate: c.lvGate, keys: Array.from({ length: c.stages }, (_, i) => `${c.key}x${i + 1}`) })),
+    ...LILACWORLD_CHAPTERS.map(c => ({ name: c.key, gate: c.lvGate, keys: Array.from({ length: c.stages }, (_, i) => `${c.key}x${i + 1}`) })),
     ...[...new Set(Object.keys(STAGES).map(k => chapterSpec(k)).filter(sp => sp?.lvGate))].map(sp => ({
       name: sp.key, gate: sp.lvGate, keys: Object.keys(STAGES).filter(k => chapterSpec(k) === sp && parseStage(k).sub > 0).sort((a, b) => parseStage(a).sub - parseStage(b).sub) })),
   ];

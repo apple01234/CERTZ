@@ -1,4 +1,4 @@
-// 네트워크 증거: 무스펠헤임 진입 시 실제로 로드되는 tile_* 파일
+// 네트워크 증거: 화산 진입 시 실제로 로드되는 tile_* 파일
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
@@ -25,7 +25,7 @@ function makeSave(stage) {
 
   await page.addInitScript(({ k, v }) => {
     try { window.localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
-  }, { k: SAVE_KEY, v: makeSave('muspelheim1') });
+  }, { k: SAVE_KEY, v: makeSave('emberland1') });
 
   await page.goto('http://localhost:3000/', { waitUntil: 'load', timeout: 90000 });
   await page.waitForTimeout(16000);

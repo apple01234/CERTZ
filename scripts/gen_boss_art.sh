@@ -11,14 +11,14 @@ declare -A P
 P[boss]="colossal abyss guardian golem knight, dark purple crystal armor plates, glowing violet runes and eyes, floating purple energy shards, menacing heavy stance"
 P[boss2]="giant frost behemoth monster, massive icy armor plates and frozen crystal spikes on back, blizzard snow swirling around body, pale blue glowing eyes"
 P[boss3]="abyss demon overlord, horned dark crimson armored demon lord with sharp claws, crimson energy aura, deep red glowing eyes, dark crown"
-P[boss_nidhog]="nidhogg undead corruption dragon, serpentine rotting dragon with tattered wings, toxic green breath glow from mouth, necrotic green rune scars"
-P[boss_surt]="surt fire titan, molten lava giant with cracked obsidian black skin, blazing fire mane, magma cracks glowing orange, burning fists"
-P[boss_fenrir]="mythical giant wolf fenrir, dark violet fur, broken glowing chain shackles, fierce glowing purple eyes, snarling fangs, four-legged stance"
-P[boss_skoll]="skoll celestial golden wolf, flowing golden mane made of solar flames, radiant gold white fur, small sun glow above, majestic running stance"
-P[boss_gram]="cursed rune blade wraith knight, dark spectral armor holding an enormous glowing teal greatsword, teal rune engravings on armor, ghostly tattered cape"
-P[boss_abudditos]="primordial god of destruction, demonic deity wreathed in crimson and magenta chaos energy, multiple glowing eyes, floating broken halo rings, apocalyptic aura"
+P[boss_blackwyrm]="blackwyrm undead corruption dragon, serpentine rotting dragon with tattered wings, toxic green breath glow from mouth, necrotic green rune scars"
+P[boss_flamegiant]="flamegiant fire titan, molten lava giant with cracked obsidian black skin, blazing fire mane, magma cracks glowing orange, burning fists"
+P[boss_greedwolf]="mythical giant wolf greedwolf, dark violet fur, broken glowing chain shackles, fierce glowing purple eyes, snarling fangs, four-legged stance"
+P[boss_twinwolf]="twinwolf celestial golden wolf, flowing golden mane made of solar flames, radiant gold white fur, small sun glow above, majestic running stance"
+P[boss_warden]="cursed rune blade wraith knight, dark spectral armor holding an enormous glowing teal greatsword, teal rune engravings on armor, ghostly tattered cape"
+P[boss_doomwyrm]="primordial god of destruction, demonic deity wreathed in crimson and magenta chaos energy, multiple glowing eyes, floating broken halo rings, apocalyptic aura"
 
-ORDER=(boss boss2 boss3 boss_nidhog boss_surt boss_fenrir boss_skoll boss_gram boss_abudditos)
+ORDER=(boss boss2 boss3 boss_blackwyrm boss_flamegiant boss_greedwolf boss_twinwolf boss_warden boss_doomwyrm)
 
 for k in "${ORDER[@]}"; do
   out="$RAW/${k}_raw.png"

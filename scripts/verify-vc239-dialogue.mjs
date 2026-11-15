@@ -20,17 +20,17 @@ await page.getByRole('button', { name: '모험가로 생성!' }).click({ timeout
 await page.getByRole('button', { name: '이 캐릭터로 시작' }).click({ timeout: 30000 });
 await page.waitForFunction(() => window.__SERTZ_SCENE__?.player, { timeout: 90000 });
 await page.evaluate(() => { const s = window.__SERTZ_SCENE__; for (const o of [...s.children.list]) if (o.text === '건너뛰기') o.emit('pointerdown'); s.tutorialDone = true; s.tutStep = -1; });
-await page.evaluate(stage => window.__SERTZ_SCENE__.startTransition(stage), 'howlrstone1x2');
-await page.waitForFunction(() => { const s = window.__SERTZ_SCENE__; return s?.stageDef?.key === 'howlrstone1x2' && !s.transitioning; }, { timeout: 30000 });
+await page.evaluate(stage => window.__SERTZ_SCENE__.startTransition(stage), 'lilacworld1x2');
+await page.waitForFunction(() => { const s = window.__SERTZ_SCENE__; return s?.stageDef?.key === 'lilacworld1x2' && !s.transitioning; }, { timeout: 30000 });
 await page.waitForTimeout(700);
 
 const KEYS = [
-  'howlBook','howlLetter','howlWar','howlAri','howlDokkaebi','howlAlliance',
-  'howlLuci','howlGolem','howlRiande','howlSwords','howlLilac','howlFourDoors','howlWindDoor',
-  'howlBalloon','howlIon','howlCurse','howlSunMark','howlEndTime','howlTimeRuler',
-  'howlNewBeginning','howlSerniumCall',
-  ...Array.from({ length: 15 }, (_, i) => `howlrstone${i + 1}Done`),
-  ...Array.from({ length: 15 }, (_, i) => `chapterIntroHowlrstone${i + 1}`),
+  'lwBook','lwLetter','lwWar','lwAri','lwDokkaebi','lwAlliance',
+  'lwLuci','lwGolem','lwRiande','lwSwords','lwLilac','lwFourDoors','lwWindDoor',
+  'lwBalloon','lwIon','lwCurse','lwSunMark','lwEndTime','lwTimeRuler',
+  'lwNewBeginning','lwSerniumCall',
+  ...Array.from({ length: 15 }, (_, i) => `lilacworld${i + 1}Done`),
+  ...Array.from({ length: 15 }, (_, i) => `chapterIntroLilacworld${i + 1}`),
 ];
 
 const results = { checked: [], pageErrors };

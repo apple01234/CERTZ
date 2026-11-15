@@ -9,7 +9,7 @@ console.log(`[챕터] total=${chs.length}`);
 for (const c of chs) console.log(`  ${String(c.num).padStart(2)}. ${c.key.padEnd(14)} ${c.dlc ? '[DLC] ' : '      '}${c.title}`);
 
 // 1) 기존 9챕터 키가 그대로인가 (회귀 방지)
-const BASE = ['forest', 'kingdom', 'alfheim', 'muspelheim', 'niflheim', 'cave', 'nidavellir', 'hel', 'abyss'];
+const BASE = ['forest', 'kingdom', 'fairyglade', 'emberland', 'frostland', 'cave', 'forgehall', 'duskrealm', 'abyss'];
 const keys = chs.map(c => c.key);
 const lostBase = BASE.filter(k => !keys.includes(k));
 console.log(`\n[기존 9챕터 보존] 실종=${lostBase.length}`);

@@ -36,7 +36,7 @@ const eq = (name, a, b) => { assert.deepEqual(a, b, `✗ ${name}`); checks++; };
 
 /* ── 2. 결정론 — 같은 (챕터, 구역)이면 언제나 같은 결과 ── */
 {
-  for (const key of ["forest", "abyss", "dlcstargate", "dlcsernium"]) {
+  for (const key of ["dlcstargate", "dlcprisma", "dlcneocity", "dlcsernium"]) {
     for (let sub = 2; sub <= 9; sub++) {
       eq(`${key}${sub} 결정론`, stageDialogueLines(key, sub), stageDialogueLines(key, sub));
     }
@@ -45,13 +45,13 @@ const eq = (name, a, b) => { assert.deepEqual(a, b, `✗ ${name}`); checks++; };
 
 /* ── 3. 풀 없는 키는 빈 배열 — 호출부가 기존 키로 폴백해야 한다 ── */
 {
-  for (const k of ["village", "rebirth", "howlrstone1", "youngprincessv"]) {
+  for (const k of ["village", "rebirth", "lilacworld1", "youngprincessv"]) {
     eq(`${k}: 풀 없음 → 빈 배열`, stageDialogueLines(k, 3), []);
     ok(`${k}: hasStageDialogue false`, hasStageDialogue(k) === false);
   }
   /* 재림/영프 편은 종전 경로가 그대로 살아 있어야 한다 */
   ok("재림 r7 은 기존 rebirthWalk 키", /^rebirthWalk[123]$/.test(stageIntro("r7")));
-  ok("영프 howlrstone1x2 는 기존 howlWalk 키", /^howlWalk1_[123]$/.test(stageIntro("howlrstone1x2")));
+  ok("영프 lilacworld1x2 는 기존 lwWalk 키", /^lwWalk1_[123]$/.test(stageIntro("lilacworld1x2")));
 }
 
 /* ── 4. 서사 금지어 미포함 (retired-story-removal 과 같은 규칙) ── */

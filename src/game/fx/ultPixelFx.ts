@@ -7,11 +7,12 @@
  * 피해·판정에는 관여하지 않는다(연출만). 같은 직업의 1·2차는 서로 다른 이펙트를 쓴다.
  *
  * 로딩: 부팅 목록(BootScene PIXELFX_SHEETS)에 넣지 않는다 — 넣으면 모든 직업이 40장을 받는다.
- *  현재 직업 4장만 prefetchUltFx 로 받는다(이미 받은 건 재사용). 아직 못 받았으면 그 회차는 생략.
+ *  현재 직업 4장만 prefetchUltFx 로 받는다(이미 받은 건 재사용). 지역 진입·전직 때 부르고, 다른 직업의 시트는 내린다.
+ *  아직 못 받았으면 받기를 걸고, 1.5초 안에 도착하면 그때 늦게라도 재생한다(첫 시전 누락 방지).
  * 크기: 시트 한 장의 풀린 메모리를 약 13MB 이하로 골랐다(모바일). 운석·대폭발·핵 등 30~97MB 시트는 제외.
  */
 import Phaser from "phaser";
-import { ensureFxSheet, playFx } from "./pixelfxBridge";
+import { ensureFxSheet, playFx, unloadFxSheet } from "./pixelfxBridge";
 
 type UltFx = { cast: string; finale: string };
 type Pair = { s5: UltFx; s5b: UltFx };
@@ -38,10 +39,22 @@ function sheetsOf(cls: string | null | undefined): string[] {
   return p ? [p.s5.cast, p.s5.finale, p.s5b.cast, p.s5b.finale] : [];
 }
 
-/** 현재 직업의 궁극기 시트 4장을 미리 받는다. 궁극기 직업이 아니면 아무것도 하지 않는다. */
-export function prefetchUltFx(scene: Phaser.Scene, cls: string | null | undefined): void {
-  for (const key of sheetsOf(cls)) void ensureFxSheet(scene, key);
+/** 이 직업에 궁극기 pixelfx 가 있는지 */
+export function hasUltFx(cls: string | null | undefined): boolean {
+  return !!(cls && ULT_PIXELFX[cls]);
 }
+
+/** 현재 직업의 궁극기 시트 4장을 미리 받고, 다른 직업의 궁극기 시트는 내린다(직업을 바꿔도 메모리가 쌓이지 않게). */
+export function prefetchUltFx(scene: Phaser.Scene, cls: string | null | undefined): void {
+  const keep = new Set(sheetsOf(cls));
+  for (const other of Object.keys(ULT_PIXELFX)) {
+    for (const key of sheetsOf(other)) if (!keep.has(key)) unloadFxSheet(scene, key);
+  }
+  for (const key of keep) void ensureFxSheet(scene, key);
+}
+
+/** 시트가 늦게 도착했을 때 그래도 재생해 줄 최대 지연 — 이보다 늦으면 이미 지난 연출이라 생략한다. */
+const LATE_MS = 1500;
 
 /** 궁극기 이펙트 재생. 시트가 아직 없으면 받기만 걸어 두고 이번엔 생략한다. */
 export function playUltFx(scene: Phaser.Scene, cls: string | null | undefined, slot: 1 | 2, phase: "cast" | "finale", x: number, y: number, flip = false): void {
@@ -50,8 +63,20 @@ export function playUltFx(scene: Phaser.Scene, cls: string | null | undefined, s
   const key = (slot === 1 ? p.s5 : p.s5b)[phase];
   let sp: Phaser.GameObjects.Sprite | null = null;
   try { sp = playFx(scene, key, x, y, { scale: SCALE[phase], flip }); } catch { /* 연출 실패는 게임을 막지 않는다 */ }
-  if (!sp) { void ensureFxSheet(scene, key); return; }
-  const fx = sp;
+  if (!sp) {
+    const t0 = Date.now();
+    void ensureFxSheet(scene, key).then((ok) => {
+      if (!ok || Date.now() - t0 > LATE_MS || !scene.sys?.isActive()) return;
+      let late: Phaser.GameObjects.Sprite | null = null;
+      try { late = playFx(scene, key, x, y, { scale: SCALE[phase], flip }); } catch { /* 무시 */ }
+      if (late) fadeLoop(scene, late, phase);
+    });
+    return;
+  }
+  fadeLoop(scene, sp, phase);
+}
+
+function fadeLoop(scene: Phaser.Scene, fx: Phaser.GameObjects.Sprite, phase: "cast" | "finale"): void {
   if (fx.anims.currentAnim?.repeat === -1) {
     scene.time.delayedCall(LOOP_MS[phase], () => {
       if (!fx.active) return;

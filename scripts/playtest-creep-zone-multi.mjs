@@ -30,7 +30,7 @@ mkdirSync(OUT, { recursive: true });
 
 /* 후보 스테이지 — 큰 표본(20마리+) 위주로, 하나는 반드시 3종족 이상.
  * 키는 src/game/stages.ts 의 `key` 필드와 일치해야 한다. */
-const CANDIDATES = (process.env.E2E_STAGES ?? "howlrstone1x1,1-2,1-3,2-1,3-1,howlrstone5x5").split(",");
+const CANDIDATES = (process.env.E2E_STAGES ?? "lilacworld1x1,1-2,1-3,2-1,3-1,lilacworld5x5").split(",");
 
 const b = await chromium.launch({ args: ["--no-sandbox", "--enable-unsafe-swiftshader"] });
 const ctx = await b.newContext({ viewport: { width: 1280, height: 800 } });
@@ -129,7 +129,7 @@ async function gotoStage(stageKey) {
        *                 : data.stage ?? save.stage
        *  새 캐릭터는 **튜토리얼 진행 중**이라 resumeTutorial 이 non-null 이고, 그러면
        *  어떤 stage 를 넘겨도 튜토리얼 스테이지로 되돌아간다(실측: dlcocean 요청 → 실제
-       *  howlrstone1x1 유지). 측정을 위해 튜토리얼 플래그만 끈다 — 판정·전투와 무관하다. */
+       *  lilacworld1x1 유지). 측정을 위해 튜토리얼 플래그만 끈다 — 판정·전투와 무관하다. */
       if ("tutStep" in s) s.tutStep = -1;
       const base = s.buildSave?.(key) ?? s.lastCarry ?? null;
       const save = base ? { ...base, stage: key, tutorialDone: true } : undefined;

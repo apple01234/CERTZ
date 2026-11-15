@@ -2,7 +2,7 @@
  *  v2.6 보루가 깔린 상태에서도 남는 구멍을 실측으로 찾는다.
  *  [A] forest1 실체인: level 게이트 → 토벌 → 체인 종료 → 포탈 개방 지연 측정
  *  [B] kingdom2 (hunt 단일 체인): 마지막 킬 직후 개방 지연
- *  [C] alfheim9 (hunt+collect): 수확 완료 직후 개방 지연
+ *  [C] fairyglade9 (hunt+collect): 수확 완료 직후 개방 지연
  *  [D] forest10 보스: 보스 격파 → bossDone 대사 → 스킵 → 개방 지연 (보스 구역은 보루 제외!)
  *  [E] 보루 거부 행렬: dialoguing / pendingPortal / repeatOn 상태에서 보루가 열어주는지
  *  [F] 이어하기: 체인 완료 세이브 재입장 시 개방 복구 */
@@ -122,10 +122,10 @@ async function huntThrough(page) {
   ok(rB.activeNow && rB.openedAtMs !== null && rB.openedAtMs < 300, `B1 마지막 킬 즉시 개방 (${Math.round(rB.openedAtMs ?? -1)}ms)`);
   await clearDialogue(page);
 
-  console.log("[C] alfheim9 — hunt+collect → 수확 후 개방");
-  await restartWith(page, "alfheim9", { lv: 30, questIdx: { alfheim9: 0 }, seen: [] });
+  console.log("[C] fairyglade9 — hunt+collect → 수확 후 개방");
+  await restartWith(page, "fairyglade9", { lv: 30, questIdx: { fairyglade9: 0 }, seen: [] });
   s = await W(page);
-  console.log(`   alfheim9 체인: ${s.chainLen}개, 현재=${s.q?.type}`);
+  console.log(`   fairyglade9 체인: ${s.chainLen}개, 현재=${s.q?.type}`);
   const rC1 = await huntThrough(page);
   await sleep(300);
   s = await W(page);

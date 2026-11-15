@@ -85,7 +85,7 @@ VFX = [
     (f"{CFXR}/cfxr aura rays.png",         "pfx_aura",     512, False),  # 보스 오라 광선
     (f"{CFXR}/cfxr ring arc.png",          "pfx_ring",     512, False),  # 충격파 링
     (f"{CFXR}/cfxr electric spark.png",    "pfx_elec",     256, True),   # 전기 스파크
-    (f"{CFXR}/cfxr skull 2.png",           "pfx_skull",    256, True),   # 사망 해골 (헬/사망 연출)
+    (f"{CFXR}/cfxr skull 2.png",           "pfx_skull",    256, True),   # 사망 해골 (명계/사망 연출)
     (f"{FW}/Star_Blue.png",                "pfx_fw_b",     256, True),   # 불꽃놀이 별 파랑
     (f"{FW}/Star_Yellow.png",              "pfx_fw_y",     256, True),   # 불꽃놀이 별 노랑
     (f"{FW}/Heart.png",                    "pfx_heart",    256, True),   # 힐 하트

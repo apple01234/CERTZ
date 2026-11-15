@@ -12,8 +12,8 @@ OUT = "/home/z/my-project/public/assets"
 # 원본 규격 (게임 판정 유지용)
 DIMS = {
     "boss": (111, 126), "boss2": (94, 144), "boss3": (110, 180),
-    "boss_nidhog": (124, 140), "boss_surt": (94, 144), "boss_fenrir": (145, 75),
-    "boss_skoll": (151, 78), "boss_gram": (69, 81), "boss_abudditos": (110, 180),
+    "boss_blackwyrm": (124, 140), "boss_flamegiant": (94, 144), "boss_greedwolf": (145, 75),
+    "boss_twinwolf": (151, 78), "boss_warden": (69, 81), "boss_doomwyrm": (110, 180),
 }
 
 def border_connected_white(rgb: np.ndarray, thr_base: int = 238) -> np.ndarray:

@@ -1,9 +1,9 @@
-// node --experimental-strip-types --import ./tests/ts-resolve-hook.mjs tests/howlrstone-dialogue.test.mjs
+// node --experimental-strip-types --import ./tests/ts-resolve-hook.mjs tests/lilacworld-dialogue.test.mjs
 //
 // 영프편 대사 계약 — vc239
 //
 // [왜 필요한가]
-//  `howlrstone.ts` 의 beats[].dialogue / chapterSpec.bossDone 은 `DIALOGUES` 키 문자열만
+//  `lilacworld.ts` 의 beats[].dialogue / chapterSpec.bossDone 은 `DIALOGUES` 키 문자열만
 //  들고 있다. 그 키가 없으면 `showDialogueOnce` 가 **조용히 false 를 돌려주고** 아무 일도
 //  일어나지 않는다 — 오류도 경고도 없다. 실제로 22개 비트 키 + 15개 bossDone 키가
 //  전부 비어 있어서 1기 15장 대사가 한 번도 재생되지 않았다(브라우저에서 확인).
@@ -11,7 +11,7 @@
 import assert from 'node:assert/strict';
 import { DIALOGUES } from '../src/game/data.ts';
 import { LILAC_INTROS } from '../src/game/lilacStory.ts';
-import { HOWLRSTONE_CHAPTERS, HOWLRSTONE_BOSSES } from '../src/game/howlrstone.ts';
+import { LILACWORLD_CHAPTERS, LILACWORLD_BOSSES } from '../src/game/lilacworld.ts';
 
 let checks = 0;
 const ok = (name, cond) => { assert.ok(cond, `✗ ${name}`); checks++; };
@@ -30,7 +30,7 @@ function validEntry(key) {
 
 /* ── 1. 모든 비트 대사 키가 실존한다 ──────────────────────────────────── */
 let beatCount = 0;
-for (const spec of HOWLRSTONE_CHAPTERS) {
+for (const spec of LILACWORLD_CHAPTERS) {
   for (const beat of spec.beats) {
     if (!beat.dialogue) continue;
     beatCount++;
@@ -40,17 +40,17 @@ for (const spec of HOWLRSTONE_CHAPTERS) {
 ok(`비트 대사 ${beatCount}개 검사됨`, beatCount > 0);
 
 /* ── 2. 모든 bossDone 키가 실존한다 ──────────────────────────────────── */
-for (const spec of HOWLRSTONE_CHAPTERS) {
+for (const spec of LILACWORLD_CHAPTERS) {
   validEntry(spec.bossDone);
 }
 
 /* ── 3. 모든 챕터 인트로 키가 실존한다 ───────────────────────────────── */
-for (const spec of HOWLRSTONE_CHAPTERS) {
+for (const spec of LILACWORLD_CHAPTERS) {
   validEntry(spec.intro);
 }
 
 /* ── 4. 보스 인트로 대사 ─────────────────────────────────────────────── */
-for (const [key, boss] of Object.entries(HOWLRSTONE_BOSSES)) {
+for (const [key, boss] of Object.entries(LILACWORLD_BOSSES)) {
   ok(`보스 ${key}: introDialogue 키 정의`, typeof boss.introDialogue === 'string' && boss.introDialogue.length > 0);
   validEntry(boss.introDialogue);
 }
@@ -59,7 +59,7 @@ for (const [key, boss] of Object.entries(HOWLRSTONE_BOSSES)) {
 {
   /* 인계 문서 규칙: 충돌 시 앞 문서(1.txt)가 우선이고, 구조자는 라일락(+펜던트),
    *  주인공은 하루다. 뒤 문서의 스칼렛+책 버전을 앞세우면 안 된다. */
-  const beatText = HOWLRSTONE_CHAPTERS
+  const beatText = LILACWORLD_CHAPTERS
     .flatMap((s) => s.beats.map((b) => b.dialogue))
     .filter(Boolean)
     .map((k) => (DIALOGUES[k]?.lines ?? []).join(' '))
@@ -85,4 +85,4 @@ for (const [key, boss] of Object.entries(HOWLRSTONE_BOSSES)) {
   ok('LILAC_INTROS 대사 참조가 존재', refs > 0);
 }
 
-console.log(`ALL CHECKS PASS: howlrstone dialogue — ${checks} checks`);
+console.log(`ALL CHECKS PASS: lilacworld dialogue — ${checks} checks`);

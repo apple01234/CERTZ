@@ -69,7 +69,7 @@ const bossSrc = readFileSync("src/game/entities/Boss.ts", "utf8");
   ok("페이즈 전환이 무의미한 보스 0종 (p1≠p3)", unchanged.length === 0);
   /* 3페이즈는 1페이즈의 상위집합이어야 "확장"이다.
    *  ⚠️ 실제로는 데이터에 구멍이 있다: abysslord 는 p1 의 자기 시그니처 greenslash 와
-   *  slam 이 p3 에 없고, skoll 은 slam 이 없다. 그래서 **원본 데이터가 아니라
+   *  slam 이 p3 에 없고, twinwolf 은 slam 이 없다. 그래서 **원본 데이터가 아니라
    *  pickAttack 이 실제로 쓰는 attackPool(페이즈 누적)** 을 검증한다. */
   const notSuperset = keys.filter((k) => {
     const p1 = attackPool(BOSS_DEFS[k].patterns, 1);

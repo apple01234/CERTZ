@@ -61,8 +61,8 @@ for (const [setName, list] of Object.entries(DECOR_SETS)) {
 }
 
 /* ── 3. 모든 챕터가 배치 세트를 갖는가 ──────────────────────────────── */
-const chapters = ['forest', 'kingdom', 'alfheim', 'muspelheim', 'niflheim',
-                  'cave', 'nidavellir', 'hel', 'abyss', 'howlrstone'];
+const chapters = ['forest', 'kingdom', 'fairyglade', 'emberland', 'frostland',
+                  'cave', 'forgehall', 'duskrealm', 'abyss', 'lilacworld'];
 for (const ch of chapters) {
   const set = decorSetFor(ch);
   assert.ok(DECOR_SETS[set], `${ch}: 세트 ${set} 가 DECOR_SETS 에 없다`);

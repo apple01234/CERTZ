@@ -265,7 +265,7 @@ const { chromium } = require("playwright");
   /* ⑪ 환생 — 방문기록 초기화 (워프 차단) */
   const rebirth = await p.evaluate(() => {
     const sw = window.__SERTZ__?.game?.scene?.getScene("world");
-    sw.visited = new Set(["village", "forest1", "forest2", "kingdom1", "alfheim1", "abyss10"]);
+    sw.visited = new Set(["village", "forest1", "forest2", "kingdom1", "fairyglade1", "abyss10"]);
     sw.inf.rebirths = 0;
     window.confirm = () => true;
     sw.player.lv = 250;

@@ -44,7 +44,7 @@ const { chromium } = require("playwright");
     const sc = g?.scene?.getScene("title");
     if (!sc) return null;
     const T = sc.textures;
-    const keys = ["hero_idle0", "chm0_idle0", "chf5_atkup3", "gm_idle0", "costm_valkyrie_idle0", "cost_warlord_atk0", "jobf_archmage_idle0", "jobm_assassin_walk1", "npc_gm", "sv_campfire", "chest_anim"];
+    const keys = ["hero_idle0", "chm0_idle0", "chf5_atkup3", "gm_idle0", "costm_wingmaiden_idle0", "cost_warlord_atk0", "jobf_archmage_idle0", "jobm_assassin_walk1", "npc_gm", "sv_campfire", "chest_anim"];
     return keys.map((k) => ({ k, ok: T.exists(k) }));
   });
   const missingTitle = (texTitle ?? []).filter((x) => !x.ok);

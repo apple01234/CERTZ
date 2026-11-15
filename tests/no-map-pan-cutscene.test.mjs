@@ -16,7 +16,7 @@ test("입장 컷씬은 대사 달린 컷만, 플레이어 위치에서 재생한
 });
 
 test("대사 없는 연출(영프 15장 입장·구역 템플릿)은 남는 컷이 없다", () => {
-  for (let n = 1; n <= 15; n++) assert.equal(chapterIntroOf(`howlrstone${n}`).shots.filter((s) => s.dialogue).length, 0);
-  assert.equal(stageIntroOf("howlrstone2", 3).shots.filter((s) => s.dialogue).length, 0);
+  for (let n = 1; n <= 15; n++) assert.equal(chapterIntroOf(`lilacworld${n}`).shots.filter((s) => s.dialogue).length, 0);
+  assert.equal(stageIntroOf("lilacworld2", 3).shots.filter((s) => s.dialogue).length, 0);
   assert.equal(chapterIntroOf("dlcstargate").shots.filter((s) => s.dialogue).length, 1);
 });

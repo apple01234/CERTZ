@@ -17,13 +17,13 @@ import { canonBossOf, canonPhaseIndex, BOSS_RECORD_ALIASES } from "./bossDesign"
 
 /** 2026-11-14 — 전투기록 보스 중 다른 보스와 같은 시트를 쓰는 쪽의 몸 색(그림 6장을 12종이 나눠 쓴다). */
 const RECORD_BODY_TINT: Record<string, number> = {
-  vord: 0xffc890, gram: 0xa8ffd0, surt: 0xffa070, abudditos: 0xff8aa8, jorm: 0x90ffe0, skoll: 0xffe08a,
+  riftwarden: 0xffc890, warden: 0xa8ffd0, flamegiant: 0xffa070, doomwyrm: 0xff8aa8, unionserpent: 0x90ffe0, twinwolf: 0xffe08a,
 };
 import { STORY_ATTACKS, storyPattern, type StoryAttack } from "./storyBossPatterns";
 import { StoryBossMechanics } from "./StoryBossMechanics";
 /**
  * 보스 (3종 — 스테이지별 정의 주입):
- *  guardian: 심연의 수호자 (알프헤임) / behemoth: 침몰의 선장 (쿠소디아 선박의 왕국) / abysslord: 심연의 군주 (심연의 왕좌)
+ *  guardian: 심연의 수호자 (요정 숲) / behemoth: 침몰의 선장 (왕국 선박의 왕국) / abysslord: 심연의 군주 (심연의 왕좌)
  * F4 최적화 핵심:
  *  - 투사체는 24발 고정 풀 재사용 (런타임 생성/파괴 없음)
  *  - 텔레그래프는 미리 만든 텍스처 스프라이트 트윈 (매 프레임 Graphics 그리기 없음)
@@ -57,7 +57,7 @@ type BossMode =  | "idle"
   | "storyCast"
   | "vxTele" // VX 패턴 공용 예고
   | "vxCast" // VX 패턴 연출/연타 중 (피해 판정은 delayedCall 체인)
-  // vc153 — 스바르트알프헤임 보스 개편 (애니 사양표 상태머신)
+  // vc153 — 어둠 동굴 보스 개편 (애니 사양표 상태머신)
   | "vanished" // Vanish — 투명화 후 재배치 대기
   | "shieldHold" // ShieldCast — 방어막 상태유지 (무적 → 종료 시 마력 폭발 반격)
   | "recover" // P7b — 강력 패턴 후 무방비 구간 (반격 기회, 피해 ×1.15)
@@ -88,7 +88,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private chargeDir = new Phaser.Math.Vector2();
   private teleRing: Phaser.GameObjects.Image | null = null;
   private teleRings: Phaser.GameObjects.Image[] = [];
-  /** v1.0.12 — 스콜&하티 쌍랑 표현 ("스콜밖에 안보임" 리포트): 하티(달을 쫓는 늑대)
+  /** v1.0.12 — 교만의 쌍랑 쌍랑 표현 ("얼음 늑대밖에 안보임" 리포트): 화염 늑대(달을 쫓는 늑대)
    *  쌍둥이 유령 스프라이트 — 판정 없는 비주얼 동반자(뒤 오프셋·플립 미러·달빛 틴트). */
   private twin: Phaser.GameObjects.Sprite | null = null;
   /** 장판 패턴(존스)용 예고 링들 */
@@ -103,7 +103,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /* ---- v4.1.4 — 난이도/신규 패턴 상태 ---- */
   /** 카오스 난이도 전용 메커니즘 활성화 (재림판에서만 선택 가능) */
   chaos = false;
-  /** 돌진 연쇄 잔여 횟수 (fenrir 2연속 / skoll 3연속, 카오스 +1) */
+  /** 돌진 연쇄 잔여 횟수 (greedwolf 2연속 / twinwolf 3연속, 카오스 +1) */
   private chargeChainLeft = 0;
   private spiralAngle = 0;
   private spiralTimer: Phaser.Time.TimerEvent | null = null;
@@ -116,8 +116,10 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /* ---- vc142 (#6) — 보스 고유 VX 패턴 상태 ---- */
   private vxKind: BossAttackKind | null = null;
   private vxStep = 0;
-  /* vc153 — 스바르트알프헤임 보스 개편 상태 */
+  /* vc153 — 어둠 동굴 보스 개편 상태 */
   private shieldInvuln = false; // ShieldCast 상태유지 중 피해 무효
+  /** 궁극기 wave 가 이 보스를 건너뛸지 — 방어막 중엔 지급을 다음 wave 로 미룬다. */
+  get ultShielded(): boolean { return this.shieldInvuln; }
   private shieldAura: Phaser.GameObjects.Image | null = null; // 방어막 오라 (정리 보장 대상)
   /* vc288 — 방어막 남은 시간 게이지. 시간제 무적의 종료 시점을 보여 준다. */
   private shieldGauge: Phaser.GameObjects.Graphics | null = null;
@@ -128,7 +130,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
    *  "왜 갑자기 세지?" 만 느꼈다. */
   private enrageAura: Phaser.GameObjects.Graphics | null = null;
   private enrageAuraTimer: Phaser.Time.TimerEvent | null = null;
-  /** 독 장판 (nidhog/jorm poisonfield) — 밟으면 도트 피해 */
+  /** 독 장판 (blackwyrm/unionserpent poisonfield) — 밟으면 도트 피해 */
   private poisonZones: { x: number; y: number; until: number; img: Phaser.GameObjects.Image; last: number }[] = [];
   /** 카운터 창 텔레그래프 링 */
   private counterRing: Phaser.GameObjects.Image | null = null;
@@ -163,7 +165,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private orbPool: Phaser.Physics.Arcade.Image[] = [];
   private orbIdx = 0;
 
-  /** v1.4.31 (#4) — 트윈(하티)이 본체와 다른 텍스처를 쓸 때의 애니 프리픽스 (boss_skoll → boss_hati) */
+  /** v1.4.31 (#4) — 트윈(화염 늑대)이 본체와 다른 텍스처를 쓸 때의 애니 프리픽스 (boss_twinwolf → boss_twinmate) */
   private twinPrefix: string | null = null;
 
   constructor(scene: WorldScene, x: number, y: number, def: BossDef, diffKey: BossDiffKey = "normal") {
@@ -187,7 +189,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     /* vc181 (지시 #7 — "보스 크기 적용 안됨"):
      *  종전엔 보스 스케일을 아무도 지정하지 않아 `scaleX || 1` = 항상 1배였다.
      *  그런데 BOSS_ATLAS 프레임 크기가 보스마다 156×163 ~ 330×212 로 제각각이라
-     *  (nidhog는 작게, boss2는 크게) 화면에서 차지하는 크기가 들쭉날쭉했다.
+     *  (blackwyrm는 작게, boss2는 크게) 화면에서 차지하는 크기가 들쭉날쭉했다.
      *  → 목표 표시 높이(320px)로 정규화해 모든 보스가 같은 체급으로 보이게 한다.
      *    (소스 프레임이 작은 보스는 확대, 큰 보스는 축소 — 판정도 displayWidth 기준이라 함께 맞는다) */
     {
@@ -224,16 +226,16 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     if (def.tex.startsWith("cast_") || def.tex.startsWith("story_")) this.applyStoryVisual(def.tex);
     this.story = new StoryBossMechanics(this);
 
-    /* v1.0.12 — 하티 스폰: 스콜 옆에 나란히 달린다.
-     *  vc142 — 아틀라스 시대: 본체=얼음 늑대(스콜), 트윈=화염 늑대(하티 전용 아트·무틴트).
+    /* v1.0.12 — 화염 늑대 스폰: 얼음 늑대 옆에 나란히 달린다.
+     *  vc142 — 아틀라스 시대: 본체=얼음 늑대(얼음 늑대), 트윈=화염 늑대(화염 늑대 전용 아트·무틴트).
      *  구형 아트는 기존대로 동일 텍스처+은빛 틴트. 히트박스/판정은 보스 본체 그대로(밸런스 불변). */
-    if (def.key === "skoll" && !canonBossOf(def.key)) {
+    if (def.key === "twinwolf" && !canonBossOf(def.key)) {
       if (BOSS_ATLAS[def.tex]) {
-        this.twinPrefix = "boss_hati";
-        this.twin = scene.add.sprite(this.x, this.y, "atl_boss_hati", 0)
+        this.twinPrefix = "boss_twinmate";
+        this.twin = scene.add.sprite(this.x, this.y, "atl_boss_twinmate", 0)
           .setDepth(this.depth - 1)
           .setAlpha(0); // v1.4.9 — 낙하 등장 중 비표시, 착지 시 0.95로 복원
-        this.twin.play("boss_hati-idle");
+        this.twin.play("boss_twinmate-idle");
       } else {
         this.twin = scene.add.sprite(this.x, this.y, this.texture.key)
           .setDepth(this.depth - 1)
@@ -460,7 +462,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       const duration = Math.max(100, this.storyReleaseAt - this.scene.time.now);
       this.anims.timeScale = this.anims.currentAnim!.duration / duration;
     } else this.anims.timeScale = 1;
-    /* v1.4.31 (#4) — 트윈이 다른 텍스처(하티)면 대응 애니키로 치환해 동기화 */
+    /* v1.4.31 (#4) — 트윈이 다른 텍스처(화염 늑대)면 대응 애니키로 치환해 동기화 */
     if (this.twin) {
       const twinWant = this.twinPrefix && want.startsWith(`${this.def.tex}-`)
         ? `${this.twinPrefix}-${want.slice(this.def.tex.length + 1)}`
@@ -469,7 +471,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  /** v1.0.12 — 하티 동기화: 프레임마다 보스 뒤 오프셋에 붙어 같이 달린다 (tick 흐름과 무관)
+  /** v1.0.12 — 화염 늑대 동기화: 프레임마다 보스 뒤 오프셋에 붙어 같이 달린다 (tick 흐름과 무관)
    *  v1.4.9 — + 생동감 애니메이션: 호흡(±2.2% 부피 보존 펄스) + 예동 감쇠 적용 */
   preUpdate(time: number, delta: number) {
     super.preUpdate(time, delta);
@@ -600,7 +602,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
           player.takeDamage(Math.round(this.def.atk * 1.1), this.chargeDir.clone(), 0.5, this.chaos ? 0.10 : 0); // v3.0.6 — 관통 + maxHP % 하한
         }
         if (this.modeTimer <= 0) {
-          // v4.1.4 — 돌진 연쇄 (fenrir/skoll 고유성, 카오스 +1): 끝나면 짧은 예고 뒤 재돌진
+          // v4.1.4 — 돌진 연쇄 (greedwolf/twinwolf 고유성, 카오스 +1): 끝나면 짧은 예고 뒤 재돌진
           if (this.chargeChainLeft > 0 && player.hp > 0) {
             this.chargeChainLeft--;
             this.setMode("chargeTele", this.chaos ? 240 : 320);
@@ -640,7 +642,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         if (this.modeTimer <= 0) this.doBlink(player);
         break;
       }
-      /* ---- vc153 — 스바르트알프헤임 보스 개편 (애니 사양표 상태머신) ---- */
+      /* ---- vc153 — 어둠 동굴 보스 개편 (애니 사양표 상태머신) ---- */
       case "vanished": {
         /* Vanish(Once) → 투명 유지 — 타이머 만료 시 다른 위치에서 재등장 (PortalTeleport 연출 공유) */
         this.setVelocity(0, 0);
@@ -739,7 +741,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     try { this.scene.pxFx?.boss("boss.intro", this.x, this.y, { scale: 1.4 }); } catch { /* 무시 */ }
     this.volleyTimer?.remove();
     this.clearTint();
-    /* vc153 — 스바르트알프헤임 방어막/투명화 잔존 정리 (페이즈 전환 시에도 상태 유출 금지) */
+    /* vc153 — 어둠 동굴 방어막/투명화 잔존 정리 (페이즈 전환 시에도 상태 유출 금지) */
     this.cleanupSvartStates();
     if (this.mode === "vanished" || this.mode === "shieldHold") this.endAttack(900);
     this.mode = "idle";
@@ -808,14 +810,14 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private pickAttack(player: PlayerLike2, dist: number) {
     /* P7b — 후보 풀은 `bossPhases.attackPool` 이 만든다(페이즈 누적 확장).
      *  종전엔 p3 에서 p1 패턴이 통째로 사라지는 보스가 2종 있었다
-     *  (abysslord: 자기 시그니처 greenslash·slam 이 p3 에 없음 / skoll: slam).
+     *  (abysslord: 자기 시그니처 greenslash·slam 이 p3 에 없음 / twinwolf: slam).
      *  그래서 abysslord 는 sig 가중치(2.6배)를 줘도 후보에 없어 **영원히 안 나왔다**. */
     let candidates = attackPool(this.def.patterns, this.phase) as BossAttackKind[];
     candidates = candidates.filter((k) => k !== this.lastAttack);
     if (candidates.length === 0) candidates = attackPool(this.def.patterns, this.phase) as BossAttackKind[];
     /* v1.4.12 (#20 보스마다 패턴 차별화) — 시그니처 패턴 가중치 뽑기:
-     *  보스별 정체성 패턴(sig)이 2.6배 확률로 나온다 — 수호자는 강타, 펜리르는 돌진,
-     *  가름은 반격처럼 각자의 전투 스타일이 체감된다. */
+     *  보스별 정체성 패턴(sig)이 2.6배 확률로 나온다 — 수호자는 강타, 탐욕의 늑대는 돌진,
+     *  혈안의 문지기은 반격처럼 각자의 전투 스타일이 체감된다. */
     const sig = this.def.sig;
     let kind: BossAttackKind;
     if (sig && candidates.includes(sig)) {
@@ -875,7 +877,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       case "counter":
         this.startCounter();
         break;
-      /* ---- vc153 — 스바르트알프헤임 보스 개편 (애니 사양표 상태머신) ---- */
+      /* ---- vc153 — 어둠 동굴 보스 개편 (애니 사양표 상태머신) ---- */
       case "greenslash":
         this.startGreenSlash(player);
         break;
@@ -957,7 +959,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   private startCharge(player: PlayerLike2) {
     void player;
-    // v4.1.4 — 돌진 연쇄: def.chargeChain(fenrir 2 / skoll 2+blink, 카오스 +1, 상한 3)
+    // v4.1.4 — 돌진 연쇄: def.chargeChain(greedwolf 2 / twinwolf 2+blink, 카오스 +1, 상한 3)
     this.chargeChainLeft = Math.min(3, (this.def.chargeChain ?? 1) - 1 + (this.chaos ? 1 : 0));
     /* P7b — 돌진 예고를 bossPhases 기준(850ms)으로. 종전 550ms 는 range 하한(600) 미만이었다.
      *  돌진은 유도형이라 예고가 짧으면 사실상 피할 수 없다 — 바닥에 진행선을 깐다. */
@@ -1148,9 +1150,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   }
 
   /* ================= vc142 (#6) — 보스 고유 VX 패턴 (유저 에셋팩 FX) =================
-   * 보스마다 전부 다른 공격: 수르트=화염기둥 추적, 니드호그/요르문간드=맹독 장판,
-   * 베헤모스/스콜=빙결 신성, 나그라파르=뇌우, 아부디토스=성역, 심연군주/베오르드=결정 산개,
-   * 가름=점멸 참격. 전부 유저 제공 UNI VFX·Hovl·Cartoon FX 텍스처 크롭분으로 연출한다. */
+   * 보스마다 전부 다른 공격: 화염의 거인=화염기둥 추적, 탐식의 흑룡/연합을 삼키는 뱀=맹독 장판,
+   * 베헤모스/얼음 늑대=빙결 신성, 재림의 천사기사=뇌우, 종언의 마룡=성역, 심연군주/재림의 파수꾼=결정 산개,
+   * 혈안의 문지기=점멸 참격. 전부 유저 제공 UNI VFX·Hovl·Cartoon FX 텍스처 크롭분으로 연출한다. */
 
   /** VX 플립북 1회 재생 (텍스처/애니 부재 시 무시 — 구버전 캐시 호환) */
   private vxAnimAt(x: number, y: number, anim: string | null, tex: string, tint: number, scale = 1, rot = 0) {
@@ -1185,7 +1187,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.vxStep = 0;
     this.setMode("vxTele", telegraphMs(kind));
     switch (kind) {
-      case "firepillars": // 수르트 — 화염 기둥이 플레이어를 3회 추적
+      case "firepillars": // 화염의 거인 — 화염 기둥이 플레이어를 3회 추적
         this.setTint(0xffb090);
         this.vxWarnRing(player.x, player.y, 0xff7a3a, 0.95);
         break;
@@ -1194,24 +1196,24 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         this.bossFx("vx_circlehazy", this.x, this.y + 8, { tint: 0x9ad8ff, scale: 1.7, alpha: 0.7, dur: 700, depth: 8 });
         this.vxWarnRing(this.x, this.y, 0x8ad4ff, 2.0);
         break;
-      case "thunderfall": // 나그라파르 — 추적 낙뢰 4연속
+      case "thunderfall": // 재림의 천사기사 — 추적 낙뢰 4연속
         this.setTint(0xffe08a);
         this.bossFx("vx_glowball", player.x, player.y, { tint: 0xffe08a, scale: 1.2, alpha: 0.75, dur: 740, depth: 8 });
         break;
-      case "poisonfield": // 니드호그/요르문간드 — 맹독 장판 3개
+      case "poisonfield": // 탐식의 흑룡/연합을 삼키는 뱀 — 맹독 장판 3개
         this.setTint(0x9aff9a);
         this.bossFx("vx_puddle", player.x, player.y, { tint: 0x7dff9a, scale: 1.1, alpha: 0.45, dur: 740, depth: 7 });
         break;
-      case "holymantle": // 아부디토스 — 마룡 성역 대폭발
+      case "holymantle": // 종언의 마룡 — 마룡 성역 대폭발
         this.setTint(0xffd0d8);
         this.bossFx("vx_magiccircle", this.x, this.y + 8, { tint: 0xff3a6a, scale: 1.8, alpha: 0.85, dur: 760, depth: 8 });
         this.vxWarnRing(this.x, this.y, 0xff3a6a, 2.35);
         break;
-      case "crystalburst": // 심연의 군주/베오르드 — 8방향 결정 산개
+      case "crystalburst": // 심연의 군주/재림의 파수꾼 — 8방향 결정 산개
         this.setTint(0x9ad0ff);
         this.bossFx("vx_crystal", this.x, this.y - 20, { tint: 0x8ad4ff, scale: 1.0, alpha: 0.85, dur: 720, depth: 9 });
         break;
-      case "blinkslash": // 가름 — 점멸 3연 참격
+      case "blinkslash": // 혈안의 문지기 — 점멸 3연 참격
         this.setTint(0xa0ffd8);
         this.bossFx("vx_slash", player.x, player.y - 12, { tint: 0x8affc0, scale: 1.0, alpha: 0.8, dur: 740, depth: 20 });
         break;
@@ -1279,7 +1281,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     const tint = this.def.orbTint;
     switch (kind) {
       case "firepillars": {
-        /* 수르트 — 플레이어 추적 화염 기둥 3연속 (vx_expcore 분출 + vx_fire 잔불) */
+        /* 화염의 거인 — 플레이어 추적 화염 기둥 3연속 (vx_expcore 분출 + vx_fire 잔불) */
         this.setMode("vxCast", 2200);
         let n = 0;
         const strike = () => {
@@ -1338,7 +1340,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         break;
       }
       case "thunderfall": {
-        /* 나그라파르 — 추적 낙뢰 4연속 (vx-bolt 낙하 + vx_elec 착탄) */
+        /* 재림의 천사기사 — 추적 낙뢰 4연속 (vx-bolt 낙하 + vx_elec 착탄) */
         this.setMode("vxCast", 2500);
         let n = 0;
         const drop = () => {
@@ -1369,7 +1371,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         break;
       }
       case "poisonfield": {
-        /* 니드호그/요르문간드 — 맹독 장판 3개 (6초 지속, 밟으면 도트) */
+        /* 탐식의 흑룡/연합을 삼키는 뱀 — 맹독 장판 3개 (6초 지속, 밟으면 도트) */
         this.setMode("vxCast", 700);
         const until = this.scene.time.now + 6000;
         for (let i = 0; i < 3; i++) {
@@ -1393,7 +1395,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         break;
       }
       case "holymantle": {
-        /* 아부디토스 — 마룡 성역: 560ms 기믹 후 240px 대폭발 (vx_aura+vx_magiccircle) */
+        /* 종언의 마룡 — 마룡 성역: 560ms 기믹 후 240px 대폭발 (vx_aura+vx_magiccircle) */
         this.setMode("vxCast", 800);
         this.bossFx("vx_magiccircle", this.x, this.y + 8, { tint, scale: 2.2, alpha: 0.9, dur: 620, depth: 8 });
         this.bossFx("vx_aura", this.x, this.y - 6, { tint: 0xffffff, scale: 1.6, alpha: 0.8, dur: 620, depth: 22 });
@@ -1439,7 +1441,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         break;
       }
       case "crystalburst": {
-        /* 심연의 군주/베오르드 — 결정 파편 8방향 산개 (vx_crystal 비행 판정) */
+        /* 심연의 군주/재림의 파수꾼 — 결정 파편 8방향 산개 (vx_crystal 비행 판정) */
         this.setMode("vxCast", 1100);
         for (let i = 0; i < 8; i++) {
           const ang = (Math.PI * 2 * i) / 8 + Math.random() * 0.3;
@@ -1466,7 +1468,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         break;
       }
       case "blinkslash": {
-        /* 가름 — 점멸 3연 참격 (보스가 플레이어 주위로 순간이동하며 벤다) */
+        /* 혈안의 문지기 — 점멸 3연 참격 (보스가 플레이어 주위로 순간이동하며 벤다) */
         this.setMode("vxCast", 1500);
         let n = 0;
         const swing = () => {
@@ -1543,7 +1545,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   /* ================= v4.1.4 — 보스별 시그니처 패턴 ================= */
 
-  /* ---------- 나선 탄막 (behemoth 눈보라 / abysslord 심연 / abudditos 종언) ----------
+  /* ---------- 나선 탄막 (behemoth 눈보라 / abysslord 심연 / doomwyrm 종언) ----------
    * 보스를 중심으로 회전하는 다중 나선 탄막 — 틈을 읽고 돌파하는 탄막 게임식 패턴 */
   private startSpiral() {
     /* P7b — 종전 "volley", 10 은 예고 없는 즉발이었다(나선은 탄이 화면을 채워 회피 불가).
@@ -1581,7 +1583,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
-  /* ---------- 회전 스윕 빔 (nidhog 독 브레스 / surt 화염 / skoll & abudditos) ----------
+  /* ---------- 회전 스윕 빔 (blackwyrm 독 브레스 / flamegiant 화염 / twinwolf & doomwyrm) ----------
    * 예고 링 3개 후, 보스에서 뻗어나오는 회전하는 광선(구슬 벽)을 130° 회전 스윕 */
   private startBeam(player: PlayerLike2) {
     this.setMode("beamTele", 780);
@@ -1635,7 +1637,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
-  /* ---------- 그림자 급습 (fenrir / skoll / gram / abudditos) ----------
+  /* ---------- 그림자 급습 (greedwolf / twinwolf / warden / doomwyrm) ----------
    * 모습을 숨긴 뒤 플레이어 근처로 순간이동 → 짧은 강타 텔레그래프 */
   private startBlink() {
     this.setMode("blinkTele", telegraphMs("blink"));
@@ -1661,7 +1663,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.startShadowSlam(player);
   }
 
-  /* ================= vc153 — 스바르트알프헤임 보스 개편 (애니 사양표 상태머신) =================
+  /* ================= vc153 — 어둠 동굴 보스 개편 (애니 사양표 상태머신) =================
    *  유저 제공 애니 사양표: ①Idle(Loop) ②Move(Loop) ③GreenSlash(Once) ④Vanish(Once)
    *  ⑤ShieldCast(Once 또는 상태유지) ⑥MagicBurst(Once) ⑦PortalTeleport(Once).
    *  6행 시트(atl_boss3: idle/walk/atk/sp1/sp2/die) 매핑 — atk=GreenSlash · sp1=Vanish · sp2=ShieldCast.
@@ -1863,7 +1865,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.scene.time.delayedCall(this.chaos ? 380 : 500, () => this.alive && this.clearTint());
   }
 
-  /* ---------- 연속 낙뢰 (guardian 심연 지진 / surt 용암 분출 / behemoth 눈보라 폭풍) ----------
+  /* ---------- 연속 낙뢰 (guardian 심연 지진 / flamegiant 용암 분출 / behemoth 눈보라 폭풍) ----------
    * 플레이어를 쫓는 연속 낙뢰 장판 — 6~8회 연속으로 이동기 강제 */
   private startQuake() {
     /* P7b — 종전 80ms 는 "한 번 맞고 시작"에 가까웠다. 첫 낙뢰 전에 예고를 세운다.
@@ -1923,7 +1925,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
-  /* ---------- 반격 카운터 (abysslord / gram / abudditos — 로스트아크식) ----------
+  /* ---------- 반격 카운터 (abysslord / warden / doomwyrm — 로스트아크식) ----------
    * 노란 링 = 반격의 창. 창 안에 1회라도 맞추면 보스가 기절+취약(받는 피해 ×1.6),
    * 방관하면 즉시 대폭발(링 2파동 + 장판)으로 응수 */
   private startCounter() {
@@ -2123,12 +2125,13 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
   takeDamage(dmg: number, dir: Phaser.Math.Vector2, knock: number, crit = false) {
     if (!this.alive) return;
-    dmg = this.scene.notePlayerHit?.(dmg, this) ?? dmg; // 최고 타격 기록 + 궁극기 예산 인출
-    /* vc153 — 스바르트알프헤임 방어막: ShieldCast 상태유지 중 피해 무효 (사양표 ⑤) */
+    /* vc153 — 어둠 동굴 방어막: ShieldCast 상태유지 중 피해 무효 (사양표 ⑤)
+     *  2026-11-15 — 무효 판정을 궁극기 예산 인출보다 먼저 한다. 막힌 타격이 예산을 깎지 않게. */
     if (this.shieldInvuln) {
       this.scene.spawnPickupText?.(this.x, this.y - 60, "무효", "#8ad4ff");
       return;
     }
+    dmg = this.scene.notePlayerHit?.(dmg, this) ?? dmg; // 최고 타격 기록 + 궁극기 예산 인출
     /* v1.4.30 (#2 사냥/보스 밸런스) — 보스 특화 직업(전사·데드아이·아크로드·섀도우로드 등)
      *  체인 합산 bossDmgPct만큼 보스에게 주는 피해 증가 */
     const spec = this.scene.playerRef ? (this.scene.playerRef as unknown as { bossDmgBonus?: number }).bossDmgBonus ?? 0 : 0;
@@ -2268,7 +2271,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
       this.teleRings = [];
       for (const r of this.zoneRings) r.destroy();
       this.zoneRings = [];
-      this.twin?.destroy(); this.twin = null; // v1.0.12 — 하티 동반 소멸
+      this.twin?.destroy(); this.twin = null; // v1.0.12 — 화염 늑대 동반 소멸
       this.setVelocity(0, 0);
       // 보스 격파 보상 — 대량 골드 + HP 물약 2개 (2D MMORPG 기본 요소)
       this.scene.dropLootGold(this.x, this.y, this.def.gold);
@@ -2314,7 +2317,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.enrageAuraTimer = null;
     this.enrageAura?.destroy();
     this.enrageAura = null;
-    this.twin?.destroy(); this.twin = null; // v1.0.12 — 씬 정리 시 하티 제거
+    this.twin?.destroy(); this.twin = null; // v1.0.12 — 씬 정리 시 화염 늑대 제거
     for (const orb of this.orbPool) orb.destroy();
     for (const r of this.teleRings) r.destroy();
     for (const r of this.zoneRings) r.destroy();

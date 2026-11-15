@@ -5,7 +5,7 @@ import os
 
 os.chdir("/home/z/my-project/public/assets")
 tiles = ["tile_grass", "tile_dark", "tile_magma", "tile_snow", "tile_cave",
-         "tile_stone", "tile_hel", "tile_abyss", "tile_path", "tile_ice", "tile_magma_path", "tile_path_dark"]
+         "tile_stone", "tile_duskrealm", "tile_abyss", "tile_path", "tile_ice", "tile_magma_path", "tile_path_dark"]
 for t in tiles:
     p = f"{t}.png"
     if not os.path.exists(p):

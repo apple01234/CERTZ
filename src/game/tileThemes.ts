@@ -28,7 +28,7 @@ export const GROUND_TILE_MAP: Record<string, string> = {
   tile_ruin: "terrain_astral",
   tile_morgue: "terrain_ruin",
   tile_vault: "terrain_machine",
-  tile_hel: "terrain_ruin",
+  tile_duskrealm: "terrain_ruin",
   tile_abyss: "terrain_astral",
   tile_nebula: "terrain_astral",
   tile_ash: "terrain_castle",

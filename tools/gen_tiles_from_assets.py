@@ -80,7 +80,7 @@ THEMES = {
     "tile_stone":        ("coarse", (150, 145, 140), 0.15, 1.00),
     "tile_ruin":         ("coarse", (140, 130, 110), 0.30, 0.95),
     "tile_ash":          ("fine",   (120, 115, 110), 0.10, 0.90),
-    "tile_hel":          ("coarse", ( 90,  70, 110), 0.50, 0.80),
+    "tile_duskrealm":          ("coarse", ( 90,  70, 110), 0.50, 0.80),
     "tile_abyss":        ("fine",   ( 70,  60, 100), 0.55, 0.70),
     "tile_morgue":       ("mid",    ( 80,  75,  95), 0.35, 0.75),
     "tile_deep":         ("fine",   ( 60,  70, 100), 0.50, 0.65),
@@ -118,7 +118,7 @@ THEMES = {
 CONTRAST = {
     # 어두운 테마는 대비를 더 줘야 질감이 보인다
     "tile_abyss": 2.1, "tile_deep": 2.1, "tile_void": 2.3, "tile_dark": 2.0,
-    "tile_hel": 1.9, "tile_morgue": 1.9, "tile_starfield": 2.0, "tile_nebula": 1.8,
+    "tile_duskrealm": 1.9, "tile_morgue": 1.9, "tile_starfield": 2.0, "tile_nebula": 1.8,
     # 회색 석재는 서로 구분되도록 대비를 다르게
     "tile_ash": 1.5, "tile_basalt": 1.9, "tile_cave": 1.7, "tile_concrete": 1.5,
     "tile_metal": 1.4, "tile_stone": 1.8, "tile_cobble": 1.8, "tile_path_dark": 2.0,

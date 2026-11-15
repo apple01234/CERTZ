@@ -29,7 +29,7 @@ const ok = (n, cond, extra = "") => {
     `status=${login.status} role=${loginBody?.user?.role}`);
 
   /* 3. 보스 아트 9종 — 신규 리페인트 webp 서빙 (구 픽셀아트 ≤498B → 신규 ≥3KB, 임계 2500B) */
-  const keys = ["boss", "boss2", "boss3", "boss_nidhog", "boss_surt", "boss_fenrir", "boss_skoll", "boss_gram", "boss_abudditos"];
+  const keys = ["boss", "boss2", "boss3", "boss_blackwyrm", "boss_flamegiant", "boss_greedwolf", "boss_twinwolf", "boss_warden", "boss_doomwyrm"];
   let servedOk = 0, newArt = 0;
   for (const k of keys) {
     const r = await fetch(`${BASE}/assets/${k}_idle0.webp`);
@@ -110,7 +110,7 @@ const ok = (n, cond, extra = "") => {
   const texOk = await page.evaluate(() => {
     const w = window.__SERTZ__?.game?.scene?.getScene("world");
     if (!w) return false;
-    return ["boss_idle0", "boss2_idle0", "boss_nidhog_idle0", "boss_abudditos_idle0"].every((k) => w.textures.exists(k));
+    return ["boss_idle0", "boss2_idle0", "boss_blackwyrm_idle0", "boss_doomwyrm_idle0"].every((k) => w.textures.exists(k));
   });
   ok(9, texOk, "보스 텍스처 9종(대표 4종) 로드");
 

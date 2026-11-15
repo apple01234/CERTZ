@@ -590,18 +590,22 @@ const MARKET_MAX_LISTINGS = 3;
 /* v1.0.6 — 등록 가능 아이템 화이트리스트 (보스 전용 드롭 = 클라 TRADE_STOCK과 동일 목록).
  *  미검증 시 미보유 아이템 등록 → 2번 계정 구매 → 전설 복제 익스플로잇이 가능했다. */
 const MARKET_LISTABLE = new Set([
-  "bd_guardian", "bd_behemoth", "bd_nidhog", "bd_surt", "bd_fenrir",
-  "bd_skoll", "bd_gram", "bd_abysslord", "bd_abudditos",
+  "bd_guardian", "bd_behemoth", "bd_blackwyrm", "bd_flamegiant", "bd_greedwolf",
+  "bd_twinwolf", "bd_warden", "bd_abysslord", "bd_doomwyrm",
 ]);
+/* 2026-11-14 — 옛 '9개의 바다' 보스 드롭 키 → 새 키. 이관 전 클라우드 세이브·기존 매물이 옛 키를 들고 있다.
+ *  (클라이언트 쪽 전체 이관표는 src/game/legacyKeys.ts) */
+const LEGACY_ITEM = { bd_nidhog: "bd_blackwyrm", bd_surt: "bd_flamegiant", bd_fenrir: "bd_greedwolf", bd_skoll: "bd_twinwolf", bd_gram: "bd_warden", bd_abudditos: "bd_doomwyrm" };
+const curItem = (k) => LEGACY_ITEM[k] ?? k;
 /* v1.0.6 — 등록자가 실제로 그 아이템을 보유 중인지 클라우드 세이브로 검증.
  *  세이브 data 최상위 owned: ItemKey[], accessories: 장착 중 장신구[] (장착분은 등록 불가) */
 function ownsListableItem(uid, itemKey) {
   if (!MARKET_LISTABLE.has(itemKey)) return { ok: false, error: "보스 전용 드롭(전설)만 등록할 수 있어요" };
   const save = db.saves[uid]?.data;
   if (!save || typeof save !== "object") return { ok: false, error: "클라우드 세이브 동기화 후 등록할 수 있어요 — 로그인 상태로 잠시 플레이하거나 계정 패널에서 백업해 주세요" };
-  const owned = Array.isArray(save.owned) ? save.owned : [];
+  const owned = Array.isArray(save.owned) ? save.owned.map(curItem) : [];
   if (!owned.includes(itemKey)) return { ok: false, error: "보유하지 않은 아이템은 등록할 수 없어요" };
-  const acc = Array.isArray(save.accessories) ? save.accessories : [];
+  const acc = Array.isArray(save.accessories) ? save.accessories.map(curItem) : [];
   if (acc.includes(itemKey)) return { ok: false, error: "장착 중인 장비는 해제한 뒤 등록하세요" };
   return { ok: true };
 }
@@ -611,7 +615,7 @@ function marketSnapshot(uid) {
   const pay = db.payouts[uid] || { gold: 0, count: 0 };
   return {
     /* vc153 (#신규8) — listings에 qty 추가 (다수 등록) */
-    listings: all.map((l) => ({ id: l.id, seller: l.seller === uid ? null : l.sellerName, mine: l.seller === uid, itemKey: l.itemKey, up: l.up ?? 0, price: l.price, qty: l.qty ?? 1, ts: l.ts })),
+    listings: all.map((l) => ({ id: l.id, seller: l.seller === uid ? null : l.sellerName, mine: l.seller === uid, itemKey: curItem(l.itemKey), up: l.up ?? 0, price: l.price, qty: l.qty ?? 1, ts: l.ts })),
     pending: { gold: pay.gold || 0, count: pay.count || 0 },
     feePct: MARKET_FEE_PCT,
     maxListings: MARKET_MAX_LISTINGS,
@@ -724,7 +728,7 @@ async function handleMarket(req, res, url, method) {
     if (!user) {
       const all = Object.values(db.market.listings).sort((a, b) => a.ts - b.ts);
       return sendJson(res, 200, {
-        listings: all.map((l) => ({ id: l.id, seller: l.sellerName, mine: false, itemKey: l.itemKey, up: l.up ?? 0, price: l.price, ts: l.ts })),
+        listings: all.map((l) => ({ id: l.id, seller: l.sellerName, mine: false, itemKey: curItem(l.itemKey), up: l.up ?? 0, price: l.price, ts: l.ts })),
         pending: { gold: 0, count: 0 }, feePct: MARKET_FEE_PCT, maxListings: MARKET_MAX_LISTINGS, guest: true,
       });
     }
@@ -750,10 +754,10 @@ async function handleMarket(req, res, url, method) {
     if (!own.ok) return sendJson(res, 403, { error: own.error });
     const mine = Object.values(db.market.listings).filter((l) => l.seller === user.id);
     if (mine.length >= MARKET_MAX_LISTINGS) return sendJson(res, 409, { error: `등록 칸이 가득 찼어요 (최대 ${MARKET_MAX_LISTINGS}칸)` });
-    if (mine.some((l) => l.itemKey === itemKey)) return sendJson(res, 409, { error: "같은 아이템은 한 칸에 수량을 늘려 등록하세요 (이미 등록됨)" });
+    if (mine.some((l) => curItem(l.itemKey) === itemKey)) return sendJson(res, 409, { error: "같은 아이템은 한 칸에 수량을 늘려 등록하세요 (이미 등록됨)" });
     /* vc153 (#신규8) — 수량 실보유 검증 (owned 멀티셋) */
     const save = db.saves[user.id]?.data;
-    const have = save && Array.isArray(save.owned) ? save.owned.filter((k) => k === itemKey).length : 0;
+    const have = save && Array.isArray(save.owned) ? save.owned.filter((k) => curItem(k) === itemKey).length : 0;
     if (have < qty) return sendJson(res, 403, { error: `보유 수량이 부족해요 (${have}개 보유 — ${qty}개 등록 요청)` });
     const id = `m${db.market.nextId++}`;
     db.market.listings[id] = { id, seller: user.id, sellerName: user.name, itemKey, up, price, qty, ts: Date.now() };
@@ -769,7 +773,7 @@ async function handleMarket(req, res, url, method) {
     if (!l) return sendJson(res, 404, { error: "이미 판매된 등록이에요" });
     if (l.seller !== user.id) return sendJson(res, 403, { error: "본인 등록만 취소할 수 있어요" });
     audit("market_cancel", { ip: clientIp(req), uid: user.id, listingId: l.id }); // v1.0.2
-    const item = { itemKey: l.itemKey, up: l.up ?? 0 };
+    const item = { itemKey: curItem(l.itemKey), up: l.up ?? 0 };
     delete db.market.listings[l.id];
     persistDb();
     return sendJson(res, 200, { ok: true, item, ...marketSnapshot(user.id) });
@@ -784,7 +788,7 @@ async function handleMarket(req, res, url, method) {
     const units = Math.max(1, Math.min(99, parseInt(b.qty, 10) || 1));
     const avail = l.qty ?? 1;
     if (avail < units) return sendJson(res, 409, { error: `남은 수량이 부족해요 (잔여 ${avail}개)` });
-    const item = { itemKey: l.itemKey, up: l.up ?? 0, price: l.price, qty: units, sellerName: l.sellerName };
+    const item = { itemKey: curItem(l.itemKey), up: l.up ?? 0, price: l.price, qty: units, sellerName: l.sellerName };
     const left = avail - units;
     if (left <= 0) delete db.market.listings[l.id];
     else l.qty = left;
@@ -792,7 +796,7 @@ async function handleMarket(req, res, url, method) {
     db.payouts[l.seller].gold += Math.floor((l.price * units * (100 - MARKET_FEE_PCT)) / 100);
     db.payouts[l.seller].count += units;
     persistDb();
-    audit("market_buy", { ip: clientIp(req), uid: user.id, listingId: l.id, itemKey: l.itemKey, price: l.price, units, seller: l.seller }); // v1.0.2
+    audit("market_buy", { ip: clientIp(req), uid: user.id, listingId: l.id, itemKey: curItem(l.itemKey), price: l.price, units, seller: l.seller }); // v1.0.2
     return sendJson(res, 200, { ok: true, item, ...marketSnapshot(user.id) });
   }
 

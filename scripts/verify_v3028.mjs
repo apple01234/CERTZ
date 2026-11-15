@@ -1,6 +1,6 @@
 /**
  * v3.0.28 검증 스크립트 — 이번 라운드 6건 수정의 데이터/로직 정합성 점검
- *  [A] 챕터 마을 NPC 대사 복구 (무스펠헤임/니플헤임/니다벨리르 키 불일치)
+ *  [A] 챕터 마을 NPC 대사 복구 (화산/설원/대장간 광산 키 불일치)
  *  [B] 이동형(reach) 퀘스트 구조 (village v1 + 각 챕터 sub10 "다음 해역으로")
  *  [C] 보스 난이도 테이블 (이지/노말/하드/카오스)
  *  [D] 자동 토벌 퀘스트 targetKeys = 구역 스폰 조합 일치
@@ -16,7 +16,7 @@ console.log("[A] 챕터 마을 NPC 대사 키 규칙 (vlg{챕터명}A/B)");
 {
   // data.ts의 VLG 등록 규칙: vlg + 챕터키 첫글자 대문자 + A/B
   // NPC dlg 키가 이 규칙과 일치해야 DIALOGUES에 존재 → NPC 대화 가능
-  const chapters = ["forest", "kingdom", "alfheim", "muspelheim", "niflheim", "cave", "nidavellir", "hel", "abyss"];
+  const chapters = ["forest", "kingdom", "fairyglade", "emberland", "frostland", "cave", "forgehall", "duskrealm", "abyss"];
   const src = readFileSync(new URL("../src/game/data.ts", import.meta.url), "utf8");
   const npcSrc = src.slice(src.indexOf("export const CHAPTER_VILLAGE_NPC"));
   for (const ch of chapters) {

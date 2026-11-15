@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # vc142 보스 디자인 교체 슬라이서 (최종)
 # 유저 아틀라스(12FPS · idle/run/attack/died/sp1/sp2/sp3) → 게임 아틀라스
-# (12열 고정 · idle/walk/atk/sp1/sp2/sp3/die) — 셀 기준 배치 + jorm 거터 검출
+# (12열 고정 · idle/walk/atk/sp1/sp2/sp3/die) — 셀 기준 배치 + unionserpent 거터 검출
 from PIL import Image, ImageFilter
 import numpy as np
 import os, json
@@ -12,12 +12,12 @@ PREVIEW = '/home/z/my-project/scripts/atlas_preview'
 os.makedirs(PREVIEW, exist_ok=True)
 
 SHEETS = [
-    dict(src='요툰헤임.png',  tex='boss',        split=None, mirror_frames=False, rows=7, note='수정골렘→심연의 수호자'),
-    dict(src='헬.png',        tex='boss3',       split=None, mirror_frames=False, rows=7, note='헬→심연의 군주'),
-    dict(src='스콜&하티.png', tex='boss_skoll',  split='L',  mirror_frames=False, rows=7, note='얼음늑대→스콜'),
-    dict(src='스콜&하티.png', tex='boss_hati',   split='R',  mirror_frames=False, rows=7, note='화염늑대→하티'),
-    dict(src='file_00000000c8fc8206a70cd9c7ea2a8359.png', tex='boss_fenrir', split=None, mirror_frames=False, rows=7, note='니플헤임 얼음수→펜리르'),
-    dict(src='file_000000004a5482069531efe87ab73ca2.png', tex='boss_jorm',   split=None, mirror_frames=False, rows=6, gutter=True, note='녹룡→요르문간드(6행 — sp3 없음)'),
+    dict(src='거인의 땅.png',  tex='boss',        split=None, mirror_frames=False, rows=7, note='수정골렘→심연의 수호자'),
+    dict(src='명계.png',        tex='boss3',       split=None, mirror_frames=False, rows=7, note='명계→심연의 군주'),
+    dict(src='교만의 쌍랑.png', tex='boss_twinwolf',  split='L',  mirror_frames=False, rows=7, note='얼음늑대→얼음 늑대'),
+    dict(src='교만의 쌍랑.png', tex='boss_twinmate',   split='R',  mirror_frames=False, rows=7, note='화염늑대→화염 늑대'),
+    dict(src='file_00000000c8fc8206a70cd9c7ea2a8359.png', tex='boss_greedwolf', split=None, mirror_frames=False, rows=7, note='설원 얼음수→탐욕의 늑대'),
+    dict(src='file_000000004a5482069531efe87ab73ca2.png', tex='boss_unionserpent',   split=None, mirror_frames=False, rows=6, gutter=True, note='녹룡→연합을 삼키는 뱀(6행 — sp3 없음)'),
 ]
 COLS = 8
 TARGET_W = 292

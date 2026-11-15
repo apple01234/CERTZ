@@ -14,7 +14,7 @@ CREATE_RESP=$(curl -s --max-time 90 --retry 3 --retry-delay 3 --retry-all-errors
     "tag_name": "v4.3.0",
     "target_commitish": "main",
     "name": "SERTZ v4.3.0 — BM 대확장 & 도파민 (가챠·패키지·일일특가·아이템 53종)",
-    "body": "## SERTZ v4.3.0 (versionCode 58)\n\nBM 대확장 & dopamine driven development:\n- 가챠 상자 4종 (무쇠/은/금/전설 — 구매 즉시 개봉, 가중치 랜덤)\n- 패키지 6종 (묶음 가치 40~60%)\n- 일일 특가 3종 30%↓ (매일 자정 교체)\n- 신규 아이템 53종: 물약 16 · 장신구 12 · 펫 6 · 치장 6 · 버프 3\n- BM 상점 카테고리 탭 7종 · 카탈로그 90종 (전체 130종+)\n- 자동전투 포탈 탑승 (적 전멸 시 자동 진입 — 검은 화면 가드 유지)\n- 다크 챕터만 어둠+불빛 (니플헤임/스바르트알프헤임/니다벨리르/헬/심연)\n- 전사 회전베기 ↔ 기본공격 사운드 스왑\n\nAPK md5: `ed6adc5c92d6a81263bbd37ee0a41dc0`",
+    "body": "## SERTZ v4.3.0 (versionCode 58)\n\nBM 대확장 & dopamine driven development:\n- 가챠 상자 4종 (무쇠/은/금/전설 — 구매 즉시 개봉, 가중치 랜덤)\n- 패키지 6종 (묶음 가치 40~60%)\n- 일일 특가 3종 30%↓ (매일 자정 교체)\n- 신규 아이템 53종: 물약 16 · 장신구 12 · 펫 6 · 치장 6 · 버프 3\n- BM 상점 카테고리 탭 7종 · 카탈로그 90종 (전체 130종+)\n- 자동전투 포탈 탑승 (적 전멸 시 자동 진입 — 검은 화면 가드 유지)\n- 다크 챕터만 어둠+불빛 (설원/어둠 동굴/대장간 광산/명계/심연)\n- 전사 회전베기 ↔ 기본공격 사운드 스왑\n\nAPK md5: `ed6adc5c92d6a81263bbd37ee0a41dc0`",
     "draft": false,
     "prerelease": false
   }')

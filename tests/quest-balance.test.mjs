@@ -86,7 +86,7 @@ function allHunts() {
         questId: q.id,
         need: q.need ?? 0,
         spawn,
-        /* 챕터 키 — `howlrstone12x3` → `howlrstone12`, `dlcstargate5` → `dlcstargate` */
+        /* 챕터 키 — `lilacworld12x3` → `lilacworld12`, `dlcstargate5` → `dlcstargate` */
         chapter: stageKey.replace(/x\d+$/, "").replace(/\d+$/, ""),
       });
     }
@@ -178,7 +178,7 @@ test("hunt 퀘스트: 후반 챕터가 초반 수준(<50)에 머물지 않는다
   );
 
   /* 실제로 "증가" 하는지 — 후반 최소값이 초반 최대값보다 커야 한다. */
-  const hw = rows.filter((r) => r.chapter.startsWith("howlrstone"));
+  const hw = rows.filter((r) => r.chapter.startsWith("lilacworld"));
   if (hw.length && late.length) {
     const hwMin = Math.min(...hw.map((r) => r.need));
     const lateMax = Math.max(...late.map((r) => r.need));
@@ -188,16 +188,16 @@ test("hunt 퀘스트: 후반 챕터가 초반 수준(<50)에 머물지 않는다
 
 test("hunt 퀘스트: 챕터 안에서도 요구량이 단조 증가한다 (후반으로 갈수록)", () => {
   const rows = allHunts();
-  /* howlrstone 챕터 번호 순으로 최소 요구량을 뽑아 단조 증가를 확인. */
+  /* lilacworld 챕터 번호 순으로 최소 요구량을 뽑아 단조 증가를 확인. */
   const byChapter = new Map();
   for (const r of rows) {
-    if (!r.chapter.startsWith("howlrstone")) continue;
+    if (!r.chapter.startsWith("lilacworld")) continue;
     const arr = byChapter.get(r.chapter) ?? [];
     arr.push(r.need);
     byChapter.set(r.chapter, arr);
   }
   const ordered = [...byChapter.entries()]
-    .map(([k, arr]) => ({ k, no: Number(k.replace("howlrstone", "")), min: Math.min(...arr) }))
+    .map(([k, arr]) => ({ k, no: Number(k.replace("lilacworld", "")), min: Math.min(...arr) }))
     .sort((a, b) => a.no - b.no);
   for (let i = 1; i < ordered.length; i++) {
     assert.ok(
@@ -226,10 +226,10 @@ test("모든 hunt 퀘스트가 유저 목표표 구간 안에 있다 (하한 20 
   assert.equal(HUNT_NEED_FLOOR, 20);
 });
 
-test("howlrstone 1~3장(초반) hunt 가 전부 유저 초반 구간 20~50 안에 있다", () => {
-  /* 유저 표의 "초반 = 20~50". howlrstone 1~3장은 이 저장소의 초반 구간이다.
+test("lilacworld 1~3장(초반) hunt 가 전부 유저 초반 구간 20~50 안에 있다", () => {
+  /* 유저 표의 "초반 = 20~50". lilacworld 1~3장은 이 저장소의 초반 구간이다.
    *  종전엔 16(하한 미만)이 있었고, 재림은 12 로 초반보다 가벼웠다 — 둘 다 잡는다. */
-  const early = allHunts().filter((r) => /^howlrstone[123]x/.test(r.stage));
+  const early = allHunts().filter((r) => /^lilacworld[123]x/.test(r.stage));
   assert.ok(early.length >= 3, `초반 hunt 가 ${early.length}건뿐 — 검사 대상 부족`);
   const out = early.filter((r) => r.need < 20 || r.need > 50);
   assert.deepEqual(
@@ -242,7 +242,7 @@ test("재림(r1~r15) hunt 가 초반보다 무겁다", () => {
   /* 재림은 200레벨 환생 이후 콘텐츠다. 종전엔 need 12 로 초반(16)보다도 가벼웠다. */
   const rb = allHunts().filter((r) => /^r\d+$/.test(r.stage));
   if (rb.length === 0) return; // 재림 스테이지가 없는 구성이면 통과
-  const earlyMax = Math.max(...allHunts().filter((r) => /^howlrstone[123]x/.test(r.stage)).map((r) => r.need));
+  const earlyMax = Math.max(...allHunts().filter((r) => /^lilacworld[123]x/.test(r.stage)).map((r) => r.need));
   const rbMin = Math.min(...rb.map((r) => r.need));
   assert.ok(rbMin > earlyMax, `재림 최소(${rbMin})가 초반 최대(${earlyMax})보다 무겁지 않다`);
 });
@@ -363,8 +363,8 @@ test("구역 스폰 총합이 zoneSpawnCap 을 넘지 않는다", () => {
   for (const [stageKey, def] of Object.entries(STAGES)) {
     const spawn = (def.enemies ?? []).reduce((t, g) => t + (g.count ?? 0), 0);
     if (spawn === 0) continue;
-    /* 스테이지 키에서 챕터 번호를 복원 — howlrstoneN / dlcNAME(15+idx) */
-    const hw = /^howlrstone(\d+)x\d+$/.exec(stageKey);
+    /* 스테이지 키에서 챕터 번호를 복원 — lilacworldN / dlcNAME(15+idx) */
+    const hw = /^lilacworld(\d+)x\d+$/.exec(stageKey);
     const dlc = /^(dlc[a-z]+)\d+$/.exec(stageKey);
     let chapterNo = 1;
     if (hw) chapterNo = Number(hw[1]);

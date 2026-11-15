@@ -22,7 +22,7 @@ import {
  *  · 저장/불러오기 왕복이 정보를 잃지 않는지
  */
 
-const CELL_W = 150.667, CELL_H = 131.111;   // howlrstone1x2 실측(비정수)
+const CELL_W = 150.667, CELL_H = 131.111;   // lilacworld1x2 실측(비정수)
 
 test('바닥 소스 규격이 게임과 일치한다', () => {
   /* AuthoredMapLayers.AUTHORED_GROUND_SOURCES 와 동일해야 한다 —

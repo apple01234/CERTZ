@@ -120,8 +120,8 @@ export function towerSpawnCount(floor: number): number {
 /** vc142 (#4) — 보스층 로테이션: 12보스 전원이 보스층마다 "각각 다르게" 배치되는 고정 로테이션
  *  v1.0.15 (피드백 #2) — 보스층이 10의 배수로 변경 (bossEvery=10) — slot 계산 자동 동기 */
 export const TOWER_BOSSES: BossKey[] = [
-  "guardian", "behemoth", "nidhog", "surt", "fenrir", "skoll",
-  "abysslord", "gram", "abudditos", "vord", "jorm", "nagr",
+  "guardian", "behemoth", "blackwyrm", "flamegiant", "greedwolf", "twinwolf",
+  "abysslord", "warden", "doomwyrm", "riftwarden", "unionserpent", "angelknight",
 ];
 export function towerBossFor(floor: number): BossKey {
   const slot = Math.max(0, Math.floor(floor / TOWER.bossEvery) - 1);
@@ -143,7 +143,7 @@ const TOWER_TIERS: EnemyKey[][] = [
   ["minion", "wraith", "x3_tinyzombie", "x2_frostfly"],
   ["frostwolf", "icegolem", "x3_icezombie", "x3_orcshaman"],
   ["emberwolf", "firespirit", "x3_wogol", "x2_snail"],
-  ["runegolem", "helhound", "x3_orcwarrior", "x2_stonegolem"],
+  ["runegolem", "duskhound", "x3_orcwarrior", "x2_stonegolem"],
   ["x3_ogre", "x3_chort", "x2_darkhound", "x2_reeffish"],
   ["x3_bigzombie", "x3_maskedorc", "x3_necromancer", "wraith"],
   ["x3_ogre", "x3_chort", "x3_necromancer", "x2_stonegolem"],
@@ -230,9 +230,10 @@ export const REBIRTH_ABYSS = 50;
 
 /** 재료 드롭 확률 (필드/던전 적 처치) — 타워/균열에서 1.6배 */
 export const MAT_CHANCES: { key: string; name: string; chance: number }[] = [
-  { key: "mat_mana", name: "마나 결정", chance: 0.055 },
-  { key: "mat_heart", name: "몬스터 심장", chance: 0.042 },
-  { key: "mat_mithril", name: "미스릴 가루", chance: 0.03 },
+  /* 2026-11-14 (유저 지시 "드랍이 너무 적음") — 재료 드롭 ×1.5 (종전 0.055 / 0.042 / 0.03). */
+  { key: "mat_mana", name: "마나 결정", chance: 0.083 },
+  { key: "mat_heart", name: "몬스터 심장", chance: 0.063 },
+  { key: "mat_mithril", name: "미스릴 가루", chance: 0.045 },
 ];
 export type CraftRecipe = {
   id: string;
@@ -327,10 +328,10 @@ export function orbBonus(orbs: Record<string, number>): { atk: number; hp: numbe
 export const WEEKLY_RAID_BOSSES: string[] = [
   "guardian", // 일 — 숲의 수호자
   "behemoth", // 월 — 늪의 거수
-  "nidhog", // 화 — 요정의 재앙
-  "surt", // 수 — 화염의 군주
-  "fenrir", // 목 — 탐욕의 늑대
-  "skoll", // 금 — 추격의 늑대
+  "blackwyrm", // 화 — 요정의 재앙
+  "flamegiant", // 수 — 화염의 군주
+  "greedwolf", // 목 — 탐욕의 늑대
+  "twinwolf", // 금 — 추격의 늑대
   "abysslord", // 토 — 심연의 군주
 ];
 export function weeklyRaidBoss(d = new Date()): string {

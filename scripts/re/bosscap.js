@@ -7,10 +7,10 @@ const SAVE_KEY = 'sertz_save_v2';
 
 // 챕터별 보스 스테이지 (10번 = 보스)
 const CASES = [
-  { stage: 'muspelheim10', label: 'surt (무스펠헤임)' },
-  { stage: 'niflheim10', label: 'fenrir (니플헤임)' },
-  { stage: 'nidavellir10', label: 'skoll (니다벨리르)' },
-  { stage: 'abyss10', label: 'abudditos (세계수 뿌리)' },
+  { stage: 'emberland10', label: 'flamegiant (화산)' },
+  { stage: 'frostland10', label: 'greedwolf (설원)' },
+  { stage: 'forgehall10', label: 'twinwolf (대장간 광산)' },
+  { stage: 'abyss10', label: 'doomwyrm (세계수 뿌리)' },
   { stage: 'forest10', label: 'guardian (숲의 신전)' },
 ];
 

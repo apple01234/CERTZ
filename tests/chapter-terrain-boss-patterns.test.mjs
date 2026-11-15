@@ -16,7 +16,7 @@ const terrain = read('public/assets/chapter-terrain/manifest.json');
 test('all 165 native chapter maps preserve the exact collision mask and world dimensions', () => {
   let rooms = 0;
   for (const [key, chapter] of Object.entries(CHAPTER_STORY_PLAN)) for (const [n, place] of chapter.places.entries()) {
-    const stage = STAGES[`${key}${key.startsWith('howlrstone') ? 'x' : ''}${n + 1}`];
+    const stage = STAGES[`${key}${key.startsWith('lilacworld') ? 'x' : ''}${n + 1}`];
     const layout = authoredRoomLayout(stage.key, stage.width, stage.height), data = chapterTerrainData(layout, place);
     assert.ok(Math.abs(data.ground.length * data.tileH - stage.height) < .00001);
     assert.ok(Math.abs(data.ground[0].length * data.tileW - stage.width) < .00001);
@@ -48,9 +48,9 @@ test('danger warnings retain readable safe corridors and a bounded recovery oppo
 });
 
 test('the cliff road connects both portals without filling the meadow with repeated crosses', () => {
-  const stage = STAGES.howlrstone1x1;
+  const stage = STAGES.lilacworld1x1;
   const layout = authoredRoomLayout(stage.key, stage.width, stage.height);
-  const data = chapterTerrainData(layout, CHAPTER_STORY_PLAN.howlrstone1.places[0]);
+  const data = chapterTerrainData(layout, CHAPTER_STORY_PLAN.lilacworld1.places[0]);
   const roadTiles = new Set(terrain.materials.earth.tiles), cols = data.ground[0].length;
   const road = new Set(data.ground.flatMap((row, y) => row.flatMap((tile, x) => roadTiles.has(tile) ? [y * cols + x] : [])));
   const open = data.ground.flat().filter(tile => tile >= 0).length;
@@ -90,7 +90,7 @@ test('main road is six fine tiles wide while keeping the collision mask and mead
   const cols=10, rows=8;
   const open=Array.from({length:cols*rows},(_,i)=>i%cols>0&&i%cols<cols-1&&Math.floor(i/cols)>0&&Math.floor(i/cols)<rows-1);
   const layout={cols,rows,cellW:144,cellH:128,open,entry:4*cols+1,exit:4*cols+8};
-  const place=CHAPTER_STORY_PLAN.howlrstone1.places[0];
+  const place=CHAPTER_STORY_PLAN.lilacworld1.places[0];
   const data=chapterTerrainData(layout,place), road=new Set(terrain.materials[place.path].tiles);
   const centerX=4*data.detail+2;
   const painted=data.ground.map((row,y)=>road.has(row[centerX])?y:-1).filter(y=>y>=0);

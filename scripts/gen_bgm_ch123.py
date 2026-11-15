@@ -3,7 +3,7 @@
 기존 Kevin MacLeod 트랙 3곡을 SERTZ 오리지널 합성 음원으로 교체한다.
   bgm_village1.ogg — 제1장 미드가르드 항구 마을 (D장조 96bpm, 따뜻한 목가적 테마)
   bgm_field1.ogg   — 제2장 숲의 신전 필드   (A단조 124bpm, 모험 행진곡)
-  bgm_title2.ogg   — 제3장 쿠소디아 왕국    (F장조 100bpm, 위엄의 왕국 테마)
+  bgm_title2.ogg   — 제3장 왕국 왕국    (F장조 100bpm, 위엄의 왕국 테마)
 같은 파일명 덮어쓰기 → audio.ts 코드 수정 불필요(BOSS_OF 주석의 "같은 파일명 교체" 관례 계승).
 합성: numpy 순수 합성(Karplus-Strong 하프·플루트·스트링·브라스·쿠아이어·드럼) + 원형 루프 무결 설계.
 """
@@ -259,7 +259,7 @@ def field():
     L.save(f"{OUT}/bgm_field1.ogg")
     return len_s
 
-# ═══ 곡 3 — 제3장 쿠소디아 왕국 (F장조 100bpm 32마디) ═══
+# ═══ 곡 3 — 제3장 왕국 왕국 (F장조 100bpm 32마디) ═══
 def kingdom():
     bpm, spb = 100, 60 / 100
     bars, len_s = 32, 32 * 4 * spb

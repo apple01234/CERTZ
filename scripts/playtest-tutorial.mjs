@@ -61,7 +61,7 @@ await settle(); await waitStep('move');
 await walk((await state()).target); await waitStep('talk');
 await walk((await state()).target,55); await press('Space');
 await page.waitForTimeout(250);  if((await state()).step==='talk'){await press('Space'); await page.waitForTimeout(250); } await settle();
-await page.waitForFunction(()=>window.__SERTZ_SCENE__?.stageDef.key==='howlrstone1x2',null,{timeout:20000});
+await page.waitForFunction(()=>window.__SERTZ_SCENE__?.stageDef.key==='lilacworld1x2',null,{timeout:20000});
 await settle(); await waitStep('attack'); await settle();
 // Re-open the same saved character to check practice recovery without granting anything.
 await page.context().storageState({path:join(out, 'tutorial-practice-storage.json')});

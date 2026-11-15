@@ -50,9 +50,17 @@ export type FxSheet = { key: string; meta: FxMeta };
 
 const SHEETS = new Map<string, FxSheet>();
 
+/** 2026-11-15 — SHEETS 는 모듈 전역이라 게임이 다시 만들어지면(검은 화면 자가 복구 재부팅 등) 텍스처는 사라지고
+ *  기록만 남는다. 그러면 "이미 받음"으로 보고 다시 받지 않아 이펙트가 영영 안 나왔다. 텍스처가 지금 게임에 있을 때만 유효하다. */
+function liveSheet(scene: Phaser.Scene, key: string): FxSheet | undefined {
+  const hit = SHEETS.get(key);
+  if (hit && !scene.textures.exists(key)) { SHEETS.delete(key); return undefined; }
+  return hit;
+}
+
 /** public/assets/fx 아래의 시트를 로드한다. 이미 로드했으면 즉시 반환. */
 export function loadFxSheet(scene: Phaser.Scene, key: string, dir = "assets/fx"): FxSheet | null {
-  const hit = SHEETS.get(key);
+  const hit = liveSheet(scene, key);
   if (hit) return hit;
 
   const png = `${dir}/${key}.png`;
@@ -82,11 +90,15 @@ export function loadFxSheet(scene: Phaser.Scene, key: string, dir = "assets/fx")
  * 브라우저 Image + fetch 로 받아 textures.addAtlas 에 넣는다. 같은 키를 동시에 불러도 한 번만 받는다.
  * 실패하면 false — 이펙트가 안 나올 뿐 게임은 멈추지 않는다.
  */
-const PENDING = new Map<string, Promise<boolean>>();
+/* 받는 중인 작업 — 게임별로 둔다(이전 게임의 끝난 작업이 새 게임의 받기를 막지 않게). */
+const PENDING = new WeakMap<Phaser.Game, Map<string, Promise<boolean>>>();
 export function ensureFxSheet(scene: Phaser.Scene, key: string, dir = "assets/fx"): Promise<boolean> {
-  if (SHEETS.has(key)) return Promise.resolve(true);
+  if (liveSheet(scene, key)) return Promise.resolve(true);
   const game = scene.game;
-  let job = PENDING.get(key);
+  let jobs = PENDING.get(game);
+  if (!jobs) { jobs = new Map(); PENDING.set(game, jobs); }
+  const pending = jobs;
+  let job = pending.get(key);
   if (!job) {
     job = (async () => {
       const meta = await fetch(`${dir}/${key}.json`).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); });
@@ -97,8 +109,8 @@ export function ensureFxSheet(scene: Phaser.Scene, key: string, dir = "assets/fx
       }
       if (!game.cache.json.exists(`${key}__meta`)) game.cache.json.add(`${key}__meta`, meta);
       return true;
-    })().catch(() => { PENDING.delete(key); return false; });
-    PENDING.set(key, job);
+    })().catch(() => { pending.delete(key); return false; });
+    pending.set(key, job);
   }
   return job.then(ok => ok && !!registerFxSheet(scene, key));
 }
@@ -108,7 +120,8 @@ export function ensureFxSheet(scene: Phaser.Scene, key: string, dir = "assets/fx
  * Phaser 의 atlas 는 이미지를 프레임으로 잘라 두지만, fps·loop·pivot 은 별도로 적용해야 한다.
  */
 export function registerFxSheet(scene: Phaser.Scene, key: string): FxSheet | null {
-  if (SHEETS.has(key)) return SHEETS.get(key)!;
+  const hit = liveSheet(scene, key);
+  if (hit) return hit;
 
   const tex = scene.textures.get(key);
   if (!tex || tex.key === "__MISSING") return null;
@@ -168,7 +181,7 @@ export function playFx(
   y: number,
   opts: PlayFxOpts = {},
 ): Phaser.GameObjects.Sprite | null {
-  const sheet = SHEETS.get(key) ?? registerFxSheet(scene, key);
+  const sheet = liveSheet(scene, key) ?? registerFxSheet(scene, key);
   if (!sheet) return null;
 
   const { meta } = sheet;
@@ -207,4 +220,19 @@ export function registerAllFx(scene: Phaser.Scene): number {
     if (registerFxSheet(scene, key)) n++;
   }
   return n;
+}
+
+/**
+ * 2026-11-15 — 받은 시트를 내린다(텍스처·애니·메타). 직업을 바꿀 때 이전 직업의 궁극기 시트가 계속 쌓이지 않게.
+ * 지금 화면에서 그 텍스처를 쓰는 오브젝트가 있으면 내리지 않는다(false).
+ */
+export function unloadFxSheet(scene: Phaser.Scene, key: string): boolean {
+  const inUse = scene.children.list.some((o) => (o as { texture?: { key?: string } }).texture?.key === key);
+  if (inUse) return false;
+  SHEETS.delete(key);
+  PENDING.get(scene.game)?.delete(key);
+  if (scene.anims.exists(`${key}-play`)) scene.anims.remove(`${key}-play`);
+  if (scene.cache.json.exists(`${key}__meta`)) scene.cache.json.remove(`${key}__meta`);
+  if (scene.textures.exists(key)) scene.textures.remove(key);
+  return true;
 }

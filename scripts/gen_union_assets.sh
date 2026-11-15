@@ -28,7 +28,7 @@ gen ub_exp "RPG buff icon of an open ancient tome with a rising golden star and 
 
 # ── 유니온 레이드 보스 초상 3종 ──
 gen raid_behemoth "RPG boss portrait of a colossal stone gate guardian giant, armored behemoth with glowing green core in chest, imposing front view bust, dark fantasy painterly style, dark background with green rim light, game boss illustration, high quality, detailed"
-gen raid_nidhogg "RPG boss portrait of a sinister abyss watcher dragon, skeletal nidhogg wyrm with icy blue glowing eyes and cold mist, imposing front view bust, dark fantasy painterly style, dark background with cyan rim light, game boss illustration, high quality, detailed"
+gen raid_blackwyrm "RPG boss portrait of a sinister abyss watcher dragon, skeletal blackwyrm wyrm with icy blue glowing eyes and cold mist, imposing front view bust, dark fantasy painterly style, dark background with cyan rim light, game boss illustration, high quality, detailed"
 gen raid_abysslord "RPG boss portrait of a dimensional overlord demon, abyss lord with violet flaming crown and purple void portal behind, imposing front view bust, dark fantasy painterly style, dark background with magenta rim light, game boss illustration, high quality, detailed"
 
 echo "=== resize ==="
@@ -37,7 +37,7 @@ const sharp = require('/home/z/my-project/node_modules/sharp');
 const fs = require('fs');
 const RAW='/home/z/my-project/scripts/union_raw', OUT='/home/z/my-project/public/assets/ui/union';
 const icons=['art_atk','art_hp','art_crit','art_gold','art_def','art_speed','ub_atk','ub_gold','ub_def','ub_exp'];
-const bosses=['raid_behemoth','raid_nidhogg','raid_abysslord'];
+const bosses=['raid_behemoth','raid_blackwyrm','raid_abysslord'];
 (async()=>{
   for(const n of icons){
     await sharp(RAW+'/'+n+'.png').resize(96,96).png({quality:90,compressionLevel:9}).toFile(OUT+'/'+n+'.png');

@@ -1,5 +1,5 @@
 /**
- * e2e_vc137.js — v1.4.31 검증: 보스 아틀라스 렌더 + 교실 파티 게임 3종 + 니플헤임 조정
+ * e2e_vc137.js — v1.4.31 검증: 보스 아틀라스 렌더 + 교실 파티 게임 3종 + 설원 조정
  *  브라우저 실측 — 아틀라스 텍스처 로드/애니 등록/보스 스폰 렌더 + 교실 활동 UI
  */
 const { chromium } = require("playwright");
@@ -48,21 +48,21 @@ const { chromium } = require("playwright");
     if (!g) return null;
     const tex = g.textures;
     const out = {};
-    for (const k of ["atl_boss", "atl_boss2", "atl_boss3", "atl_boss_nidhog", "atl_boss_surt", "atl_boss_fenrir", "atl_boss_skoll", "atl_boss_nagr", "atl_boss_hati"]) {
+    for (const k of ["atl_boss", "atl_boss2", "atl_boss3", "atl_boss_blackwyrm", "atl_boss_flamegiant", "atl_boss_greedwolf", "atl_boss_twinwolf", "atl_boss_angelknight", "atl_boss_twinmate"]) {
       const t = tex.get(k);
       out[k] = t && t.key !== "__MISSING" ? { frames: t.getFrameNames().length, w: t.getSourceImage()?.width, h: t.getSourceImage()?.height } : null;
     }
     const an = g.anims;
-    out.anims = ["boss_nidhog-idle", "boss_nidhog-walk", "boss_nidhog-atk", "boss_nidhog-sp1", "boss_nidhog-sp2", "boss_nidhog-sp3", "boss_nidhog-die", "boss2-idle", "atl_boss_hati-idle"].map((k) => ({ k, ok: an.exists(k) }));
+    out.anims = ["boss_blackwyrm-idle", "boss_blackwyrm-walk", "boss_blackwyrm-atk", "boss_blackwyrm-sp1", "boss_blackwyrm-sp2", "boss_blackwyrm-sp3", "boss_blackwyrm-die", "boss2-idle", "atl_boss_twinmate-idle"].map((k) => ({ k, ok: an.exists(k) }));
     return out;
   });
   ok("아틀라스 9종 텍스처 로드", !!atlas && Object.entries(atlas).filter(([k]) => k.startsWith("atl_")).every(([, v]) => v && v.frames >= 72));
-  const fr = atlas?.["atl_boss_nidhog"];
-  ok("니드호그 아틀라스 84프레임", fr && fr.frames === 84, fr ? `${fr.frames}fr ${fr.w}x${fr.h}` : "null");
-  ok("아틀라스 풀애니 7종 등록", !!atlas && atlas.anims.filter((a) => a.k.startsWith("boss_nidhog")).every((a) => a.ok));
+  const fr = atlas?.["atl_boss_blackwyrm"];
+  ok("탐식의 흑룡 아틀라스 84프레임", fr && fr.frames === 84, fr ? `${fr.frames}fr ${fr.w}x${fr.h}` : "null");
+  ok("아틀라스 풀애니 7종 등록", !!atlas && atlas.anims.filter((a) => a.k.startsWith("boss_blackwyrm")).every((a) => a.ok));
   ok("구형 보스도 아틀라스 애니로 등록(boss2-idle=시트 기반)", !!atlas && atlas.anims.find((a) => a.k === "boss2-idle")?.ok === true);
 
-  /* ── 3) 보스 스폰 렌더 (니드호그 — 알프헤임 보스) ── */
+  /* ── 3) 보스 스폰 렌더 (탐식의 흑룡 — 요정 숲 보스) ── */
   await p.evaluate(() => {
     const g = window.__SERTZ__.game;
     const ws = g.scene.getScene("world");
@@ -77,9 +77,9 @@ const { chromium } = require("playwright");
     const ws = g.scene.getScene("world");
     const cx = ws.cameras.main.midPoint?.x ?? ws.player.x;
     const cy = ws.cameras.main.midPoint?.y ?? ws.player.y;
-    ws.add.sprite(cx, cy - 60, "atl_boss_nidhog", 0).setDepth(50).setScale(1).setName("dbg_atlas_boss");
-    ws.add.sprite(cx - 90, cy - 60, "atl_boss_fenrir", 12).setDepth(50).setName("dbg_atlas_boss2");
-    ws.add.sprite(cx + 90, cy - 60, "atl_boss_skoll", 24).setDepth(50).setName("dbg_atlas_boss3");
+    ws.add.sprite(cx, cy - 60, "atl_boss_blackwyrm", 0).setDepth(50).setScale(1).setName("dbg_atlas_boss");
+    ws.add.sprite(cx - 90, cy - 60, "atl_boss_greedwolf", 12).setDepth(50).setName("dbg_atlas_boss2");
+    ws.add.sprite(cx + 90, cy - 60, "atl_boss_twinwolf", 24).setDepth(50).setName("dbg_atlas_boss3");
     ws.add.sprite(cx, cy + 90, "atl_boss2", 36).setDepth(50).setName("dbg_atlas_boss4");
   });
   await p.waitForTimeout(900);
@@ -118,7 +118,7 @@ const { chromium } = require("playwright");
   ok("퀴즈 진행 뷰 + 카운트다운", quizBody2.includes("미드가르드 마을") && /29초|30초|28초/.test(quizBody2));
   await p.screenshot({ path: "scripts/atlas_preview/ingame_quiz.png" });
   // 답안 제출 (host 화면에서도 버튼 동작)
-  await p.getByText("알프헤임", { exact: false }).first().click();
+  await p.getByText("요정 숲", { exact: false }).first().click();
   await p.waitForTimeout(500);
   const quizBody3 = await p.locator("body").innerText();
   ok("답안 제출 (내 답 표시)", quizBody3.includes("(내 답)"));

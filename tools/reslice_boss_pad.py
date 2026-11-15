@@ -4,7 +4,7 @@
 문제
 ----
 현재 배포본 일부는 프레임마다 캐릭터 하단(발)이 셀 경계에 정확히 닿아 있다.
-실측: atl_boss_hati 는 하단 6줄이 알파 178~255 로 채워져 있다(색 RGB 80,102,134
+실측: atl_boss_twinmate 는 하단 6줄이 알파 178~255 로 채워져 있다(색 RGB 80,102,134
 = 캐릭터 몸통색). 즉 그림자가 아니라 몸이 잘린 것이다.
 
 원인
@@ -21,7 +21,7 @@
 ----
   python3 tools/reslice_boss_pad.py                 # 미리보기(변경 없음)
   python3 tools/reslice_boss_pad.py --apply         # 실제 적용
-  python3 tools/reslice_boss_pad.py --only surt     # 특정 보스만
+  python3 tools/reslice_boss_pad.py --only flamegiant     # 특정 보스만
 """
 import re
 import sys
@@ -41,10 +41,10 @@ MAP = {
     "guardian":  ("boss",       11, 7),
     "abysslord": ("boss3",       8, 7),
     "behemoth":  ("boss2",      12, 7),
-    "surt":      ("boss_surt",   6, 7),
-    "nidhog":    ("boss_nidhog",11, 7),
-    "nagr":      ("boss_nagr",  11, 7),
-    "jorm":      ("boss_jorm",   6, 7),
+    "flamegiant":      ("boss_flamegiant",   6, 7),
+    "blackwyrm":    ("boss_blackwyrm",11, 7),
+    "angelknight":      ("boss_angelknight",  11, 7),
+    "unionserpent":      ("boss_unionserpent",   6, 7),
 }
 
 PAD_X = 0.06   # 셀 폭 대비 좌우 여백

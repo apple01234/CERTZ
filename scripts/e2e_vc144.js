@@ -3,8 +3,8 @@
  *  ① keymap autohunt 액션(B키) + 설정 라벨
  *  ② 완전 엘릭서(healFull) 자동물약 등록 가능 — isPot 확장은 런타임 인벤 판정으로 간접 검증
  *  ③ 심연의 탑 — 지정 마릿수(1층 6)·스폰 여유(+4)·12보스 로테이션(5층 guardian·60층 guardian)·속도배율
- *  ④ 후반 몬스터 HP ×10 — cave4/hel7 실측 vs sub1~3
- *  ⑤ 보스 고유 VX 패턴 — 12보스 전원 패턴 배열에 VX 7종 존재 + 수르트 sig=firepillars·니드호그 sig=poisonfield
+ *  ④ 후반 몬스터 HP ×10 — cave4/duskrealm7 실측 vs sub1~3
+ *  ⑤ 보스 고유 VX 패턴 — 12보스 전원 패턴 배열에 VX 7종 존재 + 화염의 거인 sig=firepillars·탐식의 흑룡 sig=poisonfield
  *  ⑥ vx_ 에셋 34종 HTTP 200 + 플립북 애니 등록(vx-fire 등) 실측
  *  ⑦ 툰 셰이딩 — 카메라 external 필터 2종(Blocky+ColorMatrix) 부착 실측 + localStorage 토글
  *  ⑧ 자동저장 타이머 — scene.time 이벤트 존재(5분) 는 코드 정적 검사 대체 + 세이브 API 동작
@@ -141,7 +141,7 @@ const { chromium } = require("playwright");
   ok("챕터카드 dialogueSince 세팅", ws.includes("this.dialogueSince = this.time.now;") );
   ok("보스 crater() 호출 제거", !boss.includes(".crater("));
   ok("보스 VX 패턴 구현", ["firepillars", "frostnova", "thunderfall", "poisonfield", "holymantle", "crystalburst", "blinkslash"].every((k) => boss.includes(`case "${k}"`)));
-  const allBoss = ["guardian", "behemoth", "abysslord", "nidhog", "surt", "fenrir", "skoll", "gram", "abudditos", "vord", "jorm", "nagr"];
+  const allBoss = ["guardian", "behemoth", "abysslord", "blackwyrm", "flamegiant", "greedwolf", "twinwolf", "warden", "doomwyrm", "riftwarden", "unionserpent", "angelknight"];
   const vxKinds = ["firepillars", "frostnova", "thunderfall", "poisonfield", "holymantle", "crystalburst", "blinkslash"];
   const missing = [];
   for (const b of allBoss) {
@@ -149,9 +149,9 @@ const { chromium } = require("playwright");
     if (!vxKinds.some((k) => seg.includes(k))) missing.push(b);
   }
   ok("12보스 전원 VX 패턴 보유", missing.length === 0, missing.join(","));
-  ok("수르트 sig=firepillars", /surt: \{[\s\S]*?sig: "firepillars"/.test(stages));
-  ok("니드호그 sig=poisonfield", /nidhog: \{[\s\S]*?sig: "poisonfield"/.test(stages));
-  ok("후반 HP×10 상수", stages.includes("LATE_HP_MUL = 10") && stages.includes('LATE_HP_CHAPTERS: ChapterKey[] = ["cave", "nidavellir", "hel", "abyss"]'));
+  ok("화염의 거인 sig=firepillars", /flamegiant: \{[\s\S]*?sig: "firepillars"/.test(stages));
+  ok("탐식의 흑룡 sig=poisonfield", /blackwyrm: \{[\s\S]*?sig: "poisonfield"/.test(stages));
+  ok("후반 HP×10 상수", stages.includes("LATE_HP_MUL = 10") && stages.includes('LATE_HP_CHAPTERS: ChapterKey[] = ["cave", "forgehall", "duskrealm", "abyss"]'));
   ok("탑 지정 마릿수·12보스", ws.includes("towerKillNeed(f)") && ws.includes("towerBossFor(f)"));
   ok("Enemy abs 플래그", fs.readFileSync("src/game/entities/Enemy.ts", "utf8").includes("abs?: boolean"));
   ok("healFull 자동물약 확장", fs.readFileSync("src/components/game/Panels.tsx", "utf8").includes('s.k.startsWith("potion_") || it.healFull === true'));

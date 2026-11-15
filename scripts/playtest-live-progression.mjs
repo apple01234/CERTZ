@@ -40,8 +40,8 @@ try{
   if(s.feature){const close=page.getByRole('button',{name:'닫기',exact:true});if(await close.last().isVisible())await close.last().click();continue;}
   if(s.panel){await press('Escape');continue;}
   if(s.auto)await press('b');
-  if(s.stage==='howlrstone2x3'&&s.boss)bossSeen=true;
-  if(bossSeen&&s.stage==='howlrstone2x3'&&!s.boss&&s.questIdx>0){await page.screenshot({path:out+'/first-boss-defeated.png'});console.log('PASS first boss defeated through normal controls');break;}
+  if(s.stage==='lilacworld2x3'&&s.boss)bossSeen=true;
+  if(bossSeen&&s.stage==='lilacworld2x3'&&!s.boss&&s.questIdx>0){await page.screenshot({path:out+'/first-boss-defeated.png'});console.log('PASS first boss defeated through normal controls');break;}
   if(s.p.hp<s.p.maxHp*.6&&s.p.potions.hp>0)await press('d');
   if(s.p.mp<20&&s.p.potions.mp>0)await press('f');
   if(s.portal){await move(s,s.portal);continue;}
@@ -55,7 +55,7 @@ try{
    if(distance<90){await press('x');await press('z');}
   }else await page.waitForTimeout(250);
  }
- assert.ok(bossSeen&&final.stage==='howlrstone2x3'&&!final.boss&&final.questIdx>0,'first boss clear not reached');
+ assert.ok(bossSeen&&final.stage==='lilacworld2x3'&&!final.boss&&final.questIdx>0,'first boss clear not reached');
  assert.equal(errors.length,0,errors.join('\n'));
  await context.storageState({path:out+'/first-boss-storage.json'});
 }finally{

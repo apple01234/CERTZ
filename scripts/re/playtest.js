@@ -15,7 +15,7 @@ function makeSave(stage) {
   const browser = await chromium.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage', '--use-gl=swiftshader'] });
   const results = [];
 
-  for (const stage of ['forest1', 'muspelheim1', 'niflheim1']) {
+  for (const stage of ['forest1', 'emberland1', 'frostland1']) {
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
     const page = await ctx.newPage();
     const errs = [];

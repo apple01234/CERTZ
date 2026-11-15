@@ -7,10 +7,11 @@ import { CHAPTERS, STAGES, NEXT_STAGE, PREV_STAGE, STORY_SEQUENCE, STORY_SEQUENC
 import { stageTrack, BGM_ALL_TRACKS, REBIRTH_THEME_OF } from '../src/game/audio.ts';
 import { pythonBin, pythonEnv } from './python.mjs';
 const read = p => fs.readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
-/* vc235 — data: URL 은 기준 경로가 없어 stages.ts 의 `./howlrstone` import 를
+/* vc235 — data: URL 은 기준 경로가 없어 stages.ts 의 `./lilacworld` import 를
  *  해석하지 못했다. HEAD 소스를 임시 파일로 물질화해 import 한다. */
 const before = await importFromGit('src/game/stages.ts');
-const combat = chapters => chapters.map(({title,subtitle,intro,bossDone,beats,...rest})=>rest);
+/* 2026-11-14 — 유저 지시 "골드가 너무 많음"으로 퀘스트 골드 계수 G 를 의도적으로 낮췄다(반복 의뢰 골드 −20%). 그 값만 비교에서 뺀다. */
+const combat = chapters => chapters.map(({title,subtitle,intro,bossDone,beats,repeat,...rest})=>({...rest, repeat: repeat && {...repeat, gold: undefined}}));
 assert.deepEqual(combat(CHAPTERS), combat(before.CHAPTERS), 'map IDs, combat, equipment travel and balance remain compatible');
 for (const ch of CHAPTERS.filter(c=>!c.dlc)) {
   assert.ok(ch.title.startsWith('수련 원정'));
@@ -19,17 +20,17 @@ for (const ch of CHAPTERS.filter(c=>!c.dlc)) {
 /* vc231 — 영프 편 50필드가 추가됐다. 계약의 본질은 "기존 저장키/순서가 그대로"이므로
  * 신규 키 집합을 명시적으로 열거해 고정하고, 기존 키는 전부 그대로인지 본다. */
 /* vc235 — 챕터가 15개(1화=1챕터)로 늘고 장마다 스테이지 수가 다르며
- *  키 형식도 `howlrstone{장}x{구역}` 로 바뀌었다. 실제 STAGES 순서를 그대로
- *  쓰지 않고 howlrstone 스펙에서 생성해 두 소스가 어긋나지 않게 한다. */
-const { HOWLRSTONE_CHAPTERS } = await import('../src/game/howlrstone.ts');
+ *  키 형식도 `lilacworld{장}x{구역}` 로 바뀌었다. 실제 STAGES 순서를 그대로
+ *  쓰지 않고 lilacworld 스펙에서 생성해 두 소스가 어긋나지 않게 한다. */
+const { LILACWORLD_CHAPTERS } = await import('../src/game/lilacworld.ts');
 const HW_KEYS = [];
-for (const ch of HOWLRSTONE_CHAPTERS) {
+for (const ch of LILACWORLD_CHAPTERS) {
   for (let sub = 1; sub <= ch.stages; sub++) HW_KEYS.push(`${ch.key}x${sub}`);
 }
-/* HEAD 의 NEXT_STAGE 에는 구 영프 키(howlrstone11…)가 이미 들어 있다.
+/* HEAD 의 NEXT_STAGE 에는 구 영프 키(lilacworld11…)가 이미 들어 있다.
  *  새 체계에서는 그것들이 사라지므로 비교 전에 걸러낸다. */
 const beforeNext = Object.fromEntries(
-  Object.entries(before.NEXT_STAGE).filter(([k]) => !k.startsWith('howlrstone') && k !== 'village' && k !== 'youngprincessv' && k !== 'abyss10'),
+  Object.entries(before.NEXT_STAGE).filter(([k]) => !k.startsWith('lilacworld') && k !== 'village' && k !== 'youngprincessv' && k !== 'abyss10'),
 );
 /* vc274 — "HEAD 대비 델타" 스냅샷이 자기 이력에 발목 잡혀 영구 실패하던 것을 고친다.
  *
@@ -49,7 +50,7 @@ assert.equal(NEXT_STAGE[HW_KEYS[HW_KEYS.length - 1]], 'dlcstargate1', '영프 �
 assert.equal(NEXT_STAGE.dlcstargatev, 'dlcstargate1', '그랜드 플래닛 마을 → 1구역');
 void beforeNext;
 const beforePrev = Object.fromEntries(
-  Object.entries(before.PREV_STAGE).filter(([k]) => !k.startsWith('howlrstone') && k !== 'youngprincessv' && k !== 'dlcstargatev'),
+  Object.entries(before.PREV_STAGE).filter(([k]) => !k.startsWith('lilacworld') && k !== 'youngprincessv' && k !== 'dlcstargatev'),
 );
 /* vc274 — 위와 같은 이유로 완전 일치 대신 복귀 체인의 본질(전진의 정확한 역순)을 본다. */
 assert.equal(PREV_STAGE.youngprincessv, 'village', '영프 마을 복귀 → 시작 마을');
@@ -72,9 +73,9 @@ const oldKeys = Object.keys(before.STAGES), newKeys = Object.keys(STAGES);
 for (const k of HW_KEYS) {
   assert.ok(k in STAGES, `영프 편 필드 ${k} 가 존재해야 한다`);
 }
-/* vc235 — HEAD 에는 구 영프 키(howlrstone11…)가 있어 새 체계에서 사라진다.
+/* vc235 — HEAD 에는 구 영프 키(lilacworld11…)가 있어 새 체계에서 사라진다.
  *  보존 계약은 "본편/DLC 키" 에 대한 것이므로 영프 키를 걸러 비교한다. */
-const baseOldKeys = oldKeys.filter((k) => !k.startsWith('howlrstone'));
+const baseOldKeys = oldKeys.filter((k) => !k.startsWith('lilacworld'));
 const vanished = baseOldKeys.filter((k) => !(k in STAGES));
 assert.deepEqual(vanished, [], '기존 스테이지 키는 하나도 사라지지 않는다');
 assert.ok(baseOldKeys.every(k => newKeys.includes(k)), '기존 스테이지 키 전부 유지');

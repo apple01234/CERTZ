@@ -3,9 +3,9 @@
 // [왜 data: URL 이 아니라 파일인가]
 //  종전 테스트들은 `import("data:text/javascript;base64,...")` 로 HEAD 버전을
 //  읽었다. 이 방식은 소스에 상대 import 가 하나라도 있으면 즉시 죽는다 —
-//  data: URL 에는 기준 디렉터리가 없어 `./howlrstone` 을 해석할 수 없기 때문이다
+//  data: URL 에는 기준 디렉터리가 없어 `./lilacworld` 을 해석할 수 없기 때문이다
 //  (ERR_UNSUPPORTED_RESOLVE_REQUEST / TypeError: Invalid URL).
-//  stages.ts 는 vc231 부터 `./howlrstone` 을 import 하므로 이 경로가 막혔다.
+//  stages.ts 는 vc231 부터 `./lilacworld` 을 import 하므로 이 경로가 막혔다.
 //
 // [해결]
 //  HEAD 내용을 src/ 옆의 임시 파일로 쓰고 그 파일을 import 한다. 상대 import 는

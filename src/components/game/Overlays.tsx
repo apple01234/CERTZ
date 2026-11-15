@@ -20,15 +20,7 @@ const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
 /** 세이브 이어하기 라벨용 스테이지 표기명 (v2.0 — 구역 체인 대응) */
 const STAGE_LABEL: Record<string, string> = {
   village: "에델리오나 마을",
-  forest: "숲의 신전",
-  kingdom: "쿠소디아",
-  alfheim: "알프헤임",
-  muspelheim: "무스펠헤임",
-  niflheim: "니플헤임",
-  cave: "스바르트알프헤임",
-  nidavellir: "니다벨리르",
-  hel: "헬",
-  abyss: "심층 수련장",
+  /* 삭제된 옛 9지역 키는 resolveStage 가 village 로 돌리므로 이름을 두지 않는다. */
 };
 
 /** 이어하기 라벨 — 구 세이브 키도 폴백 처리 */

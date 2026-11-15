@@ -100,9 +100,9 @@ async function gotoStage(page, stageKey, savePatch = {}) {
     const tv = await page.evaluate(() => {
       const c = window.__SERTZ_DEBUG__;
       const { tradeValue, TRADE_PRICES } = c.data;
-      return { g: tradeValue("bd_guardian"), a: tradeValue("bd_abudditos"), stock: c.data.TRADE_STOCK.length };
+      return { g: tradeValue("bd_guardian"), a: tradeValue("bd_doomwyrm"), stock: c.data.TRADE_STOCK.length };
     });
-    ok(tv.g === 4 && tv.a === 18, `판매가 60% 수수료 (guardian 8→${tv.g}, abudditos 30→${tv.a})`);
+    ok(tv.g === 4 && tv.a === 18, `판매가 60% 수수료 (guardian 8→${tv.g}, doomwyrm 30→${tv.a})`);
     ok(tv.stock === 9, `거래소 진열 9종 (${tv.stock}/9)`);
 
     // GM 에메랄드 지급 → 거래소 구매 → 상점 구매는 여전히 차단 → 판매 환급
@@ -141,13 +141,13 @@ async function gotoStage(page, stageKey, savePatch = {}) {
     const tradeEvt = await page.evaluate(() => {
       const w = window.__SERTZ__.game.scene.getScene("world");
       const p = w.player;
-      window.__SERTZ_EB__.emit("rpg:tradeBuy", { key: "bd_abudditos" });
-      const has = p.owned.includes("bd_abudditos");
+      window.__SERTZ_EB__.emit("rpg:tradeBuy", { key: "bd_doomwyrm" });
+      const has = p.owned.includes("bd_doomwyrm");
       const em = p.emerald; // 96 - 30 = 66
-      const sold = window.__SERTZ_EB__.emit("rpg:tradeSell", { key: "bd_abudditos" });
+      const sold = window.__SERTZ_EB__.emit("rpg:tradeSell", { key: "bd_doomwyrm" });
       return { has, em };
     });
-    ok(tradeEvt.has && tradeEvt.em === 66, `거래소 이벤트 구매 bd_abudditos (에메랄드 ${tradeEvt.em})`);
+    ok(tradeEvt.has && tradeEvt.em === 66, `거래소 이벤트 구매 bd_doomwyrm (에메랄드 ${tradeEvt.em})`);
 
     /* ============ [2] 강화 주문서 ============ */
     console.log("\n[2] 강화 주문서 — 충전/소모/성공률 가산");

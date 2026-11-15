@@ -188,7 +188,7 @@ export class Tutorial {
       if (Phaser.Math.Distance.Between(p.x, p.y, this.target.x, this.target.y) < 64) this.target = this.scene.tutorialPoint(240, 0);
     } else if (id === "talk") this.target = this.scene.tutorialPoint(210, 0);
     else if (id === "training") {
-      if (this.scene.stageDef.key !== "howlrstone1x2") { this.scene.tutorialTransition(); return; }
+      if (this.scene.stageDef.key !== "lilacworld1x2") { this.scene.tutorialTransition(); return; }
       this.brief("register", "레지스터", "라일락과의 약속을 품고 기초부터 익히자. 오랜 수련도 첫걸음은 정확한 한 번의 검격이다.", () => this.advance());
     } else if (id === "attack") {
       this.spawnPractice(true);

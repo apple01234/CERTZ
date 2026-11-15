@@ -17,15 +17,15 @@ fs.mkdirSync(TMP, { recursive: true });
 
 /* 원본 시트 + 격자 (원본 아트 기준) */
 const MAP = [
-  ["bsw_nidhog",    "atl_boss_nidhog",    11, 7],
-  ["bsw_surt",      "atl_boss_surt",       6, 7],
-  ["bsw_fenrir",    "atl_boss_fenrir",     6, 7],
-  ["bsw_skoll",     "atl_boss_skoll",     11, 7],
-  ["bsw_jorm",      "atl_boss_jorm",       6, 7],
-  ["bsw_nagr",      "atl_boss_nagr",      11, 7],
-  ["bsw_abudditos", "atl_boss_abudditos", 11, 7],
-  ["bsw_vord",      "atl_boss_vord",      11, 7],
-  ["bsw_gram",      "atl_boss_gram",       6, 7],
+  ["bsw_blackwyrm",    "atl_boss_blackwyrm",    11, 7],
+  ["bsw_flamegiant",      "atl_boss_flamegiant",       6, 7],
+  ["bsw_greedwolf",    "atl_boss_greedwolf",     6, 7],
+  ["bsw_twinwolf",     "atl_boss_twinwolf",     11, 7],
+  ["bsw_unionserpent",      "atl_boss_unionserpent",       6, 7],
+  ["bsw_angelknight",      "atl_boss_angelknight",      11, 7],
+  ["bsw_doomwyrm", "atl_boss_doomwyrm", 11, 7],
+  ["bsw_riftwarden",      "atl_boss_riftwarden",      11, 7],
+  ["bsw_warden",      "atl_boss_warden",       6, 7],
 ];
 const SRC = "/root/workspace/CERTZ/assets_src/boss_sheets";
 const OUT = "/root/workspace/CERTZ/public/assets";

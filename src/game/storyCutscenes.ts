@@ -144,8 +144,8 @@ export const CHAPTER_INTROS: Record<string, ChapterIntroSpec> = {
 };
 
 /** Route direction and long/close shots vary across the 15 real chapters. */
-export const HOWLRSTONE_INTROS: Record<string, ChapterIntroSpec> = Object.fromEntries(
-  Array.from({ length: 15 }, (_, index) => [`howlrstone${index + 1}`, {
+export const LILACWORLD_INTROS: Record<string, ChapterIntroSpec> = Object.fromEntries(
+  Array.from({ length: 15 }, (_, index) => [`lilacworld${index + 1}`, {
     once: true,
     shots: [
       { rx: 0.25, ry: 0.5, focus: "entry", zoom: 0.9, panMs: 420, holdMs: 180 },
@@ -159,7 +159,7 @@ export const HOWLRSTONE_INTROS: Record<string, ChapterIntroSpec> = Object.fromEn
 /** 챕터 키로 진입 연출 조회. 없으면 null (연출 생략 — 안전) */
 export function chapterIntroOf(key: string | null | undefined): ChapterIntroSpec | null {
   if (!key) return null;
-  return HOWLRSTONE_INTROS[key] ?? CHAPTER_INTROS[key] ?? null;
+  return LILACWORLD_INTROS[key] ?? CHAPTER_INTROS[key] ?? null;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -232,11 +232,11 @@ const BEAT_SHOTS: Record<StageBeat, ChapterIntroShot[]> = {
  */
 export const STAGE_INTROS: Record<string, ChapterIntroSpec> = {
   /* 영프 편 — 해롤드(크라켄) 직전. 바다가 통째로 검게 물드는 장면 */
-  "howlrstone3:5": {
+  "lilacworld3:5": {
     once: true,
     shots: [
       { rx: 0.24, ry: 0.5, focus: "entry", panMs: 520, holdMs: 260, zoom: 0.86 },
-      { rx: 0.72, ry: 0.48, focus: "feature", panMs: 980, holdMs: 380, zoom: 0.8, dialogue: "howlEliteWarn3" },
+      { rx: 0.72, ry: 0.48, focus: "feature", panMs: 980, holdMs: 380, zoom: 0.8, dialogue: "lwEliteWarn3" },
     ],
   },
   /* 최종장 직전 — 가장 웅장하게 */

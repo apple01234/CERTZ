@@ -16,7 +16,7 @@ import path from 'node:path';
 const ROOT = path.resolve(import.meta.dirname, '..');
 const GAME_FILES = [
   'src/game/data.ts',
-  'src/game/howlrstone.ts',
+  'src/game/lilacworld.ts',
   'src/game/lilacStory.ts',
   'src/game/lilacScenarios.ts',
   'src/game/grandPlanetCanon.ts',
@@ -94,7 +94,7 @@ test('손상 표기 — 이그니션이 안내인션으로 깨진 곳이 없다'
 
 test('정본 무기명 — 솔라플래임이그니션소드 표기가 정확하다', () => {
   /* 4.txt:131 정본. 등장하는 곳은 반드시 이 표기여야 한다. */
-  const data = read('src/game/data.ts') + read('src/game/howlrstone.ts') + read('src/game/lilacStory.ts');
+  const data = read('src/game/data.ts') + read('src/game/lilacworld.ts') + read('src/game/lilacStory.ts');
   assert.ok(data.includes('솔라플래임이그니션소드'), '정본 표기가 사라졌다');
   /* 깨진 변형이 하나라도 있으면 실패 */
   for (const bad of ['솔라플레임이그니션', '솔라플래임안내인션', '솔라플래임이그니션소드소드']) {

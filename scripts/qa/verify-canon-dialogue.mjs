@@ -40,7 +40,7 @@ const introText = await page.evaluate(async () => {
   const s = window.__SERTZ_SCENE__;
   try { s.seenSet?.clear?.(); } catch {}
   s.dialoguing = false;
-  s.showDialogueOnce?.('chapterIntroHowlrstone1');
+  s.showDialogueOnce?.('chapterIntroLilacworld1');
   await new Promise((r) => setTimeout(r, 1800));
   const t = document.body.innerText || '';
   return t.replace(/\s+/g, ' ').slice(0, 1200);
@@ -52,7 +52,7 @@ const doneText = await page.evaluate(async () => {
   for (let i = 0; i < 25 && s.dialoguing; i++) { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await new Promise((r) => setTimeout(r, 300)); }
   s.dialoguing = false;
   try { s.seenSet?.clear?.(); } catch {}
-  s.showDialogueOnce?.('howlrstone1Done');
+  s.showDialogueOnce?.('lilacworld1Done');
   await new Promise((r) => setTimeout(r, 1800));
   return (document.body.innerText || '').replace(/\s+/g, ' ').slice(0, 1200);
 });

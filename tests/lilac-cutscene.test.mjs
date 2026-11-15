@@ -1,7 +1,7 @@
 // node --experimental-strip-types --import ./tests/ts-resolve-hook.mjs tests/lilac-cutscene.test.mjs
 import assert from "node:assert/strict";
 import { LILAC_SCENARIOS, LILAC_CHAPTER_MAP, lilacScenarioIdAt } from "../src/game/lilacScenarios.ts";
-import { HOWLRSTONE_CHAPTERS } from "../src/game/howlrstone.ts";
+import { LILACWORLD_CHAPTERS } from "../src/game/lilacworld.ts";
 import { chapterIntroOf, resolveChapterIntroShots } from "../src/game/storyCutscenes.ts";
 import { cutsceneCharacter, castTexture } from "../src/game/cutsceneCast.ts";
 
@@ -32,7 +32,7 @@ for (const id of ids) {
 /* 3) 매핑 전수 — 모든 시나리오가 어딘가에 배치됨 */
 const placed = new Set();
 for (const ch of Object.keys(LILAC_CHAPTER_MAP)) {
-  const chapter = HOWLRSTONE_CHAPTERS.find((chapter) => chapter.key === ch);
+  const chapter = LILACWORLD_CHAPTERS.find((chapter) => chapter.key === ch);
   ok(`${ch}: 실제 챕터`, chapter);
   const fields = chapter.stages;
   for (const p of LILAC_CHAPTER_MAP[ch]) {
@@ -44,11 +44,11 @@ for (const id of ids) ok(`매핑 존재: ${id}`, placed.has(id));
 ok("15개 장 모두 연출 있음", Object.keys(LILAC_CHAPTER_MAP).length === 15);
 
 /* 4) Only the fifteen real Lilac chapters carry these directions. */
-ok("howlrstone1/1 → lilac00", lilacScenarioIdAt("howlrstone1", 1) === "lilac00");
-ok("howlrstone1/4 → lilac01", lilacScenarioIdAt("howlrstone1", 4) === "lilac01");
-ok("howlrstone15/1 → lilac15", lilacScenarioIdAt("howlrstone15", 1) === "lilac15");
-ok("존재하지 않는 howlrstone5/10 금지", lilacScenarioIdAt("howlrstone5", 10) === null);
-ok("howlrstone1/2 미배치 구역은 null", lilacScenarioIdAt("howlrstone1", 2) === null);
+ok("lilacworld1/1 → lilac00", lilacScenarioIdAt("lilacworld1", 1) === "lilac00");
+ok("lilacworld1/4 → lilac01", lilacScenarioIdAt("lilacworld1", 4) === "lilac01");
+ok("lilacworld15/1 → lilac15", lilacScenarioIdAt("lilacworld15", 1) === "lilac15");
+ok("존재하지 않는 lilacworld5/10 금지", lilacScenarioIdAt("lilacworld5", 10) === null);
+ok("lilacworld1/2 미배치 구역은 null", lilacScenarioIdAt("lilacworld1", 2) === null);
 ok("본편 forest 는 영프 연출 없음", lilacScenarioIdAt("forest", 1) === null);
 ok("본편 abyss 도 영프 연출 없음", lilacScenarioIdAt("abyss", 1) === null);
 ok("없는 챕터는 null", lilacScenarioIdAt("nope", 1) === null);
@@ -76,7 +76,7 @@ for (const scenario of Object.values(LILAC_SCENARIOS)) {
     ok(`${scenario.id}: 초상과 같은 인물`, step.actor.frame === "idle-down-0");
   }
 }
-for (const chapter of HOWLRSTONE_CHAPTERS) {
+for (const chapter of LILACWORLD_CHAPTERS) {
   const intro = chapterIntroOf(chapter.key);
   ok(`${chapter.key}: 경로 인트로`, intro?.shots.length === 4);
   const shots = resolveChapterIntroShots(intro, {

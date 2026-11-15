@@ -12,7 +12,7 @@ const { chromium } = require("playwright");
     if (!ph) return null;
     const title = ph.scene.getScene("title");
     const keys = [
-      "i_bd_guardian", "i_bd_abudditos", "i_gm_sword", "i_tier_cube", "i_eert_cube",
+      "i_bd_guardian", "i_bd_doomwyrm", "i_gm_sword", "i_tier_cube", "i_eert_cube",
       "item_coin", "item_weapon_1", "item_weapon_6", "item_armor_1",
       "exp_book", "exp_book_s", "exp_book_m", "exp_book_l",
       "item_potion_hp3", "item_potion_hp10", "item_ring_crit",

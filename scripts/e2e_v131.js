@@ -44,14 +44,14 @@ const { chromium } = require("playwright");
     const sc = w?.scene?.getScene("title");
     const anims = (k) => !!sc?.anims?.exists(k);
     return {
-      f_valk: has("cost_valkyrie_idle0"), m_war: has("costm_warlord_idle0"),
-      x_war_f: has("cost_warlord_idle0"), x_valk_m: has("costm_valkyrie_idle0"),
+      f_wingmaiden: has("cost_wingmaiden_idle0"), m_war: has("costm_warlord_idle0"),
+      x_war_f: has("cost_warlord_idle0"), x_wingmaiden_m: has("costm_wingmaiden_idle0"),
       witch: has("cost_witch_idle0"), paladin: has("costm_paladin_idle0"),
-      anim: anims("cost_valkyrie-idle") && anims("costm_warlord-walk"),
+      anim: anims("cost_wingmaiden-idle") && anims("costm_warlord-walk"),
     };
   });
-  ok("[#1] SPUM 코스튬 여형/남형 텍스처 로드", tex.f_valk && tex.m_war && tex.witch && tex.paladin);
-  ok("[#1] 교차 성별 시트 (cost_warlord/costm_valkyrie)", tex.x_war_f && tex.x_valk_m);
+  ok("[#1] SPUM 코스튬 여형/남형 텍스처 로드", tex.f_wingmaiden && tex.m_war && tex.witch && tex.paladin);
+  ok("[#1] 교차 성별 시트 (cost_warlord/costm_wingmaiden)", tex.x_war_f && tex.x_wingmaiden_m);
   ok("[#1] 신규 시트 애님 등록", tex.anim);
 
   /* 여캠 생성 — 로비 3단 */
@@ -101,14 +101,14 @@ const { chromium } = require("playwright");
     const pl = sc?.player;
     if (!pl) return { ok: false };
     const before = pl.bodyPrefix;
-    pl.owned.push("outfit_valkyrie");
-    pl.outfit = "outfit_valkyrie";
+    pl.owned.push("outfit_wingmaiden");
+    pl.outfit = "outfit_wingmaiden";
     pl.applyBodyLook();
     return { ok: true, before, after: pl.bodyPrefix, tex: pl.texture.key };
   });
-  ok("[#1] 발키리 착용 → cost_valkyrie 전환", wear.ok && wear.after === "cost_valkyrie" && wear.tex === "cost_valkyrie_idle0", `${wear.before}→${wear.after}`);
+  ok("[#1] 천사기사 착용 → cost_wingmaiden 전환", wear.ok && wear.after === "cost_wingmaiden" && wear.tex === "cost_wingmaiden_idle0", `${wear.before}→${wear.after}`);
   await p.waitForTimeout(400);
-  await shot("01_valkyrie");
+  await shot("01_wingmaiden");
   await p.evaluate(() => {
     const sc = window.__SERTZ__?.game?.scene?.getScene("world");
     sc.player.outfit = "outfit_warlord";

@@ -241,14 +241,14 @@ async function bringEnemies(page, n, filter) {
       return { hasNecro: keys.has("x3_necromancer") };
     });
     ok(necro.hasNecro, `abyss9 강령술사 스폰`);
-    await restartWith(page, "hel7", { lv: 80 });
+    await restartWith(page, "duskrealm7", { lv: 80 });
     const chort = await page.evaluate(() => {
       const w = window.__SERTZ__.game.scene.getScene("world");
       const keys = new Set(w.enemies.map((e) => e.def.key));
       const c = w.enemies.find((e) => e.def.key === "x3_chort");
       return { hasChort: keys.has("x3_chort"), chargeProfile: !!c?.def.profile?.charge };
     });
-    ok(chort.hasChort && chort.chargeProfile, `hel7 악마다라 촐트 스폰 + charge 프로필`);
+    ok(chort.hasChort && chort.chargeProfile, `duskrealm7 악마다라 촐트 스폰 + charge 프로필`);
 
   } catch (e) {
     console.log("TEST ERROR:", String(e).slice(0, 400));

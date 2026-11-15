@@ -3,9 +3,9 @@ const { execFileSync } = require("child_process");
 const fs = require("fs");
 
 const SPECS = {
-  nidhog:[140,147], surt:[256,171], fenrir:[204,184], skoll:[111,184],
-  jorm:[256,147], nagr:[140,147], abudditos:[140,147], vord:[140,147], gram:[204,184],
-  hati:[191,146], boss2:[330,212],
+  blackwyrm:[140,147], flamegiant:[256,171], greedwolf:[204,184], twinwolf:[111,184],
+  unionserpent:[256,147], angelknight:[140,147], doomwyrm:[140,147], riftwarden:[140,147], warden:[204,184],
+  twinmate:[191,146], boss2:[330,212],
 };
 
 const D = "/root/workspace/CERTZ/public/assets";

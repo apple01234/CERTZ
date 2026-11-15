@@ -9,12 +9,12 @@ const EXPECT = {
   atl_boss:       [268, 234, 6, 72],
   atl_boss2:      [330, 212, 7, 84],
   atl_boss3:      [286, 234, 6, 72],
-  atl_boss_nidhog:[226, 232, 7, 84],
-  atl_boss_surt:  [330, 224, 7, 84],
-  atl_boss_fenrir:[304, 274, 7, 84],
-  atl_boss_skoll: [274, 234, 7, 84],
-  atl_boss_nagr:  [286, 240, 6, 72],
-  atl_boss_hati:  [280, 258, 7, 84],
+  atl_boss_blackwyrm:[226, 232, 7, 84],
+  atl_boss_flamegiant:  [330, 224, 7, 84],
+  atl_boss_greedwolf:[304, 274, 7, 84],
+  atl_boss_twinwolf: [274, 234, 7, 84],
+  atl_boss_angelknight:  [286, 240, 6, 72],
+  atl_boss_twinmate:  [280, 258, 7, 84],
 };
 
 (async () => {
@@ -71,7 +71,7 @@ const EXPECT = {
         exp,
       } : null;
     }
-    out.anims = ["boss_surt-idle", "boss_surt-die", "boss2-sp3", "boss_nidhog-sp3", "boss_fenrir-die", "boss_nagr-idle"]
+    out.anims = ["boss_flamegiant-idle", "boss_flamegiant-die", "boss2-sp3", "boss_blackwyrm-sp3", "boss_greedwolf-die", "boss_angelknight-idle"]
       .map((k) => ({ k, ok: g.anims.exists(k) }));
     return out;
   }, EXPECT);
@@ -79,14 +79,14 @@ const EXPECT = {
     const a = atlas[k];
     return a && a.w === e[0] * 12 && a.h === e[1] * e[2] && a.frames === e[3];
   }), JSON.stringify(Object.fromEntries(Object.entries(atlas || {}).filter(([k]) => k.startsWith("atl_")).map(([k, v]) => [k, v ? `${v.w}x${v.h}/${v.frames}fr` : "null"]))));
-  ok("신규 애니 6종 등록(surt die·boss2 sp3·nidhog sp3 등)", !!atlas && atlas.anims.every((a) => a.ok), JSON.stringify(atlas?.anims));
+  ok("신규 애니 6종 등록(flamegiant die·boss2 sp3·blackwyrm sp3 등)", !!atlas && atlas.anims.every((a) => a.ok), JSON.stringify(atlas?.anims));
 
   /* ── 3) 9종 전체 인게임 렌더 + 스크린샷 ── */
   await p.evaluate(() => {
     const g = window.__SERTZ__.game;
     const ws = g.scene.getScene("world");
     const c = ws.cameras.main.midPoint ?? { x: ws.player.x, y: ws.player.y };
-    const keys = ["atl_boss", "atl_boss2", "atl_boss3", "atl_boss_nidhog", "atl_boss_surt", "atl_boss_fenrir", "atl_boss_skoll", "atl_boss_nagr", "atl_boss_hati"];
+    const keys = ["atl_boss", "atl_boss2", "atl_boss3", "atl_boss_blackwyrm", "atl_boss_flamegiant", "atl_boss_greedwolf", "atl_boss_twinwolf", "atl_boss_angelknight", "atl_boss_twinmate"];
     keys.forEach((k, i) => {
       const col = i % 5, row = Math.floor(i / 5);
       ws.add.sprite(c.x - 320 + col * 160, c.y - 120 + row * 220, k, 0)
@@ -108,7 +108,7 @@ const EXPECT = {
   await p.screenshot({ path: "scripts/atlas_preview/ingame_vc139_9boss.png" });
   const rendered2 = await p.evaluate(() => {
     const ws = window.__SERTZ__.game.scene.getScene("world");
-    return ["atl_boss", "atl_boss2", "atl_boss3", "atl_boss_nidhog", "atl_boss_surt", "atl_boss_fenrir", "atl_boss_skoll", "atl_boss_nagr", "atl_boss_hati"].map((k) => {
+    return ["atl_boss", "atl_boss2", "atl_boss3", "atl_boss_blackwyrm", "atl_boss_flamegiant", "atl_boss_greedwolf", "atl_boss_twinwolf", "atl_boss_angelknight", "atl_boss_twinmate"].map((k) => {
       const s = ws.children.getByName("q_" + k);
       return s ? { k, vis: s.visible, w: Math.round(s.displayWidth), h: Math.round(s.displayHeight) } : null;
     });

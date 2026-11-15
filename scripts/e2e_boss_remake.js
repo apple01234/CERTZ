@@ -1,6 +1,6 @@
 /**
- * v5.0 보스 전면 리메이크 E2E — 니드호그(알프헤임10) 실측
- *  ① 보스 스폰 + 신규 아트 텍스처(boss_nidhog_*) 로드
+ * v5.0 보스 전면 리메이크 E2E — 탐식의 흑룡(요정 숲10) 실측
+ *  ① 보스 스폰 + 신규 아트 텍스처(boss_blackwyrm_*) 로드
  *  ② 12FPS 풀애니 등록(idle/walk/atk/die/sp1~3) + 모드별 재생 전환
  *  ③ 지연 로더 동작(36프레임) + 콘솔 에러 0
  */
@@ -71,20 +71,20 @@ const { chromium } = require("playwright");
   }
   console.log("프롤로그 스킵:", prologueDone, await p.evaluate(() => window.__SERTZ_SCENE__?.stageDef?.key));
 
-  /* 알프헤임 10구역(보스) 직행 — 전환 게이트(transitioning/컷신) 폴링 재시도 */
+  /* 요정 숲 10구역(보스) 직행 — 전환 게이트(transitioning/컷신) 폴링 재시도 */
   let landed = false;
   for (let i = 0; i < 24 && !landed; i++) {
     landed = await p.evaluate(() => {
       const s = window.__SERTZ_SCENE__;
       if (!s?.gotoStage) return false;
-      if (s.stageDef?.key === "alfheim10") return true;
-      s.gotoStage("alfheim10");
+      if (s.stageDef?.key === "fairyglade10") return true;
+      s.gotoStage("fairyglade10");
       return false;
     }).catch(() => false);
     await p.keyboard.press("Enter");
     await p.waitForTimeout(900);
   }
-  ok("[1] alfheim10 진입", landed, await p.evaluate(() => window.__SERTZ_SCENE__?.stageDef?.key));
+  ok("[1] fairyglade10 진입", landed, await p.evaluate(() => window.__SERTZ_SCENE__?.stageDef?.key));
   await p.waitForTimeout(1500);
   await p.screenshot({ path: "/tmp/e2e_boss_arrive.png" });
   console.log("화면 버튼:", await p.evaluate(() => [...document.querySelectorAll("button")].map((x) => x.textContent?.trim()).filter(Boolean).slice(0, 20).join(" / ")));
@@ -138,30 +138,30 @@ const { chromium } = require("playwright");
       anim: b.anims?.currentAnim?.key,
       mode: b.mode,
       reg: {
-        idle: a.exists("boss_nidhog-idle"),
-        walk: a.exists("boss_nidhog-walk"),
-        atk: a.exists("boss_nidhog-atk"),
-        die: a.exists("boss_nidhog-die"),
-        sp1: a.exists("boss_nidhog-sp1"),
-        sp2: a.exists("boss_nidhog-sp2"),
-        sp3: a.exists("boss_nidhog-sp3"),
+        idle: a.exists("boss_blackwyrm-idle"),
+        walk: a.exists("boss_blackwyrm-walk"),
+        atk: a.exists("boss_blackwyrm-atk"),
+        die: a.exists("boss_blackwyrm-die"),
+        sp1: a.exists("boss_blackwyrm-sp1"),
+        sp2: a.exists("boss_blackwyrm-sp2"),
+        sp3: a.exists("boss_blackwyrm-sp3"),
       },
       frames: {
-        idle5: s.textures.exists("boss_nidhog_idle5"),
-        walk5: s.textures.exists("boss_nidhog_walk5"),
-        atk5: s.textures.exists("boss_nidhog_atk5"),
-        die5: s.textures.exists("boss_nidhog_die5"),
-        sp15: s.textures.exists("boss_nidhog_sp1_5"),
-        sp25: s.textures.exists("boss_nidhog_sp2_5"),
-        sp35: s.textures.exists("boss_nidhog_sp3_5"),
+        idle5: s.textures.exists("boss_blackwyrm_idle5"),
+        walk5: s.textures.exists("boss_blackwyrm_walk5"),
+        atk5: s.textures.exists("boss_blackwyrm_atk5"),
+        die5: s.textures.exists("boss_blackwyrm_die5"),
+        sp15: s.textures.exists("boss_blackwyrm_sp1_5"),
+        sp25: s.textures.exists("boss_blackwyrm_sp2_5"),
+        sp35: s.textures.exists("boss_blackwyrm_sp3_5"),
       },
-      idleRate: a.get("boss_nidhog-idle")?.frameRate,
-      idleN: a.get("boss_nidhog-idle")?.frames?.length,
+      idleRate: a.get("boss_blackwyrm-idle")?.frameRate,
+      idleN: a.get("boss_blackwyrm-idle")?.frames?.length,
     };
   });
   console.log("보스 상태:", JSON.stringify(st1, null, 1));
-  ok("[3] 니드호그 스폰", !!st1 && st1.key === "nidhog");
-  ok("[4] 신규 아트 텍스처 적용", st1?.texFrame?.startsWith("boss_nidhog_"), st1?.texFrame);
+  ok("[3] 탐식의 흑룡 스폰", !!st1 && st1.key === "blackwyrm");
+  ok("[4] 신규 아트 텍스처 적용", st1?.texFrame?.startsWith("boss_blackwyrm_"), st1?.texFrame);
   ok("[5] 12FPS 풀애니 등록(idle/walk/atk/die/sp1~3)", !!st1?.reg && Object.values(st1.reg).every(Boolean), JSON.stringify(st1?.reg));
   ok("[6] 지연 로더 36프레임 도달", !!st1?.frames && Object.values(st1.frames).every(Boolean), JSON.stringify(st1?.frames));
   ok("[7] idle 12FPS·6프레임", st1?.idleRate === 12 && st1?.idleN === 6, `rate=${st1?.idleRate} n=${st1?.idleN}`);
@@ -186,7 +186,7 @@ const { chromium } = require("playwright");
   console.log("관찰된 애니:", [...seen].join(", "));
   ok("[8] 모드별 애니 재생 전환 관찰", seen.size >= 2, [...seen].join(","));
 
-  await p.screenshot({ path: "/tmp/e2e_boss_nidhog.png" });
+  await p.screenshot({ path: "/tmp/e2e_boss_blackwyrm.png" });
 
   /* 스크롤 이동 유도 — 플레이어가 접근하면 보스도 추격(walk) */
   const st2 = await p.evaluate(() => {
@@ -198,7 +198,7 @@ const { chromium } = require("playwright");
 
   const hard = errs.filter((e) => e.startsWith("PAGEERROR"));
   ok("[9] pageerror 0", hard.length === 0, hard.join(" | ").slice(0, 300));
-  const bossRel = errs.filter((e) => /boss_nidhog|애니|anim/i.test(e));
+  const bossRel = errs.filter((e) => /boss_blackwyrm|애니|anim/i.test(e));
   ok("[10] 보스 에셋 관련 콘솔 에러 0", bossRel.length === 0, bossRel.join(" | ").slice(0, 300));
 
   await b.close();

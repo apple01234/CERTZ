@@ -13,7 +13,7 @@ const URL = `http://localhost:${PORT}`;
 let pass = 0, fail = 0;
 const ok = (cond, label) => { if (cond) { pass++; console.log(`  PASS — ${label}`); } else { fail++; console.log(`  FAIL — ${label}`); } };
 
-const KINDS = ["title", "village", "field", "alfheim", "snow", "cave", "abyss", "boss"];
+const KINDS = ["title", "village", "field", "fairyglade", "snow", "cave", "abyss", "boss"];
 
 async function waitBgm(page, pred, timeoutMs = 12000) {
   const t0 = Date.now();

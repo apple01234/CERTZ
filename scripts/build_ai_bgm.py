@@ -35,7 +35,7 @@ PLAN = {
     'title':   [('cozy', 1), ('cozy', 20)],
     'village': [('tavern', 0), ('tavern', 2), ('tavern', 7), ('cozy', 5)],
     'field':   [('adv', 1), ('adv', 8), ('adv', 14), ('adv', 19)],
-    'alfheim': [('adv', 3), ('adv', 6), ('adv', 11)],
+    'fairyglade': [('adv', 3), ('adv', 6), ('adv', 11)],
     'snow':    [('adv', 0), ('adv', 9)],
     'cave':    [('clim', 2), ('clim', 10), ('clim', 17)],
     'abyss':   [('clim', 5), ('clim', 12), ('clim', 19)],

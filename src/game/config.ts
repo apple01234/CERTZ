@@ -1,6 +1,7 @@
 import saveSchema from "../../accounts/save-schema.json" with { type: "json" };
 import { migrateLegacySkillMastery, normalizeSkillMastery } from "./skillMastery";
 import { migrateStoryProgress } from "./storyRevision";
+import { migrateLegacyKeys } from "./legacyKeys";
 
 /** 게임 전역 상수 */
 export const GAME_W = 960;
@@ -419,12 +420,13 @@ export const SAVE_VERSION = saveSchema.version;
  *  `stages.ts` 의 `resolveStage()` 와 같은 규칙이지만, 여기서는 **세이브 로드 시점**에
  *  바로 정규화해 두어 HUD·포탈·워프가 삭제된 키를 한 번도 보지 않게 한다.
  *  세이브에 새 필드를 추가하지 않는다(기존 `stage` 값을 덮어쓸 뿐이다). */
-const REMOVED_REGION_RE = /^(forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss)(v|[1-9]|10)$/;
+const REMOVED_REGION_RE = /^(forest|kingdom|fairyglade|emberland|frostland|cave|forgehall|duskrealm|abyss)(v|[1-9]|10)$/;
 
 export function migrateSave(d: SaveData): SaveData {
   const from = typeof d.v === "number" && Number.isInteger(d.v) && d.v >= 0 ? d.v : 0;
   if (from > SAVE_VERSION) return d;
-  const next = migrateStoryProgress(d);
+  /* v3 (2026-11-14) — 이름을 바꾸기 전의 옛 식별자를 새 키로 옮긴다(이관표: legacyKeys.ts). 다른 단계보다 먼저. */
+  const next = migrateStoryProgress(from < 3 ? migrateLegacyKeys(d) : d);
   if (typeof next.stage === "string" && REMOVED_REGION_RE.test(next.stage)) next.stage = "village";
   next.skillMastery = from < 2 ? migrateLegacySkillMastery(d.skillMastery) : normalizeSkillMastery(d.skillMastery);
   next.v = SAVE_VERSION;

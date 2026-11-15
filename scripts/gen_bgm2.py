@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """v3.0.20 #10 — 신규 BGM 8트랙 절차 합성 (사용자: "브금좀 여러개 써(좋은걸로)")
 
-기존 8종(bgm_field/boss/title/village/alfheim/cave/snow/abyss)에 1:1 대응하는
+기존 8종(bgm_field/boss/title/village/fairyglade/cave/snow/abyss)에 1:1 대응하는
 제2 변주 트랙 8종을 추가한다 — 같은 분위기, 다른 곡 (인게임에서 로테이션 재생).
 
 작곕 설계 (곡마다 다른 키/진행/리듬 — 시드 고정 재현 가능):
@@ -305,7 +305,7 @@ TRACKS = [
                     bass_kind="sine", bass_vol=0.30, mel_dens=0.5, arp_vol=0.16,
                     bass_pat=[(0, 1, 1.0), (4, 5, 0.8), (6, 1, 0.6)],
                     kit=[(0, "K"), (4, "S"), (2, "H"), (6, "H")])),
-    dict(name="bgm_alfheim2", bpm=88, bars=24, root=64, scale=MAJ,
+    dict(name="bgm_fairyglade2", bpm=88, bars=24, root=64, scale=MAJ,
          prog=[0, 2, 5, 4], prog_b=[2, 0, 4, 5], seed=205,
          style=dict(lead_kind="tri", lead_duty=0.5, vib=2, pad_cut=1200, pad_vol=0.34,
                     bass_kind="sine", bass_vol=0.26, mel_dens=0.45, arp_vol=0.20,

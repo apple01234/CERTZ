@@ -43,7 +43,7 @@ const { chromium } = require("playwright");
   await p.evaluate(() => {
     const sc = window.__SERTZ__.game.scene.getScene("world");
     console.log("DBG before-emit trans=", sc.transitioning);
-    sc.monsterKills["boss_vord"] = 1;
+    sc.monsterKills["boss_riftwarden"] = 1;
     window.__SERTZ_EB__.emit("rpg:bossReplay", { ch: "r5", lv: "easy" });
     console.log("DBG after-emit trans=", sc.transitioning);
   });

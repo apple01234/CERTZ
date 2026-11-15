@@ -5,7 +5,7 @@
  *  ③ 등급업 큐브 — 큐브 지급 → tierUp 이벤트 → 승급 성공 실측
  *  ④ 보스 유물 아이콘 — 지연 로드 후 i_bd_* 등 전 아이콘 텍스처 존재
  *  ⑤ 멀티 콘텐츠 — rpg:partyRaid → praid 진입 + 레이드 보스 스폰 + 복귀 포탈
- *  ⑥ 재림 시리즈 — bossReplay r5 → 재림 보스(베오르드) 스폰 실측
+ *  ⑥ 재림 시리즈 — bossReplay r5 → 재림 보스(재림의 파수꾼) 스폰 실측
  *  + pageerror 0
  */
 const { chromium } = require("playwright");
@@ -40,7 +40,7 @@ const { chromium } = require("playwright");
     const g = window.__SERTZ__?.game;
     const sc = g?.scene?.getScene("title") ?? g?.scene?.getScene("boot");
     if (!sc) return null;
-    const keys = ["i_bd_guardian", "i_bd_abudditos", "i_bd_fenrir", "i_gm_sword", "i_tier_cube", "item_eert_cube", "i_exp_book_l", "i_potion_hp5", "item_coin"];
+    const keys = ["i_bd_guardian", "i_bd_doomwyrm", "i_bd_greedwolf", "i_gm_sword", "i_tier_cube", "item_eert_cube", "i_exp_book_l", "i_potion_hp5", "item_coin"];
     const out = {};
     for (const k of keys) out[k] = sc.textures.exists(k);
     return out;
@@ -134,7 +134,7 @@ const { chromium } = require("playwright");
   await p.waitForTimeout(600);
   await p.evaluate(() => {
     const sc = window.__SERTZ__.game.scene.getScene("world");
-    sc.monsterKills["boss_vord"] = 1; // 최초 처치 등록 시뮬레이션
+    sc.monsterKills["boss_riftwarden"] = 1; // 최초 처치 등록 시뮬레이션
     window.__SERTZ_EB__.emit("rpg:bossReplay", { ch: "r5", lv: "easy" });
   });
   /* 헤드리스는 게임 루프가 ~3fps라 delayedCall(440ms 전환 + 350ms 보스 스폰)에 수 초 소요 — 폴링 대기 */
@@ -153,7 +153,7 @@ const { chromium } = require("playwright");
     }
   }
   ok("[재림] r5 보스 재도전 진입", !!rbState && rbState.stage === "r5", rbState ? `stage=${rbState.stage}` : "씬 없음");
-  ok("[재림] 재림 보스(베오르드) 스폰 + 재림판 경로", !!rbState && rbState.hasBoss && /재림한 .*베오르드/.test(rbState.bossName ?? "") && rbState.replayActive, rbState ? `name=${rbState.bossName}` : "-");
+  ok("[재림] 재림 보스(재림의 파수꾼) 스폰 + 재림판 경로", !!rbState && rbState.hasBoss && /재림한 .*재림의 파수꾼/.test(rbState.bossName ?? "") && rbState.replayActive, rbState ? `name=${rbState.bossName}` : "-");
 
   /* 대화 정리 후 ⑤ 공동 토벌전 */
   for (let i = 0; i < 20; i++) {

@@ -18,7 +18,7 @@
  *     (cine3d tint 0xff4a3a, 1300ms)을 뿌려 오라가 없어도 붉은 픽셀이 늘었다.
  *
  * 사용: node scripts/probe_b39_enrage_aura.js
- *       BOSS_STAGE=howlrstone3x5 node scripts/probe_b39_enrage_aura.js
+ *       BOSS_STAGE=lilacworld3x5 node scripts/probe_b39_enrage_aura.js
  * 종료코드: 0 전부 PASS / 2 FAIL 있음 / 3 픽셀 증명 불가(snapshot 미동작)
  */
 const { chromium } = require("playwright");
@@ -31,19 +31,19 @@ fs.mkdirSync(OUT, { recursive: true });
 
 /* ── 진입 스테이지 결정 ───────────────────────────────────────────
  *  src/game/stages.ts 의 parseStage() 가 받는 형식만 유효하다.
- *  종전 기본값 "alfheim10" 은 파서에 없어 { ch:"village", sub:0 } 로
+ *  종전 기본값 "fairyglade10" 은 파서에 없어 { ch:"village", sub:0 } 로
  *  떨어졌고, 프로브는 항상 마을에서 돌아 보스가 없었다. */
 const BOSS_STAGE = process.env.BOSS_STAGE || "dlcstargate10";
 const STAGE_KEY_RE = new RegExp(
   "^(?:" +
-    "howlrstone(?:[1-9]|1[0-5])x(?:[1-9]|10)" + // 영프 편 15장 × 10구역
+    "lilacworld(?:[1-9]|1[0-5])x(?:[1-9]|10)" + // 영프 편 15장 × 10구역
     "|(?:dlcstargate|dlcprisma|dlcocean|dlcreverse|dlcneocity|dlcmech" +
     "|dlcswallow|dlcopinicia|dlcnovel|dlcsernium)(?:[1-9]|10)" + // 본편/DLC
   ")$"
 );
 if (!STAGE_KEY_RE.test(BOSS_STAGE)) {
   console.error(`!! BOSS_STAGE="${BOSS_STAGE}" 는 parseStage 가 인식하지 못하는 키다(village 로 떨어진다).`);
-  console.error("   예: dlcstargate10, howlrstone3x5");
+  console.error("   예: dlcstargate10, lilacworld3x5");
   process.exit(1);
 }
 

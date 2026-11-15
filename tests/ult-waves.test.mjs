@@ -84,7 +84,7 @@ import { readFileSync } from "node:fs";
 function castTotal(n, budget, hits, hitDmg = 777) {
   const pool = createUltBudget(n, budget), t = {};
   let total = 0, direct = 0;
-  for (let i = 0; i < hits; i++) { const d = pool.draw(t, pool.tag(hitDmg)); total += d; direct += d; }
+  for (let i = 0; i < hits; i++) { const d = pool.draw(t, hitDmg); total += d; direct += d; }
   const pays = [];
   for (let i = 0; i < n; i++) pool.paying(() => { const d = pool.payout(i, t); pays.push(d); total += d; });
   return { total, direct, pays };
@@ -116,12 +116,41 @@ test("마지막 wave 가 종결이다 — wave 지급분 중 가장 크다", () 
   assert.ok(Math.abs(waveWeight(11, 12) / Array.from({ length: 12 }, (_, i) => waveWeight(i, 12)).reduce((x, y) => x + y) - WAVE_FINALE_SHARE) < 1e-9);
 });
 
-test("등록되지 않은 타격과 wave 자기 지급은 예산을 건드리지 않는다", () => {
+test("wave 자기 지급과 닫힌 시전은 예산을 건드리지 않는다", () => {
   const pool = createUltBudget(3, 9000), t = {};
-  assert.equal(pool.draw(t, 1234), 1234);
-  pool.tag(500);
   pool.paying(() => assert.equal(pool.draw(t, 500), 500));
   assert.deepEqual(pool.targets(), []);
+  pool.close();
+  assert.equal(pool.draw(t, 1234), 1234);
+  assert.deepEqual(pool.targets(), []);
+});
+
+/* 2026-11-15 — 외부 평가 P0 "피해량 숫자로 궁극기 타격을 식별". 이제 값이 아니라 시전(Player.ultCtx)으로 식별한다. */
+test("궁극기 타격 식별은 피해량 값이 아니라 시전 단위다", () => {
+  const ws = readFileSync(new URL("../src/game/scenes/WorldScene.ts", import.meta.url), "utf8");
+  const note = ws.slice(ws.indexOf("notePlayerHit(dmg: number"), ws.indexOf("onPlayerDead()"));
+  assert.match(note, /p\?\.ultCtx\) dmg = p\.ultCtx\.draw\(target, dmg\)/);
+  const ultSrc = readFileSync(new URL("../src/game/combat/ultWaves.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(ultSrc, /tag\(dmg/, "값 등록(tag) 방식이 남아 있다");
+  const player = readFileSync(new URL("../src/game/entities/Player.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(player, /\.tag\(/);
+  /* 궁극기 본문에서 예약한 지연 실행·타이머·트윈은 시전 예산을 다시 켠다 — 맨 delayedCall 이 남으면 컨텍스트가 끊긴다 */
+  for (const [from, to] of [["  useSkill5() {", "  private runUltFinaleNow() {"], ["  useSkill5b() {", "GM 자유전직"]]) {
+    const body = player.slice(player.indexOf(from), player.indexOf(to));
+    const tail = body.slice(body.indexOf("this.ultCtx = budget;"));
+    assert.ok(tail.length > 1000, from);
+    assert.doesNotMatch(tail, /this\.scene\.time\.(delayedCall|addEvent)\(|this\.scene\.tweens\.add\(/, from);
+  }
+  /* 궁극기가 만든 장판·회오리·분신·투사체는 만들 때의 시전을 들고 간다 */
+  for (const s of ['ult: cfg.owner === "player" ? this.player?.ultCtx', 'const ult = this.player?.ultCtx ?? null;', 'const ult = this.player.ultCtx;', 'p.setData("ult", this.player?.ultCtx ?? null)']) assert.ok(ws.includes(s), s);
+});
+
+test("방어막(피해 무효) 보스에게는 예산이 깎이지 않는다", () => {
+  const boss = readFileSync(new URL("../src/game/entities/Boss.ts", import.meta.url), "utf8");
+  const td = boss.slice(boss.indexOf("  takeDamage(dmg: number"));
+  assert.ok(td.indexOf("if (this.shieldInvuln)") < td.indexOf("notePlayerHit"), "무효 판정이 예산 인출보다 늦다");
+  const player = readFileSync(new URL("../src/game/entities/Player.ts", import.meta.url), "utf8");
+  assert.match(player, /\.ultShielded\) continue;/);
 });
 
 test("늦게 들어온 표적은 남은 wave 몫만 받는다", () => {

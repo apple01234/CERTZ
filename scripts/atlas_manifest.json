@@ -1,5 +1,5 @@
 {
- "atl_boss_nidhog": {
+ "atl_boss_blackwyrm": {
   "fw": 226,
   "fh": 232,
   "nrows": 7,
@@ -22,11 +22,11 @@
    11
   ],
   "kb": 1329,
-  "desc": "니드호그 — 알프헤임 수목룡(고해상)",
+  "desc": "탐식의 흑룡 — 요정 숲 수목룡(고해상)",
   "scale": 1.5,
   "src": "file_000000007c8c8206.png"
  },
- "atl_boss_fenrir": {
+ "atl_boss_greedwolf": {
   "fw": 304,
   "fh": 274,
   "nrows": 7,
@@ -49,11 +49,11 @@
    6
   ],
   "kb": 1513,
-  "desc": "펜리르 — 설원 백랑(고해상)",
+  "desc": "탐욕의 늑대 — 설원 백랑(고해상)",
   "scale": 1.5,
-  "src": "bsw_fenrir.webp"
+  "src": "bsw_greedwolf.webp"
  },
- "atl_boss_hati": {
+ "atl_boss_twinmate": {
   "fw": 280,
   "fh": 258,
   "nrows": 7,
@@ -76,7 +76,7 @@
    11
   ],
   "kb": 1092,
-  "desc": "하티 — 스콜 트윈 화염 늑대(LANCZOS 개선)",
+  "desc": "화염 늑대 — 얼음 늑대 트윈 화염 늑대(LANCZOS 개선)",
   "scale": 5.6
  },
  "atl_boss2": {
@@ -106,7 +106,7 @@
   "scale": 1.25,
   "src": "bsw_behemoth.webp"
  },
- "atl_boss_surt": {
+ "atl_boss_flamegiant": {
   "fw": 330,
   "fh": 224,
   "nrows": 7,
@@ -129,11 +129,11 @@
    6
   ],
   "kb": 1142,
-  "desc": "수르트 — 무스펠 용암골렘(고해상)",
+  "desc": "화염의 거인 — 화산 용암골렘(고해상)",
   "scale": 1.31,
-  "src": "bsw_surt.webp"
+  "src": "bsw_flamegiant.webp"
  },
- "atl_boss_skoll": {
+ "atl_boss_twinwolf": {
   "fw": 274,
   "fh": 234,
   "nrows": 7,
@@ -156,7 +156,7 @@
    11
   ],
   "kb": 1074,
-  "desc": "스콜 — 얼음 봉황(LANCZOS 개선)",
+  "desc": "얼음 늑대 — 얼음 봉황(LANCZOS 개선)",
   "scale": 5.6
  },
  "atl_boss3": {
@@ -180,10 +180,10 @@
    11
   ],
   "kb": 913,
-  "desc": "심연의 군주 — 헬 악마(LANCZOS 개선)",
+  "desc": "심연의 군주 — 명계 악마(LANCZOS 개선)",
   "scale": 5.6
  },
- "atl_boss_nagr": {
+ "atl_boss_angelknight": {
   "fw": 286,
   "fh": 240,
   "nrows": 6,
@@ -204,7 +204,7 @@
    11
   ],
   "kb": 916,
-  "desc": "발할라 천사기사(LANCZOS 개선)",
+  "desc": "천상 천사기사(LANCZOS 개선)",
   "scale": 5.6
  },
  "atl_boss": {
@@ -228,10 +228,10 @@
    11
   ],
   "kb": 861,
-  "desc": "심연의 수호자 — 스바르트 흑마수(LANCZOS 개선)",
+  "desc": "심연의 수호자 — 어둠 동굴 흑마수(LANCZOS 개선)",
   "scale": 5.6
  },
- "atl_boss_abudditos": {
+ "atl_boss_doomwyrm": {
   "fw": 298,
   "fh": 220,
   "nrows": 7,
@@ -254,11 +254,11 @@
    8
   ],
   "kb": 1007,
-  "desc": "마룡 아부디토스 — 흑룡 8열×7행 (vc148 그리드 재슬라이싱)",
+  "desc": "마룡 종언의 마룡 — 흑룡 8열×7행 (vc148 그리드 재슬라이싱)",
   "scale": 1.5,
-  "src": "bsw_abudditos.webp"
+  "src": "bsw_doomwyrm.webp"
  },
- "atl_boss_vord": {
+ "atl_boss_riftwarden": {
   "fw": 298,
   "fh": 220,
   "nrows": 7,
@@ -281,11 +281,11 @@
    8
   ],
   "kb": 1250,
-  "desc": "베오르드 — 흑룡 8열×7행 (vc148 그리드 재슬라이싱)",
+  "desc": "재림의 파수꾼 — 흑룡 8열×7행 (vc148 그리드 재슬라이싱)",
   "scale": 1.5,
-  "src": "bsw_vord.webp"
+  "src": "bsw_riftwarden.webp"
  },
- "atl_boss_gram": {
+ "atl_boss_warden": {
   "fw": 304,
   "fh": 274,
   "nrows": 7,
@@ -308,8 +308,8 @@
    6
   ],
   "kb": 1366,
-  "desc": "가름 — 지옥견 늑대 6열×7행 (vc148 그리드 재슬라이싱)",
+  "desc": "혈안의 문지기 — 지옥견 늑대 6열×7행 (vc148 그리드 재슬라이싱)",
   "scale": 1.5,
-  "src": "bsw_gram.webp"
+  "src": "bsw_warden.webp"
  }
 }

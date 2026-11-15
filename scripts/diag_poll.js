@@ -32,7 +32,7 @@ const { chromium } = require("playwright");
   }
   await p.evaluate(() => {
     const sc = window.__SERTZ__.game.scene.getScene("world");
-    sc.monsterKills["boss_vord"] = 1;
+    sc.monsterKills["boss_riftwarden"] = 1;
     window.__SERTZ_EB__.emit("rpg:bossReplay", { ch: "r5", lv: "easy" });
   });
   for (let i = 0; i < 12; i++) {

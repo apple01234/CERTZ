@@ -48,10 +48,10 @@ try {
   ok("월드 진입", true);
 
   /* ---------- 전투 스테이지로 이동해 실제 적을 만든다 ---------- */
-  await page.evaluate((stage) => window.__SERTZ_SCENE__.startTransition(stage), "howlrstone1x2");
+  await page.evaluate((stage) => window.__SERTZ_SCENE__.startTransition(stage), "lilacworld1x2");
   await page.waitForFunction(() => {
     const s = window.__SERTZ_SCENE__;
-    return s?.stageDef?.key === "howlrstone1x2" && !s.transitioning;
+    return s?.stageDef?.key === "lilacworld1x2" && !s.transitioning;
   }, { timeout: 60000 });
   await page.waitForTimeout(2500);
   const enemyCount = await page.evaluate(() => {

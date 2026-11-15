@@ -5,7 +5,7 @@ import { ITEMS, type ItemKey } from "../data";
 /**
  * 드롭 아이템 (2D MMORPG 기본 요소)
  *  - 골드 코인 / HP·MP 물약이 몬스터 사망 지점에 튕겨 나오고
- *  - 플레이어가 가까이 가면 자석처럼 끌려와 접촉 시 획득 (라그나로크/메이플류 픽업 감각)
+ *  - 플레이어가 가까이 가면 자석처럼 끌려와 접촉 시 획득 (종말/메이플류 픽업 감각)
  */
 export type DropKind = "gold" | ItemKey;
 

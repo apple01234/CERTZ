@@ -7,8 +7,8 @@ ROOT = "/home/z/my-project"
 man = json.load(open(f"{ROOT}/scripts/atlas_manifest.json"))
 tiles = []
 maxh = 0
-for key in ["atl_boss", "atl_boss2", "atl_boss3", "atl_boss_nidhog", "atl_boss_surt",
-            "atl_boss_fenrir", "atl_boss_skoll", "atl_boss_nagr", "atl_boss_hati"]:
+for key in ["atl_boss", "atl_boss2", "atl_boss3", "atl_boss_blackwyrm", "atl_boss_flamegiant",
+            "atl_boss_greedwolf", "atl_boss_twinwolf", "atl_boss_angelknight", "atl_boss_twinmate"]:
     info = man[key]
     fw, fh = info["fw"], info["fh"]
     im = Image.open(f"{ROOT}/public/assets/{key}.webp").convert("RGBA")

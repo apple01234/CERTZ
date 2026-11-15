@@ -1,7 +1,7 @@
 /* v2.7 검증 — 포탈 개방 보루 2.0 (자가치유형) + 화살표 포탈 지시
  *  [A] forest1 실체인: level→hunt→종료 즉시 개방
  *  [B] kingdom2 (collect→hunt 체인): 파편 수확→토벌→즉시 개방 + 파편 소실 보루
- *  [C] alfheim9 (hunt→collect): 수확 후 개방
+ *  [C] fairyglade9 (hunt→collect): 수확 후 개방
  *  [D] forest10 보스: 격파→대사→개방 (보스 구역 reach 허용 확인)
  *  [E] 자가치유 매트릭스: pendingPortal 끼임 / dialoguing 끼임 → 6초 내 강제 개방
  *  [F] 체인 완료 후 엣지 화살표가 포탈을 가리키는지 */
@@ -126,8 +126,8 @@ async function huntThrough(page) {
   const rB = await huntThrough(page);
   ok(rB.activeNow && rB.openedAtMs !== null && rB.openedAtMs < 300, `B3 수확→토벌 완료 즉시 개방 (${Math.round(rB.openedAtMs ?? -1)}ms)`);
 
-  console.log("[C] alfheim9 — hunt→collect → 수확 후 개방");
-  await restartWith(page, "alfheim9", { lv: 30, questIdx: { alfheim9: 0 }, seen: [] });
+  console.log("[C] fairyglade9 — hunt→collect → 수확 후 개방");
+  await restartWith(page, "fairyglade9", { lv: 30, questIdx: { fairyglade9: 0 }, seen: [] });
   await huntThrough(page);
   await sleep(300);
   await page.evaluate(() => {

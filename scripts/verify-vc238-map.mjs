@@ -39,7 +39,7 @@ try {
     await page.waitForTimeout(900); // 날씨/장식 생성 안정화
   };
 
-  for (const stage of ['howlrstone1x1', 'howlrstone1x2', 'howlrstone3x1', 'howlrstone6x1', 'howlrstone10x1', 'howlrstone13x1']) {
+  for (const stage of ['lilacworld1x1', 'lilacworld1x2', 'lilacworld3x1', 'lilacworld6x1', 'lilacworld10x1', 'lilacworld13x1']) {
     await transition(stage);
     const info = await page.evaluate(() => {
       const s = window.__SERTZ_SCENE__;

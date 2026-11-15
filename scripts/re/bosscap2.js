@@ -6,9 +6,9 @@ const OUT = '/root/.hermes/cache/scratch/deploy/boss';
 const SAVE_KEY = 'sertz_save_v2';
 
 const CASES = [
-  { stage: 'muspelheim10', label: 'surt' },
-  { stage: 'niflheim10', label: 'fenrir' },
-  { stage: 'nidavellir10', label: 'skoll' },
+  { stage: 'emberland10', label: 'flamegiant' },
+  { stage: 'frostland10', label: 'greedwolf' },
+  { stage: 'forgehall10', label: 'twinwolf' },
   { stage: 'forest10', label: 'guardian' },
 ];
 

@@ -35,7 +35,7 @@ console.log(`\n[DLC 챕터] ${dlcKeys.length}종: ${dlcKeys.join(', ')}`);
 if (dlcKeys.length !== 3) fail++;
 
 // 기존 9챕터 보존
-const BASE = ['forest','kingdom','alfheim','muspelheim','niflheim','cave','nidavellir','hel','abyss'];
+const BASE = ['forest','kingdom','fairyglade','emberland','frostland','cave','forgehall','duskrealm','abyss'];
 const lost = BASE.filter(k => !stages.includes(`key: "${k}", num:`));
 console.log(`[기존 9챕터] 보존 ${9 - lost.length}/9${lost.length ? ' 실종: ' + lost.join(',') : ''}`);
 fail += lost.length;

@@ -5,10 +5,10 @@ import {CHAPTERS,STAGES,NEXT_STAGE,STORY_SEQUENCE,resolveStage} from '../src/gam
 import {DIALOGUES} from '../src/game/data.ts';
 import {storyPortalDestination,storyEntryAllowed} from '../src/game/storyProgression.ts';
 
-/* vc251 — 수련 원정 9지역(forest/kingdom/alfheim/muspelheim/niflheim/cave/nidavellir/hel/abyss)
+/* vc251 — 수련 원정 9지역(forest/kingdom/fairyglade/emberland/frostland/cave/forgehall/duskrealm/abyss)
  *  완전 삭제. 종전 이 테스트는 `TRAINING_REGIONS` 가 존재하고 9지역 스테이지가 살아 있는 것을
  *  "계약"으로 강제했다. 이제 계약이 뒤집혔다 — 삭제된 상태를 고정한다. */
-const REMOVED = ['forest','kingdom','alfheim','muspelheim','niflheim','cave','nidavellir','hel','abyss'];
+const REMOVED = ['forest','kingdom','fairyglade','emberland','frostland','cave','forgehall','duskrealm','abyss'];
 
 test('9개 수련 지역은 완전히 삭제됐다',()=>{
   /* ① CHAPTERS 에 없다 */
@@ -34,14 +34,14 @@ test('구 세이브의 삭제 지역 키는 village 로 폴백한다',()=>{
   }
   /* 정상 키는 그대로 유지된다 */
   assert.equal(resolveStage('village'),'village');
-  assert.equal(resolveStage('howlrstone1x1'),'howlrstone1x1');
+  assert.equal(resolveStage('lilacworld1x1'),'lilacworld1x1');
   assert.equal(resolveStage('dlcstargate1'),'dlcstargate1');
 });
 
-test('진행 경로는 village → howlrstone1x1 → … → dlcstargate1 로 이어진다',()=>{
+test('진행 경로는 village → lilacworld1x1 → … → dlcstargate1 로 이어진다',()=>{
   const progress={cleared:false,youngPrincessCleared:false};
   /* 유저 지시 — 애델리오나 마을 다음은 별도 시작 마을이 아니라 1-1 스테이지다. */
-  assert.equal(storyPortalDestination('village',progress),'howlrstone1x1');
+  assert.equal(storyPortalDestination('village',progress),'lilacworld1x1');
   assert.equal(storyEntryAllowed('youngprincessv',progress),true);
   assert.equal(storyEntryAllowed('dlcstargate1',{cleared:true}),false);
   assert.equal(storyEntryAllowed('dlcstargate1',{youngPrincessCleared:true}),true);

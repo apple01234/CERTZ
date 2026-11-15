@@ -256,7 +256,7 @@ export function buildAllAnims(scene: Phaser.Scene) {
   a.create({ key: "wolf-run", ...fr("wolf_run", 4, 10, -1) });
   a.create({ key: "minion-idle", ...fr("minion_idle", 2, 3, -1) });
   a.create({ key: "minion-run", ...fr("minion_run", 4, 8, -1) });
-  // 스토리 확장 몬스터 (동굴/니플헤임/심연)
+  // 스토리 확장 몬스터 (동굴/설원/심연)
   a.create({ key: "spider-idle", ...fr("spider_idle", 2, 3, -1) });
   a.create({ key: "spider-run", ...fr("spider_run", 4, 9, -1) });
   a.create({ key: "golem-idle", ...fr("golem_idle", 2, 2, -1) });
@@ -287,7 +287,7 @@ export function buildAllAnims(scene: Phaser.Scene) {
     a.create({ key: "wraith-run", ...fr("wraith_run", 4, 7, -1) });
   }
   // 보스 3종 (guardian / behemoth / abysslord)
-  /* v1.4.31 (#4) — 아틀라스 보스(boss/boss2/boss3·nidhog/surt/fenrir/skoll)는 개별 idle0 이미지가
+  /* v1.4.31 (#4) — 아틀라스 보스(boss/boss2/boss3·blackwyrm/flamegiant/greedwolf/twinwolf)는 개별 idle0 이미지가
    *  철수되었으므로 2프레임 폴백을 만들지 않는다 — registerBossAnims가 시트에서 즉시 풀애니 등록 */
   if (!BOSS_ATLAS["boss"]) a.create({ key: "boss-idle", ...fr("boss_idle", 2, 2, -1) });
   if (!BOSS_ATLAS["boss2"]) a.create({ key: "boss2-idle", ...fr("boss2_idle", 2, 2, -1) });
@@ -301,16 +301,16 @@ export function buildAllAnims(scene: Phaser.Scene) {
   a.create({ key: "firespirit-run", ...fr("firespirit_run", 4, 8, -1) });
   a.create({ key: "runegolem-idle", ...fr("runegolem_idle", 2, 2, -1) });
   a.create({ key: "runegolem-run", ...fr("runegolem_run", 4, 6, -1) });
-  a.create({ key: "helhound-idle", ...fr("helhound_idle", 2, 2, -1) });
-  a.create({ key: "helhound-run", ...fr("helhound_run", 4, 10, -1) });
+  a.create({ key: "duskhound-idle", ...fr("duskhound_idle", 2, 2, -1) });
+  a.create({ key: "duskhound-run", ...fr("duskhound_run", 4, 10, -1) });
   // v2.0 이전 서사 신규 보스
-  if (!BOSS_ATLAS["boss_nidhog"]) a.create({ key: "boss_nidhog-idle", ...fr("boss_nidhog_idle", 2, 2, -1) });
-  if (!BOSS_ATLAS["boss_surt"]) a.create({ key: "boss_surt-idle", ...fr("boss_surt_idle", 2, 2, -1) });
-  if (!BOSS_ATLAS["boss_fenrir"]) a.create({ key: "boss_fenrir-idle", ...fr("boss_fenrir_idle", 2, 2, -1) });
-  if (!BOSS_ATLAS["boss_skoll"]) a.create({ key: "boss_skoll-idle", ...fr("boss_skoll_idle", 2, 2, -1) });
+  if (!BOSS_ATLAS["boss_blackwyrm"]) a.create({ key: "boss_blackwyrm-idle", ...fr("boss_blackwyrm_idle", 2, 2, -1) });
+  if (!BOSS_ATLAS["boss_flamegiant"]) a.create({ key: "boss_flamegiant-idle", ...fr("boss_flamegiant_idle", 2, 2, -1) });
+  if (!BOSS_ATLAS["boss_greedwolf"]) a.create({ key: "boss_greedwolf-idle", ...fr("boss_greedwolf_idle", 2, 2, -1) });
+  if (!BOSS_ATLAS["boss_twinwolf"]) a.create({ key: "boss_twinwolf-idle", ...fr("boss_twinwolf_idle", 2, 2, -1) });
   /* vc148 (#보스그리드) — 3종 아틀라스 전환: 레거시 2프레임 폴백은 아틀라스가 있으면 스킵 */
-  if (!BOSS_ATLAS["boss_gram"]) a.create({ key: "boss_gram-idle", ...fr("boss_gram_idle", 2, 2, -1) });
-  if (!BOSS_ATLAS["boss_abudditos"]) a.create({ key: "boss_abudditos-idle", ...fr("boss_abudditos_idle", 2, 2, -1) });
+  if (!BOSS_ATLAS["boss_warden"]) a.create({ key: "boss_warden-idle", ...fr("boss_warden_idle", 2, 2, -1) });
+  if (!BOSS_ATLAS["boss_doomwyrm"]) a.create({ key: "boss_doomwyrm-idle", ...fr("boss_doomwyrm_idle", 2, 2, -1) });
   // 배치1 — 마을 모닥불 (Serene_Village campfire 32x32 4프레임)
   a.create({
     key: "sv-campfire",
@@ -355,22 +355,22 @@ export const BOSS_ATLAS: Record<string, { key: string; file: string; fw: number;
   boss:         { key: "atl_boss", file: "boss_golem.png", fw: 100, fh: 100, cols: 10 }, // 수정 왕 → 바위 골렘 (vc235 교체: 27% 하단 잘림)
   boss2:        { key: "atl_boss2", file: "boss_skeleton.png", fw: 100, fh: 100, cols: 18 }, // 유령선 → 언데드 집행자 (vc235 교체: 79% 하단 잘림, 최우선)
   boss3:        { key: "atl_boss3", file: "boss_slime.png", fw: 288, fh: 160, cols: 22 }, // 악령 여왕 → 데몬 슬라임 (vc235 교체: 21% 잘림)
-  boss_nidhog: { key: "atl_boss_nidhog", file: "boss_dragon.png", fw: 256, fh: 157, cols: 16 }, // 니드호그 → 드래곤 (vc235 교체: 23% 잘림)
-  boss_surt:    { key: "atl_boss_surt", file: "boss_slime.png", fw: 288, fh: 160, cols: 22 }, // 수르트 → 데몬 슬라임 (화염 악마, vc235 교체)
-  boss_fenrir: { key: "atl_boss_fenrir", file: "boss_mino.png", fw: 288, fh: 160, cols: 16 }, // 펜리르 → 미노타우르스(야수형, vc235 교체: 43% 잘림)
-  boss_skoll:  { key: "atl_boss_skoll",  file: "boss_mino.png",  fw: 288, fh: 160, cols: 16 }, // 스콜 → 미노타우르스 (쌍랑도 야수형, vc235 교체: 43% 잘림)
-  boss_nagr:   { key: "atl_boss_nagr",   file: "boss_frost.png",   fw: 192, fh: 128, cols: 16 }, // 나그라파르 → 프로스트 가디언 (얼음 거수, vc235 교체: 48% 잘림)
-  boss_hati:   { key: "atl_boss_hati",   file: "boss_frost.png",   fw: 192, fh: 128, cols: 16 }, // 하티 → 프로스트 가디언 (쌍랑, vc235 교체: 77% 잘림)
-  boss_jorm:    { key: "atl_boss_jorm", file: "boss_dragon.png", fw: 256, fh: 157, cols: 16 }, // 요르문간드 → 드래곤 (뱀/드래곤, vc235 교체: 59% 잘림)
+  boss_blackwyrm: { key: "atl_boss_blackwyrm", file: "boss_dragon.png", fw: 256, fh: 157, cols: 16 }, // 탐식의 흑룡 → 드래곤 (vc235 교체: 23% 잘림)
+  boss_flamegiant:    { key: "atl_boss_flamegiant", file: "boss_slime.png", fw: 288, fh: 160, cols: 22 }, // 화염의 거인 → 데몬 슬라임 (화염 악마, vc235 교체)
+  boss_greedwolf: { key: "atl_boss_greedwolf", file: "boss_mino.png", fw: 288, fh: 160, cols: 16 }, // 탐욕의 늑대 → 미노타우르스(야수형, vc235 교체: 43% 잘림)
+  boss_twinwolf:  { key: "atl_boss_twinwolf",  file: "boss_mino.png",  fw: 288, fh: 160, cols: 16 }, // 얼음 늑대 → 미노타우르스 (쌍랑도 야수형, vc235 교체: 43% 잘림)
+  boss_angelknight:   { key: "atl_boss_angelknight",   file: "boss_frost.png",   fw: 192, fh: 128, cols: 16 }, // 재림의 천사기사 → 프로스트 가디언 (얼음 거수, vc235 교체: 48% 잘림)
+  boss_twinmate:   { key: "atl_boss_twinmate",   file: "boss_frost.png",   fw: 192, fh: 128, cols: 16 }, // 화염 늑대 → 프로스트 가디언 (쌍랑, vc235 교체: 77% 잘림)
+  boss_unionserpent:    { key: "atl_boss_unionserpent", file: "boss_dragon.png", fw: 256, fh: 157, cols: 16 }, // 연합을 삼키는 뱀 → 드래곤 (뱀/드래곤, vc235 교체: 59% 잘림)
   /* vc148 (#보스그리드) — vc137 잔재 3종 HD 재슬라이싱: 이질 아트 혼합(컬러 전방+흑룡 실루엣 특수기/
    *  보라 악마+붉은 늑대) + 프레임 잘림 수리 — bsw_ 원본 그리드(8열×7행 192.5×147 / 6열×7행 204×184) 그대로 */
-  boss_abudditos: { key: "atl_boss_abudditos", file: "boss_dragon.png", fw: 256, fh: 157, cols: 16 }, // 아부디토스 → 드래곤 (마룡, vc235 교체: 68% 잘림)
-  boss_vord:      { key: "atl_boss_vord",      file: "boss_golem.png",      fw: 100, fh: 100, cols: 10 }, // 베오르드 → 바위 골렘(파수꾼, vc235 교체: 15% 잘림)
-  boss_gram:      { key: "atl_boss_gram",      file: "boss_skeleton.png",      fw: 100, fh: 100, cols: 18 }, // 가름 → 언데드 집행자(사신형 문지기, vc235 교체: 45% 잘림)
+  boss_doomwyrm: { key: "atl_boss_doomwyrm", file: "boss_dragon.png", fw: 256, fh: 157, cols: 16 }, // 종언의 마룡 → 드래곤 (마룡, vc235 교체: 68% 잘림)
+  boss_riftwarden:      { key: "atl_boss_riftwarden",      file: "boss_golem.png",      fw: 100, fh: 100, cols: 10 }, // 재림의 파수꾼 → 바위 골렘(파수꾼, vc235 교체: 15% 잘림)
+  boss_warden:      { key: "atl_boss_warden",      file: "boss_skeleton.png",      fw: 100, fh: 100, cols: 18 }, // 혈안의 문지기 → 언데드 집행자(사신형 문지기, vc235 교체: 45% 잘림)
 
   /* ═════════ vc235 — 실제 제작 애니메이션 팩으로 교체 ═════════
    *  [왜] 기존 13종 중 11종이 프레임 하단에서 아트가 수평으로 잘려 있었다
-   *   (유령선 79%, 하티 77%, 아부디토스 68%). 격자는 정확했고 **아트 자체가**
+   *   (유령선 79%, 화염 늑대 77%, 종언의 마룡 68%). 격자는 정확했고 **아트 자체가**
    *   y=188 같은 높이에서 끊겨 있었다 — AI 생성 원본이라 격자에 그림이 안 맞는다.
    *   격자를 고쳐도 해결되지 않으므로 애니메이션이 실제로 제작된 팩으로 바꾼다.
    *
@@ -383,9 +383,9 @@ export const BOSS_ATLAS: Record<string, { key: string; file: string; fw: number;
    *   프레임 크기는 팩 원본 그대로 보존하고(확대 없음), `Boss.ts` 가 320px
    *   높이로 정규화하므로 체급은 자동으로 맞는다.
    *
-   *  [공유] boss_dragon.png 1장을 니드호그·아부디토스·요르문간드가 같이 쓴다
+   *  [공유] boss_dragon.png 1장을 탐식의 흑룡·종언의 마룡·연합을 삼키는 뱀가 같이 쓴다
    *   — 셋 다 용이고, 시트를 3벌 두면 부팅 전송량만 4MB 늘어난다.
-   *   같은 이유로 boss_golem(수정왕·베오르드)·boss_skeleton(유령선·가름)도 공유. */
+   *   같은 이유로 boss_golem(수정왕·재림의 파수꾼)·boss_skeleton(유령선·혈안의 문지기)도 공유. */
 };
 
 /** 아틀라스 행별 유효 프레임 수 (슬라이서 실측 — 뒤쪽 빈 프레임 트리밍).
@@ -405,16 +405,16 @@ export const BOSS_ATLAS_ROWS: Record<string, number[]> = {
   boss:        [4, 8, 9, 7, 10, 9, 10],            // 바위 골렘 (구 수정 왕)
   boss2:       [4, 8, 13, 12, 5, 13, 18],          // 언데드 집행자 (구 유령선 — 79% 잘림이던 최악)
   boss3:       [6, 12, 15, 5, 5, 15, 22],          // 데몬 슬라임 (구 악령 여왕)
-  boss_nidhog: [8, 12, 12, 12, 5, 12, 16],         // 드래곤
-  boss_surt:   [6, 12, 15, 5, 5, 15, 22],          // 데몬 슬라임 (화염 악마)
-  boss_fenrir: [16, 12, 16, 16, 16, 16, 16],       // 미노타우르스 (야수형)
-  boss_hati:   [6, 10, 14, 7, 7, 14, 16],          // 프로스트 가디언
-  boss_skoll:  [16, 12, 16, 16, 16, 16, 16],       // 미노타우르스 (쌍랑)
-  boss_nagr:   [6, 10, 14, 7, 7, 14, 16],          // 프로스트 가디언 (얼음 거수)
-  boss_jorm:   [8, 12, 12, 12, 5, 12, 16],         // 드래곤 (뱀/드래곤)
-  boss_abudditos: [8, 12, 12, 12, 5, 12, 16],      // 드래곤 (마룡)
-  boss_vord:      [4, 8, 9, 7, 10, 9, 10],         // 바위 골렘 (파수꾼)
-  boss_gram:      [4, 8, 13, 12, 5, 13, 18],       // 언데드 집행자 (사신형 문지기)
+  boss_blackwyrm: [8, 12, 12, 12, 5, 12, 16],         // 드래곤
+  boss_flamegiant:   [6, 12, 15, 5, 5, 15, 22],          // 데몬 슬라임 (화염 악마)
+  boss_greedwolf: [16, 12, 16, 16, 16, 16, 16],       // 미노타우르스 (야수형)
+  boss_twinmate:   [6, 10, 14, 7, 7, 14, 16],          // 프로스트 가디언
+  boss_twinwolf:  [16, 12, 16, 16, 16, 16, 16],       // 미노타우르스 (쌍랑)
+  boss_angelknight:   [6, 10, 14, 7, 7, 14, 16],          // 프로스트 가디언 (얼음 거수)
+  boss_unionserpent:   [8, 12, 12, 12, 5, 12, 16],         // 드래곤 (뱀/드래곤)
+  boss_doomwyrm: [8, 12, 12, 12, 5, 12, 16],      // 드래곤 (마룡)
+  boss_riftwarden:      [4, 8, 9, 7, 10, 9, 10],         // 바위 골렘 (파수꾼)
+  boss_warden:      [4, 8, 13, 12, 5, 13, 18],       // 언데드 집행자 (사신형 문지기)
 };
 
 /** 보스 초기 텍스처/프레임 — 아틀라스 보스는 시트 frame 0, 구형은 개별 idle0 이미지 */
@@ -437,7 +437,7 @@ export function bossPortraitUrl(tex: string): string {
  *  설계도 스펙(12FPS · 각 애니 6프레임 · 특수기술 3종)에 맞춘 보스 전용 애니 등록.
  *  - 부팅 시 idle0/1만 로드된 상태에선 기존 2프레임 애니가 폴백으로 동작
  *  - loadBossFrames()가 나머지 프레임을 지연 로드하면 이 함수가 애니를 재등록(교체)한다
- *  - 프레임이 존재하는 애니만 등록 — fenrir처럼 sp가 없는 구판 아트도 안전 */
+ *  - 프레임이 존재하는 애니만 등록 — greedwolf처럼 sp가 없는 구판 아트도 안전 */
 export function registerBossAnims(scene: Phaser.Scene, tex: string) {
   if (!tex) return;
   const a = scene.anims;

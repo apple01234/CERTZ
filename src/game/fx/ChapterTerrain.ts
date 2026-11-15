@@ -69,7 +69,7 @@ export function chapterTerrainData(lay: RoomLayout, place: Place, framedRoom = f
 
 /** Rendering only; existing WorldScene route bodies remain the sole source of collision. */
 export function renderChapterTerrain(scene: Phaser.Scene, lay: RoomLayout, onDecor?: (image: Phaser.GameObjects.Image) => void, framedRoom = false): AuthoredMapRender | null {
-  const match = /^(howlrstone\d+)x(\d+)$/.exec(lay.authored?.stageKey ?? "")
+  const match = /^(lilacworld\d+)x(\d+)$/.exec(lay.authored?.stageKey ?? "")
     ?? /^(dlc[a-z]+)(\d+)$/.exec(lay.authored?.stageKey ?? "");
   const place = match ? chapterPlace(match[1], Number(match[2])) : undefined;
   if (!place || !scene.textures.exists(TERRAIN_KEY)) return null;

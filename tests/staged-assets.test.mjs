@@ -117,7 +117,7 @@ test('region gate waits for selected body, shared FX and sound, not other costum
 });
 
 test('every region gates its own enemies and elites; tutorial redirect matches WorldScene', async () => {
-  for (const key of ['howlrstone1x1','howlrstone1x2','howlrstone10x3','howlrstone11x1','dlcocean1','r1','tower','park','gate','praid','village','invalid-old-save']) {
+  for (const key of ['lilacworld1x1','lilacworld1x2','lilacworld10x3','lilacworld11x1','dlcocean1','r1','tower','park','gate','praid','village','invalid-old-save']) {
     const stage = STAGES[resolveStage(key)];
     const keys = Object.keys(ENEMIES).map(key => `${key}_idle0`);
     const h = harness(keys);

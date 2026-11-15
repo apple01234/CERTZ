@@ -17,18 +17,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DIALOGUES } from '../src/game/data.ts';
-import { HOWLRSTONE_CHAPTERS } from '../src/game/howlrstone.ts';
+import { LILACWORLD_CHAPTERS } from '../src/game/lilacworld.ts';
 import { CHAPTER_STORY_PLAN } from '../src/game/chapterStoryPlan.ts';
 
 let checks = 0;
 const ok = (name, cond) => { assert.ok(cond, `✗ ${name}`); checks++; };
 const textOf = (key) => (DIALOGUES[key]?.lines ?? []).join(' ');
-const chapterIntro = (n) => textOf(`chapterIntroHowlrstone${n}`);
-const chapterDone = (n) => textOf(`howlrstone${n}Done`);
+const chapterIntro = (n) => textOf(`chapterIntroLilacworld${n}`);
+const chapterDone = (n) => textOf(`lilacworld${n}Done`);
 
 test('챕터 인트로/완료 대사가 템플릿으로 덮이지 않는다', () => {
-  for (const spec of HOWLRSTONE_CHAPTERS) {
-    const n = spec.key.slice('howlrstone'.length);
+  for (const spec of LILACWORLD_CHAPTERS) {
+    const n = spec.key.slice('lilacworld'.length);
     for (const [label, key] of [['인트로', spec.intro], ['완료', spec.bossDone]]) {
       const text = textOf(key);
       ok(`${spec.key} ${label}: 존재`, !!DIALOGUES[key]);
@@ -53,7 +53,7 @@ test('1장(1.txt:4-34) — 절벽 · 라일락 · 펜던트 소재다', () => {
 });
 
 test('2장(1.txt:62-174) — 사념체 · 레지스터 · 데스크니스 소재다', () => {
-  const spec = HOWLRSTONE_CHAPTERS.find((c) => c.key === 'howlrstone2');
+  const spec = LILACWORLD_CHAPTERS.find((c) => c.key === 'lilacworld2');
   const intro = chapterIntro(2) + ' ' + chapterDone(2) + ' ' + (spec?.beats ?? []).map((b) => textOf(b.dialogue)).join(' ');
   ok('2장: 사념체 언급', intro.includes('사념체'));
   ok('2장: 레지스터 또는 시스터즈 언급', intro.includes('레지스터') || intro.includes('시스터즈'));
@@ -75,14 +75,14 @@ test('옛 5챕터 체계의 문구가 해당 장에만 있다', () => {
 test('퀘스트 진행형이 실제로 완료 가능한 형태다', () => {
   /* collect 퀘스트는 수집 오브젝트가 스테이지에 있어야 완료된다. 스토리 비트로
    *  "책 페이지를 모아라"처럼 대상이 없는 collect 를 두면 진행이 막힌다. */
-  for (const spec of HOWLRSTONE_CHAPTERS) {
+  for (const spec of LILACWORLD_CHAPTERS) {
     for (const beat of spec.beats) {
       if (beat.quest?.type !== 'collect') continue;
       ok(`${spec.key} ${beat.quest.id}: collect 는 targetLabel 필수`, !!beat.quest.targetLabel);
     }
   }
   /* 1장은 도달(reach) + 사냥(hunt) 으로 정본 사건을 표현한다. */
-  const ch1 = HOWLRSTONE_CHAPTERS.find((c) => c.key === 'howlrstone1');
+  const ch1 = LILACWORLD_CHAPTERS.find((c) => c.key === 'lilacworld1');
   ok('1장: 비트 2개', (ch1?.beats.length ?? 0) === 2);
   ok('1장: collect 없음', !(ch1?.beats ?? []).some((b) => b.quest?.type === 'collect'));
 });
@@ -90,7 +90,7 @@ test('퀘스트 진행형이 실제로 완료 가능한 형태다', () => {
 test('보스가 있는 장은 다음 장소로 가는 reach 퀘스트를 자동 주입받는다', () => {
   /* stages.ts 생성기가 보스 스테이지에 boss+reach 를 넣는다. beat 에 reach 를 또 두면
    *  퀘스트 인덱스가 어긋나므로, 보스 장의 비트에는 reach 를 두지 않는다. */
-  for (const spec of HOWLRSTONE_CHAPTERS) {
+  for (const spec of LILACWORLD_CHAPTERS) {
     if (!spec.boss) continue;
     ok(`${spec.key}: 보스 장 비트에 reach 없음`, !spec.beats.some((b) => b.quest?.type === 'reach'));
   }

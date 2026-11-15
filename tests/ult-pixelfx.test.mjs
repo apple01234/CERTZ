@@ -31,3 +31,51 @@ test('시트가 실재하고 pixelfx 메타가 있으며 모바일 한도 안이
     assert.ok(w * h * 4 <= 13.5e6, `${key} 풀린 크기 ${(w * h * 4 / 1e6).toFixed(1)}MB — 13.5MB 초과`);
   }
 });
+
+/* ═══ 2026-11-15 — 외부 평가(P0·P1) 후속 ═══ */
+
+test('씨킹·드레드노트 2차 궁극기 case 가 한 번씩만 있다 (뒤쪽 중복은 실행되지 않는 죽은 코드였다)', () => {
+  const player = readFileSync('src/game/entities/Player.ts', 'utf8');
+  const body = player.slice(player.indexOf('  useSkill5b() {'), player.indexOf('GM 자유전직'));
+  for (const c of ['seaking', 'dreadnought', 'eternal', 'shadowlord']) {
+    assert.equal(body.split(`case "${c}":`).length - 1, 1, c);
+  }
+});
+
+test('전직하면 바로 새 직업의 궁극기 시트를 받는다 (첫 시전 이펙트 누락 방지)', () => {
+  const player = readFileSync('src/game/entities/Player.ts', 'utf8');
+  for (const m of ['gmSetClass(key: ClassKey): boolean {', 'applyClass(key: ClassKey): boolean {', 'switchClass(key: ClassKey): boolean {']) {
+    const i = player.indexOf(`  ${m}`);
+    const body = player.slice(i, player.indexOf('\n  }\n', i));
+    assert.match(body, /prefetchUltFx\(this\.scene, this\.cls\)/, m);
+  }
+  /* 시트가 늦게 와도 1.5초 안이면 그 회차에 재생한다 */
+  assert.match(src, /LATE_MS = 1500/);
+  /* 시전 이펙트는 3D 인트로가 걷힌 뒤에 뜬다 */
+  assert.match(player, /ultLater\(castFx \? introMs : 0, \(\) => playUltFx\(this\.scene, key5, 1, "cast"/);
+  assert.match(player, /ultLater\(castFx2 \? introMs2 : 0, \(\) => playUltFx\(this\.scene, key5, 2, "cast"/);
+});
+
+test('게임을 다시 만들어도 시트를 다시 받고, 직업을 바꾸면 이전 직업 시트를 내린다', () => {
+  /* pixelfxBridge 는 Phaser 를 불러와 노드에서 바로 돌릴 수 없다 — 계약을 소스로 고정하고 실제 동작은 브라우저에서 본다. */
+  const bridge = readFileSync('src/game/fx/pixelfxBridge.ts', 'utf8');
+  /* 기록(SHEETS)은 지금 게임에 텍스처가 있을 때만 믿는다 */
+  assert.match(bridge, /if \(hit && !scene\.textures\.exists\(key\)\) \{ SHEETS\.delete\(key\); return undefined; \}/);
+  assert.equal((bridge.match(/SHEETS\.get\(/g) ?? []).length, 1, 'liveSheet 밖에서 SHEETS 를 직접 믿는 곳이 있다');
+  /* 받는 중 작업은 게임별 */
+  assert.match(bridge, /const PENDING = new WeakMap<Phaser\.Game, Map<string, Promise<boolean>>>\(\)/);
+  /* 내리기 — 화면에서 쓰는 중이면 남긴다 */
+  const unload = bridge.slice(bridge.indexOf('export function unloadFxSheet'));
+  assert.match(unload, /if \(inUse\) return false;/);
+  for (const s of ['SHEETS.delete(key)', 'scene.anims.remove(', 'scene.textures.remove(key)']) assert.ok(unload.includes(s), s);
+  /* 미리 받기가 다른 직업 시트를 내린다 */
+  const pre = src.slice(src.indexOf('export function prefetchUltFx'), src.indexOf('const LATE_MS'));
+  assert.match(pre, /if \(!keep\.has\(key\)\) unloadFxSheet\(scene, key\)/);
+});
+
+test('이터널 2차 궁극기 설명이 실제 동작(시간 역행 + 피해 재현)과 같다', async () => {
+  const { SKILL5B_INFO } = await import('../src/game/classes.ts');
+  assert.match(SKILL5B_INFO.eternal.desc, /되돌|역행/);
+  assert.match(SKILL5B_INFO.eternal.desc, /재현/);
+  assert.doesNotMatch(SKILL5B_INFO.eternal.desc, /블랙홀|지옥의 문/);
+});

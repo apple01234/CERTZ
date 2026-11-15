@@ -20,7 +20,7 @@ const pSrc = fs.readFileSync("src/game/PhaserGame.ts", "utf8");
 const grad = fs.readFileSync("android/app/build.gradle", "utf8");
 const credits = fs.readFileSync("public/assets/CREDITS.md", "utf8");
 
-const THEMES = ["title", "village", "field", "alfheim", "cave", "snow", "abyss", "boss"];
+const THEMES = ["title", "village", "field", "fairyglade", "cave", "snow", "abyss", "boss"];
 ok("S1 플레이리스트 8테마 × 5트랙 선언",
   THEMES.every((t) => aSrc.includes(`${t}: ["bgm_${t}1", "bgm_${t}2", "bgm_${t}3", "bgm_${t}4", "bgm_${t}5"]`)));
 ok("S2 생성 트랙/구 로테이션 흔적 제거 (BGM_VARIANTS·BGM_ROTATE_MS·gen_bgm2)",
@@ -49,7 +49,7 @@ for (const t of THEMES) {
 }
 ok("S7 오디오 40곡 존재(≥250KB·테마 내 5곡 개별)", fileOk, detail);
 const oldGone = ["bgm_title.ogg", "bgm_field.ogg", "bgm_boss.ogg", "bgm_village.ogg",
-  "bgm_alfheim.ogg", "bgm_cave.ogg", "bgm_snow.ogg", "bgm_abyss.ogg"].every((f) => !fs.existsSync(`public/assets/audio/${f}`));
+  "bgm_fairyglade.ogg", "bgm_cave.ogg", "bgm_snow.ogg", "bgm_abyss.ogg"].every((f) => !fs.existsSync(`public/assets/audio/${f}`));
 ok("S8 구 칩튠/생성 트랙 16종 파일 완전 제거", oldGone);
 ok("S9 CREDITS Kevin MacLeod CC-BY 4.0 + 40트랙 표기",
   credits.includes("Kevin MacLeod") && credits.includes("CC-BY 4.0") &&
@@ -114,7 +114,7 @@ async function cleanDialogues(page) {
   ok("R1 월드 진입 시 BGM 자동 재생", !!r1, r1?.key ?? "없음");
   const kind1 = r1 ? r1.key.replace(/^bgm_/, "").replace(/[1-5]$/, "") : null;
   ok("R2 재생 트랙이 현재 테마 플레이리스트 소속",
-    !!r1 && ["title", "village", "field", "alfheim", "cave", "snow", "abyss", "boss"].includes(kind1) &&
+    !!r1 && ["title", "village", "field", "fairyglade", "cave", "snow", "abyss", "boss"].includes(kind1) &&
     page.evaluate !== null, r1?.key ?? "");
 
   /* R3 강제 로테이션 → 같은 테마 다음 곡 (직전 곡 아님) */

@@ -4,9 +4,9 @@ import os
 
 A = "/home/z/my-project/public/assets"
 jobs = [
-    ("i_bd_guardian.webp", "i_bd_vord.webp",  (1.25, 0.75, 0.55)),  # 주황빛 감시안 (베오르드 orbTint 0xffb05a)
-    ("i_bd_nidhog.webp",   "i_bd_jorm.webp",  (0.60, 1.25, 0.85)),  # 청록빛 껍질 (요르문간드 orbTint 0x9affd0)
-    ("i_bd_abudditos.webp","i_bd_nagr.webp",  (1.30, 1.05, 0.45)),  # 금빛 종언 (나그라파르 orbTint 0xffd76a)
+    ("i_bd_guardian.webp", "i_bd_riftwarden.webp",  (1.25, 0.75, 0.55)),  # 주황빛 감시안 (재림의 파수꾼 orbTint 0xffb05a)
+    ("i_bd_blackwyrm.webp",   "i_bd_unionserpent.webp",  (0.60, 1.25, 0.85)),  # 청록빛 껍질 (연합을 삼키는 뱀 orbTint 0x9affd0)
+    ("i_bd_doomwyrm.webp","i_bd_angelknight.webp",  (1.30, 1.05, 0.45)),  # 금빛 종언 (재림의 천사기사 orbTint 0xffd76a)
 ]
 for src, dst, (r, g, b) in jobs:
     im = Image.open(os.path.join(A, src)).convert("RGBA")

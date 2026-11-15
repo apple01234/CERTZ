@@ -1,4 +1,4 @@
-// node --experimental-strip-types --import ./tests/ts-resolve-hook.mjs tests/howlrstone-balance.test.mjs
+// node --experimental-strip-types --import ./tests/ts-resolve-hook.mjs tests/lilacworld-balance.test.mjs
 //
 // 영프 편(라일락 월드) 성장 곡선 계약 — vc238
 //
@@ -13,8 +13,8 @@
 //  여기서는 "실제 지급액"으로 못을 박는다(QUEST_EXP_MUL 반영).
 import assert from 'node:assert/strict';
 import { STAGES, ENEMIES, QUEST_EXP_MUL } from '../src/game/stages.ts';
-import { HOWLRSTONE_CHAPTERS } from '../src/game/howlrstone.ts';
-import { HOWLRSTONE_ENTRY } from '../src/game/howlrstone.ts';
+import { LILACWORLD_CHAPTERS } from '../src/game/lilacworld.ts';
+import { LILACWORLD_ENTRY } from '../src/game/lilacworld.ts';
 import { expToNext } from '../src/game/expTable.ts';
 import { trajectory } from '../scripts/measure-combat-balance.mjs';
 
@@ -39,7 +39,7 @@ function needTo(exp0, target) {
   /* 회귀 방지의 핵심: 종전 1-1 은 첫 퀘스트 하나로 Lv26 이었다.
    *  1장 전체(4구역 퀘스트 + 반복의뢰 1회)를 다 받아도 Lv20 을 넘으면 안 된다 —
    *  영프 편의 2장 입장 게이트가 Lv8 이므로 그보다 넉넉히 위를 상한으로 둔다. */
-  const ch1 = HOWLRSTONE_CHAPTERS[0];
+  const ch1 = LILACWORLD_CHAPTERS[0];
   let gained = 0;
   for (let sub = 1; sub <= ch1.stages; sub++) {
     const def = STAGES[`${ch1.key}x${sub}`];
@@ -50,7 +50,7 @@ function needTo(exp0, target) {
   ok(`1장 퀘스트만으로 Lv${lvAllQuests} (20 미만이어야 함)`, lvAllQuests < 20);
 
   /* 첫 구역(1-1) 단독으로는 게이트 레벨 근처에도 못 미쳐야 한다. */
-  const q11 = STAGES[`${HOWLRSTONE_ENTRY}`].quests.reduce((t, q) => t + (q.expReward ?? 0) * QUEST_EXP_MUL, 0);
+  const q11 = STAGES[`${LILACWORLD_ENTRY}`].quests.reduce((t, q) => t + (q.expReward ?? 0) * QUEST_EXP_MUL, 0);
   const lv11 = levelFrom(1, q11);
   ok(`1-1 퀘스트 지급 ${q11} EXP → Lv${lv11} (10 미만)`, lv11 < 10);
   /* 종전 값(72,000)이면 Lv26 — 그 값이 되돌아오면 여기서 잡힌다. */
@@ -64,9 +64,9 @@ function needTo(exp0, target) {
    *  영프 편 종료 Lv154(게이트 128), 그랜드 플레닛 첫 행성에서 Lv219 가 됐다.
    *  이제 사냥 요구량까지 넣은 공용 궤적(scripts/measure-combat-balance.mjs)으로
    *  **하한(막힘 없음)과 상한(과속 없음)** 을 같이 본다. */
-  const story = trajectory().slice(0, HOWLRSTONE_CHAPTERS.length);
+  const story = trajectory().slice(0, LILACWORLD_CHAPTERS.length);
   for (const t of story) {
-    const spec = HOWLRSTONE_CHAPTERS.find((c) => c.key === t.chapter);
+    const spec = LILACWORLD_CHAPTERS.find((c) => c.key === t.chapter);
     ok(`${t.chapter}: enter <= mid`, spec.lvGate.enter <= spec.lvGate.mid);
     ok(`${t.chapter}: 게이트 ${t.gateEnter} <= 입장 시점 Lv${t.enterLv} (막힘 없음)`, t.gateEnter <= t.enterLv);
     if (t.exitLv > t.enterLv) {
@@ -81,13 +81,13 @@ function needTo(exp0, target) {
 
 /* ── 3. 게이트가 단조 증가한다 ─────────────────────────────────────────── */
 {
-  const gates = HOWLRSTONE_CHAPTERS.map((c) => c.lvGate.enter);
+  const gates = LILACWORLD_CHAPTERS.map((c) => c.lvGate.enter);
   for (let i = 1; i < gates.length; i++) {
     ok(`${i + 1}장 게이트 ${gates[i]} > ${i}장 ${gates[i - 1]}`, gates[i] > gates[i - 1]);
   }
   /* 레벨 게이트 퀘스트가 그 장의 사냥 1회분과 자릿수가 맞아야 한다.
    *  (종전 15장: 게이트 2,248만 vs 사냥 1회 225만 = 10배 과다) */
-  for (const spec of HOWLRSTONE_CHAPTERS) {
+  for (const spec of LILACWORLD_CHAPTERS) {
     const avgBase = spec.enemies.reduce((t, e) => t + ENEMIES[e.key].exp, 0) / spec.enemies.length;
     const perKill = avgBase * spec.scaleMul.exp * 1.35;
     const gateQ = STAGES[`${spec.key}x1`].quests.find((q) => q.type === 'level');
@@ -99,7 +99,7 @@ function needTo(exp0, target) {
 }
 
 /* ── 4. 모든 퀘스트 보상이 실제 지급액으로 존재한다 ────────────────────── */
-for (const spec of HOWLRSTONE_CHAPTERS) {
+for (const spec of LILACWORLD_CHAPTERS) {
   for (let sub = 1; sub <= spec.stages; sub++) {
     const key = `${spec.key}x${sub}`;
     const def = STAGES[key];
@@ -114,4 +114,4 @@ for (const spec of HOWLRSTONE_CHAPTERS) {
   }
 }
 
-console.log(`ALL CHECKS PASS: howlrstone balance — ${checks} checks`);
+console.log(`ALL CHECKS PASS: lilacworld balance — ${checks} checks`);

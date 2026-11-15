@@ -38,7 +38,7 @@ const { chromium } = require('playwright');
   }
 
   // 5. 보스 신규 아트 9종 서빙 (2차 전면 교체 — ≥2500B)
-  const bosses = ['boss', 'boss2', 'boss3', 'boss_nidhog', 'boss_surt', 'boss_fenrir', 'boss_skoll', 'boss_gram', 'boss_abudditos'];
+  const bosses = ['boss', 'boss2', 'boss3', 'boss_blackwyrm', 'boss_flamegiant', 'boss_greedwolf', 'boss_twinwolf', 'boss_warden', 'boss_doomwyrm'];
   for (const b of bosses) {
     const r = await page.evaluate(async (k) => {
       const res = await fetch(`/assets/${k}_idle0.webp`);

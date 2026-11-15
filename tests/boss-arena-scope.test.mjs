@@ -131,7 +131,7 @@ test("보스맵 퀘스트는 보스/도달 목표만 쓴다 (일반 처치 퀘�
 
 test("보스맵 처치는 hunt 퀘스트 진행도를 올리지 않는다", () => {
   const progress = {};
-  const scope = huntScope("howlrstone1x10", "q-1");
+  const scope = huntScope("lilacworld1x10", "q-1");
   /* 같은 종을 잡아도 bossMap 이면 반영되지 않아야 한다. */
   const applied = recordHuntKill(progress, scope, ["wolf", "minion"], "wolf", 10, { bossMap: true });
   assert.equal(applied, false, "보스맵 처치가 집계됐다");
@@ -140,7 +140,7 @@ test("보스맵 처치는 hunt 퀘스트 진행도를 올리지 않는다", () =
 
 test("일반 구역 처치는 종전대로 집계된다 (과잉 차단 방지)", () => {
   const progress = {};
-  const scope = huntScope("howlrstone1x3", "q-1");
+  const scope = huntScope("lilacworld1x3", "q-1");
   assert.equal(recordHuntKill(progress, scope, ["wolf"], "wolf", 10, { bossMap: false }), true);
   assert.equal(huntProgressOf(progress, scope), 1);
   /* opts 를 아예 안 넘기는 기존 호출도 그대로 동작해야 한다 */

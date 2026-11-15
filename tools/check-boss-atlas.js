@@ -4,8 +4,8 @@ const { execFileSync } = require("child_process");
 const fs = require("fs");
 
 const SPECS = {
-  nidhog:[156,163], surt:[272,187], fenrir:[220,200], skoll:[127,200],
-  jorm:[272,163], nagr:[156,163], abudditos:[156,163], vord:[156,163], gram:[220,200],
+  blackwyrm:[156,163], flamegiant:[272,187], greedwolf:[220,200], twinwolf:[127,200],
+  unionserpent:[272,163], angelknight:[156,163], doomwyrm:[156,163], riftwarden:[156,163], warden:[220,200],
 };
 
 function probe(p) {

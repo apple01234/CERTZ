@@ -223,8 +223,8 @@ async function closePanels(page) {
     const w = window.__SERTZ__.game.scene.getScene("world");
     const p = w.player;
     const ids = [...Object.keys(w.constructor && {} )]; // noop
-    const mobs = ["wolf","minion","spider","golem","frostwolf","icegolem","wraith","swampbeast","emberwolf","firespirit","runegolem","helhound","x2_frog","x2_rat","x2_bat","x2_firebird","x2_frostfly","x2_snail","x2_stonegolem","x2_darkhound","x2_reeffish","x3_swampy","x3_imp","x3_icezombie","x3_tinyzombie","x3_ogre","x3_chort","x3_necromancer","x3_maskedorc","x3_orcwarrior","x3_orcshaman","x3_wogol","x3_goblin","x3_bigzombie"];
-    const bosses = ["guardian","behemoth","abysslord","nidhog","surt","fenrir","skoll","gram","abudditos"];
+    const mobs = ["wolf","minion","spider","golem","frostwolf","icegolem","wraith","swampbeast","emberwolf","firespirit","runegolem","duskhound","x2_frog","x2_rat","x2_bat","x2_firebird","x2_frostfly","x2_snail","x2_stonegolem","x2_darkhound","x2_reeffish","x3_swampy","x3_imp","x3_icezombie","x3_tinyzombie","x3_ogre","x3_chort","x3_necromancer","x3_maskedorc","x3_orcwarrior","x3_orcshaman","x3_wogol","x3_goblin","x3_bigzombie"];
+    const bosses = ["guardian","behemoth","abysslord","blackwyrm","flamegiant","greedwolf","twinwolf","warden","doomwyrm"];
     for (const m of mobs) w.monsterKills[m] = (w.monsterKills[m] ?? 0) + 1;
     for (const b of bosses) w.monsterKills[`boss_${b}`] = (w.monsterKills[`boss_${b}`] ?? 0) + 1;
     const atk0 = p.atkTotal;

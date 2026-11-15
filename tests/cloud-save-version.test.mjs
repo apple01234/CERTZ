@@ -81,10 +81,10 @@ test('legacy accounts still read/write v1 until upgraded, while unknown future u
   assert.equal((await fresh.post({ data: { stage: 'village', gold: 3 } })).status, 200);
   assert.equal((await fresh.get()).status, 200);
   const before = JSON.stringify(fresh.db);
-  const future = await fresh.post({ data: { v: 3, gold: 999 } });
-  assert.equal(future.status, 409); assert.equal(future.body.minimumSaveVersion, 3);
+  const future = await fresh.post({ data: { v: 4, gold: 999 } });
+  assert.equal(future.status, 409); assert.equal(future.body.minimumSaveVersion, 4);
   assert.equal(JSON.stringify(fresh.db), before);
-  const newer = route(access.packSaveRec({ v: 3 }, { updatedAt: 1 }));
+  const newer = route(access.packSaveRec({ v: 4 }, { updatedAt: 1 }));
   assert.equal((await newer.get(2)).status, 409);
   assert.equal((await newer.post({ data: { v: 2 } })).status, 409);
 });

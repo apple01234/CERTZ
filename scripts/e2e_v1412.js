@@ -66,7 +66,7 @@ const path = require('path');
 
   // 5. 보스 9종 — 실제 에셋 교체 (실측: 픽셀아트 무손실 webp는 200~500B — 내용 실측으로 판정)
   {
-    const bosses = ['boss', 'boss2', 'boss3', 'boss_nidhog', 'boss_surt', 'boss_fenrir', 'boss_skoll', 'boss_gram', 'boss_abudditos'];
+    const bosses = ['boss', 'boss2', 'boss3', 'boss_blackwyrm', 'boss_flamegiant', 'boss_greedwolf', 'boss_twinwolf', 'boss_warden', 'boss_doomwyrm'];
     let allOk = true;
     const sizes = {};
     for (const b of bosses) {
@@ -139,7 +139,7 @@ const path = require('path');
       }
     };
     try { walk(chunksDir); } catch {}
-    ok('번들: 사냥터 NPC 대사 9챕터', ['fieldNpc_forest', 'fieldNpc_kingdom', 'fieldNpc_cave', 'fieldNpc_niflheim', 'fieldNpc_muspelheim', 'fieldNpc_alfheim', 'fieldNpc_nidavellir', 'fieldNpc_hel', 'fieldNpc_abyss'].every((k) => bundle.includes(k)));
+    ok('번들: 사냥터 NPC 대사 9챕터', ['fieldNpc_forest', 'fieldNpc_kingdom', 'fieldNpc_cave', 'fieldNpc_frostland', 'fieldNpc_emberland', 'fieldNpc_fairyglade', 'fieldNpc_forgehall', 'fieldNpc_duskrealm', 'fieldNpc_abyss'].every((k) => bundle.includes(k)));
     ok('번들: 보스 시그니처 패턴 (sig/aggr)', (bundle.includes('sig:"slam"') || bundle.includes('sig: "slam"')) && (bundle.includes('sig:"ring"') || bundle.includes('sig: "ring"')) && (bundle.includes('aggr:.8') || bundle.includes('aggr:0.8') || bundle.includes('aggr: .8')));
     ok('번들: 이그니 UI 안내 (GuidePanel)', bundle.includes('이그니의 UI 안내서') || bundle.includes('UI 안내서'));
     ok('번들: 보스전 자동전투 금지 문구', bundle.includes('보스전에서는 자동전투를 쓸 수 없다'));

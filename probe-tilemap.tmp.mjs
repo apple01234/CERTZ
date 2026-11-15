@@ -56,10 +56,10 @@ await page.evaluate(() => {
   for (const o of [...s.children.list]) if (o.text === "건너뛰기") o.emit("pointerdown");
   s.tutorialDone = true; s.tutStep = -1;
 });
-await page.evaluate(() => window.__SERTZ_SCENE__.startTransition("howlrstone1x2"));
+await page.evaluate(() => window.__SERTZ_SCENE__.startTransition("lilacworld1x2"));
 await page.waitForFunction(() => {
   const s = window.__SERTZ_SCENE__;
-  return s?.stageDef?.key === "howlrstone1x2" && !s.transitioning;
+  return s?.stageDef?.key === "lilacworld1x2" && !s.transitioning;
 }, { timeout: 60000 });
 await page.waitForTimeout(2500);
 

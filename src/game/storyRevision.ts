@@ -17,7 +17,7 @@ type StorySave = {
 };
 
 function isStoryStage(stage: string): boolean {
-  return /^(?:village|youngprincess|howlrstone|dlc|forest|kingdom|alfheim|muspelheim|niflheim|cave|nidavellir|hel|abyss)/.test(stage);
+  return /^(?:village|youngprincess|lilacworld|dlc|forest|kingdom|fairyglade|emberland|frostland|cave|forgehall|duskrealm|abyss)/.test(stage);
 }
 
 function withoutStoryStages(values: Record<string, number> | undefined) {

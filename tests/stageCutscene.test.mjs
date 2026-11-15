@@ -48,9 +48,9 @@ const eq = (name, a, b) => { assert.deepEqual(a, b, `✗ ${name}`); checks++; };
   /* 같은 구역은 항상 같은 키, 다른 구역은 다른 키
    *  [vc251] 종전엔 "forest" 를 썼지만 수련 원정 9개 지역이 삭제되면서 죽은 키가 됐다.
    *  stageIntroSeenKey/stageBeatOf 는 순수 함수라 아무 키나 받지만,
-   *  살아있는 챕터로 검증해야 회귀 가치가 있다. howlrstone1 은 실재하는 본편 챕터다. */
-  eq("seen 키 결정론", stageIntroSeenKey("howlrstone1", 3), stageIntroSeenKey("howlrstone1", 3));
-  ok("seen 키 구역별 고유", stageIntroSeenKey("howlrstone1", 3) !== stageIntroSeenKey("howlrstone1", 4));
+   *  살아있는 챕터로 검증해야 회귀 가치가 있다. lilacworld1 은 실재하는 본편 챕터다. */
+  eq("seen 키 결정론", stageIntroSeenKey("lilacworld1", 3), stageIntroSeenKey("lilacworld1", 3));
+  ok("seen 키 구역별 고유", stageIntroSeenKey("lilacworld1", 3) !== stageIntroSeenKey("lilacworld1", 4));
 }
 
 /* ── 4. 수작업 연출의 dialogue 키가 DIALOGUES 에 실재한다 ── */
@@ -87,13 +87,13 @@ const eq = (name, a, b) => { assert.deepEqual(a, b, `✗ ${name}`); checks++; };
 }
 
 /* ── 7. 성격 판정 — 정예/보스 직전은 전용 성격 ──
- *  [vc251] "forest" → "howlrstone1": 수련 원정 지역 삭제에 맞춰 살아있는 챕터로 교체. */
+ *  [vc251] "forest" → "lilacworld1": 수련 원정 지역 삭제에 맞춰 살아있는 챕터로 교체. */
 {
-  eq("sub5 → narrow", stageBeatOf("howlrstone1", 5), "narrow");
-  eq("sub9 → descend", stageBeatOf("howlrstone1", 9), "descend");
-  eq("sub1 → rise", stageBeatOf("howlrstone1", 1), "rise");
+  eq("sub5 → narrow", stageBeatOf("lilacworld1", 5), "narrow");
+  eq("sub9 → descend", stageBeatOf("lilacworld1", 9), "descend");
+  eq("sub1 → rise", stageBeatOf("lilacworld1", 1), "rise");
   const others = new Set();
-  for (let sub = 2; sub <= 8; sub++) if (sub !== 5) others.add(stageBeatOf("howlrstone1", sub));
+  for (let sub = 2; sub <= 8; sub++) if (sub !== 5) others.add(stageBeatOf("lilacworld1", sub));
   ok("일반 구역은 sweep/rise 를 섞는다", others.size === 2);
 }
 
@@ -102,7 +102,7 @@ const eq = (name, a, b) => { assert.deepEqual(a, b, `✗ ${name}`); checks++; };
  *  살아있는 본편 챕터만 인트로를 가진다. */
 {
   eq("삭제된 forest → null", chapterIntroOf("forest"), null);
-  ok("howlrstone1 챕터 인트로 유지", !!chapterIntroOf("howlrstone1"));
+  ok("lilacworld1 챕터 인트로 유지", !!chapterIntroOf("lilacworld1"));
   eq("없는 챕터 → null", chapterIntroOf("없는키"), null);
 }
 

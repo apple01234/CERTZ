@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""하단 블록(2,0) 헬 악마 시각화 — 행 구조 확인용"""
+"""하단 블록(2,0) 명계 악마 시각화 — 행 구조 확인용"""
 from PIL import Image, ImageDraw
 import numpy as np
 from collections import deque
@@ -42,5 +42,5 @@ for bj, (x0, x1) in enumerate([(15, 522), (567, 1072), (1121, 1623)]):
 # 블록(2,0) 크롭 저장 (2배)
 crop = img.crop((15, 695, 522, 949))
 crop = crop.resize((crop.width * 2, crop.height * 2), Image.NEAREST)
-crop.save("/home/z/my-project/scripts/atlas_preview/block_hel.png")
+crop.save("/home/z/my-project/scripts/atlas_preview/block_duskrealm.png")
 print("saved")

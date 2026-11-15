@@ -47,8 +47,8 @@ test("vc278 — place 가 없으면 framed room 이 아니다", () => {
 
 test("vc278 — 실제 챕터 표에서 던전/야외가 올바로 갈린다", () => {
   /* 정본 표(chapterStoryPlan)를 통해 role 이 나오는 경로까지 확인한다. */
-  const dungeon = chapterPlace("howlrstone1", 1);
-  assert.ok(dungeon, "howlrstone1 의 1구역 place 가 있어야 한다");
+  const dungeon = chapterPlace("lilacworld1", 1);
+  assert.ok(dungeon, "lilacworld1 의 1구역 place 가 있어야 한다");
   /* 이 스테이지의 role 이 무엇이든, usesFramedRoom 과 FRAMED_ROLES 판정이 일치해야 한다. */
   assert.equal(usesFramedRoom(dungeon), FRAMED_ROLES.has(dungeon.role));
 });
@@ -99,7 +99,7 @@ test("vc278c — 방 점유율이 FRAME_FILL 에 맞는다 (참조 이미지 비
    * 큰 던전에서 95% 까지 올라갔다 = "검정 테두리"지 "떠 있는 방"이 아니다.
    * 참조 이미지들의 점유율은 68~78% 다. */
   const cases = [
-    { w: 2126, h: 1024, sw: 1280, sh: 800 }, // 실제 howlrstone11x1 실측값
+    { w: 2126, h: 1024, sw: 1280, sh: 800 }, // 실제 lilacworld11x1 실측값
     { w: 800, h: 600, sw: 1280, sh: 800 },
     { w: 3000, h: 2000, sw: 1280, sh: 800 },
     { w: 640, h: 480, sw: 390, sh: 844 },    // 세로 화면(모바일)
@@ -187,12 +187,12 @@ test("vc278 — 방 사각형이 주어지면 그 중심을 비춘다", async ()
 
 /* ═══ vc278d — scroll 은 뷰 좌상단이 아니다 (좌측 클리핑 회귀 방지) ═══
  *
- * [실측 결함] howlrstone11x1 에서 방이 왼쪽으로 잘리고 좌 여백이 0px 이었다(우 76px).
+ * [실측 결함] lilacworld11x1 에서 방이 왼쪽으로 잘리고 좌 여백이 0px 이었다(우 76px).
  *  원인: scroll 을 `방중앙 - 화면/2/줌` 으로 계산했다. Phaser 4 의 scroll 은
  *  뷰 좌상단이 아니라 **화면 중앙(원점)의 월드 좌표**라, 그 차이만큼 화면 내용이
  *  오른쪽 아래로 밀린다. 두 축 모두 검사해 같은 실수가 재발하지 않게 한다. */
 test("vc278 — scroll 은 화면 중앙의 월드 좌표다 (줌을 곱하지 않는다)", () => {
-  const room = { x: 151.875, y: 128, w: 2126.25, h: 1024 }; // 실측 howlrstone11x1
+  const room = { x: 151.875, y: 128, w: 2126.25, h: 1024 }; // 실측 lilacworld11x1
   const sw = 1280, sh = 800;
   const v = computeFramedView(room.w, room.h, sw, sh, FRAME_PAD, room);
   assert.ok(v.zoom < 1, `이 사례는 줌<1 이어야 보정 차이가 드러난다: ${v.zoom}`);

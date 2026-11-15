@@ -1,11 +1,11 @@
 /**
  * 진단용 — authored 프롭의 실제 좌표·스케일·부모 구조를 덤프한다.
- * 사용: node scripts/diag-prop.mjs http://127.0.0.1:3109 howlrstone1x2
+ * 사용: node scripts/diag-prop.mjs http://127.0.0.1:3109 lilacworld1x2
  */
 import { chromium } from "playwright";
 
 const BASE = process.argv[2] || "http://127.0.0.1:3109";
-const STAGE = process.argv[3] || "howlrstone1x2";
+const STAGE = process.argv[3] || "lilacworld1x2";
 
 const browser = await chromium.launch({ args: ["--no-sandbox", "--disable-dev-shm-usage", "--use-gl=swiftshader", "--enable-unsafe-swiftshader"] });
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
@@ -25,7 +25,7 @@ await page.waitForTimeout(3000);
 const dump = await page.evaluate(() => {
   const s = window.__SERTZ_SCENE__;
   /* ★ 실제 레이아웃 셀 크기 — 하드코딩하면 안 된다.
-   *  howlrstone1x2 실측: cols 15 × rows 9, cellW 150.667 × cellH 131.111 (비정수!) */
+   *  lilacworld1x2 실측: cols 15 × rows 9, cellW 150.667 × cellH 131.111 (비정수!) */
   if (s.layout) {
     window.__LAY = { cols: s.layout.cols, rows: s.layout.rows, cellW: s.layout.cellW, cellH: s.layout.cellH };
   }

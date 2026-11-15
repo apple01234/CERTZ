@@ -11,12 +11,12 @@ AI 생성 일러스트(v1.4.9/11)를 전부 폐기하고, 게임이 이미 사�
    boss          심연의 수호자  ← x2_stonegolem (장벽 돌골렘)  보라 틴트
    boss2         눈보라의 거수  ← x3_ogre      (광포한 오거)   청백 틴트
    boss3         심연의 군주    ← x3_chort     (악마다라 촐트) 진홍 틴트
-   boss_nidhog   탐식의 드래곤  ← x3_bigzombie (거대 시체)     부록 틴트
-   boss_surt     화염의 거인    ← x3_orcwarrior(오르크 전사)  잉걸 틴트
-   boss_fenrir   탐욕의 늑대    ← x2_darkhound (그늘 이리)     보라 틴트
-   boss_skoll    교만의 쌍랑    ← x2_darkhound (그늘 이리)     금색 틴트 (하티는 코드 twin)
-   boss_gram     혈안의 문지기  ← x3_wogol     (지옥견 워골)   혈안 틴트
-   boss_abudditos 종언의 마룡   ← x2_firebird  (잿불 새)      암홍 틴트 — 날개 실루엣 마룡
+   boss_blackwyrm   탐식의 드래곤  ← x3_bigzombie (거대 시체)     부록 틴트
+   boss_flamegiant     화염의 거인    ← x3_orcwarrior(오르크 전사)  잉걸 틴트
+   boss_greedwolf   탐욕의 늑대    ← x2_darkhound (그늘 이리)     보라 틴트
+   boss_twinwolf    교만의 쌍랑    ← x2_darkhound (그늘 이리)     금색 틴트 (화염 늑대는 코드 twin)
+   boss_warden     혈안의 문지기  ← x3_wogol     (지옥견 워골)   혈안 틴트
+   boss_doomwyrm 종언의 마룡   ← x2_firebird  (잿불 새)      암홍 틴트 — 날개 실루엣 마룡
 
 · idle0/idle1 2프레임 (실제 시트 프레임 — 애니메이션 있음)
 · 캔버스 크기 = 기존 보스와 정확히 동일 (fit_pad) → Boss.ts 히트박스·판정·밸런스 100% 불변
@@ -32,12 +32,12 @@ BOSSES = [
     ("boss",           "x2_stonegolem", (168, 128, 255), (111, 126)),
     ("boss2",          "x3_ogre",       (140, 190, 255), (94, 144)),
     ("boss3",          "x3_chort",      (255, 92, 110),  (110, 180)),
-    ("boss_nidhog",    "x3_bigzombie",  (150, 210, 120), (124, 140)),
-    ("boss_surt",      "x3_orcwarrior", (255, 130, 60),  (94, 144)),
-    ("boss_fenrir",    "x2_darkhound",  (186, 120, 255), (145, 75)),
-    ("boss_skoll",     "x2_darkhound",  (255, 216, 120), (151, 78)),
-    ("boss_gram",      "x3_wogol",      (255, 70, 70),   (69, 81)),
-    ("boss_abudditos", "x2_firebird",   (255, 60, 88),   (110, 180)),
+    ("boss_blackwyrm",    "x3_bigzombie",  (150, 210, 120), (124, 140)),
+    ("boss_flamegiant",      "x3_orcwarrior", (255, 130, 60),  (94, 144)),
+    ("boss_greedwolf",    "x2_darkhound",  (186, 120, 255), (145, 75)),
+    ("boss_twinwolf",     "x2_darkhound",  (255, 216, 120), (151, 78)),
+    ("boss_warden",      "x3_wogol",      (255, 70, 70),   (69, 81)),
+    ("boss_doomwyrm", "x2_firebird",   (255, 60, 88),   (110, 180)),
 ]
 
 def content(im):

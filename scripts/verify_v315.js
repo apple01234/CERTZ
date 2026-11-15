@@ -75,7 +75,7 @@ async function gotoStage(page, st) {
 
   /* ── ② 상인 마을 전용 + ① 오브젝트 축소 + ⑨ 세트 해금 + ⑬ 미스텍처 ── */
   const stats = {};
-  for (const st of ["village", "forest1", "muspelheim1", "niflheim1"]) {
+  for (const st of ["village", "forest1", "emberland1", "frostland1"]) {
     await gotoStage(page, st);
     await page.screenshot({ path: `scripts/shot_v315_${st}.png` });
     stats[st] = await page.evaluate(() => {
@@ -91,12 +91,12 @@ async function gotoStage(page, st) {
       return { merchants, obstacles, missing, flowers, unlocked: [...w.unlockedSets], ch: w.stageDef.key };
     });
   }
-  ok("상인은 마을에만 배치", stats.village.merchants === 1 && stats.forest1.merchants === 0 && stats.muspelheim1.merchants === 0,
-     `village=${stats.village.merchants} forest=${stats.forest1.merchants} muspel=${stats.muspelheim1.merchants}`);
+  ok("상인은 마을에만 배치", stats.village.merchants === 1 && stats.forest1.merchants === 0 && stats.emberland1.merchants === 0,
+     `village=${stats.village.merchants} forest=${stats.forest1.merchants} muspel=${stats.emberland1.merchants}`);
   ok("오브젝트 축소(0.7배)", stats.forest1.obstacles <= 20, `forest1 obstacles=${stats.forest1.obstacles} (이전 33)`);
-  ok("챕터 진입 시 세트 해금", stats.forest1.unlocked.includes("forest") && stats.muspelheim1.unlocked.includes("muspelheim"),
-     `unlocked=${stats.forest1.unlocked.concat(stats.muspelheim1.unlocked).join(",")}`);
-  ok("미스텍처 0", stats.village.missing + stats.forest1.missing + stats.muspelheim1.missing + stats.niflheim1.missing === 0);
+  ok("챕터 진입 시 세트 해금", stats.forest1.unlocked.includes("forest") && stats.emberland1.unlocked.includes("emberland"),
+     `unlocked=${stats.forest1.unlocked.concat(stats.emberland1.unlocked).join(",")}`);
+  ok("미스텍처 0", stats.village.missing + stats.forest1.missing + stats.emberland1.missing + stats.frostland1.missing === 0);
 
   /* ── ③ 펫 없이 오토 + ④ 자동사냥 안정화(방향 홀드) ── */
   await gotoStage(page, "forest2");
@@ -191,8 +191,8 @@ async function gotoStage(page, st) {
   });
   ok("잠재옵션 스탯 반영", eertStat.atk > 0, `atkTotal=${eertStat.atk} (atk+3 반영)`);
 
-  /* ── ⑦ 원소 상성: 마법사(냉기) → 무스펠헤임(화염 적) = 약점 1.25배 ── */
-  await gotoStage(page, "muspelheim1");
+  /* ── ⑦ 원소 상성: 마법사(냉기) → 화산(화염 적) = 약점 1.25배 ── */
+  await gotoStage(page, "emberland1");
   const elem = await page.evaluate(() => {
     const w = window.__SERTZ__.game.scene.getScene("world");
     const p = w.player;

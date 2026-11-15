@@ -13,4 +13,4 @@
  * ===================================================================== */
 
 /** 지역 키 — 채집 재료 풀 판정에 쓰인다 (구 낚시 지역 구분에서 유래). */
-export type FishingZone = "forest" | "kingdom" | "alfheim" | "muspelheim" | "niflheim" | "cave" | "nidavellir" | "hel" | "abyss";
+export type FishingZone = "forest" | "kingdom" | "fairyglade" | "emberland" | "frostland" | "cave" | "forgehall" | "duskrealm" | "abyss";
