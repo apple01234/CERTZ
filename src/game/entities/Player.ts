@@ -42,7 +42,7 @@ import { memoCooldowns, restoreCooldowns } from "../cooldownMemo"; // v1.0.15 (�
 import { damageMultiplier } from "../combat/damageModel";
 import { copiedReactionElement, signatureZones, signatureZoneContains, startSignatureCast, STARTER_SIGNATURE, weaponMasterProfileOf, type SignatureCast, type WeaponMasterProfile } from "../weaponMasterProfiles";
 import { planUltWaves, createUltBudget, ULT_BUDGET_MULT, type UltBudget } from "../combat/ultWaves"; // 궁극기 고정 예산 + 지속 타격
-import { WeaponMasterCombat } from "../fx/WeaponMasterCombat";
+import { WeaponMasterCombat, prefetchWeaponFx } from "../fx/WeaponMasterCombat";
 import { skillMasteryProgress, type SkillMastery } from "../skillMastery";
 import { notice } from "../fx/Notice";
 
@@ -8116,6 +8116,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.recalcSpeed();
     this.scene.emitHud();
     prefetchUltFx(this.scene, this.cls); // 2026-11-15 — 전직 즉시 새 직업의 궁극기 시트를 받는다(첫 시전 이펙트 누락 방지)
+    prefetchWeaponFx(this.scene, weaponMasterProfileOf(this.cls)?.style);
     return true;
   }
 
@@ -8289,6 +8290,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.recalcSpeed();
     this.scene.emitHud();
     prefetchUltFx(this.scene, this.cls); // 2026-11-15 — 전직 즉시 새 직업의 궁극기 시트를 받는다(첫 시전 이펙트 누락 방지)
+    prefetchWeaponFx(this.scene, weaponMasterProfileOf(this.cls)?.style);
     return true;
   }
 
@@ -8308,6 +8310,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.recalcSpeed();
     this.scene.emitHud();
     prefetchUltFx(this.scene, this.cls); // 2026-11-15 — 전직 즉시 새 직업의 궁극기 시트를 받는다(첫 시전 이펙트 누락 방지)
+    prefetchWeaponFx(this.scene, weaponMasterProfileOf(this.cls)?.style);
     return true;
   }
 

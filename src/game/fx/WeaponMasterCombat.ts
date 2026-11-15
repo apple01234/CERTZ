@@ -1,10 +1,21 @@
 import Phaser from "phaser";
-import { playFx } from "./pixelfxBridge";
+import { playFx, ensureFxSheet } from "./pixelfxBridge";
 import { signatureZones, type SignatureZone, type SkillPoint, type WeaponMasterProfile } from "../weaponMasterProfiles";
 
 type ActorLook = { texture: string; frame: string | number; flip: boolean; scaleX: number; scaleY: number };
 
 /** Cast-owned native assets: shutdown/cancel removes previews, sprites and their tweens together. */
+/** 직업 스킬 연출이 쓰는 pixelfx 시트(스타일별). 부팅 때 받지 않고 이 직업일 때만 받는다. */
+const STYLE_FX: Partial<Record<string, string[]>> = {
+  solar: ["sunburst"], life: ["healing-bloom"], lightning: ["zap-hit"], book: ["arcane-orb"],
+  art: ["divine-shield", "heal"], shadow: ["shadow-flames"], copy: ["arcane-orb"], water: ["splash"], hammer: ["hammer-smash"],
+};
+
+/** 지역 진입·전직 때 부른다 — 이 직업 스킬 연출 시트를 미리 받는다(기다리지 않는다). */
+export function prefetchWeaponFx(scene: Phaser.Scene, style: string | null | undefined): void {
+  for (const key of (style && STYLE_FX[style]) || []) void ensureFxSheet(scene, key);
+}
+
 export class WeaponMasterCombat {
   private objects = new Set<Phaser.GameObjects.GameObject>();
   private preview: Phaser.GameObjects.Graphics | null = null;
@@ -43,7 +54,7 @@ export class WeaponMasterCombat {
   }
 
   private native(key: string, x: number, y: number, scale = 0.8) {
-    if (!this.scene.textures.exists(key)) return null;
+    if (!this.scene.textures.exists(key)) { void ensureFxSheet(this.scene, key); return null; } // 다음 시전부터 나온다
     const sprite = playFx(this.scene, key, x, y, { scale, depth: 25 });
     if (sprite) this.track(sprite).setTint(this.profile.color);
     return sprite;

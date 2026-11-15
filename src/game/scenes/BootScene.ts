@@ -432,19 +432,10 @@ const SPUM_TO_BODY: Record<string, string> = {
  *   내려받고 디코드했다. 모바일에서 첫 진입 지연·메모리 압박의 주 원인.
  *  [해결] EVENT_FX 가 참조하는 45종(21.2MB)만 프리로드한다.
  *   나머지는 필요 시 loadFxSheet 로 지연 로드할 수 있다(경로는 그대로 유효). */
-const PIXELFX_SHEETS = [
-  "arcane-orb", "big-explosion", "bleeding", "blink-in", "blunt-hit", "bullet-impact",
-  "claw-swipe", "coin-spin", "collect-burst", "crit-hit", "crystal-shard", "dissolve-burn",
-  "divine-shield", "fireball", "frozen", "gem-spin", "hammer-smash", "haste", "heal",
-  "healing-bloom", "hit-spark", "ice-spikes", "impact-frame", "implosion", "leaf-storm",
-  "level-up", "pixel-dissolve", "poisoned", "poof", "portal", "quest-complete", "rage",
-  "resurrection", "shadow-flames", "shatter-death", "shield-block", "smite", "soul-rise",
-  "spawn-portal", "spin-slash", "splash", "summon-rise", "sunburst", "sword-slash", "zap-hit",
-  /* vc289 — 2026-11-09 Drive 배급 "FX Pack 1" 8종 (128px 24f).
-   *  tools/import_drive_20261109.py 가 원본 시트를 CERTZ pixelfx 스키마로 변환했다. */
-  "storm", "shockwave-big", "plasma", "energy-crack",
-  "pentagram", "implosion-drive", "orbit-rings", "sparks-glow",
-];
+/* 2026-11-15 (초기 로딩 10초·모바일 메모리) — pixelfx 부팅 프리로드(53장, 23MB·풀린 메모리 약 330MB) 제거.
+ *  실측: 월드 입장 25.9초 중 이 시트가 받은 용량의 45%, 가장 큰 텍스처(big-explosion 97MB)도 여기였다.
+ *  실제로 그림을 꺼내 쓰는 곳은 직업 스킬 연출 9장뿐이었다(PixelFxManager 는 "fire/fireball" 형 키로 찾아 원래 못 찾았다).
+ *  이제 필요할 때 받는다 — 직업 스킬은 WeaponMasterCombat.prefetchWeaponFx, 궁극기는 ultPixelFx, 보스 패턴은 bossPatternFx. */
 
 const VFX_PACK_LIST = [
   "fx_shockwave", "fx_impact", "fx_glow", "fx_burst", "fx_flare", "fx_smoke",
@@ -916,11 +907,6 @@ export class BootScene extends Phaser.Scene {
      *  tools/import-pixelfx.mjs 가 public/assets/fx 에 넣은 시트만 로드한다.
      *  atlas + json__meta 두 번 읽는 이유: Phaser atlas 는 이미지 프레임만 만들고
      *  meta.pixelfx(pivot·fps·loop)는 캐시에 남기지 않는다. pixelfxBridge 가 그걸 쓴다. */
-    this.load.setPath("assets/fx");
-    for (const k of PIXELFX_SHEETS) {
-      this.load.atlas(k, `${k}.png`, `${k}.json`);
-      this.load.json(`${k}__meta`, `${k}.json`);
-    }
   }
 
   async create() {

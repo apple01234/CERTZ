@@ -285,9 +285,10 @@ test("legacy/corrupt mastery data is bounded and level thresholds are exact", ()
 
 test("actual native renderer uses shipped sheets, tags every object and removes cast-owned effects/tweens", () => {
   const source = readFileSync(new URL("../src/game/fx/WeaponMasterCombat.ts", import.meta.url), "utf8");
-  const boot = readFileSync(new URL("../src/game/scenes/BootScene.ts", import.meta.url), "utf8");
+  /* 2026-11-15 — 부팅 프리로드를 없앴다. 스킬이 쓰는 시트는 직업별 받기 목록(STYLE_FX)에 있어야 한다. */
+  const styleFx = source.slice(source.indexOf("const STYLE_FX"), source.indexOf("};", source.indexOf("const STYLE_FX")));
   for (const [, key] of source.matchAll(/this\.native\("([^"]+)"/g)) {
-    assert.ok(boot.includes(`"${key}"`), `${key} already loaded by BootScene`);
+    assert.ok(styleFx.includes(`"${key}"`), `${key} is prefetched for its style (STYLE_FX)`);
     assert.ok(existsSync(new URL(`../public/assets/fx/${key}.png`, import.meta.url)), `${key}: existing sheet`);
     assert.ok(existsSync(new URL(`../public/assets/fx/${key}.json`, import.meta.url)), `${key}: existing animation metadata`);
   }
@@ -308,11 +309,11 @@ test("actual native renderer uses shipped sheets, tags every object and removes 
       add: { graphics: object, image: object, sprite: object },
       tweens: { add(tween) { tweens.push(tween); }, killTweensOf: object => killed.push(object) },
     };
-    const Renderer = new Function("Phaser", "playFx", "signatureZones", ts.transpile(
-      source.replace(/^import[^\n]*\n/gm, "").replace("export class WeaponMasterCombat", "class WeaponMasterCombat") + "\nreturn WeaponMasterCombat;",
+    const Renderer = new Function("Phaser", "playFx", "signatureZones", "ensureFxSheet", ts.transpile(
+      source.replace(/^import[^\n]*\n/gm, "").replace(/^export function /gm, "function ").replace("export class WeaponMasterCombat", "class WeaponMasterCombat") + "\nreturn WeaponMasterCombat;",
       { target: ts.ScriptTarget.ES2022 },
     ))({ BlendModes: { ADD: 1 }, GameObjects: { Events: { DESTROY: "destroy" } }, Animations: { Events: { ANIMATION_COMPLETE: "complete" } } },
-      (_scene, key) => { natives.push(key); return object(); }, signatureZones);
+      (_scene, key) => { natives.push(key); return object(); }, signatureZones, () => Promise.resolve(false));
     const renderer = new Renderer(scene, profile, { x: 0, y: 0 }, { x: 1, y: 0 }, 2,
       { texture: "hero_idle0", frame: "__BASE", flip: true, scaleX: 1, scaleY: 1 });
     renderer.startup();
