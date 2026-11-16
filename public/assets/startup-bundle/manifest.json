@@ -1,0 +1,5190 @@
+{
+  "version": 1,
+  "url": "assets/startup-bundle/shared-723a96e2cb995ee4.bin",
+  "encoding": "gzip",
+  "bytes": 17074712,
+  "decodedBytes": 17234743,
+  "sha256": "723a96e2cb995ee441d5ce41e34fe2f24a84c58b0be5b44c84345d4f3ab9be50",
+  "images": {
+    "assets/acc_cape_crimson.webp": {
+      "offset": 0,
+      "length": 418,
+      "type": "image/webp"
+    },
+    "assets/acc_cape_royal.webp": {
+      "offset": 418,
+      "length": 414,
+      "type": "image/webp"
+    },
+    "assets/acc_crown.webp": {
+      "offset": 832,
+      "length": 92,
+      "type": "image/webp"
+    },
+    "assets/acc_halo.webp": {
+      "offset": 924,
+      "length": 46,
+      "type": "image/webp"
+    },
+    "assets/acc_ribbon.webp": {
+      "offset": 970,
+      "length": 50,
+      "type": "image/webp"
+    },
+    "assets/acc_wings_devil.webp": {
+      "offset": 1020,
+      "length": 212,
+      "type": "image/webp"
+    },
+    "assets/acc_wings_fairy.webp": {
+      "offset": 1232,
+      "length": 234,
+      "type": "image/webp"
+    },
+    "assets/anim/wraith_spirit.png": {
+      "offset": 1466,
+      "length": 1778,
+      "type": "image/png"
+    },
+    "assets/aura/gvb_star4.png": {
+      "offset": 3244,
+      "length": 3612,
+      "type": "image/png"
+    },
+    "assets/aura/gvb_twinkle.png": {
+      "offset": 6856,
+      "length": 3312,
+      "type": "image/png"
+    },
+    "assets/aura/gvu_spark.png": {
+      "offset": 10168,
+      "length": 3568,
+      "type": "image/png"
+    },
+    "assets/aura_circle.webp": {
+      "offset": 13736,
+      "length": 35212,
+      "type": "image/webp"
+    },
+    "assets/aura_glow2.webp": {
+      "offset": 48948,
+      "length": 7984,
+      "type": "image/webp"
+    },
+    "assets/aura_ring.webp": {
+      "offset": 56932,
+      "length": 1232,
+      "type": "image/webp"
+    },
+    "assets/aura_wisp.webp": {
+      "offset": 58164,
+      "length": 1766,
+      "type": "image/webp"
+    },
+    "assets/autotile_edge.webp": {
+      "offset": 59930,
+      "length": 9608,
+      "type": "image/webp"
+    },
+    "assets/beam.webp": {
+      "offset": 69538,
+      "length": 964,
+      "type": "image/webp"
+    },
+    "assets/buff_king.webp": {
+      "offset": 70502,
+      "length": 134,
+      "type": "image/webp"
+    },
+    "assets/cainos_water0.webp": {
+      "offset": 70636,
+      "length": 364,
+      "type": "image/webp"
+    },
+    "assets/cainos_water1.webp": {
+      "offset": 71000,
+      "length": 438,
+      "type": "image/webp"
+    },
+    "assets/cainos_water2.webp": {
+      "offset": 71438,
+      "length": 450,
+      "type": "image/webp"
+    },
+    "assets/cainos_water3.webp": {
+      "offset": 71888,
+      "length": 478,
+      "type": "image/webp"
+    },
+    "assets/cfxr_flamme.webp": {
+      "offset": 72366,
+      "length": 8144,
+      "type": "image/webp"
+    },
+    "assets/cfxr_impact.webp": {
+      "offset": 80510,
+      "length": 3618,
+      "type": "image/webp"
+    },
+    "assets/cfxr_mstar.webp": {
+      "offset": 84128,
+      "length": 6318,
+      "type": "image/webp"
+    },
+    "assets/cfxr_puff.webp": {
+      "offset": 90446,
+      "length": 3222,
+      "type": "image/webp"
+    },
+    "assets/cfxr_smoke.webp": {
+      "offset": 93668,
+      "length": 12072,
+      "type": "image/webp"
+    },
+    "assets/cfxr_star.webp": {
+      "offset": 105740,
+      "length": 4356,
+      "type": "image/webp"
+    },
+    "assets/chapter-terrain/astral.png": {
+      "offset": 110096,
+      "length": 582,
+      "type": "image/png"
+    },
+    "assets/chapter-terrain/castle.png": {
+      "offset": 110678,
+      "length": 887,
+      "type": "image/png"
+    },
+    "assets/chapter-terrain/earth.png": {
+      "offset": 111565,
+      "length": 1293,
+      "type": "image/png"
+    },
+    "assets/chapter-terrain/forest.png": {
+      "offset": 112858,
+      "length": 1609,
+      "type": "image/png"
+    },
+    "assets/chapter-terrain/grass.png": {
+      "offset": 114467,
+      "length": 1239,
+      "type": "image/png"
+    },
+    "assets/chapter-terrain/machine.png": {
+      "offset": 115706,
+      "length": 1017,
+      "type": "image/png"
+    },
+    "assets/chapter-terrain/rock.png": {
+      "offset": 116723,
+      "length": 1017,
+      "type": "image/png"
+    },
+    "assets/chapter-terrain/ruin.png": {
+      "offset": 117740,
+      "length": 917,
+      "type": "image/png"
+    },
+    "assets/chapter-terrain/sand.png": {
+      "offset": 118657,
+      "length": 1130,
+      "type": "image/png"
+    },
+    "assets/chapter-terrain/snow.png": {
+      "offset": 119787,
+      "length": 1110,
+      "type": "image/png"
+    },
+    "assets/chapter-terrain/volcano.png": {
+      "offset": 120897,
+      "length": 787,
+      "type": "image/png"
+    },
+    "assets/chapter-terrain/water.png": {
+      "offset": 121684,
+      "length": 159,
+      "type": "image/png"
+    },
+    "assets/chapter-terrain/wood.png": {
+      "offset": 121843,
+      "length": 397,
+      "type": "image/png"
+    },
+    "assets/chest_anim.webp": {
+      "offset": 122240,
+      "length": 13508,
+      "type": "image/webp"
+    },
+    "assets/cl_bones.webp": {
+      "offset": 135748,
+      "length": 2454,
+      "type": "image/webp"
+    },
+    "assets/cl_eyeplant.webp": {
+      "offset": 138202,
+      "length": 672,
+      "type": "image/webp"
+    },
+    "assets/cl_jawsplant.webp": {
+      "offset": 138874,
+      "length": 2548,
+      "type": "image/webp"
+    },
+    "assets/cl_manyeyes.webp": {
+      "offset": 141422,
+      "length": 694,
+      "type": "image/webp"
+    },
+    "assets/cl_mflower.webp": {
+      "offset": 142116,
+      "length": 1178,
+      "type": "image/webp"
+    },
+    "assets/cl_pustules.webp": {
+      "offset": 143294,
+      "length": 584,
+      "type": "image/webp"
+    },
+    "assets/cl_rock.webp": {
+      "offset": 143878,
+      "length": 1472,
+      "type": "image/webp"
+    },
+    "assets/cos_abyss.webp": {
+      "offset": 145350,
+      "length": 142,
+      "type": "image/webp"
+    },
+    "assets/cos_aurora.webp": {
+      "offset": 145492,
+      "length": 140,
+      "type": "image/webp"
+    },
+    "assets/cos_dawn.webp": {
+      "offset": 145632,
+      "length": 144,
+      "type": "image/webp"
+    },
+    "assets/cos_gold.webp": {
+      "offset": 145776,
+      "length": 142,
+      "type": "image/webp"
+    },
+    "assets/cos_wings.webp": {
+      "offset": 145918,
+      "length": 138,
+      "type": "image/webp"
+    },
+    "assets/cp_bg.webp": {
+      "offset": 146056,
+      "length": 155126,
+      "type": "image/webp"
+    },
+    "assets/cp_petal.webp": {
+      "offset": 301182,
+      "length": 64694,
+      "type": "image/webp"
+    },
+    "assets/cv_candle.webp": {
+      "offset": 365876,
+      "length": 230,
+      "type": "image/webp"
+    },
+    "assets/cv_torch.webp": {
+      "offset": 366106,
+      "length": 264,
+      "type": "image/webp"
+    },
+    "assets/duskhound_idle0.webp": {
+      "offset": 366370,
+      "length": 222,
+      "type": "image/webp"
+    },
+    "assets/duskhound_idle1.webp": {
+      "offset": 366592,
+      "length": 218,
+      "type": "image/webp"
+    },
+    "assets/duskhound_run0.webp": {
+      "offset": 366810,
+      "length": 222,
+      "type": "image/webp"
+    },
+    "assets/duskhound_run1.webp": {
+      "offset": 367032,
+      "length": 212,
+      "type": "image/webp"
+    },
+    "assets/duskhound_run2.webp": {
+      "offset": 367244,
+      "length": 222,
+      "type": "image/webp"
+    },
+    "assets/duskhound_run3.webp": {
+      "offset": 367466,
+      "length": 224,
+      "type": "image/webp"
+    },
+    "assets/edge_arrow.webp": {
+      "offset": 367690,
+      "length": 96,
+      "type": "image/webp"
+    },
+    "assets/flame0.webp": {
+      "offset": 367786,
+      "length": 130,
+      "type": "image/webp"
+    },
+    "assets/flame1.webp": {
+      "offset": 367916,
+      "length": 136,
+      "type": "image/webp"
+    },
+    "assets/flame2.webp": {
+      "offset": 368052,
+      "length": 134,
+      "type": "image/webp"
+    },
+    "assets/flame3.webp": {
+      "offset": 368186,
+      "length": 132,
+      "type": "image/webp"
+    },
+    "assets/flower_r.webp": {
+      "offset": 368318,
+      "length": 88,
+      "type": "image/webp"
+    },
+    "assets/flower_w.webp": {
+      "offset": 368406,
+      "length": 88,
+      "type": "image/webp"
+    },
+    "assets/flower_y.webp": {
+      "offset": 368494,
+      "length": 88,
+      "type": "image/webp"
+    },
+    "assets/fm_prop1.webp": {
+      "offset": 368582,
+      "length": 2986,
+      "type": "image/webp"
+    },
+    "assets/fm_prop2.webp": {
+      "offset": 371568,
+      "length": 1168,
+      "type": "image/webp"
+    },
+    "assets/fm_prop3.webp": {
+      "offset": 372736,
+      "length": 850,
+      "type": "image/webp"
+    },
+    "assets/fm_shrub1.webp": {
+      "offset": 373586,
+      "length": 896,
+      "type": "image/webp"
+    },
+    "assets/fm_tree1.webp": {
+      "offset": 374482,
+      "length": 2280,
+      "type": "image/webp"
+    },
+    "assets/fm_tree2.webp": {
+      "offset": 376762,
+      "length": 2108,
+      "type": "image/webp"
+    },
+    "assets/fm_tree3.webp": {
+      "offset": 378870,
+      "length": 1802,
+      "type": "image/webp"
+    },
+    "assets/fm_tree4.webp": {
+      "offset": 380672,
+      "length": 1088,
+      "type": "image/webp"
+    },
+    "assets/furn_barrel.webp": {
+      "offset": 381760,
+      "length": 600,
+      "type": "image/webp"
+    },
+    "assets/furn_bench.webp": {
+      "offset": 382360,
+      "length": 1274,
+      "type": "image/webp"
+    },
+    "assets/furn_bucket.webp": {
+      "offset": 383634,
+      "length": 456,
+      "type": "image/webp"
+    },
+    "assets/furn_chair.webp": {
+      "offset": 384090,
+      "length": 480,
+      "type": "image/webp"
+    },
+    "assets/furn_crate_big.webp": {
+      "offset": 384570,
+      "length": 830,
+      "type": "image/webp"
+    },
+    "assets/furn_crate_small.webp": {
+      "offset": 385400,
+      "length": 596,
+      "type": "image/webp"
+    },
+    "assets/furn_pots.webp": {
+      "offset": 385996,
+      "length": 896,
+      "type": "image/webp"
+    },
+    "assets/furn_table.webp": {
+      "offset": 386892,
+      "length": 1540,
+      "type": "image/webp"
+    },
+    "assets/fx/quest-complete.png": {
+      "offset": 388432,
+      "length": 230973,
+      "type": "image/png"
+    },
+    "assets/fx2/fx_Circle.webp": {
+      "offset": 619405,
+      "length": 3706,
+      "type": "image/webp"
+    },
+    "assets/fx2/fx_Circle2.webp": {
+      "offset": 623111,
+      "length": 2264,
+      "type": "image/webp"
+    },
+    "assets/fx2/fx_Electro.webp": {
+      "offset": 625375,
+      "length": 12188,
+      "type": "image/webp"
+    },
+    "assets/fx2/fx_Flare.webp": {
+      "offset": 637563,
+      "length": 4440,
+      "type": "image/webp"
+    },
+    "assets/fx2/fx_Flash.webp": {
+      "offset": 642003,
+      "length": 2374,
+      "type": "image/webp"
+    },
+    "assets/fx2/fx_FlashFree1.webp": {
+      "offset": 644377,
+      "length": 8092,
+      "type": "image/webp"
+    },
+    "assets/fx2/fx_FlashFree2.webp": {
+      "offset": 652469,
+      "length": 29430,
+      "type": "image/webp"
+    },
+    "assets/fx2/fx_FlashFree3.webp": {
+      "offset": 681899,
+      "length": 74854,
+      "type": "image/webp"
+    },
+    "assets/fx_tornado.webp": {
+      "offset": 756753,
+      "length": 3834,
+      "type": "image/webp"
+    },
+    "assets/golem_idle0.webp": {
+      "offset": 760587,
+      "length": 192,
+      "type": "image/webp"
+    },
+    "assets/golem_idle1.webp": {
+      "offset": 760779,
+      "length": 186,
+      "type": "image/webp"
+    },
+    "assets/golem_run0.webp": {
+      "offset": 760965,
+      "length": 192,
+      "type": "image/webp"
+    },
+    "assets/golem_run1.webp": {
+      "offset": 761157,
+      "length": 180,
+      "type": "image/webp"
+    },
+    "assets/golem_run2.webp": {
+      "offset": 761337,
+      "length": 192,
+      "type": "image/webp"
+    },
+    "assets/golem_run3.webp": {
+      "offset": 761529,
+      "length": 186,
+      "type": "image/webp"
+    },
+    "assets/ground/ground_dirt.png": {
+      "offset": 761715,
+      "length": 2112,
+      "type": "image/png"
+    },
+    "assets/gvb_buff_air.webp": {
+      "offset": 763827,
+      "length": 21070,
+      "type": "image/webp"
+    },
+    "assets/gvb_electric_splat.webp": {
+      "offset": 784897,
+      "length": 8002,
+      "type": "image/webp"
+    },
+    "assets/gvb_glow_blue.webp": {
+      "offset": 792899,
+      "length": 26360,
+      "type": "image/webp"
+    },
+    "assets/gvb_glow_blurry.webp": {
+      "offset": 819259,
+      "length": 11354,
+      "type": "image/webp"
+    },
+    "assets/gvb_glow_white.webp": {
+      "offset": 830613,
+      "length": 5438,
+      "type": "image/webp"
+    },
+    "assets/gvb_grad_soft.webp": {
+      "offset": 836051,
+      "length": 516,
+      "type": "image/webp"
+    },
+    "assets/gvb_lensflare.webp": {
+      "offset": 836567,
+      "length": 9308,
+      "type": "image/webp"
+    },
+    "assets/gvb_lightning_blue.webp": {
+      "offset": 845875,
+      "length": 17600,
+      "type": "image/webp"
+    },
+    "assets/gvb_ring_soft.webp": {
+      "offset": 863475,
+      "length": 15118,
+      "type": "image/webp"
+    },
+    "assets/gvb_shard.webp": {
+      "offset": 878593,
+      "length": 2108,
+      "type": "image/webp"
+    },
+    "assets/gvb_shield_hex.webp": {
+      "offset": 880701,
+      "length": 23436,
+      "type": "image/webp"
+    },
+    "assets/gvb_smoke_pink.webp": {
+      "offset": 904137,
+      "length": 27270,
+      "type": "image/webp"
+    },
+    "assets/gvb_star4.webp": {
+      "offset": 931407,
+      "length": 1740,
+      "type": "image/webp"
+    },
+    "assets/gvb_star_green.webp": {
+      "offset": 933147,
+      "length": 5164,
+      "type": "image/webp"
+    },
+    "assets/gvb_trail_stylized.webp": {
+      "offset": 938311,
+      "length": 40334,
+      "type": "image/webp"
+    },
+    "assets/gvb_twink_01.webp": {
+      "offset": 978645,
+      "length": 878,
+      "type": "image/webp"
+    },
+    "assets/gvb_twinkle.webp": {
+      "offset": 979523,
+      "length": 1276,
+      "type": "image/webp"
+    },
+    "assets/gvu_circle_aggr.webp": {
+      "offset": 980799,
+      "length": 213034,
+      "type": "image/webp"
+    },
+    "assets/gvu_energybolts.webp": {
+      "offset": 1193833,
+      "length": 30216,
+      "type": "image/webp"
+    },
+    "assets/gvu_energynoise.webp": {
+      "offset": 1224049,
+      "length": 163994,
+      "type": "image/webp"
+    },
+    "assets/gvu_energyweb.webp": {
+      "offset": 1388043,
+      "length": 144880,
+      "type": "image/webp"
+    },
+    "assets/gvu_exp_core.webp": {
+      "offset": 1532923,
+      "length": 60636,
+      "type": "image/webp"
+    },
+    "assets/gvu_flare_xo.webp": {
+      "offset": 1593559,
+      "length": 4632,
+      "type": "image/webp"
+    },
+    "assets/gvu_glow.webp": {
+      "offset": 1598191,
+      "length": 16418,
+      "type": "image/webp"
+    },
+    "assets/gvu_linelong.webp": {
+      "offset": 1614609,
+      "length": 3244,
+      "type": "image/webp"
+    },
+    "assets/gvu_mask_ommi.webp": {
+      "offset": 1617853,
+      "length": 57346,
+      "type": "image/webp"
+    },
+    "assets/gvu_mask_razor.webp": {
+      "offset": 1675199,
+      "length": 46222,
+      "type": "image/webp"
+    },
+    "assets/gvu_shockwave_fiery.webp": {
+      "offset": 1721421,
+      "length": 87002,
+      "type": "image/webp"
+    },
+    "assets/gvu_spark.webp": {
+      "offset": 1808423,
+      "length": 1346,
+      "type": "image/webp"
+    },
+    "assets/gvu_specks.webp": {
+      "offset": 1809769,
+      "length": 114366,
+      "type": "image/webp"
+    },
+    "assets/gvu_streaks.webp": {
+      "offset": 1924135,
+      "length": 138612,
+      "type": "image/webp"
+    },
+    "assets/gvu_trail_ghost.webp": {
+      "offset": 2062747,
+      "length": 56844,
+      "type": "image/webp"
+    },
+    "assets/gvu_trail_wave.webp": {
+      "offset": 2119591,
+      "length": 59588,
+      "type": "image/webp"
+    },
+    "assets/gw_arc.webp": {
+      "offset": 2179179,
+      "length": 9502,
+      "type": "image/webp"
+    },
+    "assets/gw_arrow.webp": {
+      "offset": 2188681,
+      "length": 1654,
+      "type": "image/webp"
+    },
+    "assets/gw_boom.webp": {
+      "offset": 2190335,
+      "length": 48954,
+      "type": "image/webp"
+    },
+    "assets/gw_crack.webp": {
+      "offset": 2239289,
+      "length": 16376,
+      "type": "image/webp"
+    },
+    "assets/gw_crater.webp": {
+      "offset": 2255665,
+      "length": 3366,
+      "type": "image/webp"
+    },
+    "assets/gw_crit.webp": {
+      "offset": 2259031,
+      "length": 16592,
+      "type": "image/webp"
+    },
+    "assets/gw_crystal.webp": {
+      "offset": 2275623,
+      "length": 19118,
+      "type": "image/webp"
+    },
+    "assets/gw_dash.webp": {
+      "offset": 2294741,
+      "length": 12546,
+      "type": "image/webp"
+    },
+    "assets/gw_dot.webp": {
+      "offset": 2307287,
+      "length": 3770,
+      "type": "image/webp"
+    },
+    "assets/gw_electro.webp": {
+      "offset": 2311057,
+      "length": 10382,
+      "type": "image/webp"
+    },
+    "assets/gw_fire.webp": {
+      "offset": 2321439,
+      "length": 36154,
+      "type": "image/webp"
+    },
+    "assets/gw_flare.webp": {
+      "offset": 2357593,
+      "length": 4466,
+      "type": "image/webp"
+    },
+    "assets/gw_flash.webp": {
+      "offset": 2362059,
+      "length": 2210,
+      "type": "image/webp"
+    },
+    "assets/gw_glow.webp": {
+      "offset": 2364269,
+      "length": 10546,
+      "type": "image/webp"
+    },
+    "assets/gw_magic.webp": {
+      "offset": 2374815,
+      "length": 108390,
+      "type": "image/webp"
+    },
+    "assets/gw_proj.webp": {
+      "offset": 2483205,
+      "length": 16998,
+      "type": "image/webp"
+    },
+    "assets/gw_rune.webp": {
+      "offset": 2500203,
+      "length": 20014,
+      "type": "image/webp"
+    },
+    "assets/gw_shock.webp": {
+      "offset": 2520217,
+      "length": 20706,
+      "type": "image/webp"
+    },
+    "assets/gw_slash_a.webp": {
+      "offset": 2540923,
+      "length": 14488,
+      "type": "image/webp"
+    },
+    "assets/gw_slash_b.webp": {
+      "offset": 2555411,
+      "length": 18392,
+      "type": "image/webp"
+    },
+    "assets/gw_slash_c.webp": {
+      "offset": 2573803,
+      "length": 7538,
+      "type": "image/webp"
+    },
+    "assets/gw_spark.webp": {
+      "offset": 2581341,
+      "length": 9868,
+      "type": "image/webp"
+    },
+    "assets/gw_tech.webp": {
+      "offset": 2591209,
+      "length": 106478,
+      "type": "image/webp"
+    },
+    "assets/gw_trail.webp": {
+      "offset": 2697687,
+      "length": 1554,
+      "type": "image/webp"
+    },
+    "assets/hero_atk0.webp": {
+      "offset": 2699241,
+      "length": 552,
+      "type": "image/webp"
+    },
+    "assets/hero_atk1.webp": {
+      "offset": 2699793,
+      "length": 568,
+      "type": "image/webp"
+    },
+    "assets/hero_atk2.webp": {
+      "offset": 2700361,
+      "length": 582,
+      "type": "image/webp"
+    },
+    "assets/hero_atk3.webp": {
+      "offset": 2700943,
+      "length": 598,
+      "type": "image/webp"
+    },
+    "assets/hero_atkdown0.webp": {
+      "offset": 2701541,
+      "length": 728,
+      "type": "image/webp"
+    },
+    "assets/hero_atkdown1.webp": {
+      "offset": 2702269,
+      "length": 720,
+      "type": "image/webp"
+    },
+    "assets/hero_atkdown2.webp": {
+      "offset": 2702989,
+      "length": 724,
+      "type": "image/webp"
+    },
+    "assets/hero_atkdown3.webp": {
+      "offset": 2703713,
+      "length": 710,
+      "type": "image/webp"
+    },
+    "assets/hero_atkup0.webp": {
+      "offset": 2704423,
+      "length": 704,
+      "type": "image/webp"
+    },
+    "assets/hero_atkup1.webp": {
+      "offset": 2705127,
+      "length": 698,
+      "type": "image/webp"
+    },
+    "assets/hero_atkup2.webp": {
+      "offset": 2705825,
+      "length": 666,
+      "type": "image/webp"
+    },
+    "assets/hero_atkup3.webp": {
+      "offset": 2706491,
+      "length": 656,
+      "type": "image/webp"
+    },
+    "assets/hero_idle0.webp": {
+      "offset": 2707147,
+      "length": 728,
+      "type": "image/webp"
+    },
+    "assets/hero_idle1.webp": {
+      "offset": 2707875,
+      "length": 736,
+      "type": "image/webp"
+    },
+    "assets/hero_idle2.webp": {
+      "offset": 2708611,
+      "length": 728,
+      "type": "image/webp"
+    },
+    "assets/hero_idle3.webp": {
+      "offset": 2709339,
+      "length": 738,
+      "type": "image/webp"
+    },
+    "assets/hero_walk0.webp": {
+      "offset": 2710077,
+      "length": 728,
+      "type": "image/webp"
+    },
+    "assets/hero_walk1.webp": {
+      "offset": 2710805,
+      "length": 762,
+      "type": "image/webp"
+    },
+    "assets/hero_walk2.webp": {
+      "offset": 2711567,
+      "length": 732,
+      "type": "image/webp"
+    },
+    "assets/hero_walk3.webp": {
+      "offset": 2712299,
+      "length": 682,
+      "type": "image/webp"
+    },
+    "assets/hero_walkside0.webp": {
+      "offset": 2712981,
+      "length": 552,
+      "type": "image/webp"
+    },
+    "assets/hero_walkside1.webp": {
+      "offset": 2713533,
+      "length": 554,
+      "type": "image/webp"
+    },
+    "assets/hero_walkside2.webp": {
+      "offset": 2714087,
+      "length": 574,
+      "type": "image/webp"
+    },
+    "assets/hero_walkside3.webp": {
+      "offset": 2714661,
+      "length": 554,
+      "type": "image/webp"
+    },
+    "assets/hero_walkup0.webp": {
+      "offset": 2715215,
+      "length": 704,
+      "type": "image/webp"
+    },
+    "assets/hero_walkup1.webp": {
+      "offset": 2715919,
+      "length": 700,
+      "type": "image/webp"
+    },
+    "assets/hero_walkup2.webp": {
+      "offset": 2716619,
+      "length": 676,
+      "type": "image/webp"
+    },
+    "assets/hero_walkup3.webp": {
+      "offset": 2717295,
+      "length": 626,
+      "type": "image/webp"
+    },
+    "assets/house_a.png": {
+      "offset": 2717921,
+      "length": 2376,
+      "type": "image/png"
+    },
+    "assets/house_b.png": {
+      "offset": 2720297,
+      "length": 2023,
+      "type": "image/png"
+    },
+    "assets/hv2_arrow.webp": {
+      "offset": 2722320,
+      "length": 1938,
+      "type": "image/webp"
+    },
+    "assets/hv2_circle.webp": {
+      "offset": 2724258,
+      "length": 1572,
+      "type": "image/webp"
+    },
+    "assets/hv2_circle2.webp": {
+      "offset": 2725830,
+      "length": 944,
+      "type": "image/webp"
+    },
+    "assets/hv2_crack.webp": {
+      "offset": 2726774,
+      "length": 8566,
+      "type": "image/webp"
+    },
+    "assets/hv2_crater.webp": {
+      "offset": 2735340,
+      "length": 4226,
+      "type": "image/webp"
+    },
+    "assets/hv2_crystal.webp": {
+      "offset": 2739566,
+      "length": 11340,
+      "type": "image/webp"
+    },
+    "assets/hv2_electro.webp": {
+      "offset": 2750906,
+      "length": 7376,
+      "type": "image/webp"
+    },
+    "assets/hv2_flare.webp": {
+      "offset": 2758282,
+      "length": 1872,
+      "type": "image/webp"
+    },
+    "assets/hv2_flash0.webp": {
+      "offset": 2760154,
+      "length": 2590,
+      "type": "image/webp"
+    },
+    "assets/hv2_flash1.webp": {
+      "offset": 2762744,
+      "length": 7264,
+      "type": "image/webp"
+    },
+    "assets/hv2_flash2.webp": {
+      "offset": 2770008,
+      "length": 11780,
+      "type": "image/webp"
+    },
+    "assets/hv2_flash3.webp": {
+      "offset": 2781788,
+      "length": 24934,
+      "type": "image/webp"
+    },
+    "assets/hv2_glow.webp": {
+      "offset": 2806722,
+      "length": 6196,
+      "type": "image/webp"
+    },
+    "assets/hv2_gradient.webp": {
+      "offset": 2812918,
+      "length": 2894,
+      "type": "image/webp"
+    },
+    "assets/hv2_heart.webp": {
+      "offset": 2815812,
+      "length": 1616,
+      "type": "image/webp"
+    },
+    "assets/hv2_magiccircle.webp": {
+      "offset": 2817428,
+      "length": 23352,
+      "type": "image/webp"
+    },
+    "assets/hv2_magiccircle2.webp": {
+      "offset": 2840780,
+      "length": 116110,
+      "type": "image/webp"
+    },
+    "assets/hv2_mask.webp": {
+      "offset": 2956890,
+      "length": 3862,
+      "type": "image/webp"
+    },
+    "assets/hv2_point.webp": {
+      "offset": 2960752,
+      "length": 186,
+      "type": "image/webp"
+    },
+    "assets/hv2_projectile.webp": {
+      "offset": 2960938,
+      "length": 9728,
+      "type": "image/webp"
+    },
+    "assets/hv2_smoke.webp": {
+      "offset": 2970666,
+      "length": 9518,
+      "type": "image/webp"
+    },
+    "assets/hv2_smoke26.webp": {
+      "offset": 2980184,
+      "length": 19912,
+      "type": "image/webp"
+    },
+    "assets/hv2_snow.webp": {
+      "offset": 3000096,
+      "length": 5060,
+      "type": "image/webp"
+    },
+    "assets/hv2_splat.webp": {
+      "offset": 3005156,
+      "length": 2972,
+      "type": "image/webp"
+    },
+    "assets/hv2_star.webp": {
+      "offset": 3008128,
+      "length": 1850,
+      "type": "image/webp"
+    },
+    "assets/hv2_stone.webp": {
+      "offset": 3009978,
+      "length": 3824,
+      "type": "image/webp"
+    },
+    "assets/hv2_techcircle.webp": {
+      "offset": 3013802,
+      "length": 6778,
+      "type": "image/webp"
+    },
+    "assets/hv2_techcircle2.webp": {
+      "offset": 3020580,
+      "length": 34766,
+      "type": "image/webp"
+    },
+    "assets/hv2_trail.webp": {
+      "offset": 3055346,
+      "length": 1218,
+      "type": "image/webp"
+    },
+    "assets/hv_flash.webp": {
+      "offset": 3056564,
+      "length": 11290,
+      "type": "image/webp"
+    },
+    "assets/hv_slash.webp": {
+      "offset": 3067854,
+      "length": 14828,
+      "type": "image/webp"
+    },
+    "assets/i_bd_abysslord.webp": {
+      "offset": 3082682,
+      "length": 710,
+      "type": "image/webp"
+    },
+    "assets/i_bd_behemoth.webp": {
+      "offset": 3083392,
+      "length": 714,
+      "type": "image/webp"
+    },
+    "assets/i_bd_blackwyrm.webp": {
+      "offset": 3084106,
+      "length": 640,
+      "type": "image/webp"
+    },
+    "assets/i_bd_doomwyrm.webp": {
+      "offset": 3084746,
+      "length": 704,
+      "type": "image/webp"
+    },
+    "assets/i_bd_flamegiant.webp": {
+      "offset": 3085450,
+      "length": 632,
+      "type": "image/webp"
+    },
+    "assets/i_bd_greedwolf.webp": {
+      "offset": 3086082,
+      "length": 604,
+      "type": "image/webp"
+    },
+    "assets/i_bd_guardian.webp": {
+      "offset": 3086686,
+      "length": 682,
+      "type": "image/webp"
+    },
+    "assets/i_bd_twinwolf.webp": {
+      "offset": 3087368,
+      "length": 712,
+      "type": "image/webp"
+    },
+    "assets/i_bd_warden.webp": {
+      "offset": 3088080,
+      "length": 690,
+      "type": "image/webp"
+    },
+    "assets/i_buff_crit.webp": {
+      "offset": 3088770,
+      "length": 600,
+      "type": "image/webp"
+    },
+    "assets/i_buff_luck.webp": {
+      "offset": 3089370,
+      "length": 486,
+      "type": "image/webp"
+    },
+    "assets/i_chest_gold.webp": {
+      "offset": 3089856,
+      "length": 204,
+      "type": "image/webp"
+    },
+    "assets/i_chest_iron.webp": {
+      "offset": 3090060,
+      "length": 206,
+      "type": "image/webp"
+    },
+    "assets/i_chest_legend.webp": {
+      "offset": 3090266,
+      "length": 206,
+      "type": "image/webp"
+    },
+    "assets/i_chest_silver.webp": {
+      "offset": 3090472,
+      "length": 206,
+      "type": "image/webp"
+    },
+    "assets/i_cos_flame.webp": {
+      "offset": 3090678,
+      "length": 160,
+      "type": "image/webp"
+    },
+    "assets/i_cos_frost.webp": {
+      "offset": 3090838,
+      "length": 160,
+      "type": "image/webp"
+    },
+    "assets/i_cos_holy.webp": {
+      "offset": 3090998,
+      "length": 162,
+      "type": "image/webp"
+    },
+    "assets/i_cos_rainbow.webp": {
+      "offset": 3091160,
+      "length": 338,
+      "type": "image/webp"
+    },
+    "assets/i_cos_shadow.webp": {
+      "offset": 3091498,
+      "length": 166,
+      "type": "image/webp"
+    },
+    "assets/i_cos_storm.webp": {
+      "offset": 3091664,
+      "length": 162,
+      "type": "image/webp"
+    },
+    "assets/i_exp_book.webp": {
+      "offset": 3091826,
+      "length": 492,
+      "type": "image/webp"
+    },
+    "assets/i_exp_book_l.webp": {
+      "offset": 3092318,
+      "length": 884,
+      "type": "image/webp"
+    },
+    "assets/i_exp_book_m.webp": {
+      "offset": 3093202,
+      "length": 784,
+      "type": "image/webp"
+    },
+    "assets/i_exp_book_s.webp": {
+      "offset": 3093986,
+      "length": 788,
+      "type": "image/webp"
+    },
+    "assets/i_gm_armor.webp": {
+      "offset": 3094774,
+      "length": 670,
+      "type": "image/webp"
+    },
+    "assets/i_gm_elixir.webp": {
+      "offset": 3095444,
+      "length": 242,
+      "type": "image/webp"
+    },
+    "assets/i_gm_ring.webp": {
+      "offset": 3095686,
+      "length": 606,
+      "type": "image/webp"
+    },
+    "assets/i_gm_sword.webp": {
+      "offset": 3096292,
+      "length": 524,
+      "type": "image/webp"
+    },
+    "assets/i_pack_daily.webp": {
+      "offset": 3096816,
+      "length": 154,
+      "type": "image/webp"
+    },
+    "assets/i_pack_growth.webp": {
+      "offset": 3096970,
+      "length": 158,
+      "type": "image/webp"
+    },
+    "assets/i_pack_premium.webp": {
+      "offset": 3097128,
+      "length": 156,
+      "type": "image/webp"
+    },
+    "assets/i_pack_starter.webp": {
+      "offset": 3097284,
+      "length": 158,
+      "type": "image/webp"
+    },
+    "assets/i_pack_ultimate.webp": {
+      "offset": 3097442,
+      "length": 156,
+      "type": "image/webp"
+    },
+    "assets/i_pack_weekly.webp": {
+      "offset": 3097598,
+      "length": 162,
+      "type": "image/webp"
+    },
+    "assets/i_pendant_blood.webp": {
+      "offset": 3097760,
+      "length": 660,
+      "type": "image/webp"
+    },
+    "assets/i_pendant_moon.webp": {
+      "offset": 3098420,
+      "length": 722,
+      "type": "image/webp"
+    },
+    "assets/i_pendant_sage.webp": {
+      "offset": 3099142,
+      "length": 720,
+      "type": "image/webp"
+    },
+    "assets/i_pendant_star.webp": {
+      "offset": 3099862,
+      "length": 718,
+      "type": "image/webp"
+    },
+    "assets/i_pendant_ward.webp": {
+      "offset": 3100580,
+      "length": 668,
+      "type": "image/webp"
+    },
+    "assets/i_pet_ember.webp": {
+      "offset": 3101248,
+      "length": 198,
+      "type": "image/webp"
+    },
+    "assets/i_pet_frost.webp": {
+      "offset": 3101446,
+      "length": 200,
+      "type": "image/webp"
+    },
+    "assets/i_pet_golem.webp": {
+      "offset": 3101646,
+      "length": 192,
+      "type": "image/webp"
+    },
+    "assets/i_pet_reaper.webp": {
+      "offset": 3101838,
+      "length": 162,
+      "type": "image/webp"
+    },
+    "assets/i_pet_unicorn.webp": {
+      "offset": 3102000,
+      "length": 192,
+      "type": "image/webp"
+    },
+    "assets/i_pet_wisp.webp": {
+      "offset": 3102192,
+      "length": 192,
+      "type": "image/webp"
+    },
+    "assets/i_potion_hp10.webp": {
+      "offset": 3102384,
+      "length": 234,
+      "type": "image/webp"
+    },
+    "assets/i_potion_hp3.webp": {
+      "offset": 3102618,
+      "length": 686,
+      "type": "image/webp"
+    },
+    "assets/i_potion_hp4.webp": {
+      "offset": 3103304,
+      "length": 698,
+      "type": "image/webp"
+    },
+    "assets/i_potion_hp5.webp": {
+      "offset": 3104002,
+      "length": 708,
+      "type": "image/webp"
+    },
+    "assets/i_potion_hp6.webp": {
+      "offset": 3104710,
+      "length": 702,
+      "type": "image/webp"
+    },
+    "assets/i_potion_hp7.webp": {
+      "offset": 3105412,
+      "length": 242,
+      "type": "image/webp"
+    },
+    "assets/i_potion_hp8.webp": {
+      "offset": 3105654,
+      "length": 236,
+      "type": "image/webp"
+    },
+    "assets/i_potion_hp9.webp": {
+      "offset": 3105890,
+      "length": 244,
+      "type": "image/webp"
+    },
+    "assets/i_potion_mp10.webp": {
+      "offset": 3106134,
+      "length": 238,
+      "type": "image/webp"
+    },
+    "assets/i_potion_mp3.webp": {
+      "offset": 3106372,
+      "length": 610,
+      "type": "image/webp"
+    },
+    "assets/i_potion_mp4.webp": {
+      "offset": 3106982,
+      "length": 616,
+      "type": "image/webp"
+    },
+    "assets/i_potion_mp5.webp": {
+      "offset": 3107598,
+      "length": 624,
+      "type": "image/webp"
+    },
+    "assets/i_potion_mp6.webp": {
+      "offset": 3108222,
+      "length": 626,
+      "type": "image/webp"
+    },
+    "assets/i_potion_mp7.webp": {
+      "offset": 3108848,
+      "length": 242,
+      "type": "image/webp"
+    },
+    "assets/i_potion_mp8.webp": {
+      "offset": 3109090,
+      "length": 242,
+      "type": "image/webp"
+    },
+    "assets/i_potion_mp9.webp": {
+      "offset": 3109332,
+      "length": 242,
+      "type": "image/webp"
+    },
+    "assets/i_ring_ancient.webp": {
+      "offset": 3109574,
+      "length": 136,
+      "type": "image/webp"
+    },
+    "assets/i_ring_dragon.webp": {
+      "offset": 3109710,
+      "length": 140,
+      "type": "image/webp"
+    },
+    "assets/i_ring_fortune.webp": {
+      "offset": 3109850,
+      "length": 610,
+      "type": "image/webp"
+    },
+    "assets/i_ring_might.webp": {
+      "offset": 3110460,
+      "length": 636,
+      "type": "image/webp"
+    },
+    "assets/i_ring_phantom.webp": {
+      "offset": 3111096,
+      "length": 616,
+      "type": "image/webp"
+    },
+    "assets/i_ring_swift.webp": {
+      "offset": 3111712,
+      "length": 606,
+      "type": "image/webp"
+    },
+    "assets/i_ring_titan.webp": {
+      "offset": 3112318,
+      "length": 686,
+      "type": "image/webp"
+    },
+    "assets/i_sfa_abyss.webp": {
+      "offset": 3113004,
+      "length": 670,
+      "type": "image/webp"
+    },
+    "assets/i_sfa_cave.webp": {
+      "offset": 3113674,
+      "length": 666,
+      "type": "image/webp"
+    },
+    "assets/i_sfa_duskrealm.webp": {
+      "offset": 3114340,
+      "length": 666,
+      "type": "image/webp"
+    },
+    "assets/i_sfa_emberland.webp": {
+      "offset": 3115006,
+      "length": 772,
+      "type": "image/webp"
+    },
+    "assets/i_sfa_fairyglade.webp": {
+      "offset": 3115778,
+      "length": 670,
+      "type": "image/webp"
+    },
+    "assets/i_sfa_forest.webp": {
+      "offset": 3116448,
+      "length": 698,
+      "type": "image/webp"
+    },
+    "assets/i_sfa_forgehall.webp": {
+      "offset": 3117146,
+      "length": 690,
+      "type": "image/webp"
+    },
+    "assets/i_sfa_frostland.webp": {
+      "offset": 3117836,
+      "length": 784,
+      "type": "image/webp"
+    },
+    "assets/i_sfa_kingdom.webp": {
+      "offset": 3118620,
+      "length": 680,
+      "type": "image/webp"
+    },
+    "assets/i_sfr_abyss.webp": {
+      "offset": 3119300,
+      "length": 610,
+      "type": "image/webp"
+    },
+    "assets/i_sfr_cave.webp": {
+      "offset": 3119910,
+      "length": 616,
+      "type": "image/webp"
+    },
+    "assets/i_sfr_duskrealm.webp": {
+      "offset": 3120526,
+      "length": 634,
+      "type": "image/webp"
+    },
+    "assets/i_sfr_emberland.webp": {
+      "offset": 3121160,
+      "length": 628,
+      "type": "image/webp"
+    },
+    "assets/i_sfr_fairyglade.webp": {
+      "offset": 3121788,
+      "length": 620,
+      "type": "image/webp"
+    },
+    "assets/i_sfr_forest.webp": {
+      "offset": 3122408,
+      "length": 718,
+      "type": "image/webp"
+    },
+    "assets/i_sfr_forgehall.webp": {
+      "offset": 3123126,
+      "length": 692,
+      "type": "image/webp"
+    },
+    "assets/i_sfr_frostland.webp": {
+      "offset": 3123818,
+      "length": 690,
+      "type": "image/webp"
+    },
+    "assets/i_sfr_kingdom.webp": {
+      "offset": 3124508,
+      "length": 636,
+      "type": "image/webp"
+    },
+    "assets/i_sfw_abyss.webp": {
+      "offset": 3125144,
+      "length": 524,
+      "type": "image/webp"
+    },
+    "assets/i_sfw_emberland.webp": {
+      "offset": 3125668,
+      "length": 424,
+      "type": "image/webp"
+    },
+    "assets/i_sfw_forest.webp": {
+      "offset": 3126092,
+      "length": 404,
+      "type": "image/webp"
+    },
+    "assets/i_sfw_forgehall.webp": {
+      "offset": 3126496,
+      "length": 532,
+      "type": "image/webp"
+    },
+    "assets/i_sfw_kingdom.webp": {
+      "offset": 3127028,
+      "length": 606,
+      "type": "image/webp"
+    },
+    "assets/i_tier_cube.webp": {
+      "offset": 3127634,
+      "length": 210,
+      "type": "image/webp"
+    },
+    "assets/impact_star.webp": {
+      "offset": 3127844,
+      "length": 196,
+      "type": "image/webp"
+    },
+    "assets/item_armor_1.webp": {
+      "offset": 3128040,
+      "length": 664,
+      "type": "image/webp"
+    },
+    "assets/item_armor_2.webp": {
+      "offset": 3128704,
+      "length": 648,
+      "type": "image/webp"
+    },
+    "assets/item_armor_3.webp": {
+      "offset": 3129352,
+      "length": 636,
+      "type": "image/webp"
+    },
+    "assets/item_armor_4.webp": {
+      "offset": 3129988,
+      "length": 708,
+      "type": "image/webp"
+    },
+    "assets/item_armor_5.webp": {
+      "offset": 3130696,
+      "length": 628,
+      "type": "image/webp"
+    },
+    "assets/item_armor_6.webp": {
+      "offset": 3131324,
+      "length": 630,
+      "type": "image/webp"
+    },
+    "assets/item_buff_atk.webp": {
+      "offset": 3131954,
+      "length": 560,
+      "type": "image/webp"
+    },
+    "assets/item_buff_def.webp": {
+      "offset": 3132514,
+      "length": 748,
+      "type": "image/webp"
+    },
+    "assets/item_buff_exp.webp": {
+      "offset": 3133262,
+      "length": 462,
+      "type": "image/webp"
+    },
+    "assets/item_buff_spd.webp": {
+      "offset": 3133724,
+      "length": 720,
+      "type": "image/webp"
+    },
+    "assets/item_coin.webp": {
+      "offset": 3134444,
+      "length": 104,
+      "type": "image/webp"
+    },
+    "assets/item_eert_cube.webp": {
+      "offset": 3134548,
+      "length": 200,
+      "type": "image/webp"
+    },
+    "assets/item_emerald.webp": {
+      "offset": 3134748,
+      "length": 456,
+      "type": "image/webp"
+    },
+    "assets/item_mat_heart.webp": {
+      "offset": 3135204,
+      "length": 112,
+      "type": "image/webp"
+    },
+    "assets/item_mat_mana.webp": {
+      "offset": 3135316,
+      "length": 136,
+      "type": "image/webp"
+    },
+    "assets/item_mat_mithril.webp": {
+      "offset": 3135452,
+      "length": 104,
+      "type": "image/webp"
+    },
+    "assets/item_mythic_armor.webp": {
+      "offset": 3135556,
+      "length": 628,
+      "type": "image/webp"
+    },
+    "assets/item_mythic_pendant.webp": {
+      "offset": 3136184,
+      "length": 572,
+      "type": "image/webp"
+    },
+    "assets/item_mythic_ring.webp": {
+      "offset": 3136756,
+      "length": 562,
+      "type": "image/webp"
+    },
+    "assets/item_mythic_weapon.webp": {
+      "offset": 3137318,
+      "length": 402,
+      "type": "image/webp"
+    },
+    "assets/item_pendant_arcane.webp": {
+      "offset": 3137720,
+      "length": 680,
+      "type": "image/webp"
+    },
+    "assets/item_pendant_vital.webp": {
+      "offset": 3138400,
+      "length": 620,
+      "type": "image/webp"
+    },
+    "assets/item_potion_elixir.webp": {
+      "offset": 3139020,
+      "length": 170,
+      "type": "image/webp"
+    },
+    "assets/item_potion_hp.webp": {
+      "offset": 3139190,
+      "length": 340,
+      "type": "image/webp"
+    },
+    "assets/item_potion_hp2.webp": {
+      "offset": 3139530,
+      "length": 638,
+      "type": "image/webp"
+    },
+    "assets/item_potion_mp.webp": {
+      "offset": 3140168,
+      "length": 356,
+      "type": "image/webp"
+    },
+    "assets/item_potion_mp2.webp": {
+      "offset": 3140524,
+      "length": 572,
+      "type": "image/webp"
+    },
+    "assets/item_ring_crit.webp": {
+      "offset": 3141096,
+      "length": 574,
+      "type": "image/webp"
+    },
+    "assets/item_ring_guard.webp": {
+      "offset": 3141670,
+      "length": 650,
+      "type": "image/webp"
+    },
+    "assets/item_ring_power.webp": {
+      "offset": 3142320,
+      "length": 578,
+      "type": "image/webp"
+    },
+    "assets/item_ring_vital.webp": {
+      "offset": 3142898,
+      "length": 674,
+      "type": "image/webp"
+    },
+    "assets/item_scroll_return.webp": {
+      "offset": 3143572,
+      "length": 560,
+      "type": "image/webp"
+    },
+    "assets/item_scroll_star.webp": {
+      "offset": 3144132,
+      "length": 432,
+      "type": "image/webp"
+    },
+    "assets/item_scroll_warp.webp": {
+      "offset": 3144564,
+      "length": 596,
+      "type": "image/webp"
+    },
+    "assets/item_weapon_1.webp": {
+      "offset": 3145160,
+      "length": 334,
+      "type": "image/webp"
+    },
+    "assets/item_weapon_2.webp": {
+      "offset": 3145494,
+      "length": 346,
+      "type": "image/webp"
+    },
+    "assets/item_weapon_3.webp": {
+      "offset": 3145840,
+      "length": 570,
+      "type": "image/webp"
+    },
+    "assets/item_weapon_4.webp": {
+      "offset": 3146410,
+      "length": 412,
+      "type": "image/webp"
+    },
+    "assets/item_weapon_5.webp": {
+      "offset": 3146822,
+      "length": 490,
+      "type": "image/webp"
+    },
+    "assets/item_weapon_6.webp": {
+      "offset": 3147312,
+      "length": 492,
+      "type": "image/webp"
+    },
+    "assets/item_wpn_bow.webp": {
+      "offset": 3147804,
+      "length": 178,
+      "type": "image/webp"
+    },
+    "assets/item_wpn_cutlass.webp": {
+      "offset": 3147982,
+      "length": 186,
+      "type": "image/webp"
+    },
+    "assets/item_wpn_dagger.webp": {
+      "offset": 3148168,
+      "length": 154,
+      "type": "image/webp"
+    },
+    "assets/item_wpn_greatsword.webp": {
+      "offset": 3148322,
+      "length": 142,
+      "type": "image/webp"
+    },
+    "assets/item_wpn_staff.webp": {
+      "offset": 3148464,
+      "length": 160,
+      "type": "image/webp"
+    },
+    "assets/kd_plant1.webp": {
+      "offset": 3148624,
+      "length": 2260,
+      "type": "image/webp"
+    },
+    "assets/kd_plant2.webp": {
+      "offset": 3150884,
+      "length": 2328,
+      "type": "image/webp"
+    },
+    "assets/kd_plant3.webp": {
+      "offset": 3153212,
+      "length": 1768,
+      "type": "image/webp"
+    },
+    "assets/mg_crit.webp": {
+      "offset": 3154980,
+      "length": 10504,
+      "type": "image/webp"
+    },
+    "assets/mg_explode.webp": {
+      "offset": 3165484,
+      "length": 55862,
+      "type": "image/webp"
+    },
+    "assets/mg_fire.webp": {
+      "offset": 3221346,
+      "length": 21108,
+      "type": "image/webp"
+    },
+    "assets/mg_light.webp": {
+      "offset": 3242454,
+      "length": 1994,
+      "type": "image/webp"
+    },
+    "assets/mg_light2.webp": {
+      "offset": 3244448,
+      "length": 2444,
+      "type": "image/webp"
+    },
+    "assets/mg_particles.webp": {
+      "offset": 3246892,
+      "length": 27130,
+      "type": "image/webp"
+    },
+    "assets/mg_particles2.webp": {
+      "offset": 3274022,
+      "length": 19126,
+      "type": "image/webp"
+    },
+    "assets/mg_point.webp": {
+      "offset": 3293148,
+      "length": 1544,
+      "type": "image/webp"
+    },
+    "assets/mg_shock0.webp": {
+      "offset": 3294692,
+      "length": 12000,
+      "type": "image/webp"
+    },
+    "assets/mg_slash0.webp": {
+      "offset": 3306692,
+      "length": 8706,
+      "type": "image/webp"
+    },
+    "assets/mg_slash1.webp": {
+      "offset": 3315398,
+      "length": 7842,
+      "type": "image/webp"
+    },
+    "assets/mg_slash2.webp": {
+      "offset": 3323240,
+      "length": 8482,
+      "type": "image/webp"
+    },
+    "assets/mg_slash3.webp": {
+      "offset": 3331722,
+      "length": 10886,
+      "type": "image/webp"
+    },
+    "assets/mg_slash4.webp": {
+      "offset": 3342608,
+      "length": 4682,
+      "type": "image/webp"
+    },
+    "assets/mg_slash5.webp": {
+      "offset": 3347290,
+      "length": 4336,
+      "type": "image/webp"
+    },
+    "assets/mg_smoke.webp": {
+      "offset": 3351626,
+      "length": 24692,
+      "type": "image/webp"
+    },
+    "assets/mg_spark.webp": {
+      "offset": 3376318,
+      "length": 10886,
+      "type": "image/webp"
+    },
+    "assets/npc_fairy_aria.webp": {
+      "offset": 3387204,
+      "length": 2856,
+      "type": "image/webp"
+    },
+    "assets/npc_gm.webp": {
+      "offset": 3390060,
+      "length": 176,
+      "type": "image/webp"
+    },
+    "assets/npc_guide_lily.webp": {
+      "offset": 3390236,
+      "length": 2710,
+      "type": "image/webp"
+    },
+    "assets/npc_mage_rin.webp": {
+      "offset": 3392946,
+      "length": 2722,
+      "type": "image/webp"
+    },
+    "assets/npc_merchant.webp": {
+      "offset": 3395668,
+      "length": 186,
+      "type": "image/webp"
+    },
+    "assets/npc_merchant_nyan.webp": {
+      "offset": 3395854,
+      "length": 2610,
+      "type": "image/webp"
+    },
+    "assets/npc_scholar_mio.webp": {
+      "offset": 3398464,
+      "length": 2358,
+      "type": "image/webp"
+    },
+    "assets/npc_witch_nyx.webp": {
+      "offset": 3400822,
+      "length": 2352,
+      "type": "image/webp"
+    },
+    "assets/npcbody/npcbody_butler.png": {
+      "offset": 3403174,
+      "length": 749,
+      "type": "image/png"
+    },
+    "assets/npcbody/npcbody_devil.png": {
+      "offset": 3403923,
+      "length": 862,
+      "type": "image/png"
+    },
+    "assets/npcbody/npcbody_elf.png": {
+      "offset": 3404785,
+      "length": 885,
+      "type": "image/png"
+    },
+    "assets/npcbody/npcbody_fisher.png": {
+      "offset": 3405670,
+      "length": 809,
+      "type": "image/png"
+    },
+    "assets/npcbody/npcbody_knight.png": {
+      "offset": 3406479,
+      "length": 872,
+      "type": "image/png"
+    },
+    "assets/npcbody/npcbody_mage.png": {
+      "offset": 3407351,
+      "length": 869,
+      "type": "image/png"
+    },
+    "assets/npcbody/npcbody_merchant.png": {
+      "offset": 3408220,
+      "length": 744,
+      "type": "image/png"
+    },
+    "assets/npcbody/npcbody_miner.png": {
+      "offset": 3408964,
+      "length": 781,
+      "type": "image/png"
+    },
+    "assets/npcbody/npcbody_mystic.png": {
+      "offset": 3409745,
+      "length": 804,
+      "type": "image/png"
+    },
+    "assets/npcbody/npcbody_priest.png": {
+      "offset": 3410549,
+      "length": 934,
+      "type": "image/png"
+    },
+    "assets/npcbody/npcbody_scout.png": {
+      "offset": 3411483,
+      "length": 787,
+      "type": "image/png"
+    },
+    "assets/npcbody/npcbody_smith.png": {
+      "offset": 3412270,
+      "length": 800,
+      "type": "image/png"
+    },
+    "assets/npcbody/npcbody_villager_f.png": {
+      "offset": 3413070,
+      "length": 790,
+      "type": "image/png"
+    },
+    "assets/npcbody/npcbody_villager_m.png": {
+      "offset": 3413860,
+      "length": 856,
+      "type": "image/png"
+    },
+    "assets/objects/_split/dungeon/obj_dungeon_fence__1.png": {
+      "offset": 3414716,
+      "length": 315,
+      "type": "image/png"
+    },
+    "assets/objects/_split/dungeon/obj_dungeon_fence__2.png": {
+      "offset": 3415031,
+      "length": 325,
+      "type": "image/png"
+    },
+    "assets/objects/_split/dungeon/obj_dungeon_fence__3.png": {
+      "offset": 3415356,
+      "length": 319,
+      "type": "image/png"
+    },
+    "assets/objects/_split/dungeon/obj_dungeon_grave__1.png": {
+      "offset": 3415675,
+      "length": 433,
+      "type": "image/png"
+    },
+    "assets/objects/_split/dungeon/obj_dungeon_grave__2.png": {
+      "offset": 3416108,
+      "length": 401,
+      "type": "image/png"
+    },
+    "assets/objects/_split/dungeon/obj_dungeon_jar__1.png": {
+      "offset": 3416509,
+      "length": 425,
+      "type": "image/png"
+    },
+    "assets/objects/_split/dungeon/obj_dungeon_jar__2.png": {
+      "offset": 3416934,
+      "length": 410,
+      "type": "image/png"
+    },
+    "assets/objects/_split/dungeon/obj_dungeon_pentagram__1.png": {
+      "offset": 3417344,
+      "length": 123,
+      "type": "image/png"
+    },
+    "assets/objects/_split/dungeon/obj_dungeon_table__1.png": {
+      "offset": 3417467,
+      "length": 437,
+      "type": "image/png"
+    },
+    "assets/objects/_split/dungeon/obj_dungeon_table__2.png": {
+      "offset": 3417904,
+      "length": 425,
+      "type": "image/png"
+    },
+    "assets/objects/_split/dungeon/obj_dungeon_tree_dead__2.png": {
+      "offset": 3418329,
+      "length": 369,
+      "type": "image/png"
+    },
+    "assets/objects/_split/forest/obj_forest_rock__1.png": {
+      "offset": 3418698,
+      "length": 1474,
+      "type": "image/png"
+    },
+    "assets/objects/_split/forest/obj_forest_sign__1.png": {
+      "offset": 3420172,
+      "length": 600,
+      "type": "image/png"
+    },
+    "assets/objects/_split/town/obj_town_stall_stripe__1.png": {
+      "offset": 3420772,
+      "length": 591,
+      "type": "image/png"
+    },
+    "assets/objects/_split/town/obj_town_stall_stripe__2.png": {
+      "offset": 3421363,
+      "length": 566,
+      "type": "image/png"
+    },
+    "assets/objects/dungeon/obj_dungeon_anvil.png": {
+      "offset": 3421929,
+      "length": 259,
+      "type": "image/png"
+    },
+    "assets/objects/dungeon/obj_dungeon_barrel.png": {
+      "offset": 3422188,
+      "length": 609,
+      "type": "image/png"
+    },
+    "assets/objects/dungeon/obj_dungeon_bookshelf.png": {
+      "offset": 3422797,
+      "length": 622,
+      "type": "image/png"
+    },
+    "assets/objects/dungeon/obj_dungeon_candle.png": {
+      "offset": 3423419,
+      "length": 224,
+      "type": "image/png"
+    },
+    "assets/objects/dungeon/obj_dungeon_carpet_v.png": {
+      "offset": 3423643,
+      "length": 800,
+      "type": "image/png"
+    },
+    "assets/objects/dungeon/obj_dungeon_chest.png": {
+      "offset": 3424443,
+      "length": 327,
+      "type": "image/png"
+    },
+    "assets/objects/dungeon/obj_dungeon_sign.png": {
+      "offset": 3424770,
+      "length": 375,
+      "type": "image/png"
+    },
+    "assets/objects/dungeon/obj_dungeon_stump.png": {
+      "offset": 3425145,
+      "length": 116,
+      "type": "image/png"
+    },
+    "assets/objects/dungeon/obj_dungeon_throne.png": {
+      "offset": 3425261,
+      "length": 1462,
+      "type": "image/png"
+    },
+    "assets/objects/dungeon/obj_dungeon_torch.png": {
+      "offset": 3426723,
+      "length": 289,
+      "type": "image/png"
+    },
+    "assets/objects/forest/obj_forest_bush.png": {
+      "offset": 3427012,
+      "length": 977,
+      "type": "image/png"
+    },
+    "assets/objects/forest/obj_forest_bush_tall.png": {
+      "offset": 3427989,
+      "length": 839,
+      "type": "image/png"
+    },
+    "assets/objects/forest/obj_forest_rock_monument.png": {
+      "offset": 3428828,
+      "length": 3657,
+      "type": "image/png"
+    },
+    "assets/objects/forest/obj_forest_tree_dried.png": {
+      "offset": 3432485,
+      "length": 2734,
+      "type": "image/png"
+    },
+    "assets/objects/forest/obj_forest_tree_orange.png": {
+      "offset": 3435219,
+      "length": 3079,
+      "type": "image/png"
+    },
+    "assets/objects/forest/obj_forest_tree_pink.png": {
+      "offset": 3438298,
+      "length": 3000,
+      "type": "image/png"
+    },
+    "assets/objects/forest/obj_forest_trunk.png": {
+      "offset": 3441298,
+      "length": 956,
+      "type": "image/png"
+    },
+    "assets/objects/town/obj_town_barrel.png": {
+      "offset": 3442254,
+      "length": 192,
+      "type": "image/png"
+    },
+    "assets/objects/town/obj_town_bench.png": {
+      "offset": 3442446,
+      "length": 857,
+      "type": "image/png"
+    },
+    "assets/objects/town/obj_town_planter.png": {
+      "offset": 3443303,
+      "length": 757,
+      "type": "image/png"
+    },
+    "assets/objects/town/obj_town_vending.png": {
+      "offset": 3444060,
+      "length": 225,
+      "type": "image/png"
+    },
+    "assets/objects/town/obj_town_waterfall.png": {
+      "offset": 3444285,
+      "length": 202,
+      "type": "image/png"
+    },
+    "assets/optimized-startup/aura/gvb_buff_air.webp": {
+      "offset": 3444487,
+      "length": 27970,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvb_glow_blue.webp": {
+      "offset": 3472457,
+      "length": 61660,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvb_glow_blurry.webp": {
+      "offset": 3534117,
+      "length": 27200,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvb_glow_white.webp": {
+      "offset": 3561317,
+      "length": 10296,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvb_lensflare.webp": {
+      "offset": 3571613,
+      "length": 12476,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvb_lightning_blue.webp": {
+      "offset": 3584089,
+      "length": 29968,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvb_ring_soft.webp": {
+      "offset": 3614057,
+      "length": 19548,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvb_shield_hex.webp": {
+      "offset": 3633605,
+      "length": 27108,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvb_star_green.webp": {
+      "offset": 3660713,
+      "length": 7276,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvb_trail_stylized.webp": {
+      "offset": 3667989,
+      "length": 56408,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvu_circle_aggr.webp": {
+      "offset": 3724397,
+      "length": 314282,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvu_energynoise.webp": {
+      "offset": 4038679,
+      "length": 154772,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvu_energyweb.webp": {
+      "offset": 4193451,
+      "length": 224456,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvu_flare_xo.webp": {
+      "offset": 4417907,
+      "length": 12856,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvu_glow.webp": {
+      "offset": 4430763,
+      "length": 26912,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvu_mask_ommi.webp": {
+      "offset": 4457675,
+      "length": 80894,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvu_mask_razor.webp": {
+      "offset": 4538569,
+      "length": 63134,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvu_shockwave_fiery.webp": {
+      "offset": 4601703,
+      "length": 199810,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvu_trail_ghost.webp": {
+      "offset": 4801513,
+      "length": 83624,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/aura/gvu_trail_wave.webp": {
+      "offset": 4885137,
+      "length": 127216,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/chapter-terrain/terrain.webp": {
+      "offset": 5012353,
+      "length": 25338,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/cutscene-cast/haru.webp": {
+      "offset": 5037691,
+      "length": 51558,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/cutscene-cast/lilac.webp": {
+      "offset": 5089249,
+      "length": 61624,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/cutscene-cast/recorder.webp": {
+      "offset": 5150873,
+      "length": 61192,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/cutscene-cast/register.webp": {
+      "offset": 5212065,
+      "length": 52710,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fa/p1.webp": {
+      "offset": 5264775,
+      "length": 22820,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/blink-in.webp": {
+      "offset": 5287595,
+      "length": 99056,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/blunt-hit.webp": {
+      "offset": 5386651,
+      "length": 81510,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/bullet-impact.webp": {
+      "offset": 5468161,
+      "length": 29622,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/claw-swipe.webp": {
+      "offset": 5497783,
+      "length": 33326,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/coin-spin.webp": {
+      "offset": 5531109,
+      "length": 46448,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/collect-burst.webp": {
+      "offset": 5577557,
+      "length": 74028,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/crit-hit.webp": {
+      "offset": 5651585,
+      "length": 107440,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/crystal-shard.webp": {
+      "offset": 5759025,
+      "length": 160108,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/dissolve-burn.webp": {
+      "offset": 5919133,
+      "length": 316150,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/gem-spin.webp": {
+      "offset": 6235283,
+      "length": 91828,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/heal.webp": {
+      "offset": 6327111,
+      "length": 135582,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/hit-spark.webp": {
+      "offset": 6462693,
+      "length": 15030,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/impact-frame.webp": {
+      "offset": 6477723,
+      "length": 21094,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/level-up.webp": {
+      "offset": 6498817,
+      "length": 567512,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/poof.webp": {
+      "offset": 7066329,
+      "length": 80840,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/shatter-death.webp": {
+      "offset": 7147169,
+      "length": 298780,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/shield-block.webp": {
+      "offset": 7445949,
+      "length": 94624,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/spin-slash.webp": {
+      "offset": 7540573,
+      "length": 99076,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/fx/sword-slash.webp": {
+      "offset": 7639649,
+      "length": 45958,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/ground/ground_ash.webp": {
+      "offset": 7685607,
+      "length": 13878,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/ground/ground_cavern.webp": {
+      "offset": 7699485,
+      "length": 13474,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/ground/ground_forest.webp": {
+      "offset": 7712959,
+      "length": 17608,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/ground/ground_lava.webp": {
+      "offset": 7730567,
+      "length": 14738,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/ground/ground_meadow.webp": {
+      "offset": 7745305,
+      "length": 18692,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/ground/ground_sand.webp": {
+      "offset": 7763997,
+      "length": 18294,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/ground/ground_slate.webp": {
+      "offset": 7782291,
+      "length": 13028,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/ground/ground_snow.webp": {
+      "offset": 7795319,
+      "length": 16778,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/ground/ground_violet.webp": {
+      "offset": 7812097,
+      "length": 16352,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/map/map_chest.webp": {
+      "offset": 7828449,
+      "length": 18752,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/tile_abyss.webp": {
+      "offset": 7847201,
+      "length": 12788,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/tile_dark.webp": {
+      "offset": 7859989,
+      "length": 14866,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/tile_duskrealm.webp": {
+      "offset": 7874855,
+      "length": 14856,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/tile_grass.webp": {
+      "offset": 7889711,
+      "length": 17008,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/tile_path.webp": {
+      "offset": 7906719,
+      "length": 8338,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/tile_snow.webp": {
+      "offset": 7915057,
+      "length": 11192,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/tiles/kenney_tinydungeon.webp": {
+      "offset": 7926249,
+      "length": 4564,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/tiles/kenney_tinytown.webp": {
+      "offset": 7930813,
+      "length": 4242,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vc239/vfx_tidal_wave.webp": {
+      "offset": 7935055,
+      "length": 26992,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vc239/vfx_void_collapse.webp": {
+      "offset": 7962047,
+      "length": 3236,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_arc.webp": {
+      "offset": 7965283,
+      "length": 8218,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_bolt2.webp": {
+      "offset": 7973501,
+      "length": 9184,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_crystal.webp": {
+      "offset": 7982685,
+      "length": 10756,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_expc.webp": {
+      "offset": 7993441,
+      "length": 43020,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_explosion.webp": {
+      "offset": 8036461,
+      "length": 16202,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_fire.webp": {
+      "offset": 8052663,
+      "length": 8948,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_flare.webp": {
+      "offset": 8061611,
+      "length": 4688,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_flash.webp": {
+      "offset": 8066299,
+      "length": 4538,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_furnace.webp": {
+      "offset": 8070837,
+      "length": 5872,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_fw_heart.webp": {
+      "offset": 8076709,
+      "length": 6516,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_fw_moon.webp": {
+      "offset": 8083225,
+      "length": 5596,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_fw_smile.webp": {
+      "offset": 8088821,
+      "length": 9154,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_fw_star_b.webp": {
+      "offset": 8097975,
+      "length": 7518,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_fw_star_y.webp": {
+      "offset": 8105493,
+      "length": 6394,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_glowb.webp": {
+      "offset": 8111887,
+      "length": 16216,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_hex.webp": {
+      "offset": 8128103,
+      "length": 12098,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_is2.webp": {
+      "offset": 8140201,
+      "length": 2674,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_ist.webp": {
+      "offset": 8142875,
+      "length": 4018,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_ltn3.webp": {
+      "offset": 8146893,
+      "length": 2510,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_magic.webp": {
+      "offset": 8149403,
+      "length": 207904,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_magic2.webp": {
+      "offset": 8357307,
+      "length": 98066,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_ring.webp": {
+      "offset": 8455373,
+      "length": 5980,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_ring3.webp": {
+      "offset": 8461353,
+      "length": 2598,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_shock.webp": {
+      "offset": 8463951,
+      "length": 10706,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_shockf.webp": {
+      "offset": 8474657,
+      "length": 200412,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_slash_m.webp": {
+      "offset": 8675069,
+      "length": 7074,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_snow.webp": {
+      "offset": 8682143,
+      "length": 2992,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_spark.webp": {
+      "offset": 8685135,
+      "length": 4940,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_starry.webp": {
+      "offset": 8690075,
+      "length": 533564,
+      "type": "image/webp"
+    },
+    "assets/optimized-startup/vfx2/vfx_wisp.webp": {
+      "offset": 9223639,
+      "length": 159594,
+      "type": "image/webp"
+    },
+    "assets/orb.webp": {
+      "offset": 9383233,
+      "length": 242,
+      "type": "image/webp"
+    },
+    "assets/outfit_navy_idle0.webp": {
+      "offset": 9383475,
+      "length": 308,
+      "type": "image/webp"
+    },
+    "assets/outfit_royal_idle0.webp": {
+      "offset": 9383783,
+      "length": 306,
+      "type": "image/webp"
+    },
+    "assets/outfit_shadow_idle0.webp": {
+      "offset": 9384089,
+      "length": 310,
+      "type": "image/webp"
+    },
+    "assets/outfit_spring_idle0.webp": {
+      "offset": 9384399,
+      "length": 302,
+      "type": "image/webp"
+    },
+    "assets/pet_atlas.webp": {
+      "offset": 9384701,
+      "length": 144,
+      "type": "image/webp"
+    },
+    "assets/pet_pixie.webp": {
+      "offset": 9384845,
+      "length": 176,
+      "type": "image/webp"
+    },
+    "assets/pet_slime.webp": {
+      "offset": 9385021,
+      "length": 184,
+      "type": "image/webp"
+    },
+    "assets/petal0.webp": {
+      "offset": 9385205,
+      "length": 1536,
+      "type": "image/webp"
+    },
+    "assets/pfx_aura.webp": {
+      "offset": 9386741,
+      "length": 13078,
+      "type": "image/webp"
+    },
+    "assets/pfx_elec.webp": {
+      "offset": 9399819,
+      "length": 1854,
+      "type": "image/webp"
+    },
+    "assets/pfx_fw_b.webp": {
+      "offset": 9401673,
+      "length": 22034,
+      "type": "image/webp"
+    },
+    "assets/pfx_fw_y.webp": {
+      "offset": 9423707,
+      "length": 19044,
+      "type": "image/webp"
+    },
+    "assets/pfx_heart.webp": {
+      "offset": 9442751,
+      "length": 18436,
+      "type": "image/webp"
+    },
+    "assets/pfx_hit.webp": {
+      "offset": 9461187,
+      "length": 1228,
+      "type": "image/webp"
+    },
+    "assets/pfx_magic.webp": {
+      "offset": 9462415,
+      "length": 3122,
+      "type": "image/webp"
+    },
+    "assets/pfx_ring.webp": {
+      "offset": 9465537,
+      "length": 1736,
+      "type": "image/webp"
+    },
+    "assets/pfx_runic.webp": {
+      "offset": 9467273,
+      "length": 24926,
+      "type": "image/webp"
+    },
+    "assets/pfx_skull.webp": {
+      "offset": 9492199,
+      "length": 5130,
+      "type": "image/webp"
+    },
+    "assets/pfx_spark_y.webp": {
+      "offset": 9497329,
+      "length": 6152,
+      "type": "image/webp"
+    },
+    "assets/pfx_star.webp": {
+      "offset": 9503481,
+      "length": 1980,
+      "type": "image/webp"
+    },
+    "assets/pine.webp": {
+      "offset": 9505461,
+      "length": 306,
+      "type": "image/webp"
+    },
+    "assets/pine_dark.webp": {
+      "offset": 9505767,
+      "length": 288,
+      "type": "image/webp"
+    },
+    "assets/pine_snow.webp": {
+      "offset": 9506055,
+      "length": 372,
+      "type": "image/webp"
+    },
+    "assets/pk_circle_02.webp": {
+      "offset": 9506427,
+      "length": 36890,
+      "type": "image/webp"
+    },
+    "assets/pk_circle_04.webp": {
+      "offset": 9543317,
+      "length": 41850,
+      "type": "image/webp"
+    },
+    "assets/pk_dirt_01.webp": {
+      "offset": 9585167,
+      "length": 44356,
+      "type": "image/webp"
+    },
+    "assets/pk_dirt_02.webp": {
+      "offset": 9629523,
+      "length": 51740,
+      "type": "image/webp"
+    },
+    "assets/pk_fire_01.webp": {
+      "offset": 9681263,
+      "length": 87302,
+      "type": "image/webp"
+    },
+    "assets/pk_fire_02.webp": {
+      "offset": 9768565,
+      "length": 76546,
+      "type": "image/webp"
+    },
+    "assets/pk_flame_02.webp": {
+      "offset": 9845111,
+      "length": 48378,
+      "type": "image/webp"
+    },
+    "assets/pk_flame_04.webp": {
+      "offset": 9893489,
+      "length": 43216,
+      "type": "image/webp"
+    },
+    "assets/pk_light_01.webp": {
+      "offset": 9936705,
+      "length": 77214,
+      "type": "image/webp"
+    },
+    "assets/pk_light_02.webp": {
+      "offset": 10013919,
+      "length": 77880,
+      "type": "image/webp"
+    },
+    "assets/pk_light_03.webp": {
+      "offset": 10091799,
+      "length": 83398,
+      "type": "image/webp"
+    },
+    "assets/pk_magic_01.webp": {
+      "offset": 10175197,
+      "length": 70442,
+      "type": "image/webp"
+    },
+    "assets/pk_magic_02.webp": {
+      "offset": 10245639,
+      "length": 75462,
+      "type": "image/webp"
+    },
+    "assets/pk_magic_03.webp": {
+      "offset": 10321101,
+      "length": 47916,
+      "type": "image/webp"
+    },
+    "assets/pk_magic_05.webp": {
+      "offset": 10369017,
+      "length": 60496,
+      "type": "image/webp"
+    },
+    "assets/pk_muzzle_02.webp": {
+      "offset": 10429513,
+      "length": 47086,
+      "type": "image/webp"
+    },
+    "assets/pk_muzzle_04.webp": {
+      "offset": 10476599,
+      "length": 52070,
+      "type": "image/webp"
+    },
+    "assets/pk_smoke_01.webp": {
+      "offset": 10528669,
+      "length": 84050,
+      "type": "image/webp"
+    },
+    "assets/pk_smoke_04.webp": {
+      "offset": 10612719,
+      "length": 84490,
+      "type": "image/webp"
+    },
+    "assets/pk_smoke_06.webp": {
+      "offset": 10697209,
+      "length": 43906,
+      "type": "image/webp"
+    },
+    "assets/pk_smoke_08.webp": {
+      "offset": 10741115,
+      "length": 83092,
+      "type": "image/webp"
+    },
+    "assets/pk_spark_02.webp": {
+      "offset": 10824207,
+      "length": 87402,
+      "type": "image/webp"
+    },
+    "assets/pk_spark_04.webp": {
+      "offset": 10911609,
+      "length": 72406,
+      "type": "image/webp"
+    },
+    "assets/pk_spark_06.webp": {
+      "offset": 10984015,
+      "length": 40048,
+      "type": "image/webp"
+    },
+    "assets/pk_star_01.webp": {
+      "offset": 11024063,
+      "length": 30212,
+      "type": "image/webp"
+    },
+    "assets/pk_star_02.webp": {
+      "offset": 11054275,
+      "length": 36856,
+      "type": "image/webp"
+    },
+    "assets/pk_star_03.webp": {
+      "offset": 11091131,
+      "length": 32732,
+      "type": "image/webp"
+    },
+    "assets/portal0.webp": {
+      "offset": 11123863,
+      "length": 5938,
+      "type": "image/webp"
+    },
+    "assets/portal1.webp": {
+      "offset": 11129801,
+      "length": 6090,
+      "type": "image/webp"
+    },
+    "assets/portal2.webp": {
+      "offset": 11135891,
+      "length": 6066,
+      "type": "image/webp"
+    },
+    "assets/portal3.webp": {
+      "offset": 11141957,
+      "length": 6110,
+      "type": "image/webp"
+    },
+    "assets/portal4.webp": {
+      "offset": 11148067,
+      "length": 5984,
+      "type": "image/webp"
+    },
+    "assets/portal5.webp": {
+      "offset": 11154051,
+      "length": 5868,
+      "type": "image/webp"
+    },
+    "assets/portal6.webp": {
+      "offset": 11159919,
+      "length": 5652,
+      "type": "image/webp"
+    },
+    "assets/portal7.webp": {
+      "offset": 11165571,
+      "length": 5688,
+      "type": "image/webp"
+    },
+    "assets/px_fire0.webp": {
+      "offset": 11171259,
+      "length": 590,
+      "type": "image/webp"
+    },
+    "assets/px_fire1.webp": {
+      "offset": 11171849,
+      "length": 642,
+      "type": "image/webp"
+    },
+    "assets/px_fire2.webp": {
+      "offset": 11172491,
+      "length": 688,
+      "type": "image/webp"
+    },
+    "assets/px_fire3.webp": {
+      "offset": 11173179,
+      "length": 700,
+      "type": "image/webp"
+    },
+    "assets/px_fire4.webp": {
+      "offset": 11173879,
+      "length": 692,
+      "type": "image/webp"
+    },
+    "assets/quest_mark.webp": {
+      "offset": 11174571,
+      "length": 126,
+      "type": "image/webp"
+    },
+    "assets/ring.webp": {
+      "offset": 11174697,
+      "length": 7846,
+      "type": "image/webp"
+    },
+    "assets/ring_bless.webp": {
+      "offset": 11182543,
+      "length": 120,
+      "type": "image/webp"
+    },
+    "assets/rock.webp": {
+      "offset": 11182663,
+      "length": 276,
+      "type": "image/webp"
+    },
+    "assets/rock_dark.webp": {
+      "offset": 11182939,
+      "length": 260,
+      "type": "image/webp"
+    },
+    "assets/rock_snow.webp": {
+      "offset": 11183199,
+      "length": 266,
+      "type": "image/webp"
+    },
+    "assets/rock_stone.webp": {
+      "offset": 11183465,
+      "length": 260,
+      "type": "image/webp"
+    },
+    "assets/rune_circle.webp": {
+      "offset": 11183725,
+      "length": 120174,
+      "type": "image/webp"
+    },
+    "assets/runegolem_idle0.webp": {
+      "offset": 11303899,
+      "length": 190,
+      "type": "image/webp"
+    },
+    "assets/runegolem_idle1.webp": {
+      "offset": 11304089,
+      "length": 184,
+      "type": "image/webp"
+    },
+    "assets/runegolem_run0.webp": {
+      "offset": 11304273,
+      "length": 190,
+      "type": "image/webp"
+    },
+    "assets/runegolem_run1.webp": {
+      "offset": 11304463,
+      "length": 176,
+      "type": "image/webp"
+    },
+    "assets/runegolem_run2.webp": {
+      "offset": 11304639,
+      "length": 190,
+      "type": "image/webp"
+    },
+    "assets/runegolem_run3.webp": {
+      "offset": 11304829,
+      "length": 184,
+      "type": "image/webp"
+    },
+    "assets/scorch.webp": {
+      "offset": 11305013,
+      "length": 1984,
+      "type": "image/webp"
+    },
+    "assets/shock_ring.webp": {
+      "offset": 11306997,
+      "length": 4706,
+      "type": "image/webp"
+    },
+    "assets/slash0.webp": {
+      "offset": 11311703,
+      "length": 1674,
+      "type": "image/webp"
+    },
+    "assets/slash1.webp": {
+      "offset": 11313377,
+      "length": 2476,
+      "type": "image/webp"
+    },
+    "assets/slash2.webp": {
+      "offset": 11315853,
+      "length": 1652,
+      "type": "image/webp"
+    },
+    "assets/slash3.webp": {
+      "offset": 11317505,
+      "length": 1300,
+      "type": "image/webp"
+    },
+    "assets/slash4.webp": {
+      "offset": 11318805,
+      "length": 1280,
+      "type": "image/webp"
+    },
+    "assets/slash5.webp": {
+      "offset": 11320085,
+      "length": 788,
+      "type": "image/webp"
+    },
+    "assets/slash_arc.webp": {
+      "offset": 11320873,
+      "length": 10900,
+      "type": "image/webp"
+    },
+    "assets/spark.webp": {
+      "offset": 11331773,
+      "length": 76,
+      "type": "image/webp"
+    },
+    "assets/sparkle0.webp": {
+      "offset": 11331849,
+      "length": 102,
+      "type": "image/webp"
+    },
+    "assets/sparkle1.webp": {
+      "offset": 11331951,
+      "length": 94,
+      "type": "image/webp"
+    },
+    "assets/spum_butler.webp": {
+      "offset": 11332045,
+      "length": 576,
+      "type": "image/webp"
+    },
+    "assets/spum_devil.webp": {
+      "offset": 11332621,
+      "length": 418,
+      "type": "image/webp"
+    },
+    "assets/spum_elf.webp": {
+      "offset": 11333039,
+      "length": 454,
+      "type": "image/webp"
+    },
+    "assets/spum_fisher.webp": {
+      "offset": 11333493,
+      "length": 326,
+      "type": "image/webp"
+    },
+    "assets/spum_forager.webp": {
+      "offset": 11333819,
+      "length": 378,
+      "type": "image/webp"
+    },
+    "assets/spum_knight.webp": {
+      "offset": 11334197,
+      "length": 546,
+      "type": "image/webp"
+    },
+    "assets/spum_mage.webp": {
+      "offset": 11334743,
+      "length": 356,
+      "type": "image/webp"
+    },
+    "assets/spum_miner.webp": {
+      "offset": 11335099,
+      "length": 420,
+      "type": "image/webp"
+    },
+    "assets/spum_mystic.webp": {
+      "offset": 11335519,
+      "length": 480,
+      "type": "image/webp"
+    },
+    "assets/spum_scout.webp": {
+      "offset": 11335999,
+      "length": 386,
+      "type": "image/webp"
+    },
+    "assets/spum_skel.webp": {
+      "offset": 11336385,
+      "length": 364,
+      "type": "image/webp"
+    },
+    "assets/spum_smith.webp": {
+      "offset": 11336749,
+      "length": 520,
+      "type": "image/webp"
+    },
+    "assets/spum_villager_f.webp": {
+      "offset": 11337269,
+      "length": 332,
+      "type": "image/webp"
+    },
+    "assets/spum_villager_m.webp": {
+      "offset": 11337601,
+      "length": 426,
+      "type": "image/webp"
+    },
+    "assets/sv_campfire.webp": {
+      "offset": 11338027,
+      "length": 320,
+      "type": "image/webp"
+    },
+    "assets/sv_door.webp": {
+      "offset": 11338347,
+      "length": 300,
+      "type": "image/webp"
+    },
+    "assets/swampbeast_idle0.webp": {
+      "offset": 11338647,
+      "length": 252,
+      "type": "image/webp"
+    },
+    "assets/swampbeast_idle1.webp": {
+      "offset": 11338899,
+      "length": 246,
+      "type": "image/webp"
+    },
+    "assets/swampbeast_run0.webp": {
+      "offset": 11339145,
+      "length": 252,
+      "type": "image/webp"
+    },
+    "assets/swampbeast_run1.webp": {
+      "offset": 11339397,
+      "length": 242,
+      "type": "image/webp"
+    },
+    "assets/swampbeast_run2.webp": {
+      "offset": 11339639,
+      "length": 252,
+      "type": "image/webp"
+    },
+    "assets/swampbeast_run3.webp": {
+      "offset": 11339891,
+      "length": 248,
+      "type": "image/webp"
+    },
+    "assets/tile_amber.webp": {
+      "offset": 11340139,
+      "length": 1514,
+      "type": "image/webp"
+    },
+    "assets/tile_ash.webp": {
+      "offset": 11341653,
+      "length": 3758,
+      "type": "image/webp"
+    },
+    "assets/tile_basalt.webp": {
+      "offset": 11345411,
+      "length": 1278,
+      "type": "image/webp"
+    },
+    "assets/tile_blood.webp": {
+      "offset": 11346689,
+      "length": 3148,
+      "type": "image/webp"
+    },
+    "assets/tile_bone.webp": {
+      "offset": 11349837,
+      "length": 4132,
+      "type": "image/webp"
+    },
+    "assets/tile_cave.png": {
+      "offset": 11353969,
+      "length": 3190,
+      "type": "image/png"
+    },
+    "assets/tile_cave_wet.webp": {
+      "offset": 11357159,
+      "length": 3350,
+      "type": "image/webp"
+    },
+    "assets/tile_deep.webp": {
+      "offset": 11360509,
+      "length": 1586,
+      "type": "image/webp"
+    },
+    "assets/tile_desert.webp": {
+      "offset": 11362095,
+      "length": 1040,
+      "type": "image/webp"
+    },
+    "assets/tile_dirt.webp": {
+      "offset": 11363135,
+      "length": 1578,
+      "type": "image/webp"
+    },
+    "assets/tile_dirt_pack.webp": {
+      "offset": 11364713,
+      "length": 3424,
+      "type": "image/webp"
+    },
+    "assets/tile_dirt_pack_v1.webp": {
+      "offset": 11368137,
+      "length": 3316,
+      "type": "image/webp"
+    },
+    "assets/tile_dirt_pack_v2.webp": {
+      "offset": 11371453,
+      "length": 3390,
+      "type": "image/webp"
+    },
+    "assets/tile_forest.webp": {
+      "offset": 11374843,
+      "length": 1882,
+      "type": "image/webp"
+    },
+    "assets/tile_garden.webp": {
+      "offset": 11376725,
+      "length": 2082,
+      "type": "image/webp"
+    },
+    "assets/tile_gold.webp": {
+      "offset": 11378807,
+      "length": 41878,
+      "type": "image/webp"
+    },
+    "assets/tile_grass2.webp": {
+      "offset": 11420685,
+      "length": 1504,
+      "type": "image/webp"
+    },
+    "assets/tile_grass_flower.webp": {
+      "offset": 11422189,
+      "length": 52772,
+      "type": "image/webp"
+    },
+    "assets/tile_grass_pack.webp": {
+      "offset": 11474961,
+      "length": 8920,
+      "type": "image/webp"
+    },
+    "assets/tile_grass_pack_v1.webp": {
+      "offset": 11483881,
+      "length": 8920,
+      "type": "image/webp"
+    },
+    "assets/tile_grass_pack_v2.webp": {
+      "offset": 11492801,
+      "length": 8920,
+      "type": "image/webp"
+    },
+    "assets/tile_ice.png": {
+      "offset": 11501721,
+      "length": 2876,
+      "type": "image/png"
+    },
+    "assets/tile_lava.webp": {
+      "offset": 11504597,
+      "length": 2032,
+      "type": "image/webp"
+    },
+    "assets/tile_magma.png": {
+      "offset": 11506629,
+      "length": 3538,
+      "type": "image/png"
+    },
+    "assets/tile_magma_path.png": {
+      "offset": 11510167,
+      "length": 3375,
+      "type": "image/png"
+    },
+    "assets/tile_metal.webp": {
+      "offset": 11513542,
+      "length": 448,
+      "type": "image/webp"
+    },
+    "assets/tile_morgue.webp": {
+      "offset": 11513990,
+      "length": 3350,
+      "type": "image/webp"
+    },
+    "assets/tile_moss.webp": {
+      "offset": 11517340,
+      "length": 1862,
+      "type": "image/webp"
+    },
+    "assets/tile_nebula.webp": {
+      "offset": 11519202,
+      "length": 1502,
+      "type": "image/webp"
+    },
+    "assets/tile_path_dark.png": {
+      "offset": 11520704,
+      "length": 3792,
+      "type": "image/png"
+    },
+    "assets/tile_ruin.webp": {
+      "offset": 11524496,
+      "length": 444,
+      "type": "image/webp"
+    },
+    "assets/tile_rust.webp": {
+      "offset": 11524940,
+      "length": 45962,
+      "type": "image/webp"
+    },
+    "assets/tile_sand.webp": {
+      "offset": 11570902,
+      "length": 950,
+      "type": "image/webp"
+    },
+    "assets/tile_sand_pack.webp": {
+      "offset": 11571852,
+      "length": 7140,
+      "type": "image/webp"
+    },
+    "assets/tile_sand_pack_v1.webp": {
+      "offset": 11578992,
+      "length": 7140,
+      "type": "image/webp"
+    },
+    "assets/tile_sand_pack_v2.webp": {
+      "offset": 11586132,
+      "length": 7140,
+      "type": "image/webp"
+    },
+    "assets/tile_stone.png": {
+      "offset": 11593272,
+      "length": 2924,
+      "type": "image/png"
+    },
+    "assets/tile_vault.webp": {
+      "offset": 11596196,
+      "length": 4014,
+      "type": "image/webp"
+    },
+    "assets/tile_void.webp": {
+      "offset": 11600210,
+      "length": 45498,
+      "type": "image/webp"
+    },
+    "assets/tile_water_pack.webp": {
+      "offset": 11645708,
+      "length": 5496,
+      "type": "image/webp"
+    },
+    "assets/tile_water_pack_v1.webp": {
+      "offset": 11651204,
+      "length": 5496,
+      "type": "image/webp"
+    },
+    "assets/tile_water_pack_v2.webp": {
+      "offset": 11656700,
+      "length": 5496,
+      "type": "image/webp"
+    },
+    "assets/tn_concrete.webp": {
+      "offset": 11662196,
+      "length": 49746,
+      "type": "image/webp"
+    },
+    "assets/tn_dirt0.webp": {
+      "offset": 11711942,
+      "length": 16942,
+      "type": "image/webp"
+    },
+    "assets/tn_dirt1.webp": {
+      "offset": 11728884,
+      "length": 31848,
+      "type": "image/webp"
+    },
+    "assets/tn_floor.webp": {
+      "offset": 11760732,
+      "length": 35124,
+      "type": "image/webp"
+    },
+    "assets/tn_rock.webp": {
+      "offset": 11795856,
+      "length": 94448,
+      "type": "image/webp"
+    },
+    "assets/tn_sand.webp": {
+      "offset": 11890304,
+      "length": 22958,
+      "type": "image/webp"
+    },
+    "assets/torch.webp": {
+      "offset": 11913262,
+      "length": 146,
+      "type": "image/webp"
+    },
+    "assets/tx_ap_bite_dn.webp": {
+      "offset": 11913408,
+      "length": 820,
+      "type": "image/webp"
+    },
+    "assets/tx_ap_bite_up.webp": {
+      "offset": 11914228,
+      "length": 904,
+      "type": "image/webp"
+    },
+    "assets/tx_ap_edge_dn.webp": {
+      "offset": 11915132,
+      "length": 554,
+      "type": "image/webp"
+    },
+    "assets/tx_ap_edge_lt.webp": {
+      "offset": 11915686,
+      "length": 810,
+      "type": "image/webp"
+    },
+    "assets/tx_ap_edge_rt.webp": {
+      "offset": 11916496,
+      "length": 780,
+      "type": "image/webp"
+    },
+    "assets/tx_ap_edge_up.webp": {
+      "offset": 11917276,
+      "length": 902,
+      "type": "image/webp"
+    },
+    "assets/tx_ap_gvar1.webp": {
+      "offset": 11918178,
+      "length": 108,
+      "type": "image/webp"
+    },
+    "assets/tx_ap_gvar2.webp": {
+      "offset": 11918286,
+      "length": 110,
+      "type": "image/webp"
+    },
+    "assets/tx_ap_pvar.webp": {
+      "offset": 11918396,
+      "length": 128,
+      "type": "image/webp"
+    },
+    "assets/tx_cp_bite_dn.webp": {
+      "offset": 11918524,
+      "length": 822,
+      "type": "image/webp"
+    },
+    "assets/tx_cp_bite_up.webp": {
+      "offset": 11919346,
+      "length": 906,
+      "type": "image/webp"
+    },
+    "assets/tx_cp_edge_dn.webp": {
+      "offset": 11920252,
+      "length": 886,
+      "type": "image/webp"
+    },
+    "assets/tx_cp_edge_lt.webp": {
+      "offset": 11921138,
+      "length": 752,
+      "type": "image/webp"
+    },
+    "assets/tx_cp_edge_rt.webp": {
+      "offset": 11921890,
+      "length": 930,
+      "type": "image/webp"
+    },
+    "assets/tx_cp_edge_up.webp": {
+      "offset": 11922820,
+      "length": 944,
+      "type": "image/webp"
+    },
+    "assets/tx_cp_gvar1.webp": {
+      "offset": 11923764,
+      "length": 110,
+      "type": "image/webp"
+    },
+    "assets/tx_cp_gvar2.webp": {
+      "offset": 11923874,
+      "length": 112,
+      "type": "image/webp"
+    },
+    "assets/tx_cp_pvar.webp": {
+      "offset": 11923986,
+      "length": 128,
+      "type": "image/webp"
+    },
+    "assets/tx_dp_bite_dn.webp": {
+      "offset": 11924114,
+      "length": 998,
+      "type": "image/webp"
+    },
+    "assets/tx_dp_bite_up.webp": {
+      "offset": 11925112,
+      "length": 1012,
+      "type": "image/webp"
+    },
+    "assets/tx_dp_edge_dn.webp": {
+      "offset": 11926124,
+      "length": 924,
+      "type": "image/webp"
+    },
+    "assets/tx_dp_edge_lt.webp": {
+      "offset": 11927048,
+      "length": 1042,
+      "type": "image/webp"
+    },
+    "assets/tx_dp_edge_rt.webp": {
+      "offset": 11928090,
+      "length": 938,
+      "type": "image/webp"
+    },
+    "assets/tx_dp_edge_up.webp": {
+      "offset": 11929028,
+      "length": 1186,
+      "type": "image/webp"
+    },
+    "assets/tx_dp_gvar1.webp": {
+      "offset": 11930214,
+      "length": 106,
+      "type": "image/webp"
+    },
+    "assets/tx_dp_gvar2.webp": {
+      "offset": 11930320,
+      "length": 108,
+      "type": "image/webp"
+    },
+    "assets/tx_dp_pvar.webp": {
+      "offset": 11930428,
+      "length": 126,
+      "type": "image/webp"
+    },
+    "assets/tx_gp_bite_dn.webp": {
+      "offset": 11930554,
+      "length": 1066,
+      "type": "image/webp"
+    },
+    "assets/tx_gp_bite_up.webp": {
+      "offset": 11931620,
+      "length": 892,
+      "type": "image/webp"
+    },
+    "assets/tx_gp_edge_dn.webp": {
+      "offset": 11932512,
+      "length": 1158,
+      "type": "image/webp"
+    },
+    "assets/tx_gp_edge_lt.webp": {
+      "offset": 11933670,
+      "length": 1012,
+      "type": "image/webp"
+    },
+    "assets/tx_gp_edge_rt.webp": {
+      "offset": 11934682,
+      "length": 1034,
+      "type": "image/webp"
+    },
+    "assets/tx_gp_edge_up.webp": {
+      "offset": 11935716,
+      "length": 1086,
+      "type": "image/webp"
+    },
+    "assets/tx_gp_gvar1.webp": {
+      "offset": 11936802,
+      "length": 108,
+      "type": "image/webp"
+    },
+    "assets/tx_gp_gvar2.webp": {
+      "offset": 11936910,
+      "length": 108,
+      "type": "image/webp"
+    },
+    "assets/tx_gp_pvar.webp": {
+      "offset": 11937018,
+      "length": 126,
+      "type": "image/webp"
+    },
+    "assets/tx_si_bite_dn.webp": {
+      "offset": 11937144,
+      "length": 676,
+      "type": "image/webp"
+    },
+    "assets/tx_si_bite_up.webp": {
+      "offset": 11937820,
+      "length": 752,
+      "type": "image/webp"
+    },
+    "assets/tx_si_edge_dn.webp": {
+      "offset": 11938572,
+      "length": 680,
+      "type": "image/webp"
+    },
+    "assets/tx_si_edge_lt.webp": {
+      "offset": 11939252,
+      "length": 838,
+      "type": "image/webp"
+    },
+    "assets/tx_si_edge_rt.webp": {
+      "offset": 11940090,
+      "length": 840,
+      "type": "image/webp"
+    },
+    "assets/tx_si_edge_up.webp": {
+      "offset": 11940930,
+      "length": 736,
+      "type": "image/webp"
+    },
+    "assets/tx_si_gvar1.webp": {
+      "offset": 11941666,
+      "length": 112,
+      "type": "image/webp"
+    },
+    "assets/tx_si_gvar2.webp": {
+      "offset": 11941778,
+      "length": 112,
+      "type": "image/webp"
+    },
+    "assets/tx_si_pvar.webp": {
+      "offset": 11941890,
+      "length": 132,
+      "type": "image/webp"
+    },
+    "assets/ud_bones.webp": {
+      "offset": 11942022,
+      "length": 256,
+      "type": "image/webp"
+    },
+    "assets/ud_brokentree.webp": {
+      "offset": 11942278,
+      "length": 724,
+      "type": "image/webp"
+    },
+    "assets/ud_deadtree1.webp": {
+      "offset": 11943002,
+      "length": 1328,
+      "type": "image/webp"
+    },
+    "assets/ud_deadtree2.webp": {
+      "offset": 11944330,
+      "length": 870,
+      "type": "image/webp"
+    },
+    "assets/ud_deadtree3.webp": {
+      "offset": 11945200,
+      "length": 1342,
+      "type": "image/webp"
+    },
+    "assets/ud_grave1.webp": {
+      "offset": 11946542,
+      "length": 194,
+      "type": "image/webp"
+    },
+    "assets/ud_grave2.webp": {
+      "offset": 11946736,
+      "length": 196,
+      "type": "image/webp"
+    },
+    "assets/ud_grave3.webp": {
+      "offset": 11946932,
+      "length": 198,
+      "type": "image/webp"
+    },
+    "assets/ud_skulls.webp": {
+      "offset": 11947130,
+      "length": 1316,
+      "type": "image/webp"
+    },
+    "assets/ui2/button.webp": {
+      "offset": 11948446,
+      "length": 24222,
+      "type": "image/webp"
+    },
+    "assets/ui2/input.webp": {
+      "offset": 11972668,
+      "length": 16582,
+      "type": "image/webp"
+    },
+    "assets/ui2/panel.webp": {
+      "offset": 11989250,
+      "length": 84302,
+      "type": "image/webp"
+    },
+    "assets/uni_boom.webp": {
+      "offset": 12073552,
+      "length": 56406,
+      "type": "image/webp"
+    },
+    "assets/vc239/vfx_holy_judgement.png": {
+      "offset": 12129958,
+      "length": 6800,
+      "type": "image/png"
+    },
+    "assets/vf_arrow.webp": {
+      "offset": 12136758,
+      "length": 4040,
+      "type": "image/webp"
+    },
+    "assets/vf_emb_fire.webp": {
+      "offset": 12140798,
+      "length": 6018,
+      "type": "image/webp"
+    },
+    "assets/vf_emb_nature.webp": {
+      "offset": 12146816,
+      "length": 6018,
+      "type": "image/webp"
+    },
+    "assets/vf_emb_sound.webp": {
+      "offset": 12152834,
+      "length": 6018,
+      "type": "image/webp"
+    },
+    "assets/vf_emb_void.webp": {
+      "offset": 12158852,
+      "length": 6018,
+      "type": "image/webp"
+    },
+    "assets/vf_flare_dark.webp": {
+      "offset": 12164870,
+      "length": 21858,
+      "type": "image/webp"
+    },
+    "assets/vf_flare_earth.webp": {
+      "offset": 12186728,
+      "length": 15352,
+      "type": "image/webp"
+    },
+    "assets/vf_flare_elec.webp": {
+      "offset": 12202080,
+      "length": 16218,
+      "type": "image/webp"
+    },
+    "assets/vf_flare_fire.webp": {
+      "offset": 12218298,
+      "length": 4334,
+      "type": "image/webp"
+    },
+    "assets/vf_flare_ice.webp": {
+      "offset": 12222632,
+      "length": 22392,
+      "type": "image/webp"
+    },
+    "assets/vf_flare_nature.webp": {
+      "offset": 12245024,
+      "length": 22392,
+      "type": "image/webp"
+    },
+    "assets/vf_flare_void.webp": {
+      "offset": 12267416,
+      "length": 21858,
+      "type": "image/webp"
+    },
+    "assets/vf_flare_water.webp": {
+      "offset": 12289274,
+      "length": 22392,
+      "type": "image/webp"
+    },
+    "assets/vf_impact.webp": {
+      "offset": 12311666,
+      "length": 19286,
+      "type": "image/webp"
+    },
+    "assets/vf_lightning.webp": {
+      "offset": 12330952,
+      "length": 16218,
+      "type": "image/webp"
+    },
+    "assets/vf_penta_dark.webp": {
+      "offset": 12347170,
+      "length": 207278,
+      "type": "image/webp"
+    },
+    "assets/vf_penta_elec.webp": {
+      "offset": 12554448,
+      "length": 207278,
+      "type": "image/webp"
+    },
+    "assets/vf_penta_fire.webp": {
+      "offset": 12761726,
+      "length": 207278,
+      "type": "image/webp"
+    },
+    "assets/vf_penta_ice.webp": {
+      "offset": 12969004,
+      "length": 207278,
+      "type": "image/webp"
+    },
+    "assets/vf_pentacle.webp": {
+      "offset": 13176282,
+      "length": 207278,
+      "type": "image/webp"
+    },
+    "assets/vf_ring.webp": {
+      "offset": 13383560,
+      "length": 12386,
+      "type": "image/webp"
+    },
+    "assets/vf_ring_fire.webp": {
+      "offset": 13395946,
+      "length": 12386,
+      "type": "image/webp"
+    },
+    "assets/vf_ring_void.webp": {
+      "offset": 13408332,
+      "length": 12386,
+      "type": "image/webp"
+    },
+    "assets/vf_slash.webp": {
+      "offset": 13420718,
+      "length": 14444,
+      "type": "image/webp"
+    },
+    "assets/vf_star.webp": {
+      "offset": 13435162,
+      "length": 39736,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_aura.webp": {
+      "offset": 13474898,
+      "length": 11670,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_burst.webp": {
+      "offset": 13486568,
+      "length": 20818,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_caustic.webp": {
+      "offset": 13507386,
+      "length": 17162,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_electrichit.webp": {
+      "offset": 13524548,
+      "length": 17876,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_electro.webp": {
+      "offset": 13542424,
+      "length": 15600,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_flare.webp": {
+      "offset": 13558024,
+      "length": 7982,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_flarebig.webp": {
+      "offset": 13566006,
+      "length": 7856,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_flarew.webp": {
+      "offset": 13573862,
+      "length": 4054,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_glow.webp": {
+      "offset": 13577916,
+      "length": 12140,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_glowblue.webp": {
+      "offset": 13590056,
+      "length": 23822,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_glowyellow.webp": {
+      "offset": 13613878,
+      "length": 17696,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_ground_shadow.webp": {
+      "offset": 13631574,
+      "length": 2498,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_hex.webp": {
+      "offset": 13634072,
+      "length": 23146,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_impact.webp": {
+      "offset": 13657218,
+      "length": 68598,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_lightning.webp": {
+      "offset": 13725816,
+      "length": 28116,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_noise.webp": {
+      "offset": 13753932,
+      "length": 36844,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_purple.webp": {
+      "offset": 13790776,
+      "length": 6604,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_shockwave.webp": {
+      "offset": 13797380,
+      "length": 18632,
+      "type": "image/webp"
+    },
+    "assets/vfx/fx_smoke.webp": {
+      "offset": 13816012,
+      "length": 24578,
+      "type": "image/webp"
+    },
+    "assets/vfx2/vfx_arrowp.png": {
+      "offset": 13840590,
+      "length": 5353,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_bolt.png": {
+      "offset": 13845943,
+      "length": 7900,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_cl1.png": {
+      "offset": 13853843,
+      "length": 3687,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_cl2.png": {
+      "offset": 13857530,
+      "length": 4016,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_cl3.png": {
+      "offset": 13861546,
+      "length": 3703,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_crit.png": {
+      "offset": 13865249,
+      "length": 5017,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_flower.png": {
+      "offset": 13870266,
+      "length": 2914,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_fw_tri.png": {
+      "offset": 13873180,
+      "length": 6003,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_glowy.png": {
+      "offset": 13879183,
+      "length": 7348,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_heal_heart.png": {
+      "offset": 13886531,
+      "length": 7004,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_ltn1.png": {
+      "offset": 13893535,
+      "length": 2749,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_ltn2.png": {
+      "offset": 13896284,
+      "length": 413,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_petal.png": {
+      "offset": 13896697,
+      "length": 2180,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_proj.png": {
+      "offset": 13898877,
+      "length": 7666,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_pt1.png": {
+      "offset": 13906543,
+      "length": 2512,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_pt2.png": {
+      "offset": 13909055,
+      "length": 2999,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_pt3.png": {
+      "offset": 13912054,
+      "length": 1368,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_pt4.png": {
+      "offset": 13913422,
+      "length": 968,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_pt5.png": {
+      "offset": 13914390,
+      "length": 2325,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_pt6.png": {
+      "offset": 13916715,
+      "length": 1325,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_pt7.png": {
+      "offset": 13918040,
+      "length": 3433,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_pt8.png": {
+      "offset": 13921473,
+      "length": 3812,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_ring1.png": {
+      "offset": 13925285,
+      "length": 5535,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_slash.png": {
+      "offset": 13930820,
+      "length": 6679,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_slash_turn.png": {
+      "offset": 13937499,
+      "length": 6765,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_splat.png": {
+      "offset": 13944264,
+      "length": 6741,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_star4.png": {
+      "offset": 13951005,
+      "length": 5994,
+      "type": "image/png"
+    },
+    "assets/vfx2/vfx_twinkle.png": {
+      "offset": 13956999,
+      "length": 3816,
+      "type": "image/png"
+    },
+    "assets/vfx2_blood.webp": {
+      "offset": 13960815,
+      "length": 3442,
+      "type": "image/webp"
+    },
+    "assets/vfx2_bolt.webp": {
+      "offset": 13964257,
+      "length": 758,
+      "type": "image/webp"
+    },
+    "assets/vfx2_boom.webp": {
+      "offset": 13965015,
+      "length": 7172,
+      "type": "image/webp"
+    },
+    "assets/vfx2_cfx1.webp": {
+      "offset": 13972187,
+      "length": 7522,
+      "type": "image/webp"
+    },
+    "assets/vfx2_charged.webp": {
+      "offset": 13979709,
+      "length": 1268,
+      "type": "image/webp"
+    },
+    "assets/vfx2_elec.webp": {
+      "offset": 13980977,
+      "length": 340,
+      "type": "image/webp"
+    },
+    "assets/vfx2_hit1.webp": {
+      "offset": 13981317,
+      "length": 4700,
+      "type": "image/webp"
+    },
+    "assets/vfx2_hit3.webp": {
+      "offset": 13986017,
+      "length": 16094,
+      "type": "image/webp"
+    },
+    "assets/vfx2_hit5.webp": {
+      "offset": 14002111,
+      "length": 11684,
+      "type": "image/webp"
+    },
+    "assets/vfx2_pulse.webp": {
+      "offset": 14013795,
+      "length": 3604,
+      "type": "image/webp"
+    },
+    "assets/vfx2_tri.webp": {
+      "offset": 14017399,
+      "length": 2946,
+      "type": "image/webp"
+    },
+    "assets/vfx2_wspark.webp": {
+      "offset": 14020345,
+      "length": 3728,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_aura_rays.webp": {
+      "offset": 14024073,
+      "length": 70012,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_aura_runic.webp": {
+      "offset": 14094085,
+      "length": 62434,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_electric_arc_anim_x4.webp": {
+      "offset": 14156519,
+      "length": 27476,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_electric_arcs_x4.webp": {
+      "offset": 14183995,
+      "length": 47748,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_ember_blur.webp": {
+      "offset": 14231743,
+      "length": 7888,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_fire_circle_drawn.webp": {
+      "offset": 14239631,
+      "length": 13598,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_flamme_crisp.webp": {
+      "offset": 14253229,
+      "length": 6884,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_heart.webp": {
+      "offset": 14260113,
+      "length": 7102,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_hit_triangle.webp": {
+      "offset": 14267215,
+      "length": 1678,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_hit_triangle_dissolve.webp": {
+      "offset": 14268893,
+      "length": 5106,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_magic_star.webp": {
+      "offset": 14273999,
+      "length": 6734,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_puddle.webp": {
+      "offset": 14280733,
+      "length": 6768,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_ring_electric.webp": {
+      "offset": 14287501,
+      "length": 15772,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_ring_ice.webp": {
+      "offset": 14303273,
+      "length": 3432,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_ring_spikes_revert.webp": {
+      "offset": 14306705,
+      "length": 4108,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_skull_2.webp": {
+      "offset": 14310813,
+      "length": 11722,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_smoke_cloud_x4_white.webp": {
+      "offset": 14322535,
+      "length": 13750,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_star_blurred.webp": {
+      "offset": 14336285,
+      "length": 36328,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_stretch_ray_blur.webp": {
+      "offset": 14372613,
+      "length": 9450,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_stretch_sipkes_x2.webp": {
+      "offset": 14382063,
+      "length": 13986,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_stretch_spike_fade.webp": {
+      "offset": 14396049,
+      "length": 10162,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_sword_trail_mask_light.webp": {
+      "offset": 14406211,
+      "length": 5706,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_sword_trail_mask_lines.webp": {
+      "offset": 14411917,
+      "length": 45538,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_cfxr_water_small_splash_stretch.webp": {
+      "offset": 14457455,
+      "length": 13248,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_circle.webp": {
+      "offset": 14470703,
+      "length": 21704,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_circle2.webp": {
+      "offset": 14492407,
+      "length": 25642,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_crack.webp": {
+      "offset": 14518049,
+      "length": 21732,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_craterfree1.webp": {
+      "offset": 14539781,
+      "length": 41656,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_crystalfree1.webp": {
+      "offset": 14581437,
+      "length": 18388,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_electric_splat_hit_02.webp": {
+      "offset": 14599825,
+      "length": 6558,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_electro03.webp": {
+      "offset": 14606383,
+      "length": 36470,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_flare02_white.webp": {
+      "offset": 14642853,
+      "length": 5146,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_flashfree1.webp": {
+      "offset": 14647999,
+      "length": 6824,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_flashfree2.webp": {
+      "offset": 14654823,
+      "length": 30544,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_flashfree3.webp": {
+      "offset": 14685367,
+      "length": 61100,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_glow_blue_01.webp": {
+      "offset": 14746467,
+      "length": 21434,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_glow_yellow_01.webp": {
+      "offset": 14767901,
+      "length": 8642,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_glowblurry.webp": {
+      "offset": 14776543,
+      "length": 9930,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_glowfree1.webp": {
+      "offset": 14786473,
+      "length": 26454,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_gradient2.webp": {
+      "offset": 14812927,
+      "length": 11284,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_hexagon_01.webp": {
+      "offset": 14824211,
+      "length": 21962,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_lightning02_01_blue.webp": {
+      "offset": 14846173,
+      "length": 34222,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_poison_smoke_pink.webp": {
+      "offset": 14880395,
+      "length": 110916,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_projectilefree1.webp": {
+      "offset": 14991311,
+      "length": 23040,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_ring02.webp": {
+      "offset": 15014351,
+      "length": 2160,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_rune_big.webp": {
+      "offset": 15016511,
+      "length": 72106,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_rune_glow.webp": {
+      "offset": 15088617,
+      "length": 106288,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_smoke26.webp": {
+      "offset": 15194905,
+      "length": 18010,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_smoke_pink2.webp": {
+      "offset": 15212915,
+      "length": 22194,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_smokefree1.webp": {
+      "offset": 15235109,
+      "length": 11362,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_snowflake.webp": {
+      "offset": 15246471,
+      "length": 2712,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_splat.webp": {
+      "offset": 15249183,
+      "length": 6880,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_sprite_lensflare.webp": {
+      "offset": 15256063,
+      "length": 9130,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_star.webp": {
+      "offset": 15265193,
+      "length": 5664,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_star4.webp": {
+      "offset": 15270857,
+      "length": 1974,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_stylizedtrail03.webp": {
+      "offset": 15272831,
+      "length": 36252,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_techcircle2.webp": {
+      "offset": 15309083,
+      "length": 106478,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_trail_pink.webp": {
+      "offset": 15415561,
+      "length": 28242,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_twink_01.webp": {
+      "offset": 15443803,
+      "length": 880,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_twinkle_b.webp": {
+      "offset": 15444683,
+      "length": 1086,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_circle_aggressive.webp": {
+      "offset": 15445769,
+      "length": 280810,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_circle_hazy.webp": {
+      "offset": 15726579,
+      "length": 48074,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_cone_long.webp": {
+      "offset": 15774653,
+      "length": 14488,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_energybolts.webp": {
+      "offset": 15789141,
+      "length": 40572,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_energynoise.webp": {
+      "offset": 15829713,
+      "length": 26948,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_energyweb.webp": {
+      "offset": 15856661,
+      "length": 113520,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_exp_core.webp": {
+      "offset": 15970181,
+      "length": 53062,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_flare_xo.webp": {
+      "offset": 16023243,
+      "length": 26912,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_glow.webp": {
+      "offset": 16050155,
+      "length": 19170,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_linelong.webp": {
+      "offset": 16069325,
+      "length": 4460,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_shockwave_fiery.webp": {
+      "offset": 16073785,
+      "length": 63416,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_smoke.webp": {
+      "offset": 16137201,
+      "length": 110698,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_spark.webp": {
+      "offset": 16247899,
+      "length": 2374,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_specks.webp": {
+      "offset": 16250273,
+      "length": 92176,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_streaks_horizontal.webp": {
+      "offset": 16342449,
+      "length": 94846,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_tile_fiery.webp": {
+      "offset": 16437295,
+      "length": 38248,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_tile_spiky.webp": {
+      "offset": 16475543,
+      "length": 6548,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_tile_starry.webp": {
+      "offset": 16482091,
+      "length": 59334,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_trail_ghost.webp": {
+      "offset": 16541425,
+      "length": 53304,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_uni_trail_wave.webp": {
+      "offset": 16594729,
+      "length": 45648,
+      "type": "image/webp"
+    },
+    "assets/vfx3/gv_wispysmoke03b_8x8.webp": {
+      "offset": 16640377,
+      "length": 127464,
+      "type": "image/webp"
+    },
+    "assets/vfx3_flare.webp": {
+      "offset": 16767841,
+      "length": 810,
+      "type": "image/webp"
+    },
+    "assets/vfx3_flower.webp": {
+      "offset": 16768651,
+      "length": 916,
+      "type": "image/webp"
+    },
+    "assets/vfx3_heart.webp": {
+      "offset": 16769567,
+      "length": 1380,
+      "type": "image/webp"
+    },
+    "assets/vfx3_impact.webp": {
+      "offset": 16770947,
+      "length": 1658,
+      "type": "image/webp"
+    },
+    "assets/vfx3_ring.webp": {
+      "offset": 16772605,
+      "length": 2278,
+      "type": "image/webp"
+    },
+    "assets/vfx3_slash.webp": {
+      "offset": 16774883,
+      "length": 836,
+      "type": "image/webp"
+    },
+    "assets/vx_aura.webp": {
+      "offset": 16775719,
+      "length": 9038,
+      "type": "image/webp"
+    },
+    "assets/vx_bolt.webp": {
+      "offset": 16784757,
+      "length": 4520,
+      "type": "image/webp"
+    },
+    "assets/vx_circlehazy.webp": {
+      "offset": 16789277,
+      "length": 1432,
+      "type": "image/webp"
+    },
+    "assets/vx_crack.webp": {
+      "offset": 16790709,
+      "length": 8576,
+      "type": "image/webp"
+    },
+    "assets/vx_crystal.webp": {
+      "offset": 16799285,
+      "length": 9924,
+      "type": "image/webp"
+    },
+    "assets/vx_debris.webp": {
+      "offset": 16809209,
+      "length": 14666,
+      "type": "image/webp"
+    },
+    "assets/vx_elec.webp": {
+      "offset": 16823875,
+      "length": 3274,
+      "type": "image/webp"
+    },
+    "assets/vx_expcore.webp": {
+      "offset": 16827149,
+      "length": 8428,
+      "type": "image/webp"
+    },
+    "assets/vx_fire.webp": {
+      "offset": 16835577,
+      "length": 5830,
+      "type": "image/webp"
+    },
+    "assets/vx_firecircle.webp": {
+      "offset": 16841407,
+      "length": 1594,
+      "type": "image/webp"
+    },
+    "assets/vx_flare.webp": {
+      "offset": 16843001,
+      "length": 4466,
+      "type": "image/webp"
+    },
+    "assets/vx_flarexo.webp": {
+      "offset": 16847467,
+      "length": 1902,
+      "type": "image/webp"
+    },
+    "assets/vx_flash.webp": {
+      "offset": 16849369,
+      "length": 11888,
+      "type": "image/webp"
+    },
+    "assets/vx_fly.webp": {
+      "offset": 16861257,
+      "length": 6666,
+      "type": "image/webp"
+    },
+    "assets/vx_glowball.webp": {
+      "offset": 16867923,
+      "length": 10812,
+      "type": "image/webp"
+    },
+    "assets/vx_glowh.webp": {
+      "offset": 16878735,
+      "length": 10546,
+      "type": "image/webp"
+    },
+    "assets/vx_hex.webp": {
+      "offset": 16889281,
+      "length": 22210,
+      "type": "image/webp"
+    },
+    "assets/vx_lensflare.webp": {
+      "offset": 16911491,
+      "length": 9176,
+      "type": "image/webp"
+    },
+    "assets/vx_magiccircle.webp": {
+      "offset": 16920667,
+      "length": 36062,
+      "type": "image/webp"
+    },
+    "assets/vx_petal.webp": {
+      "offset": 16956729,
+      "length": 16326,
+      "type": "image/webp"
+    },
+    "assets/vx_puddle.webp": {
+      "offset": 16973055,
+      "length": 1904,
+      "type": "image/webp"
+    },
+    "assets/vx_ring.webp": {
+      "offset": 16974959,
+      "length": 10562,
+      "type": "image/webp"
+    },
+    "assets/vx_shockwave.webp": {
+      "offset": 16985521,
+      "length": 33094,
+      "type": "image/webp"
+    },
+    "assets/vx_slash.webp": {
+      "offset": 17018615,
+      "length": 10758,
+      "type": "image/webp"
+    },
+    "assets/vx_smoke.webp": {
+      "offset": 17029373,
+      "length": 38258,
+      "type": "image/webp"
+    },
+    "assets/vx_smokecloud.webp": {
+      "offset": 17067631,
+      "length": 1994,
+      "type": "image/webp"
+    },
+    "assets/vx_snow.webp": {
+      "offset": 17069625,
+      "length": 5180,
+      "type": "image/webp"
+    },
+    "assets/vx_spikes.webp": {
+      "offset": 17074805,
+      "length": 2632,
+      "type": "image/webp"
+    },
+    "assets/vx_splat.webp": {
+      "offset": 17077437,
+      "length": 6120,
+      "type": "image/webp"
+    },
+    "assets/vx_star.webp": {
+      "offset": 17083557,
+      "length": 2974,
+      "type": "image/webp"
+    },
+    "assets/vx_techcircle.webp": {
+      "offset": 17086531,
+      "length": 34760,
+      "type": "image/webp"
+    },
+    "assets/vx_trailghost.webp": {
+      "offset": 17121291,
+      "length": 1538,
+      "type": "image/webp"
+    },
+    "assets/vx_twinkle.webp": {
+      "offset": 17122829,
+      "length": 1974,
+      "type": "image/webp"
+    },
+    "assets/wall_rock.webp": {
+      "offset": 17124803,
+      "length": 1094,
+      "type": "image/webp"
+    },
+    "assets/well.webp": {
+      "offset": 17125897,
+      "length": 922,
+      "type": "image/webp"
+    },
+    "assets/wraith_idle0.webp": {
+      "offset": 17126819,
+      "length": 166,
+      "type": "image/webp"
+    },
+    "assets/wraith_idle1.webp": {
+      "offset": 17126985,
+      "length": 164,
+      "type": "image/webp"
+    },
+    "assets/wraith_run0.webp": {
+      "offset": 17127149,
+      "length": 166,
+      "type": "image/webp"
+    },
+    "assets/wraith_run1.webp": {
+      "offset": 17127315,
+      "length": 166,
+      "type": "image/webp"
+    },
+    "assets/wraith_run2.webp": {
+      "offset": 17127481,
+      "length": 166,
+      "type": "image/webp"
+    },
+    "assets/wraith_run3.webp": {
+      "offset": 17127647,
+      "length": 168,
+      "type": "image/webp"
+    },
+    "assets/wx_crack.webp": {
+      "offset": 17127815,
+      "length": 21732,
+      "type": "image/webp"
+    },
+    "assets/wx_crater.webp": {
+      "offset": 17149547,
+      "length": 5642,
+      "type": "image/webp"
+    },
+    "assets/wx_smoke.webp": {
+      "offset": 17155189,
+      "length": 19730,
+      "type": "image/webp"
+    },
+    "assets/wx_snowflake.webp": {
+      "offset": 17174919,
+      "length": 8528,
+      "type": "image/webp"
+    },
+    "assets/wx_spark5.webp": {
+      "offset": 17183447,
+      "length": 30670,
+      "type": "image/webp"
+    },
+    "assets/wx_splat.webp": {
+      "offset": 17214117,
+      "length": 6068,
+      "type": "image/webp"
+    },
+    "assets/x2_arrow.webp": {
+      "offset": 17220185,
+      "length": 122,
+      "type": "image/webp"
+    },
+    "assets/x2_arrow_green.webp": {
+      "offset": 17220307,
+      "length": 126,
+      "type": "image/webp"
+    },
+    "assets/x2_arrow_sky.webp": {
+      "offset": 17220433,
+      "length": 130,
+      "type": "image/webp"
+    },
+    "assets/x2_bow.webp": {
+      "offset": 17220563,
+      "length": 98,
+      "type": "image/webp"
+    },
+    "assets/x2_bricks.webp": {
+      "offset": 17220661,
+      "length": 232,
+      "type": "image/webp"
+    },
+    "assets/x2_darkhound_atk0.webp": {
+      "offset": 17220893,
+      "length": 302,
+      "type": "image/webp"
+    },
+    "assets/x2_darkhound_idle0.webp": {
+      "offset": 17221195,
+      "length": 286,
+      "type": "image/webp"
+    },
+    "assets/x2_darkhound_idle1.webp": {
+      "offset": 17221481,
+      "length": 286,
+      "type": "image/webp"
+    },
+    "assets/x2_darkhound_run0.webp": {
+      "offset": 17221767,
+      "length": 286,
+      "type": "image/webp"
+    },
+    "assets/x2_darkhound_run1.webp": {
+      "offset": 17222053,
+      "length": 282,
+      "type": "image/webp"
+    },
+    "assets/x2_darkhound_run2.webp": {
+      "offset": 17222335,
+      "length": 286,
+      "type": "image/webp"
+    },
+    "assets/x2_darkhound_run3.webp": {
+      "offset": 17222621,
+      "length": 302,
+      "type": "image/webp"
+    },
+    "assets/x2_frog_atk0.webp": {
+      "offset": 17222923,
+      "length": 124,
+      "type": "image/webp"
+    },
+    "assets/x2_frog_idle0.webp": {
+      "offset": 17223047,
+      "length": 124,
+      "type": "image/webp"
+    },
+    "assets/x2_frog_idle1.webp": {
+      "offset": 17223171,
+      "length": 122,
+      "type": "image/webp"
+    },
+    "assets/x2_frog_run0.webp": {
+      "offset": 17223293,
+      "length": 124,
+      "type": "image/webp"
+    },
+    "assets/x2_frog_run1.webp": {
+      "offset": 17223417,
+      "length": 124,
+      "type": "image/webp"
+    },
+    "assets/x2_frog_run2.webp": {
+      "offset": 17223541,
+      "length": 124,
+      "type": "image/webp"
+    },
+    "assets/x2_frog_run3.webp": {
+      "offset": 17223665,
+      "length": 128,
+      "type": "image/webp"
+    },
+    "assets/x2_rat_atk0.webp": {
+      "offset": 17223793,
+      "length": 240,
+      "type": "image/webp"
+    },
+    "assets/x2_rat_idle0.webp": {
+      "offset": 17224033,
+      "length": 200,
+      "type": "image/webp"
+    },
+    "assets/x2_rat_idle1.webp": {
+      "offset": 17224233,
+      "length": 200,
+      "type": "image/webp"
+    },
+    "assets/x2_rat_run0.webp": {
+      "offset": 17224433,
+      "length": 200,
+      "type": "image/webp"
+    },
+    "assets/x2_rat_run1.webp": {
+      "offset": 17224633,
+      "length": 248,
+      "type": "image/webp"
+    },
+    "assets/x2_rat_run2.webp": {
+      "offset": 17224881,
+      "length": 200,
+      "type": "image/webp"
+    },
+    "assets/x2_rat_run3.webp": {
+      "offset": 17225081,
+      "length": 238,
+      "type": "image/webp"
+    },
+    "assets/x2_reeffish_atk0.webp": {
+      "offset": 17225319,
+      "length": 216,
+      "type": "image/webp"
+    },
+    "assets/x2_reeffish_idle0.webp": {
+      "offset": 17225535,
+      "length": 178,
+      "type": "image/webp"
+    },
+    "assets/x2_reeffish_idle1.webp": {
+      "offset": 17225713,
+      "length": 174,
+      "type": "image/webp"
+    },
+    "assets/x2_reeffish_run0.webp": {
+      "offset": 17225887,
+      "length": 178,
+      "type": "image/webp"
+    },
+    "assets/x2_reeffish_run1.webp": {
+      "offset": 17226065,
+      "length": 208,
+      "type": "image/webp"
+    },
+    "assets/x2_reeffish_run2.webp": {
+      "offset": 17226273,
+      "length": 178,
+      "type": "image/webp"
+    },
+    "assets/x2_reeffish_run3.webp": {
+      "offset": 17226451,
+      "length": 208,
+      "type": "image/webp"
+    },
+    "assets/x2_sp_arcane.webp": {
+      "offset": 17226659,
+      "length": 208,
+      "type": "image/webp"
+    },
+    "assets/x2_sp_darkbolt.webp": {
+      "offset": 17226867,
+      "length": 206,
+      "type": "image/webp"
+    },
+    "assets/x2_sp_fireball.webp": {
+      "offset": 17227073,
+      "length": 210,
+      "type": "image/webp"
+    },
+    "assets/x2_sp_icelance.webp": {
+      "offset": 17227283,
+      "length": 104,
+      "type": "image/webp"
+    },
+    "assets/x2_sp_magicorb.webp": {
+      "offset": 17227387,
+      "length": 200,
+      "type": "image/webp"
+    },
+    "assets/x2_sp_sparks.webp": {
+      "offset": 17227587,
+      "length": 138,
+      "type": "image/webp"
+    },
+    "assets/x3_bow.webp": {
+      "offset": 17227725,
+      "length": 162,
+      "type": "image/webp"
+    },
+    "assets/x3_gun.webp": {
+      "offset": 17227887,
+      "length": 548,
+      "type": "image/webp"
+    },
+    "assets/x3_necromancer_atk0.webp": {
+      "offset": 17228435,
+      "length": 304,
+      "type": "image/webp"
+    },
+    "assets/x3_necromancer_idle0.webp": {
+      "offset": 17228739,
+      "length": 338,
+      "type": "image/webp"
+    },
+    "assets/x3_necromancer_idle1.webp": {
+      "offset": 17229077,
+      "length": 338,
+      "type": "image/webp"
+    },
+    "assets/x3_necromancer_idle2.webp": {
+      "offset": 17229415,
+      "length": 338,
+      "type": "image/webp"
+    },
+    "assets/x3_necromancer_idle3.webp": {
+      "offset": 17229753,
+      "length": 338,
+      "type": "image/webp"
+    },
+    "assets/x3_necromancer_run0.webp": {
+      "offset": 17230091,
+      "length": 338,
+      "type": "image/webp"
+    },
+    "assets/x3_necromancer_run1.webp": {
+      "offset": 17230429,
+      "length": 342,
+      "type": "image/webp"
+    },
+    "assets/x3_necromancer_run2.webp": {
+      "offset": 17230771,
+      "length": 338,
+      "type": "image/webp"
+    },
+    "assets/x3_necromancer_run3.webp": {
+      "offset": 17231109,
+      "length": 304,
+      "type": "image/webp"
+    },
+    "assets/x3_orcwarrior_atk0.webp": {
+      "offset": 17231413,
+      "length": 280,
+      "type": "image/webp"
+    },
+    "assets/x3_orcwarrior_idle0.webp": {
+      "offset": 17231693,
+      "length": 294,
+      "type": "image/webp"
+    },
+    "assets/x3_orcwarrior_idle1.webp": {
+      "offset": 17231987,
+      "length": 294,
+      "type": "image/webp"
+    },
+    "assets/x3_orcwarrior_idle2.webp": {
+      "offset": 17232281,
+      "length": 294,
+      "type": "image/webp"
+    },
+    "assets/x3_orcwarrior_idle3.webp": {
+      "offset": 17232575,
+      "length": 294,
+      "type": "image/webp"
+    },
+    "assets/x3_orcwarrior_run0.webp": {
+      "offset": 17232869,
+      "length": 294,
+      "type": "image/webp"
+    },
+    "assets/x3_orcwarrior_run1.webp": {
+      "offset": 17233163,
+      "length": 276,
+      "type": "image/webp"
+    },
+    "assets/x3_orcwarrior_run2.webp": {
+      "offset": 17233439,
+      "length": 294,
+      "type": "image/webp"
+    },
+    "assets/x3_orcwarrior_run3.webp": {
+      "offset": 17233733,
+      "length": 264,
+      "type": "image/webp"
+    },
+    "assets/x3_shuriken.webp": {
+      "offset": 17233997,
+      "length": 100,
+      "type": "image/webp"
+    },
+    "assets/x3_staff.webp": {
+      "offset": 17234097,
+      "length": 110,
+      "type": "image/webp"
+    },
+    "assets/x3_sword.webp": {
+      "offset": 17234207,
+      "length": 536,
+      "type": "image/webp"
+    }
+  }
+}

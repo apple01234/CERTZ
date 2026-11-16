@@ -252,6 +252,7 @@ export type QuestState = {
 /** 퀘스트 로그 (J — 스테이지별 메인 체인 진행 상황) */
 export type QuestLogState = {
   stageName: string;
+  recovery?: { title: string };
   list: { title: string; desc: string; state: "done" | "active" | "locked"; canAccept?: boolean; accepted?: boolean }[];
   /* vc193 (버그 #2) — 마을·실내(안전 지대)에서는 트래커를 접는다.
    *  종전엔 마을에서도 이전 사냥터 퀘스트가 남아 "마을인데 몬스터 260마리" 가 떴다. */

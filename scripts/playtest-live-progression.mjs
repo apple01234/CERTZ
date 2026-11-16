@@ -3,6 +3,7 @@ import {chromium} from 'playwright';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {nextStepToward} from '../src/game/navigation.ts';
 import assert from 'node:assert/strict';
+const runStarted=Date.now();
 const out=process.env.PROGRESSION_QA_OUT??'/dev/shm/certz-live-progression';
 const base=process.env.PROGRESSION_QA_URL??'https://sertz.vercel.app?renderer=canvas';
 const storage=JSON.parse(await readFile(out+'/tutorial-complete-storage.json','utf8'));
@@ -18,8 +19,8 @@ try{
   const s=window.__SERTZ_SCENE__;if(!s?.assetsReady||!s.physics?.world)return null;
   const p=s.player,point=o=>o?.active?{x:o.x,y:o.y}:null,q=s.currentQuest();
   return {stage:s.stageDef.key,dialogue:s.dialoguing,cinema:s.camCinema,feature:s.featureTutOpen,panel:s.panelNavOpen,auto:s.autoHunt,
-   p:{x:p.x,y:p.y,hp:p.hp,maxHp:p.maxHp,mp:p.mp,maxMp:p.maxMp,lv:p.lv,state:p.state,potions:p.potions,atk:p.atk},quest:q,hunt:s.huntCount,
-   fragment:point(s.fragment),portal:s.portalActive?point(s.portal):null,boss:s.boss?.alive?{...point(s.boss),hp:s.boss.hp,maxHp:s.boss.maxHp,mode:s.boss.mode}:null,
+   p:{x:p.x,y:p.y,hp:p.hp,maxHp:p.maxHp,mp:p.mp,maxMp:p.maxMp,lv:p.lv,state:p.state,potions:p.potions,atk:p.atk,ap:p.ap,weapon:p.weapon,armor:p.armor},quest:q,hunt:s.huntCount,
+   fragment:point(s.fragment),portal:s.portalActive?point(s.portal):null,boss:s.boss?.alive?{...point(s.boss),hp:s.boss.hp,maxHp:s.boss.maxHp,mode:s.boss.mode,charge:{x:s.boss.chargeDir.x,y:s.boss.chargeDir.y},countdown:s.boss.countdown}:null,
    questIdx:s.questIdx,layout:s.layout?{cols:s.layout.cols,rows:s.layout.rows,open:s.layout.open,cellW:s.layout.cellW,cellH:s.layout.cellH}:null,
    enemies:s.enemies.filter(e=>e.active&&e.alive).map(e=>({x:e.x,y:e.y,key:e.def.key,hp:e.hp})),kills:s.totalKills};
  });
@@ -47,18 +48,19 @@ try{
   if(s.p.mp<20&&s.p.potions.mp>0)await press('f');
   if(s.portal){await move(s,s.portal);continue;}
   if(s.fragment){await move(s,s.fragment,5);continue;}
-  const targets=s.boss?[s.boss]:s.enemies.filter(e=>s.quest?.type!=='hunt'||!(s.quest.targetKeys??[s.quest.targetKey]).filter(Boolean).length||(s.quest.targetKeys??[s.quest.targetKey]).includes(e.key));
+  const nearby=s.enemies.filter(e=>Math.hypot(e.x-s.p.x,e.y-s.p.y)<115);
+  const targets=s.boss?(nearby.length?nearby:[s.boss]):s.enemies.filter(e=>s.quest?.type!=='hunt'||!(s.quest.targetKeys??[s.quest.targetKey]).filter(Boolean).length||(s.quest.targetKeys??[s.quest.targetKey]).includes(e.key));
   const target=targets.sort((a,b)=>Math.hypot(a.x-s.p.x,a.y-s.p.y)-Math.hypot(b.x-s.p.x,b.y-s.p.y))[0];
   if(target){
-   if(s.boss&&/Tele|telegraph|chargeWind/.test(s.boss.mode)){await move(s,target,0,true);continue;}
+   if(s.boss&&['chargeTele','charging'].includes(s.boss.mode)){const d=s.boss.charge;const side=(s.p.x-s.boss.x)*(-d.y)+(s.p.y-s.boss.y)*d.x;if(Math.abs(side)<115||s.boss.mode==='charging'){const sign=side>=0?1:-1;await move(s,{x:s.p.x-d.y*200*sign,y:s.p.y+d.x*200*sign},0);if(s.boss.mode==='charging')await press('Shift');continue;}}
    const distance=Math.hypot(target.x-s.p.x,target.y-s.p.y);
    if(distance>38)await move(s,target,20);
-   if(distance<90){await press('x');await press('z');}
+   if(distance<90){await press('x');await press('z');await press('c');}
   }else await page.waitForTimeout(250);
  }
  assert.ok(bossSeen&&final.stage==='lilacworld2x3'&&!final.boss&&final.questIdx>0,'first boss clear not reached');
  assert.equal(errors.length,0,errors.join('\n'));
  await context.storageState({path:out+'/first-boss-storage.json'});
 }finally{
- await writeFile(out+'/progression-results.json',JSON.stringify({history,final,pageErrors:errors,actions:'normal keyboard/UI only; no progress, stats, enemy HP or timers changed'},null,2));await browser.close();
+ await writeFile(out+'/progression-results.json',JSON.stringify({history,final,elapsedMs:Date.now()-runStarted,pageErrors:errors,actions:'normal keyboard/UI only; no progress, stats, enemy HP or timers changed'},null,2));await browser.close();
 }

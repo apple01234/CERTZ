@@ -1,6 +1,6 @@
 /** Quest layouts collapsed by 7ac2782. Amounts are the rewards actually paid before that commit. */
-export const STORY_QUEST_REVISION = 1;
-export type StoryQuestMigration = { revision: number; credits: Record<string, { gold: number; exp: number }> };
+export const STORY_QUEST_REVISION = 2;
+export type StoryQuestMigration = { revision: number; credits: Record<string, { gold: number; exp: number }>; review?: string[] };
 const LEGACY: Record<string, { dialogue: string; paid: [number, number][] }> = {
   dlcstargate1: { dialogue: "gpDeparture", paid: [[278,1664484],[14300,16609320]] },
   dlcstargate2: { dialogue: "gpBoundary", paid: [[1536,43200],[10375,11912784]] },
@@ -40,18 +40,26 @@ type QuestSave = {
 };
 
 export function migrateStoryQuests<T extends QuestSave>(save: T): T {
-  if ((save.storyQuestMigration?.revision ?? 0) >= STORY_QUEST_REVISION) return save;
+  if ((save.storyQuestMigration?.revision ?? 0) >= STORY_QUEST_REVISION) {
+    const review = save.storyQuestMigration?.review;
+    return review === undefined || Array.isArray(review) ? save
+      : { ...save, storyQuestMigration: { ...save.storyQuestMigration!, review: [] } };
+  }
   if (save.storyRevision && save.storyRevision !== "haru-evernote-v1") return save;
   const next = { ...save, questIdx: { ...save.questIdx }, questAccepted: { ...save.questAccepted },
-    storyQuestMigration: { revision: STORY_QUEST_REVISION, credits: {} } as StoryQuestMigration };
-  // ponytail: unmarked v3 saves since the commit are ambiguous; preserve indices until their old layout is known.
+    storyQuestMigration: { revision: STORY_QUEST_REVISION, credits: { ...save.storyQuestMigration?.credits }, review: [] } as StoryQuestMigration };
+  const alreadyMigrated = (save.storyQuestMigration?.revision ?? 0) >= 1;
+  // Timestamps cannot identify a quest layout after an old character has been played again.
   const legacy = (save.v ?? 0) < 3 || (Number.isFinite(save.lastSeen) && save.lastSeen! > 0 && save.lastSeen! < Date.UTC(2026, 10, 16, 3, 14, 49));
-  if (!legacy) return next;
   for (const [stage, old] of Object.entries(LEGACY)) {
     const idx = next.questIdx[stage];
     if (!Number.isInteger(idx) || idx <= 0) continue;
     // 7ac2782 saves have no layout marker either; their new objective dialogue identifies them.
     if (idx === 1 && save.seen?.includes(old.dialogue)) continue;
+    if (idx === 1 && (alreadyMigrated || !legacy)) {
+      next.storyQuestMigration.review!.push(stage);
+      continue;
+    }
     next.questIdx[stage] = idx >= old.paid.length ? 1 : 0;
     if (stage in next.questAccepted) next.questAccepted[stage] = next.questAccepted[stage] >= idx ? next.questIdx[stage] : next.questIdx[stage] - 1;
     if (next.questIdx[stage] === 0) {
@@ -62,9 +70,18 @@ export function migrateStoryQuests<T extends QuestSave>(save: T): T {
   return next;
 }
 
+/** Optional recovery replays an ambiguous objective without paying it a second time. */
+export function recoverStoryQuest(migration: StoryQuestMigration, stage: string, gold: number, exp: number): boolean {
+  if (!Array.isArray(migration.review) || !migration.review.includes(stage)) return false;
+  migration.review = migration.review.filter(key => key !== stage);
+  migration.credits[stage] = { gold: Math.max(0, gold), exp: Math.max(0, exp) };
+  return true;
+}
+
 /** A replacement objective pays only the part not already earned on its old chain. */
 export function storyQuestReward(migration: StoryQuestMigration, stage: string, gold: number, exp: number) {
   const credit = migration.credits[stage];
   delete migration.credits[stage];
-  return { gold: Math.max(0, gold - (credit?.gold ?? 0)), exp: Math.max(0, exp - (credit?.exp ?? 0)) };
+  return { gold: Math.max(0, gold - (Number.isFinite(credit?.gold) ? Math.max(0, credit!.gold) : 0)),
+    exp: Math.max(0, exp - (Number.isFinite(credit?.exp) ? Math.max(0, credit!.exp) : 0)) };
 }

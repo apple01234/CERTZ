@@ -463,7 +463,8 @@ export function prepareSave(data: SaveData, key: string, raw = JSON.stringify(da
     throw new Error(reason);
   }
   const next = migrateSave(data);
-  if (!data.storyQuestMigration && data.questIdx && JSON.stringify(next.questIdx) !== JSON.stringify(data.questIdx)) {
+  if (data.questIdx && (JSON.stringify(next.questIdx) !== JSON.stringify(data.questIdx)
+    || (next.storyQuestMigration?.review?.length && JSON.stringify(next.storyQuestMigration.review) !== JSON.stringify(data.storyQuestMigration?.review)))) {
     backupSaveOriginal(`quest-layout:${key}`, raw);
   }
   if (JSON.stringify(next) !== raw) backupSaveOriginal(key, raw);

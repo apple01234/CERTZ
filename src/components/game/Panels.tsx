@@ -5469,6 +5469,13 @@ function QuestLogPanel({ questLog, rpg, onClose }: { questLog: QuestLogState; rp
           </button>
         </div>
 
+        {questLog.recovery && (
+          <div className="mb-3 rounded-lg border border-amber-300/30 bg-amber-400/5 p-3 text-xs text-amber-100">
+            <p className="font-bold">이전 의뢰 진행도 확인</p>
+            <p className="mt-1">{questLog.recovery.title} 목표를 진행하지 않았는데 완료로 표시되나요? 이 구역 목표를 다시 열 수 있습니다. 장비·레벨·재화는 유지되며 완료 보상은 다시 지급되지 않습니다.</p>
+            <button className="mt-2 rounded border border-amber-200/40 px-3 py-2 font-bold" onClick={() => EventBus.emit("rpg:questRecover")}>이 구역 목표 다시 열기</button>
+          </div>
+        )}
         {/* v3.0.25 (#창분리) — 보스 재도전은 전용 창으로 분리 (메이플스토리처럼 퀘스트창·보스창 별개) */}
         {rpg && (
           <button

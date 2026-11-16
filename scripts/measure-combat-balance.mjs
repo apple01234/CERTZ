@@ -8,6 +8,7 @@ import { expToNext } from '../src/game/expTable.ts';
 import { ITEMS } from '../src/game/data.ts';
 import { LILACWORLD_CHAPTERS } from '../src/game/lilacworld.ts';
 import { mitigateEnemyDamage } from '../src/game/combat/defense.ts';
+import { FIRST_DIO } from '../src/game/firstBoss.ts';
 
 const gear = (kind, stat, lv) => Math.max(0, ...Object.values(ITEMS)
   .filter(i => i.kind === kind && !i.gmOnly && !i.bmOnly && !i.tradeLock && i.price > 0 && (i.reqLv ?? 0) <= lv && (!i.clsOnly || i.clsOnly.includes('warrior')))
@@ -38,7 +39,7 @@ export function measure(key, lv) {
     const hp = fixed ? fixed.hp : b.hp * 1.25 * Math.max(1, sc.hp * 1.6) * dif.hp;
     const atk = fixed?.atk ?? b.atk * Math.max(1, sc.atk * 1.15) * dif.atk;
     row.bossHp = Math.round(hp);
-    row.bossHtk = Math.round(hp / (p.atk * CRIT));
+    row.bossHtk = Math.round(hp / (mitigateEnemyDamage(p.atk, key === 'lilacworld2x3' ? FIRST_DIO : null) * CRIT));
     row.bossHitsToDie = +(p.hp / Math.max(1, atk - p.def * 0.5)).toFixed(1); // 보스는 방어 50% 관통
   }
   return row;

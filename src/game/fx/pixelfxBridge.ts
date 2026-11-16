@@ -27,6 +27,7 @@
  * 캐릭터 발밑에서 터진다. 픽셀 단위라 프레임 크기로 나눠 0~1 비율로 준다.
  */
 import Phaser from "phaser";
+import { assetUrl } from "../assetSelection";
 
 export type FxMeta = {
   id: string;
@@ -117,7 +118,7 @@ export function ensureFxSheet(scene: Phaser.Scene, key: string, dir = "assets/fx
       const meta = await fetch(`${dir}/${key}.json`).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); });
       if (!game.textures.exists(key)) {
         const img = new Image();
-        await new Promise<void>((ok, fail) => { img.onload = () => ok(); img.onerror = () => fail(new Error("image")); img.src = `${dir}/${key}.png`; });
+        await new Promise<void>((ok, fail) => { img.onload = () => ok(); img.onerror = () => fail(new Error("image")); img.src = assetUrl(`${dir}/`, `${key}.png`); });
         /* 내려진 뒤 도착했으면 등록하지 않는다 — 쓰지 않을 텍스처를 올리지 않는다. */
         if (droppedOf(game).has(key)) return false;
         if (!game.textures.exists(key)) game.textures.addAtlas(key, img, meta);
@@ -129,6 +130,7 @@ export function ensureFxSheet(scene: Phaser.Scene, key: string, dir = "assets/fx
   }
   return job.then(ok => {
     pending.delete(key);
+    if (scene.game !== game || !scene.textures) return false;
     /* 받는 사이 내려졌으면 등록하지 않는다(경쟁 조건). */
     return ok && !droppedOf(game).has(key) && !!registerFxSheet(scene, key);
   });

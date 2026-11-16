@@ -133,11 +133,13 @@ test('held confirmation cannot auto-select or advance the following speech befor
   assert.equal(completed, 1); assert.equal(h.current, null);
 });
 
-test('choice opening guard rejects the initiating key and immediate touch', () => {
+test('choice opening guard rejects the initiating key but accepts a fresh immediate touch', () => {
   const h = harness(); let picked = 0; h.bus.on('dialogue:choice', () => picked++);
-  h.show(choice()); h.key('keydown', 'Enter'); h.choose(); assert.equal(picked, 0);
+  h.show(choice()); h.key('keydown', 'Enter'); assert.equal(picked, 0);
+  h.choose(); assert.equal(picked, 1, 'a deliberate touch must not be dropped inside the keyboard guard');
+  h.show(choice());
   h.key('keyup', 'Enter'); h.advance(300); h.key('keydown', 'ArrowDown'); h.key('keydown', 'Enter');
-  assert.equal(picked, 1); assert.equal(h.current, null);
+  assert.equal(picked, 2); assert.equal(h.current, null);
 });
 
 

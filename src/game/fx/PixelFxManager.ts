@@ -21,7 +21,9 @@
  *   this.fx.rare("levelup", x, y);  // 큰 연출
  */
 import Phaser from "phaser";
-import { playFx, type PlayFxOpts } from "./pixelfxBridge";
+import { playFx, ensureFxSheet, type PlayFxOpts } from "./pixelfxBridge";
+import { pixelFxKey } from "../assetSelection";
+import { ADMITTED_PIXELFX } from "./pixelFxSheets";
 
 export type FxEvent =
   | "hit.slash" | "hit.blunt" | "hit.ranged" | "hit.crit"
@@ -121,14 +123,15 @@ export class PixelFxManager {
 
   private hasAnySheet(): boolean {
     try {
-      return this.scene.textures.exists("torch") || this.scene.textures.exists("frost-nova");
+      return this.scene.textures.exists("sword-slash") || this.scene.textures.exists("torch") || this.scene.textures.exists("frost-nova");
     } catch { return false; }
   }
 
   /** 로드된 시트만 남긴 실제 후보 목록 */
   private candidates(ev: FxEvent): string[] {
-    const all = EVENT_FX[ev] ?? [];
-    const have = all.filter((k) => this.scene.textures.exists(k.replace(/\//g, "-")) || this.scene.textures.exists(k));
+    const all = (EVENT_FX[ev] ?? []).map(pixelFxKey).filter(key => ADMITTED_PIXELFX.has(key) || this.scene.textures.exists(key));
+    for (const key of all) if (!this.scene.textures.exists(key)) void ensureFxSheet(this.scene, key);
+    const have = all.filter(key => this.scene.textures.exists(key));
     if (have.length) return this.lowEnd ? have.slice(0, 1) : have;
     /* vc232 (#16 "몬스터가 죽을 때마다 얼음장판") — 여기가 원인이었다.
      *  후보가 없을 때 `frost-nova` 로 떨어졌는데, 사망 이펙트(death.normal)가
@@ -163,6 +166,8 @@ export class PixelFxManager {
     } catch { /* 연출 실패는 게임을 막지 않는다 */ }
 
     if (sp) {
+      const cap = /^(hit\.|death.normal|pickup\.)/.test(ev) ? 44 : ev === "levelup" ? 120 : 80;
+      sp.setScale(Math.min(sp.scaleX, cap / Math.max(1, sp.width, sp.height)));
       this.lastAt.set(ev, now);
       this.live.add(sp);
     }
@@ -185,7 +190,8 @@ export class PixelFxManager {
       if (oldest) { try { oldest.destroy(); } catch { /* 무시 */ } this.live.delete(oldest); }
       else return;
     }
-    const all = BOSS_FX[ev] ?? [];
+    const all = (BOSS_FX[ev] ?? []).map(pixelFxKey).filter(key => ADMITTED_PIXELFX.has(key) || this.scene.textures.exists(key));
+    for (const key of all) if (!this.scene.textures.exists(key)) void ensureFxSheet(this.scene, key);
     const have = all.filter((k) => this.scene.textures.exists(k));
     if (!have.length) return;
     const key = Phaser.Utils.Array.GetRandom(have);
@@ -198,7 +204,7 @@ export class PixelFxManager {
         onComplete: () => { if (sp) this.live.delete(sp); opts.onComplete?.(); },
       });
     } catch { /* 무시 */ }
-    if (sp) { this.lastAt.set(ev, now); this.live.add(sp); }
+    if (sp) { sp.setScale(Math.min(sp.scaleX, 220 / Math.max(1, sp.width, sp.height))); this.lastAt.set(ev, now); this.live.add(sp); }
   }
 
   /** 화면 흔들림 + 이펙트 (보스·크리티컬용). 보스 이벤트도 받는다. */

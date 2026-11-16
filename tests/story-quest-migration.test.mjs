@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { migrateSave, prepareSave, loadSave, writeSave, SAVE_VERSION, saveMigrationBackupKey, setActiveCharId, SAVE_KEY } from '../src/game/config.ts';
 import { createCharacter, readCharSave, setActiveChar, clearActiveChar, loadSlots } from '../src/game/slots.ts';
-import { storyQuestReward, STORY_QUEST_REVISION } from '../src/game/storyQuestMigration.ts';
+import { storyQuestReward, recoverStoryQuest, STORY_QUEST_REVISION } from '../src/game/storyQuestMigration.ts';
 import { STAGES, QUEST_EXP_MUL } from '../src/game/stages.ts';
 
 function storage() {
@@ -46,13 +46,45 @@ test('a 7ac2782 completed objective is distinguished by its authored dialogue, i
   assert.deepEqual(migrateSave(next), next);
 });
 
-test('unmarked saves written since 7ac2782 or without a timestamp keep their progress even if old dialogue aged out', () => {
+test('ambiguous one-step saves keep their completion; impossible new indices identify the legacy layout', () => {
   for (const lastSeen of [undefined, Date.UTC(2026, 10, 16, 3, 14, 49), Date.UTC(2026, 10, 17)]) {
     const save = { ...legacy(), lastSeen };
     const next = migrateSave(save);
-    assert.deepEqual(next.questIdx, save.questIdx);
+    assert.deepEqual(next.questIdx, {...save.questIdx, dlcstargate9: 1});
+    assert.deepEqual(next.storyQuestMigration.review, ['dlcstargate2']);
     assert.deepEqual(next.storyQuestMigration.credits, {});
   }
+});
+
+test('ambiguous recovery is explicit, pays no extra reward and survives revision-one saves', () => {
+  const save = legacy(); save.lastSeen = Date.now();
+  save.storyQuestMigration = {revision:1, credits:{park:{gold:7,exp:8}}};
+  const next = migrateSave(save), before = structuredClone(next);
+  assert.equal(next.questIdx.dlcstargate2, 1, 'loading alone cannot reset a completed quest');
+  assert.ok(next.storyQuestMigration.review.includes('dlcstargate2'));
+  assert.equal(recoverStoryQuest(next.storyQuestMigration, 'park', 100, 200), false);
+  assert.equal(recoverStoryQuest(next.storyQuestMigration, 'dlcstargate2', 5180, 1000), true);
+  assert.equal(recoverStoryQuest(next.storyQuestMigration, 'dlcstargate2', 5180, 1000), false);
+  assert.deepEqual(storyQuestReward(next.storyQuestMigration, 'dlcstargate2', 5180, 1000), {gold:0,exp:0});
+  for (const key of ['lv','exp','gold','owned','huntProg','emerald']) assert.deepEqual(next[key],before[key]);
+  assert.deepEqual(next.storyQuestMigration.credits.park,{gold:7,exp:8});
+  assert.deepEqual(migrateSave(next),next);
+});
+
+test('ambiguous save review has a dedicated original backup before revision is written', () => {
+  const store=storage(),save=legacy(); save.lastSeen=Date.now();
+  const raw=JSON.stringify(save),next=prepareSave(save,'sertz_char_review',raw);
+  assert.equal(next.questIdx.dlcstargate2,1);
+  assert.equal(store.getItem(saveMigrationBackupKey('quest-layout:sertz_char_review')),raw);
+});
+
+test('malformed optional review and reward fields cannot crash a restored character or create NaN money', () => {
+  const save={...legacy(),storyQuestMigration:{revision:STORY_QUEST_REVISION,credits:{dlcstargate2:{gold:'invalid',exp:-20}},review:{broken:true}}};
+  const next=migrateSave(save);
+  assert.deepEqual(next.storyQuestMigration.review,[]);
+  assert.equal(recoverStoryQuest(save.storyQuestMigration,'dlcstargate2',10,20),false);
+  assert.deepEqual(storyQuestReward(next.storyQuestMigration,'dlcstargate2',10,20),{gold:10,exp:20});
+  assert.equal(next.gold,save.gold);
 });
 
 test('all collapsed legacy chains preserve completion and remap each unfinished old index', () => {

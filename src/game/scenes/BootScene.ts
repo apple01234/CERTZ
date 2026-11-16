@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { PIXELFX_SHEETS } from "../fx/pixelFxSheets";
 import { preloadStoryBosses, registerStoryBosses } from "../fx/storyBossAssets";
 import { preloadStoryEnemies, registerStoryEnemies } from "../fx/storyEnemyAssets";
 import { AURA_TEXTURE_LOADS } from "../fx/auraTextures";
@@ -433,19 +434,7 @@ const SPUM_TO_BODY: Record<string, string> = {
  *   내려받고 디코드했다. 모바일에서 첫 진입 지연·메모리 압박의 주 원인.
  *  [해결] EVENT_FX 가 참조하는 45종(21.2MB)만 프리로드한다.
  *   나머지는 필요 시 loadFxSheet 로 지연 로드할 수 있다(경로는 그대로 유효). */
-const PIXELFX_SHEETS = [
-  "arcane-orb", "big-explosion", "bleeding", "blink-in", "blunt-hit", "bullet-impact",
-  "claw-swipe", "coin-spin", "collect-burst", "crit-hit", "crystal-shard", "dissolve-burn",
-  "divine-shield", "fireball", "frozen", "gem-spin", "hammer-smash", "haste", "heal",
-  "healing-bloom", "hit-spark", "ice-spikes", "impact-frame", "implosion", "leaf-storm",
-  "level-up", "pixel-dissolve", "poisoned", "poof", "portal", "quest-complete", "rage",
-  "resurrection", "shadow-flames", "shatter-death", "shield-block", "smite", "soul-rise",
-  "spawn-portal", "spin-slash", "splash", "summon-rise", "sunburst", "sword-slash", "zap-hit",
-  /* vc289 — 2026-11-09 Drive 배급 "FX Pack 1" 8종 (128px 24f).
-   *  tools/import_drive_20261109.py 가 원본 시트를 CERTZ pixelfx 스키마로 변환했다. */
-  "storm", "shockwave-big", "plasma", "energy-crack",
-  "pentagram", "implosion-drive", "orbit-rings", "sparks-glow",
-];
+
 
 const VFX_PACK_LIST = [
   "fx_shockwave", "fx_impact", "fx_glow", "fx_burst", "fx_flare", "fx_smoke",

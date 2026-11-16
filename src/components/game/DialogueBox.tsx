@@ -370,7 +370,8 @@ export function DialogueBox({
     idx >= (dialogue?.lines.length ?? 0) - 1 && shown.length >= line.length;
 
   const pickChoice = (c: { id: string } | undefined) => {
-    if (!c || !hasChoices || choiceSettled.current || performance.now() - openedAt.current < OPEN_GUARD_MS) return;
+    // A fresh pointer selection cannot be the keyboard event that opened this dialogue.
+    if (!c || !hasChoices || choiceSettled.current) return;
     choiceSettled.current = true;
     stopHold();
     audio.sfx.uiClick();
@@ -532,7 +533,7 @@ export function DialogueBox({
              *  → 게임 문법인 **깜빡이는 진행 화살표**로 바꾼다. 키 힌트는 첫 줄에서 한 번만,
              *    그마저도 아이콘 없이 짧게(모바일은 탭, PC는 Space) 표기한다. */}
             <span className="text-[10px] font-bold text-white/25 sm:text-[11px]">
-              {idx === 0 && shown.length >= line.length ? "Space / 탭" : ""}
+              {hasChoices ? "↑↓ 선택 · Space 다시 눌러 확정" : idx === 0 && shown.length >= line.length ? "Space / 탭" : ""}
             </span>
             {shown.length >= line.length && (
               <span

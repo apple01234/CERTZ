@@ -1,4 +1,5 @@
 import { FREE_DASH, freeDashFraction, type DashRect } from "../combat/freeDash";
+import { FIRST_DIO, isFirstDio } from "../firstBoss";
 import { normalizeSkillMastery } from "../skillMastery";
 import Phaser from "phaser";
 import { DECOR_BUDGET, decorSetFor, pickByTag, isSolidDecor, decorCollisionBounds, type DecorObj } from "../decorObjects";
@@ -57,7 +58,7 @@ import { SkillInputBuffer, type SkillCaster, type SkillId } from "./input/skillB
 import { cine3d } from "../cine3d"; // vc181 — 3D 시네마틱 레이어
 import { writeSave, loadSave, prepareSave, SAVE_VERSION, getFcode, type SaveData, setPlayerName, getPlayerName } from "../config";
 import { STORY_REVISION } from "../storyRevision";
-import { STORY_QUEST_REVISION, storyQuestReward, type StoryQuestMigration } from "../storyQuestMigration";
+import { STORY_QUEST_REVISION, storyQuestReward, recoverStoryQuest, type StoryQuestMigration } from "../storyQuestMigration";
 import { ensureWorldAssets, markWorldReady, reportLoadingFailure } from "../stagedAssets";
 import { createSimRunner, SIM_STEP_MS } from "../sim/fixedStep"; // vc183 — 20Hz 고정 틱 시뮬레이션
 import { keyLabel, loadKeyMap, loadMoveScheme, moveKeysFor, type KeyMap, type GameAction, type MoveScheme } from "../keymap";
@@ -904,7 +905,7 @@ export class WorldScene extends Phaser.Scene {
       if (data.stage === originalStage) data.stage = data.save!.stage as StageKey;
     }
     this.storyRevision = data.save?.storyRevision ?? STORY_REVISION;
-    this.storyQuestMigration = { revision: data.save?.storyQuestMigration?.revision ?? STORY_QUEST_REVISION, credits: { ...data.save?.storyQuestMigration?.credits } };
+    this.storyQuestMigration = { ...data.save?.storyQuestMigration, revision: data.save?.storyQuestMigration?.revision ?? STORY_QUEST_REVISION, credits: { ...data.save?.storyQuestMigration?.credits }, review: Array.isArray(data.save?.storyQuestMigration?.review) ? [...data.save.storyQuestMigration.review] : [] };
     this.questIdx = 0;
     this.activeStoryTalk = null;
     this.huntCount = 0;
@@ -2563,6 +2564,7 @@ export class WorldScene extends Phaser.Scene {
     else EventBus.emit("tut:state", { active: false, step: null });
     this.emitHud();
     this.emitQuest();
+    this.emitQuestLog();
     this.emitRpgState();
 
     /* ---------- 멀티플레이 (같은 서버 접속자 동기화 — v1.7 / 실내는 제외) ---------- */
@@ -9744,6 +9746,7 @@ export class WorldScene extends Phaser.Scene {
       ...base,
       hp: Math.round(fixed ? fixed.hp * dif.hp / normal.hp : base.hp * 1.25 * Math.max(1, sc.hp * 1.6) * dif.hp),
       atk: Math.round(fixed?.atk ? fixed.atk * dif.atk / normal.atk : base.atk * Math.max(1, sc.atk * 1.15) * dif.atk),
+      ...(isFirstDio(this.stageDef.key, base.key, true) ? { def: FIRST_DIO.def, defPct: FIRST_DIO.defPct, speed: FIRST_DIO.speed } : {}),
       exp: Math.round(base.exp * sc.exp * dif.reward),
       gold: Math.round(base.gold * sc.gold * dif.reward),
     };
@@ -12064,6 +12067,15 @@ export class WorldScene extends Phaser.Scene {
       this.emitQuest();
       this.emitQuestLog();
     };
+    const onQuestRecover = () => {
+      const stage = this.stageDef.key, q = this.stageDef.quests[0];
+      if (!q || this.currentQuest() || this.bossFightActive()) return;
+      if (!recoverStoryQuest(this.storyQuestMigration, stage, q.reward ?? 0, Math.round((q.expReward ?? 0) * QUEST_EXP_MUL))) return;
+      this.questIdx = 0; this.savedQuestIdx[stage] = 0; this.acceptedQuests[stage] = 0;
+      this.huntCount = 0;
+      this.afterAdvance(); this.emitQuestLog(); this.save();
+      notice("이 구역 목표를 다시 확인할 수 있습니다. 완료 보상은 중복 지급되지 않습니다.");
+    };
     /* #8 — 퀘스트 추적 선택 */
     const onQuestTrack = (v: { stage: string | null }) => {
       this.trackedStage = v.stage;
@@ -12335,6 +12347,7 @@ export class WorldScene extends Phaser.Scene {
     listen("rpg:eert", onEert);
     listen("rpg:sortInv", onSortInv); // v4.4.0 — 메이플식 [정리]
     listen("rpg:questAccept", onQuestAccept);
+    listen("rpg:questRecover", onQuestRecover);
     listen("rpg:questTrack", onQuestTrack);
     listen("rpg:autoset", onAutoSet);
     listen("rpg:autohunt", onAutoHunt);
@@ -12514,6 +12527,7 @@ export class WorldScene extends Phaser.Scene {
       unlisten("rpg:quickpot", onQuickPot);
       unlisten("rpg:eert", onEert);
       unlisten("rpg:questAccept", onQuestAccept);
+      unlisten("rpg:questRecover", onQuestRecover);
       unlisten("rpg:questTrack", onQuestTrack);
     });
 
@@ -18134,6 +18148,8 @@ export class WorldScene extends Phaser.Scene {
     const safeZone = !!this.stageDef.isVillage || this.isInterior;
     const payload: QuestLogState = {
       stageName: `${this.stageDef.name} — ${this.stageDef.subtitle}`,
+      recovery: !this.currentQuest() && this.storyQuestMigration.review?.includes(this.stageDef.key)
+        ? { title: this.stageDef.quests[0]?.title ?? "이 구역 목표" } : undefined,
       list: this.tut && this.fieldReq ? [{ title: `${this.fieldReq.npcName}의 수련 의뢰`,
         desc: `${this.fieldReq.mobName} ${this.fieldReq.count}/${this.fieldReq.need} · 완료 후 레지스터에게 보고`,
         state: "active", accepted: true, canAccept: false }] : safeZone ? [] : list,

@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { FIRST_DIO, isFirstDio } from "../firstBoss";
 import type { WorldScene } from "../scenes/WorldScene";
 import { cine3d } from "../cine3d"; // vc181 — 3D 시네마틱
 import type { BossDef, BossAttackKind, BossDiffKey } from "../data";
@@ -86,6 +87,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private nextAttackCd = 1600;
   private knockVec = new Phaser.Math.Vector2();
   private chargeDir = new Phaser.Math.Vector2();
+  private firstDio = false;
+  private chargeLane: Phaser.GameObjects.Graphics | null = null;
   private teleRing: Phaser.GameObjects.Image | null = null;
   private teleRings: Phaser.GameObjects.Image[] = [];
   /** v1.0.12 — 교만의 쌍랑 쌍랑 표현 ("얼음 늑대밖에 안보임" 리포트): 화염 늑대(달을 쫓는 늑대)
@@ -173,6 +176,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     const src = bossSourceFrame(def.tex);
     super(scene, x, y, src.key, src.frame);
     this.def = def;
+    this.firstDio = isFirstDio(scene.stageDef.key, def.key, storyEncounter);
     /* vc183 (지시 — 적에게도 방어력) — 보스 기본 방어력.
      *  보스는 잡몹보다 단단해야 "체력이 많은 벽"이 아니라 "때려도 덜 박히는 벽"이 된다.
      *  정액 25 + 비율 10%를 기본으로 주고, BossDef 에 값이 있으면 그쪽이 우선한다.
@@ -588,8 +592,11 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         if (this.modeTimer <= 0) {
           this.clearTint();
           this.squash(0.12, -0.08); // v1.4.9 — 돌진 출발 러닝 스트레치
-          this.chargeDir.set(player.x - this.x, player.y - this.y).normalize();
-          this.chargeTarget.set(player.x, player.y);
+          if (!this.firstDio) {
+            this.chargeDir.set(player.x - this.x, player.y - this.y).normalize();
+            this.chargeTarget.set(player.x, player.y);
+          }
+          this.chargeLane?.destroy(); this.chargeLane = null;
           this.setMode("charging", 520);
           this.chargeHitDone = false;
           this.scene.sfxDash();
@@ -597,7 +604,8 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
         break;
       }
       case "charging": {
-        this.setVelocity(this.chargeDir.x * 520 + this.knockVec.x, this.chargeDir.y * 520 + this.knockVec.y);
+        const dashSpeed = this.firstDio ? FIRST_DIO.chargeSpeed : 520;
+        this.setVelocity(this.chargeDir.x * dashSpeed + this.knockVec.x, this.chargeDir.y * dashSpeed + this.knockVec.y);
         if (!this.chargeHitDone && dist < 64) {
           this.chargeHitDone = true;
           player.takeDamage(Math.round(this.def.atk * 1.1), this.chargeDir.clone(), 0.5, this.chaos ? 0.10 : 0); // v3.0.6 — 관통 + maxHP % 하한
@@ -740,6 +748,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
      *  사방으로 터지며 카메라가 풀백하는 연출을 얹어 "지금 뭔가 변했다"를 각인시킨다. */
     void cine3d().play({ preset: "bossPattern", x: this.x, y: this.y, tint: this.phase === 3 ? 0xff4a3a : 0xffa24a, duration: 1300 });
     try { this.scene.pxFx?.boss("boss.intro", this.x, this.y, { scale: 1.4 }); } catch { /* 무시 */ }
+    this.chargeLane?.destroy(); this.chargeLane = null;
     this.volleyTimer?.remove();
     this.clearTint();
     /* vc153 — 어둠 동굴 방어막/투명화 잔존 정리 (페이즈 전환 시에도 상태 유출 금지) */
@@ -959,13 +968,23 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /* ---------- 스킬 2: 돌진 ---------- */
 
   private startCharge(player: PlayerLike2) {
-    void player;
+    if (this.firstDio) {
+      this.chargeTarget.set(player.x, player.y);
+      this.chargeDir.set(player.x - this.x, player.y - this.y).normalize();
+      const endX = this.x + this.chargeDir.x * FIRST_DIO.chargeSpeed * .52;
+      const endY = this.y + this.chargeDir.y * FIRST_DIO.chargeSpeed * .52;
+      this.chargeLane?.destroy();
+      this.chargeLane = this.scene.add.graphics().setDepth(5).setName("dio:charge-lane");
+      this.chargeLane.lineStyle(128, 0xff9060, .14).lineBetween(this.x, this.y, endX, endY)
+        .lineStyle(3, 0xffba8c, .9).lineBetween(this.x, this.y, endX, endY);
+    }
     // v4.1.4 — 돌진 연쇄: def.chargeChain(greedwolf 2 / twinwolf 2+blink, 카오스 +1, 상한 3)
     this.chargeChainLeft = Math.min(3, (this.def.chargeChain ?? 1) - 1 + (this.chaos ? 1 : 0));
     /* P7b — 돌진 예고를 bossPhases 기준(850ms)으로. 종전 550ms 는 range 하한(600) 미만이었다.
      *  돌진은 유도형이라 예고가 짧으면 사실상 피할 수 없다 — 바닥에 진행선을 깐다. */
-    this.setMode("chargeTele", telegraphMs("charge"));
-    this.vxWarnRing(this.x, this.y, 0xff9060, 1.25, telegraphMs("charge") * 0.85);
+    const warning = this.firstDio ? FIRST_DIO.chargeWarningMs : telegraphMs("charge");
+    this.setMode("chargeTele", warning);
+    this.vxWarnRing(this.x, this.y, 0xff9060, 1.25, warning * 0.85);
   }
 
   /* ---------- 스킬 3: 투사체 ---------- */
@@ -1142,7 +1161,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.clearTint();
     const key = this.def.summonKey;
     if (key) {
-      this.scene.requestSummon(key, this.phase === 3 ? 2 : 1, this.x, this.y);
+      const alive = this.scene.enemies.filter(e => e.active && e.alive).length;
+      const count = this.firstDio ? Math.max(0, Math.min(1, FIRST_DIO.summonCap - alive)) : this.phase === 3 ? 2 : 1;
+      if (count) this.scene.requestSummon(key, count, this.x, this.y);
       this.scene.spawnBurstAt(this.x, this.y, 16, 0xc070ff);
       this.bossFx("hv2_crystal", this.x, this.y - 6, { tint: 0xc070ff, scale: 0.9, dur: 320 }); // v1.4.11 — 결정 파편
       this.scene.showBanner(`${this.def.name}가 권속을 부른다!`);
@@ -2042,8 +2063,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
    *   유저 요구 "패턴 사이의 반격 기회" — 종전엔 곧바로 idle 로 돌아가 다음 패턴을
    *   준비했으므로, 보스가 계속 공격만 하는 것처럼 보였다. */
   private endAttack(cd: number) {
+    this.chargeLane?.destroy(); this.chargeLane = null;
     /* 반격 창: 패턴별 1~2초(bossPhases.RECOVERY_MS). 창이 열린 동안 피해 ×1.15. */
-    const win = this.lastAttack ? recoveryMs(this.lastAttack) : 0;
+    const win = this.lastAttack ? this.firstDio ? FIRST_DIO.recoveryMs : recoveryMs(this.lastAttack) : 0;
     if (win > 0 && this.alive) {
       this.mode = "recover";
       this.modeTimer = win;
@@ -2211,6 +2233,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     EventBus.emit("boss:update", { hp: Math.max(0, this.sharedMode && !this.sharedIsHost ? Math.round(this.sharedHp) : this.hp), maxHp: this.maxHp });
 
     if (hpAuthority && this.hp <= 0) {
+      this.chargeLane?.destroy(); this.chargeLane = null;
       this.hp = 0;
       this.alive = false;
       this.mode = "dead";
@@ -2300,6 +2323,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   }
 
   destroyPool() {
+    this.chargeLane?.destroy(); this.chargeLane = null;
     this.recoveryLabel?.destroy(); this.recoveryLabel = null;
     this.story?.destroy(); this.story = null;
     this.volleyTimer?.remove();

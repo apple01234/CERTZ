@@ -31,7 +31,7 @@ const OUT = join(ROOT, "src", "game", "editorAssetManifest.ts");
 const IMAGE_EXT = new Set([".png", ".webp", ".jpg", ".jpeg"]);
 
 /** 에디터와 무관한 디렉터리(오디오/백업). */
-const SKIP_DIRS = new Set(["audio", "sfx2", ".tile_backup", ".tile_pack_backup", ".vfx_alpha_backup"]);
+const SKIP_DIRS = new Set(["audio", "sfx2", "optimized-startup", "startup-bundle", ".tile_backup", ".tile_pack_backup", ".vfx_alpha_backup"]);
 
 /** 최상위 디렉터리 → 카테고리 라벨. 표에 없는 디렉터리는 이름 그대로 노출한다. */
 const CATEGORY_LABEL = {

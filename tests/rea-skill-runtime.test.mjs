@@ -9,6 +9,8 @@ import {
 import { CLASSES, SKILL_LABELS, chainOf, familyOf, resolveSkill1Of, resolveSkill2Of } from "../src/game/classes.ts";
 import { FREE_DASH, freeDashDirection } from "../src/game/combat/freeDash.ts";
 import { skillMasteryProgress, normalizeSkillMastery } from "../src/game/skillMastery.ts";
+import { ADMITTED_PIXELFX } from "../src/game/fx/pixelFxSheets.ts";
+import { STARTER_PIXELFX } from "../src/game/assetSelection.ts";
 
 function clock() {
   let now = 0;
@@ -285,9 +287,9 @@ test("legacy/corrupt mastery data is bounded and level thresholds are exact", ()
 
 test("actual native renderer uses shipped sheets, tags every object and removes cast-owned effects/tweens", () => {
   const source = readFileSync(new URL("../src/game/fx/WeaponMasterCombat.ts", import.meta.url), "utf8");
-  const boot = readFileSync(new URL("../src/game/scenes/BootScene.ts", import.meta.url), "utf8");
   for (const [, key] of source.matchAll(/this\.native\("([^"]+)"/g)) {
-    assert.ok(boot.includes(`"${key}"`), `${key} already loaded by BootScene`);
+    assert.ok(ADMITTED_PIXELFX.has(key), `${key} registered in BootScene's catalog`);
+    assert.ok(STARTER_PIXELFX.includes(key), `${key} ready before synchronous signature rendering`);
     assert.ok(existsSync(new URL(`../public/assets/fx/${key}.png`, import.meta.url)), `${key}: existing sheet`);
     assert.ok(existsSync(new URL(`../public/assets/fx/${key}.json`, import.meta.url)), `${key}: existing animation metadata`);
   }

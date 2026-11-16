@@ -23,7 +23,7 @@ test('본편과 수련 원정 보스: 노말 전투 길이가 목표 밴드 안�
   assert.equal(bosses.length, 19, '영프 9 + 그랜드 플레닛 4 + 수련 원정 6');
   for (const r of bosses) {
     assert.ok(BOSS_STAGE_STATS[r.key], `${r.key}: 본편 보스는 실효 스탯 표에 있어야 한다`);
-    const [lo, hi] = r.key.startsWith('dlc') ? [450, 1300] : [120, 500];
+    const [lo, hi] = r.key === 'lilacworld2x3' ? [18, 120] : r.key.startsWith('dlc') ? [450, 1300] : [120, 500];
     assert.ok(r.bossHtk >= lo && r.bossHtk <= hi, `${r.key}: 기본공격 ${r.bossHtk}타 (목표 ${lo}~${hi})`);
     assert.ok(r.bossHitsToDie >= 5, `${r.key}: 보스에게 ${r.bossHitsToDie}대에 죽는다 (5대 이상)`);
   }

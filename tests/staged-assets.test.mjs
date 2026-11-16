@@ -7,6 +7,8 @@ import { assetUrl, isWorldAsset } from '../src/game/assetSelection.ts';
 import { BODY_PREFIXES, STAGES, ENEMIES, BOSS_DEFS, resolveStage } from '../src/game/data.ts';
 import { resolveBodyPrefix } from '../src/game/characterAppearance.ts';
 import { tutorialResume, tutorialStage } from '../src/game/tutorialFlow.ts';
+import { LILAC_SCENARIOS } from '../src/game/lilacScenarios.ts';
+import { StartupBundle } from '../src/game/startupBundle.ts';
 import { storyEnemyRole, STORY_ENEMY_TEXTURES } from '../src/game/storyEnemyVisuals.ts';
 
 // Execute the real scheduler against controlled network/cache ports.
@@ -17,7 +19,7 @@ const javascript = ts.transpile(body, { target: ts.ScriptTarget.ES2022 });
 function harness(keys, deadline = 1000) {
   const updates = [], cache = new Set(), starts = [], releases = new Map(), metadataRequests = [];
   const window = { setTimeout, clearTimeout };
-  const { Manager, retry } = new Function('publish', 'window', 'PHASE_LIMIT_MS', 'json', 'let retryAction; ' + javascript + '; return { Manager: AssetManager, retry: () => retryAction?.() };')(p => updates.push(structuredClone(p)), window, deadline, async url => { metadataRequests.push(url); return { frames: {} }; });
+  const { Manager, retry } = new Function('publish', 'window', 'PHASE_LIMIT_MS', 'json', 'StartupBundle', 'let retryAction; ' + javascript + '; return { Manager: AssetManager, retry: () => retryAction?.() };')(p => updates.push(structuredClone(p)), window, deadline, async url => { metadataRequests.push(url); return { frames: {} }; }, StartupBundle);
   const game = { events: new EventEmitter(), textures: { exists: key => cache.has(key) } };
   const restarts = [];
   const scene = { events: new EventEmitter(), sys: { isActive: () => true }, registry: { get: () => ({ fresh: true }) }, scene: { restart: data => restarts.push(data) } };
@@ -97,7 +99,7 @@ test('atlas frames and effect metadata share one JSON request', async () => {
 
 function worldGate(h) {
   const gate = ast.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === 'ensureWorldAssets').getText(ast).replace(/^export /, '');
-  const ports = { BODY_PREFIXES, STAGES, ENEMIES, BOSS_DEFS, resolveStage, resolveBodyPrefix, tutorialResume, tutorialStage, isWorldAsset, storyEnemyRole, STORY_ENEMY_TEXTURES };
+  const ports = { BODY_PREFIXES, STAGES, ENEMIES, BOSS_DEFS, resolveStage, resolveBodyPrefix, tutorialResume, tutorialStage, isWorldAsset, storyEnemyRole, STORY_ENEMY_TEXTURES, LILAC_SCENARIOS };
   return new Function('managers', 'publish', 'lastProgress', ...Object.keys(ports), ts.transpile(gate, { target: ts.ScriptTarget.ES2022 }) + '; return ensureWorldAssets;')(new WeakMap([[h.scene.game = {}, h.manager]]), () => {}, {}, ...Object.values(ports));
 }
 

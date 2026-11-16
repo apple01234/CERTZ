@@ -10,7 +10,7 @@ const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PAT
   args: ['--no-sandbox', '--enable-unsafe-swiftshader'] });
 const results = [];
 try {
-  for (const mode of ['Space', 'Tab', 'Escape', 'held-space', 'mobile-tap', 'created-reload', 'opening-reload']) {
+  for (const mode of ['Space', 'Tab', 'Escape', 'held-space', 'held-keyboard', 'mobile-tap', 'created-reload', 'opening-reload']) {
     const mobile = mode === 'mobile-tap';
     const context = await browser.newContext({ viewport: mobile ? { width: 844, height: 390 } : { width: 1280, height: 800 },
       isMobile: mobile, hasTouch: mobile });
@@ -58,9 +58,17 @@ try {
         });
         if (state?.step === 'move') { result.final = state; break; }
         const choice = page.getByRole('button', { name: '두려움에 도망치는 사람', exact: true });
-        if (await choice.isVisible()) await choice.click();
+        if (await choice.isVisible()) {
+          if (mode === 'held-keyboard') {
+            await page.keyboard.up('Space'); await page.waitForTimeout(300);
+            await page.keyboard.press('ArrowDown'); await page.keyboard.press('Space');
+            result.choiceAttempted = true;
+          } else if (mode !== 'held-space' || !result.choiceAttempted) {
+            result.choiceAttempted = true; await choice.click();
+          }
+        }
         else if (mobile) await page.touchscreen.tap(415, 330);
-        else if (mode === 'held-space') await page.keyboard.down('Space');
+        else if (mode === 'held-space' || mode === 'held-keyboard') await page.keyboard.down('Space');
         else await page.keyboard.press('Space', { delay: 50 });
         await page.waitForTimeout(mode === 'held-space' ? 100 : 300);
       }
@@ -71,6 +79,7 @@ try {
       assert.equal(result.final.paused, false);
       const saved = await page.evaluate(id => JSON.parse(localStorage.getItem(`sertz_char_${id}`)), created.id);
       assert.equal(saved.playerName, name);
+      if (result.choiceAttempted) assert.equal(saved.storyChoices?.haruWho, 'flee', 'chosen answer must persist');
       assert.equal((await slots()).activeId, created.id);
       assert.deepEqual(result.pageErrors, []);
       result.passed = true;

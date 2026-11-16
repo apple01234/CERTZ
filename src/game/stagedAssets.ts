@@ -6,6 +6,8 @@ import type { SaveData } from "./config";
 import { rememberTexture } from "./texGuard";
 import { assetUrl, isWorldAsset, TITLE_ASSETS, type AssetDefinition } from "./assetSelection";
 import { storyEnemyRole, STORY_ENEMY_TEXTURES } from "./storyEnemyVisuals";
+import { LILAC_SCENARIOS } from "./lilacScenarios";
+import { StartupBundle } from "./startupBundle";
 
 export type LoadProgress = { phase: string; elapsedMs: number; total: number; complete: number; active: number; failed: string[]; error?: string };
 const PHASE_LIMIT_MS = 30000;
@@ -88,6 +90,7 @@ class AssetManager {
   private queue: Job[] = [];
   private active = 0;
   private disposed = false;
+  private startupBundle = new StartupBundle();
   private phase = 0;
   constructor(private game: Phaser.Game, definitions: AssetDefinition[], private register: (scene: Phaser.Scene) => void) {
     this.definitions = new Map(definitions.map(def => [def.key, def]));
@@ -120,7 +123,14 @@ class AssetManager {
       } finally { clearTimeout(timer); }
       return;
     }
-    const [img, atlas] = await Promise.all([image(def.urls[0]), def.type === "atlas" ? this.metadataFor(def.urls[1]) : Promise.resolve(null)]);
+    const pixels = (async () => {
+      const bundled = await this.startupBundle.image(def.urls[0]);
+      try {
+        try { return await image(bundled ?? def.urls[0]); }
+        catch (error) { if (!bundled) throw error; return await image(def.urls[0]); }
+      } finally { if (bundled) URL.revokeObjectURL(bundled); }
+    })();
+    const [img, atlas] = await Promise.all([pixels, def.type === "atlas" ? this.metadataFor(def.urls[1]) : Promise.resolve(null)]);
     if (this.disposed) throw new Error("game destroyed");
     if (this.exists(def)) return;
     if (def.type === "atlas") this.game.textures.addAtlas(def.key, img, atlas);
@@ -226,7 +236,10 @@ export async function ensureWorldAssets(scene: Phaser.Scene, data: { stage?: str
     if (role) monsters.add(`storymob_${role}`);
   }
   allMonsters.unshift(...STORY_ENEMY_TEXTURES);
-  const scope = { body: resolveBodyPrefix(data.save ?? {}), bodies: BODY_PREFIXES, monsters: [...monsters], allMonsters };
+  const presentation = /^lilacworld1x[1-4]$/.test(stage.key) && !data.gmBoss && !data.replayBoss
+    ? ["cast_register", "cast_recorder", ...Object.values(LILAC_SCENARIOS).filter(s => s.chapter === 1)
+      .flatMap(s => s.steps.flatMap(step => step.t === "enter" && step.actor.tex ? [step.actor.tex] : []))] : undefined;
+  const scope = { body: resolveBodyPrefix(data.save ?? {}), bodies: BODY_PREFIXES, monsters: [...monsters], allMonsters, demandFx: true, presentation };
   const keys = [...manager.definitions.values()].filter(def => isWorldAsset(def, scope)).map(def => def.key);
   // Every region re-enters this gate before spawn; completed/in-flight jobs are
   // reused. Do not start a full-catalog background burst during gameplay.

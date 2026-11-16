@@ -6,6 +6,7 @@
  *  - 이전 작업분(v1.5) 스토리 데이터(대사/보스/몬스터/퀘스트) 전부 이관 + 복귀 차원문 체인
  */
 import { rekeyLegacy } from "./legacyKeys";
+import { FIRST_DIO } from "./firstBoss";
 import {
   LILACWORLD_CHAPTERS,
   LILACWORLD_BOSSES,
@@ -1040,7 +1041,7 @@ const LATE_HP_RAMP = 1.2;
  *   (종전 4대) HP 를 20% 낮췄다(480~1,200타).
  *  측정·검증: scripts/measure-combat-balance.mjs, tests/combat-balance.test.mjs. */
 export const BOSS_STAGE_STATS: Record<StageKey, { hp: number; atk?: number }> = {
-  lilacworld2x3: { hp: 19800 },
+  lilacworld2x3: { hp: FIRST_DIO.hp, atk: FIRST_DIO.atk },
   lilacworld5x4: { hp: 71200 },
   lilacworld7x3: { hp: 110000 },
   lilacworld7x5: { hp: 117000 },
