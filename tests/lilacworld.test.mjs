@@ -162,7 +162,8 @@ for (const ch of LILACWORLD_CHAPTERS) {
   }
 }
 const bossOrder = LILACWORLD_CHAPTERS.flatMap(c => CHAPTER_STORY_PLAN[c.key].places.map(p => p.boss).filter(Boolean));
-assert.deepEqual(bossOrder, ['dio','harold','verodin','rasion','feron','shadow','scarlet_blood','scarlet_dark','scarlet_seal','desknis']);
+assert.deepEqual(bossOrder, ['dio','harold','verodin','rasion','feron','scarlet_blood','scarlet_dark','scarlet_seal','desknis']);
+assert.equal(STAGES.lilacworld10x2.quests[0].dialogue, 'lwSecretRoute');
 
 /* ── 7. parseStage / chapterSpec ───────────────────────────────────────── */
 assert.deepEqual(parseStage('lilacworld3x3'), { ch: 'lilacworld3', sub: 3 });

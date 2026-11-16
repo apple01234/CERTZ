@@ -15,8 +15,8 @@ export const CHAPTER_STORY_PLAN: Record<string, ChapterStoryPlan> = {
     place("에델리오나 성의 뒷문", "court", "castle"), place("검이 잠든 지하 감옥", "dungeon", "ruin", "castle"),
   ] },
   lilacworld2: { title: "떠나야 할 이유", canon: "1.txt:62-174", places: [
-    place("습격당한 마을", "village", "earth", "castle"), place("피난 골목", "ruin", "ruin", "earth"),
-    place("디오와 사념체", "court", "ruin", "castle", "rock", "dio"), place("시스터즈의 아지트", "inn", "wood"),
+    place("시스터즈의 아지트와 서쪽 길", "inn", "wood"), place("피난 골목", "ruin", "ruin", "earth"),
+    place("디오와 사념체", "court", "ruin", "castle", "rock", "dio"), place("습격이 끝난 마을", "village", "earth", "castle"),
   ] },
   lilacworld3: { title: "칼리야의 수련", canon: "2.txt:35-45", places: [
     place("칼리야로 가는 길", "road", "grass", "earth"), place("도깨비들의 언덕", "cliff", "forest", "earth"),
@@ -49,7 +49,7 @@ export const CHAPTER_STORY_PLAN: Record<string, ChapterStoryPlan> = {
     place("성채 결계 외곽", "ruin", "ruin", "castle"), place("반란군이 연 돌입로", "road", "earth", "castle"),
   ] },
   lilacworld10: { title: "시스터즈의 비밀 통로", canon: "2.txt:158-162", places: [
-    place("어둠의 성채 외벽", "ruin", "ruin", "castle"), place("군단장의 사념체", "court", "castle", "ruin", "rock", "shadow"),
+    place("어둠의 성채 외벽", "ruin", "ruin", "castle"), place("군단장들이 지키는 정면 입구", "court", "castle", "ruin", "rock"),
     place("지하의 미로", "tunnel", "ruin", "castle"), place("스칼렛의 함정", "tunnel", "castle", "ruin"), place("시스터즈의 방어선", "tunnel", "ruin", "castle"),
   ] },
   lilacworld11: { title: "피의 영역", canon: "2.txt:162-166", places: [
@@ -71,7 +71,7 @@ export const CHAPTER_STORY_PLAN: Record<string, ChapterStoryPlan> = {
   ] },
   lilacworld15: { title: "끝이 아닌 재건", canon: "2.txt:307-323", places: [
     place("에델리오나의 재건", "village", "earth", "castle"), place("라일락의 무덤", "garden", "grass", "castle"),
-    place("연합의 회의", "court", "castle"), place("워프 아일랜드", "shore", "grass", "castle", "water"),
+    place("하루가 돌아온 집", "inn", "wood"), place("워프 아일랜드", "shore", "grass", "castle", "water"),
   ] },
 };
 

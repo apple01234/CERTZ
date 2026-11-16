@@ -16,7 +16,7 @@ import {
 import { hasStageDialogue } from "./stageDialogue";
 import { CHAPTER_STORY_PLAN, chapterEncounter } from "./chapterStoryPlan";
 import { canonBossOf, BOSS_RECORD_ALIASES } from "./entities/bossDesign";
-import { GRAND_PLANET_BOSSES, type GrandPlanetBossKey } from "./grandPlanetCanon";
+import { GRAND_PLANET_BOSSES, GRAND_PLANET_CHAPTERS, GRAND_PLANET_ROUTE, SNORIKA_STORY, SNORIKA_ENTRY, type GrandPlanetBossKey } from "./grandPlanetCanon";
 
 /* ================= 타입 ================= */
 
@@ -36,7 +36,8 @@ export type ChapterKey =
    *  챕터가 두 자리가 되면서 스테이지 키는 `lilacworld{장}x{구역}` 형식을 쓴다. */
   | "lilacworld1" | "lilacworld2" | "lilacworld3" | "lilacworld4" | "lilacworld5"
   | "lilacworld6" | "lilacworld7" | "lilacworld8" | "lilacworld9" | "lilacworld10"
-  | "lilacworld11" | "lilacworld12" | "lilacworld13" | "lilacworld14" | "lilacworld15";
+  | "lilacworld11" | "lilacworld12" | "lilacworld13" | "lilacworld14" | "lilacworld15"
+  | "snorika";
 
 /** 스테이지 키 — "village" | lilacworld{N}x{M} | dlc* (구 세이브 키는 resolveStage 가 village 로 폴백) */
 export type StageKey = string;
@@ -126,6 +127,7 @@ export type QuestDef = {
   expReward?: number;
   dialogue?: string;
   storyItemTexture?: string;
+  story?: boolean;
 };
 
 /* v1.0.15 (피드백 #5) — 퀘스트 경험치 리밸런싱 승수.
@@ -924,7 +926,7 @@ export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: nu
    *  본편/DLC 는 기존 형식 그대로 둔다. */
   const hw = /^(lilacworld(?:[1-9]|1[0-5]))x([1-9]|10)$/.exec(key);
   if (hw) return { ch: hw[1] as ChapterKey, sub: parseInt(hw[2], 10) };
-  const m = /^(dlcstargate|dlcprisma|dlcocean|dlcreverse|dlcneocity|dlcmech|dlcswallow|dlcopinicia|dlcnovel|dlcsernium)([1-9]|10)$/.exec(key);
+  const m = /^(dlcstargate|dlcprisma|dlcocean|dlcreverse|dlcneocity|dlcmech|dlcswallow|dlcopinicia|dlcnovel|dlcsernium|snorika)([1-9]|10)$/.exec(key);
   if (!m) return { ch: "village", sub: 0 };
   return { ch: m[1] as ChapterKey, sub: parseInt(m[2], 10) };
 }
@@ -1042,7 +1044,6 @@ export const BOSS_STAGE_STATS: Record<StageKey, { hp: number; atk?: number }> = 
   lilacworld7x3: { hp: 110000 },
   lilacworld7x5: { hp: 117000 },
   lilacworld8x4: { hp: 143000 },
-  lilacworld10x2: { hp: 218000, atk: 173 }, // 2026-11-14 — 장 공격 배율 상향(잡몹)과 무관하게 종전 보스 공격력 고정
   lilacworld11x4: { hp: 285000, atk: 187 }, // 〃
   lilacworld12x4: { hp: 344000, atk: 213 }, // 〃
   lilacworld13x4: { hp: 413000 },
@@ -2357,6 +2358,8 @@ export function resolveStage(key: string): StageKey {
 /** 오프닝 대사 매핑 — 구역 1은 챕터 인트로, 나머지는 구역 안내
  *  v1.0.19 (A-3) — 재림 지역(r1~r15)은 전용 인트로 대사 키 사용 (보스 구역은 rebirthBoss) */
 export function stageIntro(key: StageKey): string {
+  const story = STAGES[key]?.quests.find((quest) => quest.story)?.dialogue;
+  if (story && !key.startsWith("lilacworld")) return story;
   const spec = chapterSpec(key);
   if (!spec) {
     /* vc231 — 영프 편은 CHAPTERS 밖이라 여기서 별도 처리한다.
@@ -2463,12 +2466,118 @@ for (const [chapter, plan] of Object.entries(CHAPTER_STORY_PLAN)) {
   }
 }
 
+function bindStoryQuest(stage: StageDef, quest: QuestDef, departure?: string, capGold = false) {
+  const old = stage.quests;
+  const spawns = stage.enemies.reduce((sum, group) => sum + group.count, 0);
+  const mobs = stage.enemies.map(group => ENEMIES[group.key]);
+  const oldHunt = old.reduce((sum, q) => sum + (q.type === "hunt" ? q.need ?? 0 : 0), 0);
+  const newHunt = quest.type === "hunt" ? quest.need ?? 0 : 0;
+  const removedKills = Math.max(spawns, oldHunt) - Math.max(spawns, newHunt);
+  const scale = stageScale(stage.key);
+  // Add the experience from removed mandatory kills to the story objective.
+  const mobExp = mobs.reduce((sum, mob) => sum + mob.exp, 0) / Math.max(1, mobs.length);
+  const storyExp = Math.round(Math.max(0, removedKills) * mobExp * scale.exp * 1.35 / QUEST_EXP_MUL);
+  const expReward = old.reduce((sum, q) => sum + (q.expReward ?? 0), storyExp);
+  let reward = old.reduce((sum, q) => sum + (q.reward ?? 0), 0);
+  if (capGold && mobs.length) {
+    const mobGold = mobs.reduce((sum, mob) => sum + (mob.gold[0] + mob.gold[1]) / 2, 0) / mobs.length;
+    reward = Math.min(reward, Math.round(Math.max(spawns, newHunt) * mobGold * scale.gold * 2));
+  }
+  const objective = { ...quest, story: true, reward: reward || quest.reward, expReward: expReward || quest.expReward };
+  if (quest.type === "collect" && !objective.storyItemTexture) objective.storyItemTexture = "i_exp_book";
+  stage.quests = [objective];
+  if (quest.type === "boss") {
+    stage.quests.push({ id: `${stage.key}-next`, type: "reach", title: "다음 장소로", desc: "전투를 마치고 열린 길로 이동한다.", targetLabel: "차원문", dialogue: departure, story: true });
+  }
+  if (quest.type === "hunt") ensureQuestSpawns(stage.enemies, [quest.targetKey]);
+}
+
+for (const [i, chapter] of GRAND_PLANET_ROUTE.entries()) {
+  const spec = GRAND_PLANET_CHAPTERS[chapter]!;
+  for (const { sub, quest } of spec.beats ?? []) {
+    const stage = STAGES[`${chapter}${sub}`];
+    bindStoryQuest(stage, quest, sub === 10 ? spec.bossDone : undefined, true);
+  }
+  const next = GRAND_PLANET_ROUTE[i + 1];
+  NEXT_STAGE[`${chapter}10`] = next ? `${next}v` : null;
+  if (next) PREV_STAGE[`${next}v`] = `${chapter}10`;
+}
+NEXT_STAGE.dlcocean10 = "dlcmechv";
+PREV_STAGE.dlcoceanv = "dlcneocityv";
+PREV_STAGE.dlcmechv = "dlcocean10";
+NEXT_STAGE.dlcsernium10 = "dlcneocityv";
+
+for (const { sub, quest } of SNORIKA_STORY.beats) {
+  const key = `snorika${sub}`;
+  const boss = sub === SNORIKA_STORY.bossAt;
+  const baseline = STAGES.lilacworld3x3;
+  const stage: StageDef = {
+    ...baseline, key, name: quest.title, subtitle: SNORIKA_STORY.title,
+    boss, bossKey: boss ? SNORIKA_STORY.boss : undefined, repeat: undefined,
+    enemies: [], flowerCount: 0, treeCount: 4, rockCount: 6,
+    quests: [], scaleMul: { hp: 1, atk: 1, exp: 1, gold: 1 },
+  };
+  bindStoryQuest(stage, quest);
+  STAGES[key] = stage;
+  STAGE_SHORT[key] = quest.title;
+  STAGE_THEME[key] = sub === 1 ? STAGE_THEME[SNORIKA_STORY.returnStage]
+    : { ground: SNORIKA_STORY.groundTex, path: SNORIKA_STORY.pathTex, bg: SNORIKA_STORY.bg };
+  NEXT_STAGE[key] = sub === SNORIKA_STORY.beats.length ? SNORIKA_STORY.returnStage : `snorika${sub + 1}`;
+  PREV_STAGE[key] = key === SNORIKA_ENTRY ? SNORIKA_STORY.returnStage : `snorika${sub - 1}`;
+}
+
+const lilacObjectives: Record<string, { type: "reach" | "talk" | "collect"; dialogue: string; title: string; target: string }> = {
+  lilacworld3x2: { type: "reach", dialogue: "lwHillside", title: "도깨비들의 언덕을 지나", target: "리엘의 주막" },
+  lilacworld3x3: { type: "talk", dialogue: "lwRiel", title: "주막에서 만난 도사", target: "리엘" },
+  lilacworld4x3: { type: "talk", dialogue: "lwAriTraining", title: "에벤트에서 익히는 일섬", target: "아리" },
+  lilacworld6x4: { type: "collect", dialogue: "lwLucyCorruption", title: "상처에 남은 보석의 힘", target: "다크니스의 흔적" },
+  lilacworld7x4: { type: "collect", dialogue: "lwWarpStone", title: "전선을 잇는 이동석", target: "이동석" },
+  lilacworld8x5: { type: "talk", dialogue: "lwFeronMemory", title: "라일락의 기억", target: "아리" },
+  lilacworld9x3: { type: "collect", dialogue: "lwBarrier", title: "시스터즈가 무너뜨린 결계", target: "성채 결계" },
+  lilacworld10x2: { type: "reach", dialogue: "lwSecretRoute", title: "정면 대신 지하로", target: "지하 통로" },
+  lilacworld10x4: { type: "collect", dialogue: "lwTrap", title: "닫혀 버린 통로", target: "닫힌 문" },
+  lilacworld10x5: { type: "reach", dialogue: "lwSistersLast", title: "시스터즈가 열어 준 길", target: "최상층" },
+  lilacworld11x2: { type: "collect", dialogue: "lwBloodRite", title: "원혈의 방식", target: "흡수의 흔적" },
+  lilacworld12x3: { type: "talk", dialogue: "lwReaction", title: "반응으로 돌아오는 원소", target: "제르" },
+  lilacworld14x2: { type: "reach", dialogue: "lwRasionPact", title: "검 안의 계약", target: "하루의 내면" },
+  lilacworld14x4: { type: "collect", dialogue: "lwEther", title: "무의 원소 에테르", target: "운명의 검" },
+  lilacworld15x3: { type: "reach", dialogue: "lwEmptyHome", title: "다녀왔습니다", target: "하루가 돌아온 집" },
+};
+for (const [key, { type, dialogue, title, target }] of Object.entries(lilacObjectives)) {
+  const stage = STAGES[key];
+  bindStoryQuest(stage, {
+    id: stage.quests[0]?.id ?? dialogue, type, dialogue, title,
+    desc: type === "talk" ? `${target}에게 이야기를 듣는다.` : type === "collect" ? `${target}에 다가가 조사한다.` : `${target}으로 이어지는 길을 찾는다.`,
+    targetLabel: target, storyItemTexture: key === "lilacworld14x4" ? "item_wpn_greatsword" : undefined,
+  });
+}
+Object.assign(STAGES.lilacworld13x4.quests[1], { dialogue: "lwSealEnd", story: true });
+Object.assign(STAGES.lilacworld14x5.quests[1], { dialogue: "lwTimeLines", story: true });
+// Pay the infiltration experience across the next two chapter entrances.
+const fortressRewards = { lilacworld10x2: 100_000, lilacworld10x5: 150_000 };
+for (const [key, reward] of Object.entries(fortressRewards)) {
+  const objective = STAGES[key].quests[0];
+  objective.expReward = (objective.expReward ?? 0) - reward;
+}
+for (const [key, reward] of Object.entries({ lilacworld11x1: 150_000, lilacworld12x1: 100_000 })) {
+  const objective = STAGES[key].quests[0];
+  objective.expReward = (objective.expReward ?? 0) + reward;
+}
+
+/** Story destinations use their authored gates. Existing combat records keep their original scale. */
+export function stageEntranceLevel(key: StageKey): number {
+  const { ch } = parseStage(key);
+  if (ch === "snorika") return 0;
+  if (ch !== "village" && GRAND_PLANET_CHAPTERS[ch]) return GRAND_PLANET_CHAPTERS[ch]?.lvGate?.enter ?? 0;
+  return chapterSpec(key)?.lvGate.enter ?? 0;
+}
+
 /* 2026-11-14 (유저 지시 "레벨업 — 급상승 구간만 고르게") — 전투 없는 6·15장 앞의 5·14장이 그 몫까지 몰아 줘서
  *  한 장에 14~24레벨이 올랐다(실측 5장 Lv28→42, 14장 Lv106→130). 5장 경험치 배율(9.18)은 다음 전투 장인 7장(6.89)보다도 높았다.
  *  앞 장의 몬스터·퀘스트 경험치를 keep 배로 줄이고, 빈 장의 이야기 진행(이동) 퀘스트가 routeExp 씩 준다.
  *  keep·routeExp 는 scripts/measure-combat-balance.mjs trajectory 로 맞췄다 — 다음 전투 장 입장 레벨(Lv42·Lv130)은 종전과 같다. */
 for (const { from, to, keep, routeExp } of [
-  { from: "lilacworld5", to: "lilacworld6", keep: 0.4, routeExp: 5300 },
+  { from: "lilacworld5", to: "lilacworld6", keep: 0.4, routeExp: 4100 },
   { from: "lilacworld14", to: "lilacworld15", keep: 0.4, routeExp: 1_940_000 },
 ]) {
   for (const [key, stage] of Object.entries(STAGES)) {
@@ -2476,6 +2585,8 @@ for (const { from, to, keep, routeExp } of [
       if (stage.scaleMul) stage.scaleMul = { ...stage.scaleMul, exp: stage.scaleMul.exp * keep };
       for (const q of stage.quests) if (q.expReward) q.expReward = Math.round(q.expReward * keep);
     }
-    if (key.startsWith(`${to}x`)) for (const q of stage.quests) if (q.type === "reach") q.expReward = routeExp;
+    if (key.startsWith(`${to}x`)) for (const q of stage.quests) {
+      if (q.type === "reach" || (q.story && q.type === "collect")) q.expReward = routeExp;
+    }
   }
 }

@@ -77,6 +77,9 @@ function needTo(exp0, target) {
   const end = story[story.length - 1].exitLv;
   /* 마지막 장을 끝내면 그랜드 플레닛 진입 요구(130)를 넘되, 한참 넘지는 않는다. */
   ok(`영프 편 종료 Lv${end} — 130~135 (그랜드 플레닛 진입)`, end >= 130 && end <= 135);
+  const healingExp = Object.values(STAGES).filter(stage => stage.key.startsWith('lilacworld6x'))
+    .flatMap(stage => stage.quests).reduce((sum, quest) => sum + (quest.expReward ?? 0) * QUEST_EXP_MUL, 0);
+  ok('6장은 Lv37부터 전투 없이 7장 요구 레벨에 도달한다', levelFrom(37, healingExp) >= STAGES.lilacworld7x1.quests[0].need);
 }
 
 /* ── 3. 게이트가 단조 증가한다 ─────────────────────────────────────────── */

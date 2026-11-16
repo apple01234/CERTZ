@@ -38,7 +38,9 @@ test('시나리오의 choice 스텝이 정본 표와 같은 id 집합을 쓴다'
 
   const step = choiceSteps[0];
   assert.equal(step.key, 'haruWho', 'key 가 저장 키와 다르다');
-  assert.equal(step.prompt, '너는 어떤 사람이 되고 싶니?', '정본 질문 문구와 다르다');
+  assert.equal(step.prompt, '당신이라면 어떤 사람이 되고 싶나요?');
+  assert.ok(scen.steps.some(s => s.t === 'say' && s.lines.includes('너는 어떤 사람이 되고 싶니?')));
+  assert.ok(scen.steps.some(s => s.t === 'say' && s.lines.some(line => line.startsWith('두려움에 도망치는 사람이 되고 싶어요.'))));
   const stepIds = step.options.map((o) => o.id).sort();
   const canonIds = CANON_STORY_CHOICES['haruWho'].map((o) => o.id).sort();
   assert.deepEqual(stepIds, canonIds, '시나리오와 정본 표의 id 가 어긋난다');

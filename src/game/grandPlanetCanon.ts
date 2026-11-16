@@ -12,7 +12,7 @@ function beat(sub: number, dialogue: string, title: string, desc: string, type: 
   return {
     sub, dialogue,
     quest: { id: dialogue, type, title, desc, need: type === "hunt" ? 4 : 1,
-      targetLabel: title, targetKey, dialogue, reward: 180 + sub * 15, expReward: 160 + sub * 25 },
+      targetLabel: title, targetKey, dialogue, story: true, reward: 180 + sub * 15, expReward: 160 + sub * 25 },
   };
 }
 
@@ -162,15 +162,16 @@ export const CANON_FAMILIES: readonly CanonFamily[] = [
   { key: "grast", name: "그래스트", world: "grand", power: "우주", element: "light", true15: true, lord: "리안", lordTitle: "가주", fallen: false },
   { key: "destiny", name: "데스티니", world: "grand", power: "태양", element: "fire", true15: true, lord: "아리", lordTitle: "가주", fallen: false },
   { key: "fate", name: "페이트", world: "grand", power: "달", element: "ice", true15: true, lord: "루나", lordTitle: "가주", fallen: false },
-  { key: "carrion", name: "카르리온", world: "grand", power: "어둠", element: "dark", true15: true, lord: "페르온", lordTitle: "가주", fallen: true },
+  { key: "carrion", name: "카르리온", world: "grand", power: "암흑", element: "dark", true15: false, lord: "페르온", lordTitle: "가주", fallen: true },
   { key: "ariano", name: "아리아노", world: "grand", power: "아트", element: "none", true15: true, lord: "란", lordTitle: "가주", fallen: false },
-  { key: "flame", name: "엘리자베스-플래임", world: "grand", power: "불", element: "fire", true15: true, lord: "제니퍼", lordTitle: "가주", fallen: false },
+  { key: "flame", name: "엘리자베스-플래임", world: "grand", power: "불", element: "fire", true15: true, lord: "엘리자베스", lordTitle: "가주", fallen: false },
   { key: "orpheus", name: "오르페우스", world: "grand", power: "주문과 주술", element: "dark", true15: false, lord: "제르", lordTitle: "가주", fallen: false },
   { key: "selina", name: "셀리나", world: "grand", power: "무기", element: "none", true15: false, lord: "시아", lordTitle: "가주", fallen: false },
   { key: "ignition", name: "이그니션", world: "grand", power: "도공", element: "fire", true15: false, lord: null, lordTitle: null, fallen: false },
   { key: "jillian", name: "질리언", world: "grand", power: "조종", element: "none", true15: true, lord: "캐스터", lordTitle: "가주", fallen: false },
   { key: "reverse", name: "리버스", world: "grand", power: "반전", element: "electric", true15: false, lord: null, lordTitle: null, fallen: false },
-  { key: "pertiers", name: "페르티에스", world: "grand", power: "지배", element: "dark", true15: true, lord: "레이지스", lordTitle: "가주", fallen: true },
+  { key: "pheus", name: "페우스", world: "grand", power: "마법", element: "dark", true15: false, lord: null, lordTitle: null, fallen: true },
+  { key: "pertiers", name: "페르티에스", world: "grand", power: "지배", element: "dark", true15: false, lord: "레이지스", lordTitle: "가주", fallen: true },
   /* 제로세계 — 이 7가문이 코드에 전혀 없었다 */
   { key: "everforce", name: "에버포스", world: "zero", power: "번개", element: "electric", true15: true, lord: "벨리카", lordTitle: "영주", fallen: false },
   { key: "sentinel", name: "샌티널", world: "zero", power: "모래", element: "earth", true15: true, lord: "비에르", lordTitle: "영주", fallen: false },
@@ -284,7 +285,7 @@ export const SNORIKA_END = "snorika6";
 export const SNORIKA_STORY = {
   title: "눈의 왕국 스노리카", source: "지정 문서 6 — 눈의왕국 스노리카",
   template: "lilacworld2", groundTex: "tile_snow", pathTex: "tile_ice", bg: "#101b34",
-  returnStage: "youngprincessv", bossAt: 5, boss: "snorikaking" as const,
+  returnStage: "lilacworld4x2", bossAt: 5, boss: "snorikaking" as const,
   beats: [
     beat(1, "snowBook", "천문대의 수상한 책", "벨리카·란·넬리야가 받은 책을 조사한다.", "collect"),
     beat(2, "snowChess", "눈사람을 만드는 아이", "체스가 간직한 친구의 이야기를 듣는다."),
@@ -337,7 +338,7 @@ export const GRAND_PLANET_DIALOGUES: Record<string, GrandPlanetDialogue> = {
   gpPocket: { speaker: "아이리스", lines: ["마공학 포켓을 확인하세요. 좌표를 분수대 석판에 맞추면 연결할 수 있어요.", "심장유물을 회수한 흔적을 없애려는 컴퍼니를 추적해야 해요."] },
   gpFestival: { speaker: "아이리스", lines: ["호위팀은 귀족들을 지키고, 회수팀은 문서를 추적해 주세요. 정보팀은 연락을 유지할게요.", "오늘 밤 네오시티 컨벤션홀에서 합류해요."] },
   gpFalseIris: { speaker: "리엘의 스승", lines: ["저자는 아이리스가 아니네. 수호자의 기술을 훔친 귀쥐야.", "미리 준비한 이동용 꽃이 있네. 동료들과 진짜 연락처로 돌아가자."] },
-  gpGrandfather: { speaker: "리안", lines: ["이 그림은 과거를 보여줘. 미래를 보여주는 그림은 아니야.", "할아버지는 직접 사람들을 만나고 오감으로 세계를 확인하라고 하셨어.", "그랜드 플레닛의 사람들을 기억할 수 있도록 지도를 선물로 받고 싶었지.", "지정된 2기 기록은 이 기억과 무도회를 향하는 장면까지 남아 있다. 이후의 결말은 아직 기록되지 않았다."] },
+  gpGrandfather: { speaker: "리안", lines: ["이 그림은 과거를 보여줘. 미래를 보여주는 그림은 아니야.", "할아버지는 직접 사람들을 만나고 오감으로 세계를 확인하라고 하셨어.", "그랜드 플래닛의 사람들을 기억할 수 있도록 지도를 선물로 받고 싶었지.", "과거의 기억이 조금은 돌아온 것 같아요. 이제 무도회에 가 볼까요?"] },
   snowBook: { speaker: "란", lines: ["천문대에서 받은 책에 눈의 왕국 스노리카라고 적혀 있어요.", "페이지가 혼자 넘어가요. 파란빛이 우리를 책 속으로 끌어당기고 있어요!"] },
   snowChess: { speaker: "체스", lines: ["친구가 하늘의 오로라가 되었대요. 눈사람으로 다시 돌아올 수 있다고 믿어요.", "추운 밤에 혼자 있지 않도록 목도리와 외투를 주고 싶어요."] },
   snowHeart: { speaker: "스칼렛", lines: ["체스는 친구를 살리려고 설원의 마녀에게 심장을 넘겼어.", "심장과 기억이 얼어붙고 친구를 살리겠다는 사명만 남은 채 왕이 되었지."] },

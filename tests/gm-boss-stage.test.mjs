@@ -9,6 +9,7 @@ test('GM 패널의 모든 보스가 이동할 보스 구역을 찾는다', () =>
   assert.deepEqual(missing, []);
 });
 
-test('정본에 필드 배치가 없는 보스 4종은 첫 재림 보스 구역에서 체험한다', () => {
-  for (const k of ['guardian', 'behemoth', 'snorikaking', 'scarlet']) assert.equal(gmBossStage(k), 'r5', k);
+test('필드 배치가 없는 보스는 재림 구역, 클로체스는 스노리카에서 체험한다', () => {
+  for (const k of ['guardian', 'behemoth', 'scarlet']) assert.equal(gmBossStage(k), 'r5', k);
+  assert.equal(gmBossStage('snorikaking'), 'snorika5');
 });

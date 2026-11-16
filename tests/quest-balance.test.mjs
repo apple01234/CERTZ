@@ -74,13 +74,13 @@ export function maxKillsIn(
 
 /* ─────────────────────────── 수집 헬퍼 ─────────────────────────── */
 
-/** STAGES 전수의 hunt 퀘스트를 평탄화한다. */
+/** 대량 토벌량 기준의 적용 대상인 일반 hunt 퀘스트를 평탄화한다. */
 function allHunts() {
   const rows = [];
   for (const [stageKey, def] of Object.entries(STAGES)) {
     const spawn = (def.enemies ?? []).reduce((t, g) => t + (g.count ?? 0), 0);
     for (const q of def.quests ?? []) {
-      if (q.type !== "hunt") continue;
+      if (q.type !== "hunt" || q.story) continue;
       rows.push({
         stage: stageKey,
         questId: q.id,
@@ -230,7 +230,7 @@ test("lilacworld 1~3장(초반) hunt 가 전부 유저 초반 구간 20~50 안�
   /* 유저 표의 "초반 = 20~50". lilacworld 1~3장은 이 저장소의 초반 구간이다.
    *  종전엔 16(하한 미만)이 있었고, 재림은 12 로 초반보다 가벼웠다 — 둘 다 잡는다. */
   const early = allHunts().filter((r) => /^lilacworld[123]x/.test(r.stage));
-  assert.ok(early.length >= 3, `초반 hunt 가 ${early.length}건뿐 — 검사 대상 부족`);
+  assert.deepEqual(early.map(q => q.stage), ['lilacworld3x4', 'lilacworld3x5']);
   const out = early.filter((r) => r.need < 20 || r.need > 50);
   assert.deepEqual(
     out.map((r) => `${r.stage}=${r.need}`), [],

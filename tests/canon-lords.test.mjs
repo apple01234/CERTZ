@@ -1,10 +1,6 @@
 /**
  * canon-lords.test.mjs — vc279 가문 영주 데이터 계약
  *
- * 배경: 지시서 P7c 는 "제로세계 6가문이 코드에 없다"였으나 vc278 에서 확인한 결과
- * 가문 24개는 **이미 정본 7.txt 와 1:1 일치**했다. 실제 결손은 **영주(가주) 이름**이었다:
- *   비에르·에이리·피닉스·종려·카즈하·레이지스 6개가 src/game 어디에도 없었다.
- *
  * 이 테스트는 두 가지를 고정한다:
  *   ① 정본에 명시된 영주는 반드시 lord 로 존재한다 (빠뜨리면 실패)
  *   ② 정본에 **없는** 이름을 만들어내지 않는다 (창작 금지 — 지시서 §0-1)
@@ -29,7 +25,7 @@ const CANON_LORDS = {
   페이트: ['루나', '가주'],
   카르리온: ['페르온', '가주'],
   아리아노: ['란', '가주'],
-  '엘리자베스-플래임': ['제니퍼', '가주'],
+  '엘리자베스-플래임': ['엘리자베스', '가주'],
   오르페우스: ['제르', '가주'],
   셀리나: ['시아', '가주'],
   질리언: ['캐스터', '가주'],
@@ -44,15 +40,14 @@ const CANON_LORDS = {
 };
 
 /** 정본에 사람 이름이 **없는** 가문 — null 이어야 한다(창작 금지). */
-const NO_LORD = ['이그니션', '리버스'];
+const NO_LORD = ['이그니션', '리버스', '페우스'];
 
-test('가문 24개가 정본과 일치하고 누락이 없다', () => {
-  assert.equal(CANON_FAMILIES.length, 24, '가문 수가 24가 아니다');
+test('가문 25개가 정본과 일치하고 누락이 없다', () => {
+  assert.equal(CANON_FAMILIES.length, 25);
   const names = CANON_FAMILIES.map((f) => f.name);
-  assert.equal(new Set(names).size, 24, '가문명 중복');
-  for (const n of Object.keys(CANON_LORDS)) {
-    assert.ok(names.includes(n), `정본 가문 '${n}' 이 코드에 없다`);
-  }
+  assert.deepEqual([...names].sort(), [...Object.keys(CANON_LORDS), ...NO_LORD].sort());
+  assert.equal(CANON_FAMILIES.filter(f => f.true15).length, 15);
+  assert.equal(CANON_FAMILIES.filter(f => f.fallen).length, 5);
 });
 
 test('정본에 명시된 영주는 전부 lord 로 존재한다', () => {
@@ -73,7 +68,7 @@ test('정본에 사람 이름이 없는 가문은 null — 창작하지 않았�
   }
 });
 
-test('lord 가 있는 가문 수는 정본과 같다 (24 - 2 = 22)', () => {
+test('lord 가 있는 가문 수는 정본과 같다 (25 - 3 = 22)', () => {
   const withLord = CANON_FAMILIES.filter((f) => f.lord !== null);
   assert.equal(withLord.length, 22, `lord 보유 가문이 ${withLord.length}개`);
   assert.equal(Object.keys(CANON_FAMILY_BY_LORD).length, 22, '역조회 맵 크기 불일치');

@@ -12,7 +12,7 @@
 import { CHAPTERS, ENEMIES, type ChapterKey } from "./stages";
 import { LILACWORLD_CHAPTERS } from "./lilacworld";
 import { LILAC_DIALOGUES } from "./lilacStory";
-import { GRAND_PLANET_DIALOGUES } from "./grandPlanetCanon";
+import { CANON_FAMILIES, GRAND_PLANET_DIALOGUES, familyBlurb } from "./grandPlanetCanon";
 import { CHAPTER_STORY_PLAN } from "./chapterStoryPlan";
 import { stageDialogueLines } from "./stageDialogue"; /* vc237 — 구역별 걷는 대사 */
 import type { FamilyKey } from "./classes";
@@ -2064,6 +2064,7 @@ export const DIALOGUES: Record<string, DialogueDef> = {
 /* vc149 (#23) — NPC 말투 개편: 챕터당 3→6줄 확장(반복감 제거) + 사람 냄새 나는 구어체.
  *  안내인(반말·장난기), 시스템 안내문이 아니라 "동행이 떠드는" 느낌으로 정리했다. */
 const WALK_AMBIENT: Record<ChapterKey, string[]> = {
+  snorika: [],
   /* vc186b DLC — 세계 구원 이후 그랜드플래닛 (기획서 2기) */
   dlcstargate: [
     "별모양 행성이 발밑에서 꿈틀거린다. 이건 땅이 아니라… 살아 있는 무언가다.",
@@ -3328,7 +3329,28 @@ Object.assign(DIALOGUES, {
   bossIntroDesknis: { speaker: "데스크니스", lines: ["세계와 영혼을 잠식하고 새로운 세계를 만들겠다."] },
   bossDean: { speaker: "딘", lines: ["베로니카, 흑마법으로 길을 봉쇄하겠다."] },
 });
-for (const id of ["gpLittleStarFight", "gpJadeFight", "gpCoreFight", "gpFabian"]) DIALOGUES[id] = GRAND_PLANET_DIALOGUES[id];
+Object.assign(DIALOGUES, GRAND_PLANET_DIALOGUES, {
+  lwHillside: { speaker: "하루", lines: ["칼리야에 다다랐을 땐 더 걸을 힘이 없었다. 도깨비들이 다가오는 순간 부채 소리가 들렸다."] },
+  lwAriTraining: { speaker: "아리", lines: ["일섬은 원소를 강하게 압축했다가 터뜨리는 기술이야. 리안에게 바람을, 제르에게 불과 순환을 배워 둬."] },
+  lwLucyCorruption: { speaker: "하루", lines: ["루시의 상처에 남은 어둠을 끌어냈다. 나까지 잠식될 뻔했지만 검의 힘으로 버텼다."] },
+  lwWarpStone: { speaker: "하루", lines: ["돌은 제자리에 두고 가세요. 라시온은 제가 막을 테니, 다른 전선도 이동석부터 연결해 주세요."] },
+  lwFeronMemory: { speaker: "아리", lines: ["라일락이 남긴 펜던트야. 네가 잃어버린 추억을 떠올려, 페르온.", "리안이 나와 페르온을 발견해 병원으로 옮겨 주었다."] },
+  lwBarrier: { speaker: "리엘", lines: ["시스터즈가 결계를 부쉈어. 부상자들이 회복할 시간을 벌었으니, 이제 성채로 갈 길을 준비하자."] },
+  lwSecretRoute: { speaker: "시스터즈", lines: ["정면을 지나면 사념체들을 하나씩 상대해야 해. 우리가 찾아낸 지하 통로로 우회하자."] },
+  lwTrap: { speaker: "하루", lines: ["문이 닫혔다. 우리가 확보한 길 자체가 스칼렛의 함정이었다."] },
+  lwSistersLast: { speaker: "시스터즈", lines: ["사념체는 우리가 막을게. 최상층으로 가, 하루."] },
+  lwBloodRite: { speaker: "연합", lines: ["스칼렛은 원혈로 원소를 흡수해. 하지만 흡수에 집중하는 동안은 그녀도 원소를 쓸 수 없어."] },
+  lwReaction: { speaker: "제르", lines: ["한 사람이 서로 다른 원소를 반응시키면 그 뒤에 새로운 원소가 생깁니다.", "여러 원소를 복사한 하루라면, 그 힘으로 우리 모두의 원소를 되돌릴 수 있습니다."] },
+  lwSealEnd: { speaker: "루시", lines: ["페르온이 번 일 분 동안 마지막 자연의 힘을 모았어. 리안, 지금이야!", "스칼렛은 라일락을 되살리고 싶었다고 했다. 결국 잠식을 거둬들였고, 그때는 모든 것이 끝난 줄 알았다."] },
+  lwRasionPact: { speaker: "라시온", lines: ["네가 쓰러졌던 날, 나는 네 검에 영혼을 걸었다. 계약이 허락하는 동안 너를 지키기 위해 나왔다."] },
+  lwEther: { speaker: "하루", lines: ["남의 힘을 카피해도 내가 잊어 온 기억은 내 것이었다.", "빛은 어둠을 밝힐 뿐이다. 어둠도 없애 버리는 태초의 힘, 무의 원소 에테르."] },
+  lwTimeLines: { speaker: "리엘", lines: ["하루가 쓰러뜨린 뒤에도 어둠이 남아 있는 곳에서 데스크니스가 다시 깨어났다.", "이번에는 내가 맡지. 무한한 시간선에 가두고, 그가 잠식한 세계를 돌려놓을게."] },
+  lwEmptyHome: { speaker: "하루", lines: ["다녀왔습니다.", "대답은 없었다. 아주머니가 끓여 주시던 고기 스튜를 만들어 봤다. 그 맛은 카피할 수 없었지만, 그날 밤에는 오랜만에 별을 봤다."] },
+  loreWeaponMasters: { speaker: "기록관", lines: ["가문에 내려오는 힘은 원력이고 웨폰마스터가 발현하는 고유 원소와 능력은 구분한다.", "순환은 몸에 원소를 돌리고, 일섬은 원소를 압축해 터뜨린다. 영역은 원소를 끌어들여 과충전하며 발현하면 영역이 무너진다.", "빛·시간·생명·힘·마법의 초월자는 각기 다른 권능을 다룬다. 마스터 어빌리티에는 운명과의 계약이 필요하다."] },
+});
+for (const [world, id] of [["lilac", "loreLilacFamilies"], ["grand", "loreGrandFamilies"], ["zero", "loreZeroFamilies"]]) {
+  DIALOGUES[id] = { speaker: "기록관", lines: CANON_FAMILIES.filter(family => family.world === world).map(familyBlurb) };
+}
 /* [제거됨] 아래 루프는 15장 인트로/완료 대사를 `${plan.title}` · "…에서 이야기가 이어진다."
  *  · "…의 이야기를 기록했다. / 다음 장소로 향하자." 라는 **템플릿 2줄로 덮어썼다**.
  *  그래서 위 표에 정본(1.txt~8.txt)을 옮겨 적은 30개 키가 화면에 도달하지 못했다

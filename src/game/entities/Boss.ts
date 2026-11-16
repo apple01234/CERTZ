@@ -168,7 +168,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   /** v1.4.31 (#4) — 트윈(화염 늑대)이 본체와 다른 텍스처를 쓸 때의 애니 프리픽스 (boss_twinwolf → boss_twinmate) */
   private twinPrefix: string | null = null;
 
-  constructor(scene: WorldScene, x: number, y: number, def: BossDef, diffKey: BossDiffKey = "normal") {
+  constructor(scene: WorldScene, x: number, y: number, def: BossDef, diffKey: BossDiffKey = "normal", storyEncounter = false) {
     /* v1.4.31 (#4 보스 개편) — 아틀라스 보스는 시트 frame 0, 구형은 개별 idle0 이미지 */
     const src = bossSourceFrame(def.tex);
     super(scene, x, y, src.key, src.frame);
@@ -224,7 +224,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     this.bodyTint = RECORD_BODY_TINT[def.key] ?? 0;
     if (this.bodyTint) this.setTint(this.bodyTint);
     if (def.tex.startsWith("cast_") || def.tex.startsWith("story_")) this.applyStoryVisual(def.tex);
-    this.story = new StoryBossMechanics(this);
+    this.story = new StoryBossMechanics(this, storyEncounter);
 
     /* v1.0.12 — 화염 늑대 스폰: 얼음 늑대 옆에 나란히 달린다.
      *  vc142 — 아틀라스 시대: 본체=얼음 늑대(얼음 늑대), 트윈=화염 늑대(화염 늑대 전용 아트·무틴트).
@@ -531,8 +531,9 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     const dist = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
 
     this.updatePhase();
-    if (this.story?.tick()) {
-      this.scene.showBanner("링 아웃 — 파비앙의 항복!");
+    const storyFinish = this.story?.tick();
+    if (storyFinish) {
+      this.scene.showBanner(storyFinish === "seal" ? "봉쇄 완료 — 루시와 리안에게 기회가 열렸다!" : "링 아웃 — 파비앙의 항복!");
       this.hp = 1; this.takeDamage(this.maxHp * 100, new Phaser.Math.Vector2(), 0);
       return;
     }

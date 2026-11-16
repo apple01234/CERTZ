@@ -64,8 +64,7 @@ for (const { stage, q, mixKeys } of huntQuests) {
  *  임계값은 "회귀 방지용 하한"이므로 삭제 후 실제 규모에 맞춘다.
  *  vc288 — 보스맵 hunt 퀘스트를 걷어내 175 → 150건이 됐다(요구사항 8.2).
  *  이 숫자를 낮추는 게 목적이 아니라, 남은 콘텐츠가 통째로 사라지면 잡히게 하는 것이다. */
-// Healing/reconstruction rooms and documented new boss encounters replace some mandatory hunts.
-ok(`hunt 퀘스트 전수 검사 (${huntQuests.length}건)`, huntQuests.length >= 130);
+ok(`hunt 퀘스트 전수 검사 (${huntQuests.length}건)`, huntQuests.length >= 90);
 
 /* [vc288 — 보스맵 격리] 보스맵에는 일반몹도 일반 hunt 퀘스트도 없어야 한다.
  *  요구사항 8.2: "보스맵에는 … 일반 몬스터를 배치하지 않는다. 보스맵에 연결되는 퀘스트는

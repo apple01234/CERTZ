@@ -13,9 +13,11 @@ export class StoryBossMechanics {
   private core: Phaser.GameObjects.Image | null = null;
   private coreLabel: Phaser.GameObjects.Text | null = null;
   private coreHp = 0;
+  private sealTimer: Phaser.Time.TimerEvent | null = null;
+  private sealFinished = false;
   private origin: { x: number; y: number };
   private readonly key: string;
-  constructor(private boss: Boss) {
+  constructor(private boss: Boss, private readonly storyEncounter: boolean) {
     this.origin = { x: boss.x, y: boss.y };
     this.key = BOSS_RECORD_ALIASES[boss.def.key] ?? boss.def.key;
     const scene = boss.scene;
@@ -91,17 +93,30 @@ export class StoryBossMechanics {
     this.coreLabel = b.scene.add.text(b.x, b.y - 65, "장미 동력핵", { fontSize: "14px", color: "#ffd9eb", stroke: "#271a30", strokeThickness: 3 }).setOrigin(.5).setDepth(15);
   }
   interceptDamage(damage: number): boolean {
+    if (this.isSealTrial() && !this.sealFinished) return true;
     if (this.coreHp <= 0) return false;
     this.coreHp = Math.max(0, this.coreHp - damage);
     this.coreLabel?.setText(`장미 동력핵 ${this.coreHp}`);
     if (!this.coreHp) { this.core?.destroy(); this.coreLabel?.destroy(); this.core = null; this.coreLabel = null; this.boss.scene.showBanner("장미의 동력핵 파괴 — 본체 노출!"); }
     return true;
   }
-  tick(): boolean {
+  /** Only the story encounter uses Feron's one-minute diversion. Replays keep HP combat. */
+  private isSealTrial(): boolean {
+    return this.storyEncounter && this.key === "scarlet_seal" && this.boss.scene.stageDef.key === "lilacworld13x4";
+  }
+
+  tick(): "ringout" | "seal" | null {
     const b = this.boss;
     if (this.dean?.active) this.dean.setPosition(b.x - 105, b.y);
     this.core?.setPosition(b.x, b.y - 20); this.coreLabel?.setPosition(b.x, b.y - 65);
-    return this.key === "fabian" && Phaser.Math.Distance.Between(b.x, b.y, this.origin.x, this.origin.y) > 235;
+    if (this.isSealTrial()) {
+      if (this.sealFinished) return "seal";
+      if (!this.sealTimer) {
+        b.scene.showBanner("페르온의 영역 · 루시가 마지막 힘을 모을 때까지 60초 생존");
+        this.sealTimer = b.scene.time.delayedCall(60_000, () => { this.sealFinished = true; });
+      }
+    }
+    return this.key === "fabian" && Phaser.Math.Distance.Between(b.x, b.y, this.origin.x, this.origin.y) > 235 ? "ringout" : null;
   }
   phaseChanged(): void { this.clearAttack(); if (this.key === "littlestar") this.exposeCore(); }
   clearAttack(): void {
@@ -110,6 +125,8 @@ export class StoryBossMechanics {
     if (this.dean?.active) this.dean.play("cast_dean-ready");
   }
   destroy(): void {
+    this.sealTimer?.remove();
+    this.sealTimer = null;
     this.clearAttack(); this.ring?.destroy(); this.dean?.destroy(); this.core?.destroy(); this.coreLabel?.destroy();
     this.ring = null; this.dean = null; this.core = null; this.coreLabel = null;
   }

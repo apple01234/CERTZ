@@ -18,9 +18,9 @@ const rows = mainChain();
 const story = rows.filter(r => r.key.startsWith('lilacworld'));
 const dlc = rows.filter(r => r.key.startsWith('dlc'));
 
-test('본편 보스: 노말 전투 길이가 목표 밴드 안이다', () => {
+test('본편과 수련 원정 보스: 노말 전투 길이가 목표 밴드 안이다', () => {
   const bosses = rows.filter(r => r.bossHtk);
-  assert.ok(bosses.length >= 20, '영프 10 + 그랜드 플레닛 10 보스');
+  assert.equal(bosses.length, 19, '영프 9 + 그랜드 플레닛 4 + 수련 원정 6');
   for (const r of bosses) {
     assert.ok(BOSS_STAGE_STATS[r.key], `${r.key}: 본편 보스는 실효 스탯 표에 있어야 한다`);
     const [lo, hi] = r.key.startsWith('dlc') ? [450, 1300] : [120, 500];

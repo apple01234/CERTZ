@@ -39,7 +39,8 @@ import { beginSceneCinematic, type CinematicSession } from "../fx/sceneCinematic
 import { resolveVillageNpcTexture } from "../villageNpcAssets";
 import { buildSeenList } from "../cutsceneSeen"; // vc270 — 본 컷신은 맵 이동 후 재생하지 않는다
 import { playAutoCutscene, type CutStep } from "../fx/AutoCutscene"; // v4.9.0 — 메이플식 자동 컷씬
-import { CANON_STORY_CHOICES } from "../grandPlanetCanon"; // vc279 — P7c 선택지 정본(id→label)
+import { CANON_STORY_CHOICES, SNORIKA_ENTRY, GRAND_PLANET_CANON_END } from "../grandPlanetCanon";
+import { stageEntranceLevel } from "../stages";
 import { PixelFxManager } from "../fx/PixelFxManager"; // v4.9.3 — pixelfx 통합 매니저
 import { prefetchUltFx, playUltFx } from "../fx/ultPixelFx"; // 2026-11-14 — 궁극기 pixelfx · 2026-11-16 원격 연출 동기화
 import { gmBossStage } from "../gmBossStage"; // 2026-11-14 — GM 보스 체험 구역(배치 없는 보스 4종 수정)
@@ -261,6 +262,7 @@ export class WorldScene extends Phaser.Scene {
    *  이후에 한다. 그 전까지는 "정의만 있는 상태"로 취급한다. */
   private readonly state: GameState = createGameState();
   questIdx = 0;
+  private activeStoryTalk: string | null = null;
   huntCount = 0;
   totalKills = 0;
   startTime = 0;
@@ -901,6 +903,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.storyRevision = data.save?.storyRevision ?? STORY_REVISION;
     this.questIdx = 0;
+    this.activeStoryTalk = null;
     this.huntCount = 0;
     this.totalKills = 0;
     this.startTime = this.time.now;
@@ -2337,6 +2340,13 @@ export class WorldScene extends Phaser.Scene {
     }
     /* ---------- 이펙트 풀 ---------- */
     this.buildFxPools();
+    if (!this.isInterior) {
+      this.spawnStoryTalk();
+      if (stageKey === "dlcneocityv") this.addStoryMarker("전투기록 수련 원정", "storyWarp|dlcoceanv");
+      if ((stageKey === "village" || stageKey === "lilacworld4x2") && this.youngPrincessCleared) {
+        this.addStoryMarker("천문대의 책 · 스노리카", `storyWarp|${SNORIKA_ENTRY}`);
+      }
+    }
 
     /* v2.4 — 이어하기 시 레벨 게이트가 이미 충족된 상태면 즉시 연쇄 완료
      *  (구세이브는 questIdx가 신규 체인의 앞쪽으로 밀려날 수 있다 — 자기 레벨이 충분하면 게이트 스킵) */
@@ -2505,9 +2515,13 @@ export class WorldScene extends Phaser.Scene {
     const isContentStage = stageKey === "tower" || stageKey === "park" || stageKey === "gate" || stageKey === "closet" || stageKey === "dojang";
     // Restore the player first; one director owns physics/input until its final shot.
     const viewedIntro = this.stagePresentationSeen(stageKey);
-    const directedIntro = !viewedIntro && resumeTutorial === null && !this.isInterior && !isContentStage &&
+    const canonField = this.stageDef.quests.some(q => q.story) && !stageKey.startsWith("lilacworld");
+    const directedIntro = !canonField && !viewedIntro && resumeTutorial === null && !this.isInterior && !isContentStage &&
       (this.playLilacOpeningCutscene(stageKey) || this.playChapterIntroCutscene(stageKey));
-    if (!viewedIntro && resumeTutorial === null && !this.isInterior && !isContentStage && !directedIntro) {
+    if (canonField && !this.isInterior) {
+      const q = this.currentQuest() ?? this.stageDef.quests[0];
+      if (q?.dialogue && (q.type === "reach" || q.type === "hunt" || q.type === "boss")) this.showDialogueOnce(q.dialogue);
+    } else if (!viewedIntro && resumeTutorial === null && !this.isInterior && !isContentStage && !directedIntro) {
       if (stageKey === "village" && !savedPlayer?.playerName) {
         // v1.1.0 (#18) — 신규 플레이어: 프롤로그 시네마틱(내레이션 4비트) → 플레이형 인트로(이동 → 우물 → 이름 짓기)
         this.startIntroSequence();
@@ -4217,7 +4231,7 @@ export class WorldScene extends Phaser.Scene {
       onComplete: () => f.destroy(),
     });
     if (quest?.storyItemTexture) {
-      this.cameras.main.flash(180, 255, 237, 191);
+      if (!quest.story) this.cameras.main.flash(180, 255, 237, 191);
       if (quest.dialogue) this.showDialogueOnce(quest.dialogue);
       this.advanceQuest();
       this.afterAdvance();
@@ -4466,10 +4480,9 @@ export class WorldScene extends Phaser.Scene {
    */
   private gotoStage(next: StageKey, extra?: { entry?: { x: number; y: number }; replayBoss?: string; replayDiff?: string; gmBoss?: string; gmBossArena?: boolean; contestFrom?: StageKey; save?: SaveData }, force = false) {
     if (this.transitioning && !force) return;
-    if (!storyEntryAllowed(next, this)) {
-      notice(next.startsWith("dlc")
-        ? "그랜드 플레닛은 영준 프린세스 엔딩 이후에 열립니다"
-        : "영준 프린세스는 본편 엔딩 이후에 열립니다");
+    if (!(extra?.gmBoss && this.adminRole === "admin") && !storyEntryAllowed(next, this)) {
+      const name = next.startsWith("snorika") ? "스노리카" : "그랜드 플레닛";
+      notice(`${name}: 영준 프린세스 엔딩 이후 입장할 수 있습니다`);
       this.transitioning = false;
       return;
     }
@@ -4580,6 +4593,8 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private enterPortal() {
+    const quest = this.currentQuest();
+    if (quest?.type === "reach" && quest.story && quest.dialogue && this.showDialogueOnce(quest.dialogue)) return;
     this.portalActive = false;
     /* v1.4.3 (작업4) — 파티 보드: 원정 이동 카운트 (파티 중일 때만) */
     {
@@ -4615,7 +4630,7 @@ export class WorldScene extends Phaser.Scene {
     const ns = parseStage(next);
     if (ns.sub === 1 && ns.ch !== "village") {
       const spec = chapterSpec(next);
-      const need = spec?.lvGate.enter ?? 0;
+      const need = stageEntranceLevel(next);
       if (need > 0 && this.player.lv < need && this.adminRole !== "admin") {
         this.portalActive = true; // 차단 — 다시 밟을 수 있게
         audio.sfx.deny();
@@ -9578,6 +9593,7 @@ export class WorldScene extends Phaser.Scene {
    */
   private afterAdvance() {
     const q = this.currentQuest();
+    if (q?.type === "talk" && q.story) this.spawnStoryTalk();
     if (q?.type === "hunt") {
       /* 토벌 퀘스트 시작 기준선 — 시작 이후 킬만 진행 (지시 #17)
        * v3.0.28 — targetKeys(자동 토벌)는 구역 몬스터 전체 기준선
@@ -9749,7 +9765,7 @@ export class WorldScene extends Phaser.Scene {
       this.saveSoon();
       notice("⚔ 보스전! 자동전투가 해제됐다 — 보스 패턴을 직접 피하며 싸우자 (물약 단축키 F/D)");
     }
-    this.boss = new Boss(this, bx, by, def, "normal");
+    this.boss = new Boss(this, bx, by, def, "normal", true);
     this.spawnBossRunic(bx, by, false); /* v4.1.7 — 유료 팩 룬 마법진 */
     this.applyBossPostFX(false); /* v4.1.5 — 보스전 블룸 */
     this.physics.add.collider(this.boss, this.solidGroup);
@@ -15904,6 +15920,16 @@ export class WorldScene extends Phaser.Scene {
     if (!this.canPlayerAction("interact")) return;
     const it = this.nearInteract;
     if (!it) return;
+    if (it.dlg?.startsWith("storyWarp|")) {
+      this.startTransition(it.dlg.slice("storyWarp|".length));
+      return;
+    }
+    if (it.dlg?.startsWith("storyTalk|")) {
+      const dialogue = it.dlg.slice("storyTalk|".length);
+      this.activeStoryTalk = dialogue;
+      this.showDialogue(dialogue);
+      return;
+    }
     if (it.dlg === "tutorial_history") { this.openHistoryDialogue(); return; }
     if (it.dlg?.startsWith("tutorial|")) {
       const who = it.dlg.slice(9);
@@ -17421,6 +17447,7 @@ export class WorldScene extends Phaser.Scene {
     if (q.type === "boss") return "▶ 보스";
     if (q.type === "reach") return "▶ 다음 구역 차원문"; /* v3.0.26 (#75) — 목적지 방향 명시 */
     if (q.type === "collect") return `▶ ${q.storyItemTexture ? q.targetLabel : "결정"}`;
+    if (q.type === "talk" && q.story) return `▶ ${q.targetLabel}`;
     return "";
   }
 
@@ -18595,6 +18622,17 @@ export class WorldScene extends Phaser.Scene {
       this.time.delayedCall(160, () => this.trySleep());
       return;
     }
+    const storyTalk = this.activeStoryTalk;
+    this.activeStoryTalk = null;
+    const storyQuest = this.currentQuest();
+    if (storyTalk) this.markSeen(storyTalk);
+    if (storyTalk && storyQuest?.type === "talk" && storyQuest.story && storyQuest.dialogue === storyTalk) {
+      this.advanceQuest();
+      this.afterAdvance();
+      this.flushSave();
+      if (this.stageDef.key === GRAND_PLANET_CANON_END) this.showBanner("네오시티 19화 · 내면의 거울");
+      return;
+    }
     // 주민/카이엔 대화 종료 → talk 퀘스트 진행
     // v1.4.4 (유저 지시) — 카이엔 교관도 NPC 3명 카운트에 포함 (전직 NPC 1 + 일반 NPC 2 = 3명)
     if (this.activeNpcId) {
@@ -18826,6 +18864,24 @@ export class WorldScene extends Phaser.Scene {
 
   /* ═════════ v1.0.11 — 튜토리얼 지원 (Tutorial.ts 호출 API) ═════════ */
 
+  private addStoryMarker(label: string, dlg: string, speaker?: string) {
+    if (this.interactables.some(item => item.dlg === dlg)) return;
+    const p = this.stageDef.isVillage
+      ? this.cutsceneActorPosition({ x: this.stageW / 2 - 300, y: this.stageH / 2 + 165 })
+      : this.tutorialPoint(120, -75);
+    const who = cutsceneCharacter(speaker)?.id ?? "recorder";
+    createCastSprite(this, who, p.x, p.y)?.setDepth(this.yDepthFor(p.y));
+    this.add.text(p.x, p.y - 42, label, { fontFamily: "Galmuri11, sans-serif", fontSize: "12px", color: "#ffedbf", stroke: "#101522", strokeThickness: 3 })
+      .setOrigin(0.5).setDepth(this.yDepthFor(p.y) + 0.1);
+    this.interactables.push({ ...p, kind: "talk", dlg, label });
+  }
+
+  private spawnStoryTalk() {
+    const q = this.currentQuest() ?? this.stageDef.quests.find(q => q.story && q.type === "talk");
+    if (q?.type !== "talk" || !q.story || !q.dialogue || !DIALOGUES[q.dialogue]) return;
+    this.addStoryMarker(q.targetLabel, `storyTalk|${q.dialogue}`, DIALOGUES[q.dialogue].speaker);
+  }
+
   /** Optional world conversations retain the old prologue's lore without stopping first play. */
   private addHistoryNpc() {
     if (this.stageDef.key !== "lilacworld1x2" || this.interactables.some(it => it.dlg === "tutorial_history")) return;
@@ -18842,6 +18898,10 @@ export class WorldScene extends Phaser.Scene {
       { id: "lilac00_open", label: "세 왕국의 이야기" },
       { id: "lilac00_war", label: "인피니트보석과 전쟁" },
       { id: "lilac00_close", label: "빛과 어둠, 웨폰마스터" },
+      { id: "loreWeaponMasters", label: "웨폰마스터의 능력과 원력" },
+      { id: "loreLilacFamilies", label: "라일락 월드 가문" },
+      { id: "loreGrandFamilies", label: "그랜드 플레닛 가문" },
+      { id: "loreZeroFamilies", label: "제로세계 가문" },
     ];
     const clear = () => { EventBus.off("dialogue:choice", pick); EventBus.off("dialogue:done", clear); this.events.off("shutdown", clear); };
     const pick = (v: { id: string }) => {

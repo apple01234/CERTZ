@@ -46,7 +46,7 @@ export function storyPortalDestination(stage: string, progress: StoryProgress): 
 
 /** 포탈·친구 따라가기·워프·세이브 재진입 모두 같은 잠금을 사용한다. */
 export function storyEntryAllowed(stage: string, progress: StoryProgress): boolean {
-  if (stage.startsWith("dlc")) {
+  if (stage.startsWith("dlc") || stage.startsWith("snorika")) {
     return !!progress.youngPrincessCleared || !MIDDLE_CHAPTER_IMPLEMENTED;
   }
   if (stage.startsWith("youngprincess")) return true;
