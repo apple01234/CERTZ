@@ -6149,3 +6149,17 @@ Work Log:
 - **P1 멀티플레이 버전 호환성**: 49838da 에서 구역 식별자를 바꿨는데 방 배치는 클라가 보낸 stage 문자열을 그대로 키로 써서, 구버전 APK 사용자와 신버전 사용자가 같은 자리에 있어도 서로 보이지 않았다. 구버전 APK 는 이미 배포된 고정 바이너리라 클라에서 고칠 수 없어 **서버가 받는 즉시 정규화**한다(multiplayer/stageAliases.js, join·state 두 경로). MQTT 경로(mpMqtt.ts)도 같은 이관표를 쓴다. 두 경로 결과가 어긋나면 여전히 방이 갈라지므로 전수 비교 테스트를 넣었다(	ests/multiplayer-stage-compat.test.mjs). 일반 단어(help·shell·shelter)는 건드리지 않는 것도 고정.
 - 검증: 신규 테스트 10건 포함 대상 30/30, 전체 810/820, tsc·eslint 통과. 실패 10건은 이번 변경과 무관한 환경 문제(2건 CRLF 불일치, 8건 Pillow/Python 부재).
 - 남은 것: 초기 로딩 10초 목표(네트워크 조건 필요), 원격 플레이어 화면의 궁극기·pixelfx 동기화(프로토콜 추가 필요), 실 브라우저 보스전 검증.
+---
+
+Task ID: 15
+Agent: DeepSeek Harness (lead)
+Task: 원격 궁극기 연출 동기화 — pixelfx 원격 재생 + 서버 s5b 화이트리스트 누락 (2026-11-16)
+
+Work Log:
+- **제2궁극기가 원격에 전혀 전달되지 않던 버그**: 서버 act 화이트리스트(ACT_KINDS)에 s5b 가 없었다. vc146 에서 클라(
+et.ts)·MQTT(mpMqtt.ts) 경로에만 추가하고 서버를 빠뜨려, 소켓 서버 경유 시 제2궁극기 연출이 다른 사람 화면에 **아예 나오지 않았다**. 화이트리스트에 추가.
+- **pixelfx 원격 재생**: 로컬 시전자만 pixelfx(시전·종결)를 보고 원격은 계열 근사 연출만 봤다("내가 쓰는 스킬 ≠ 상대가 보는 스킬"의 마지막 조각). playRemoteSkillFx 의 s5/s5b 분기에서 playUltFx(this, cls, slot, "cast", …) 를 호출한다. 원격 화면에 그 직업 시트가 없으면 받기만 걸고 이번엔 생략한다(게임을 막지 않음).
+- 계약 고정(	ests/remote-ult-fx-sync.test.mjs): ①서버·클라·MQTT 세 경로의 스킬 종류 집합이 일치 ②원격이 pixelfx 를 부른다 ③원격 연출이 	akeDamage·
+otePlayerHit·ultCtx 를 부르지 않는다(코스메틱 전용 — 데미지 이중 적용 방지) ④자기 액션은 무시하고 스로틀 뒤에 재생.
+- 검증: 신규 5건 포함 전체 815/825, tsc·eslint 통과. 실패 10건은 환경 문제(2건 CRLF, 8건 Pillow 부재)로 변경과 무관.
+- 남은 것: 초기 로딩 10초 목표(네트워크 조건 필요), 실 브라우저 다중 접속 검증.
