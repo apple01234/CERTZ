@@ -116,13 +116,18 @@ test("마지막 wave 가 종결이다 — wave 지급분 중 가장 크다", () 
   assert.ok(Math.abs(waveWeight(11, 12) / Array.from({ length: 12 }, (_, i) => waveWeight(i, 12)).reduce((x, y) => x + y) - WAVE_FINALE_SHARE) < 1e-9);
 });
 
-test("wave 자기 지급과 닫힌 시전은 예산을 건드리지 않는다", () => {
+test("wave 자기 지급은 예산을 건드리지 않고, 닫힌 시전도 남은 예산 안에서만 지급한다", () => {
   const pool = createUltBudget(3, 9000), t = {};
   pool.paying(() => assert.equal(pool.draw(t, 500), 500));
   assert.deepEqual(pool.targets(), []);
   pool.close();
-  assert.equal(pool.draw(t, 1234), 1234);
-  assert.deepEqual(pool.targets(), []);
+  /* 2026-11-16 — 종전엔 닫힌 뒤 굴린 값 그대로를 돌려줬다(P0 상한 우회의 원인).
+   *  이제는 닫혀도 같은 예산 인출 규칙을 쓴다 — 총액이 예산을 넘지 않는다. */
+  let total = 0;
+  for (let i = 0; i < 200; i++) total += pool.draw(t, 1234);
+  assert.deepEqual(pool.targets(), [t], "닫힌 뒤 타격이 예산에 반영되지 않는다");
+  assert.ok(total <= 9000, `닫힌 뒤 총합 ${total} 이 예산 9000 을 넘었다`);
+  assert.ok(total > 0, "닫힌 뒤 전혀 지급되지 않는다");
 });
 
 /* 2026-11-15 — 외부 평가 P0 "피해량 숫자로 궁극기 타격을 식별". 이제 값이 아니라 시전(Player.ultCtx)으로 식별한다. */
@@ -150,7 +155,65 @@ test("방어막(피해 무효) 보스에게는 예산이 깎이지 않는다", (
   const td = boss.slice(boss.indexOf("  takeDamage(dmg: number"));
   assert.ok(td.indexOf("if (this.shieldInvuln)") < td.indexOf("notePlayerHit"), "무효 판정이 예산 인출보다 늦다");
   const player = readFileSync(new URL("../src/game/entities/Player.ts", import.meta.url), "utf8");
-  assert.match(player, /\.ultShielded\) continue;/);
+  assert.match(player, /\.ultShielded\) \{/);
+  /* 2026-11-16 — 마지막 wave 까지 막히면 남은 몫을 소멸시킨다 */
+  assert.match(player, /if \(last\) budget\.settle\(wi, e\);/);
+});
+
+/* ═══ 2026-11-16 — 외부 평가 P0/P1 후속 회귀 방지 ═══ */
+
+test("P0 — 시전이 닫힌 뒤에도 잔존 장판·늦은 투사체는 예산을 넘지 못한다", () => {
+  const pool = createUltBudget(5, 100000), t = {};
+  let total = 0;
+  for (let i = 0; i < 5; i++) pool.paying(() => { total += pool.payout(i, t); });
+  pool.close();
+  /* 종전엔 닫힌 뒤 굴린 값 그대로를 돌려줘 총합이 4배(400,000)까지 넘겼다. */
+  for (let i = 0; i < 60; i++) total += pool.draw(t, 5000);
+  assert.ok(total <= 100000, `닫힌 뒤 초과: ${total} > 100000`);
+});
+
+test("P0 — 예산이 바닥나면 0 을 돌려준다 (1 로 되살아나 상한을 넘기지 않게)", async () => {
+  const { MIN_DRAW } = await import("../src/game/combat/ultWaves.ts");
+  const pool = createUltBudget(1, 1000), t = {};
+  pool.paying(() => pool.payout(0, t));
+  pool.close();
+  assert.equal(pool.draw(t, 5000), MIN_DRAW, "예산 소진 뒤에도 피해가 남는다");
+  assert.equal(MIN_DRAW, 0);
+  /* 0 을 받은 Enemy/Boss 는 타격 자체를 버린다 */
+  for (const f of ["Enemy", "Boss"]) {
+    const src = readFileSync(new URL(`../src/game/entities/${f}.ts`, import.meta.url), "utf8");
+    const td = src.slice(src.indexOf("  takeDamage(dmg: number"));
+    const guard = td.indexOf("if (dmg <= 0) return;");
+    assert.ok(guard >= 0, `${f}: 0 피해를 버리지 않는다`);
+    /* 가드 뒤 첫 실제 클램프는 0 을 1 로 되살린다 — 가드가 그보다 앞에 있어야 한다. */
+    const clamp = td.indexOf("Math.max(1, Math.round(");
+    assert.ok(clamp === -1 || guard < clamp, `${f}: 0 이 1 로 되살아난다`);
+  }
+});
+
+test("P0 — 마지막 wave 까지 방어막이면 남은 예산이 소멸해 잔존 장판이 꺼내 쓰지 못한다", () => {
+  const pool = createUltBudget(4, 50000), shield = {};
+  for (let i = 0; i < 3; i++) pool.paying(() => pool.payout(i, shield));
+  pool.paying(() => pool.settle(3, shield)); // 마지막 wave — 방어막 유지
+  pool.close();
+  let leaked = 0;
+  for (let i = 0; i < 40; i++) leaked += pool.draw(shield, 900);
+  assert.equal(leaked, 0, `방어막으로 막은 피해가 잔존 장판으로 ${leaked} 들어갔다`);
+});
+
+test("P1 — 직업을 빠르게 바꿔도 내린 시트가 늦게 도착한 다운로드로 되살아나지 않는다", () => {
+  const bridge = readFileSync(new URL("../src/game/fx/pixelfxBridge.ts", import.meta.url), "utf8");
+  assert.match(bridge, /const DROPPED = new WeakMap<Phaser\.Game, Set<string>>\(\)/);
+  /* 받기 완료 시 버려진 키는 등록하지 않는다 */
+  const ensure = bridge.slice(bridge.indexOf("export function ensureFxSheet"), bridge.indexOf("export function registerFxSheet"));
+  assert.match(ensure, /droppedOf\(game\)\.has\(key\)/);
+  assert.match(ensure, /pending\.delete\(key\)/);
+  /* 내리기는 사용 중이어도 버릴 키로 표시한다 */
+  const unload = bridge.slice(bridge.indexOf("export function unloadFxSheet"));
+  assert.ok(unload.indexOf("droppedOf(scene.game).add(key)") < unload.indexOf("if (inUse)"),
+    "사용 중이라 내리지 못할 때 버릴 키로 표시하지 않는다");
+  /* 다시 받기 시작하면 표시를 해제한다(A→B→A) */
+  assert.match(ensure, /droppedOf\(game\)\.delete\(key\)/);
 });
 
 test("늦게 들어온 표적은 남은 wave 몫만 받는다", () => {

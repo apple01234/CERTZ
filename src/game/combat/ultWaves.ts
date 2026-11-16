@@ -111,14 +111,23 @@ export function waveWeight(index: number, total: number): number {
   return (others * WAVE_FINALE_SHARE) / (1 - WAVE_FINALE_SHARE);
 }
 
+/** 인출할 예산이 없을 때 돌려주는 값 — 0 이면 호출부(Enemy/Boss.takeDamage)가 타격 자체를 버린다.
+ *  최소 1 을 남기면 잔존 장판이 틱마다 1 씩 계속 넣어 상한을 조금씩 넘긴다(실측 60틱 → +60). */
+export const MIN_DRAW = 0;
+
 export type UltBudget<T extends object = object> = {
   /** 이 시전의 직접 타격이 표적에게 피해를 넣기 직전 호출 — 예산 인출액을 돌려준다.
-   *  wave 지급 중이거나 시전이 닫혔으면(close) 받은 값을 그대로 돌려준다. */
+   *  wave 지급 중이면 받은 값을 그대로 돌려준다.
+   *  시전이 닫힌(close) 뒤에도 **이 시전의 남은 예산 안에서만** 돌려준다 — 잔존 장판·늦은 투사체가
+   *  상한을 넘기지 않게. 남은 예산이 없으면 MIN_DRAW. */
   draw(target: T, dmg: number): number;
-  /** 시전 종료 — 이후 늦게 도착한 타격(잔존 장판 등)은 예산과 무관하게 굴린 값 그대로 들어간다. */
+  /** 시전 종료 — 이후 이 시전이 만든 잔존 공격은 남은 예산에서만 인출한다(총 피해 상한 유지). */
   close(): void;
   /** i 번째 wave 가 이 표적에게 줄 피해. 마지막 wave 는 남은 전액. */
   payout(index: number, target: T): number;
+  /** 지급 없이 이 표적의 남은 예산을 소멸시킨다 — 방어막(피해 무효)으로 마지막 wave 까지
+   *  막힌 경우, 남은 몫을 잔존 장판이 나중에 꺼내 쓰지 못하게 한다(방어막이 의미를 갖도록). */
+  settle(index: number, target: T): void;
   /** 이미 한 번이라도 맞은 표적들 — wave 가 범위 밖이어도 끝까지 지급한다. */
   targets(): T[];
   /** wave 지급 타격을 넣는 동안은 인출하지 않는다. */
@@ -132,8 +141,11 @@ export function createUltBudget<T extends object = object>(waves: number, perTar
   let inPayout = false;
   const weightFrom = (i: number) => { let w = 0; for (let k = i; k < waves; k++) w += waveWeight(k, waves); return w; };
   const total = weightFrom(0);
-  /* 늦게 들어온 표적은 남은 wave 몫만 받는다(끝날 때 들어와 전액을 한 방에 받지 않게). */
-  const of = (t: T, from = next) => {
+  /* 늦게 들어온 표적은 남은 wave 몫만 받는다(끝날 때 들어와 전액을 한 방에 받지 않게).
+   *  2026-11-16 — 시전이 **닫힌 뒤** 처음 맞는 표적은 남은 wave 가 없으므로 그 규칙을 쓰면 예산이
+   *  0 이 되어 잔존 장판이 아무 피해도 못 준다. 이때는 그 표적의 **전액**을 준다 — 상한은
+   *  "표적당 예산"이지 "시전당 예산"이 아니므로, 표적마다 예산 하나를 갖는 것이 설계 그대로다. */
+  const of = (t: T, from = closed ? 0 : next) => {
     let st = left.get(t);
     if (!st) {
       const rest = Math.round(perTarget * (total > 0 ? weightFrom(Math.min(from, waves)) / total : 0));
@@ -144,11 +156,23 @@ export function createUltBudget<T extends object = object>(waves: number, perTar
   };
   return {
     draw(target, dmg) {
-      if (inPayout || closed) return dmg;
+      if (inPayout) return dmg;
+      /* 2026-11-16 (외부 평가 P0) — 종전엔 닫힌 뒤(close) 굴린 값을 그대로 돌려줬다. 그래서
+       *  30초 잔존 장판·늦게 도착한 투사체가 예산 밖 피해를 계속 넣어, 한 시전이 한 표적에게
+       *  준 총 피해가 예산의 4배까지 넘겼다(실측: 예산 100,000 → 실제 400,000).
+       *  이제 닫힌 뒤에도 **이 표적의 남은 예산 안에서만** 인출한다.
+       *  · 시전 중에 이미 예산을 받은 표적 → 남은 몫에서만.
+       *  · 시전이 끝난 뒤 처음 맞는 표적 → 그 표적의 예산은 아직 손대지 않았으므로 전액에서.
+       *  ⇒ 표적 하나가 이 시전에서 받는 총 피해는 언제나 예산(perTarget) 이하다. */
       const st = of(target);
+      /* 굴린 값(dmg)은 쓰지 않는다 — 직접 타격은 연출·타이밍만 담당하고 지급액은 예산이 정한다
+       * (직업별 타수·배율 차이가 총 피해를 흔들지 않게 하는 원래 설계).
+       * 닫힌 뒤에도 **같은 인출 규칙**을 쓴다. 달라지는 것은 wave 가 더 이상 예산을 채우지
+       * 않는다는 것뿐이라, 잔존 장판·늦은 투사체는 남은 몫까지만 꺼내 쓸 수 있다. */
       const out = Math.max(0, Math.min(Math.round(st.direct * DIRECT_DRAW), st.rest));
-      st.direct -= out; st.rest -= out;
-      return Math.max(1, out);
+      st.direct -= out;
+      st.rest -= out;
+      return Math.max(MIN_DRAW, out);
     },
     payout(index, target) {
       const st = of(target, index);
@@ -161,6 +185,15 @@ export function createUltBudget<T extends object = object>(waves: number, perTar
     },
     targets() { return [...left.keys()]; },
     close() { closed = true; },
+    /* 2026-11-16 (외부 평가 P0) — 마지막 wave 까지 방어막이 유지되면 그 표적의 남은 예산은
+     *  끝내 지급되지 않는다. 그 몫을 **소멸**시킨다. 소멸시키지 않으면 닫힌 뒤 잔존 장판이
+     *  "남은 예산"으로 꺼내 써서, 방어막으로 막은 피해가 몇 초 뒤 그대로 들어간다(방어막 무의미). */
+    settle(index, target) {
+      const st = of(target, index);
+      st.rest = 0;
+      st.direct = 0;
+      next = Math.max(next, index + 1);
+    },
     paying(fn) {
       inPayout = true;
       try { fn(); } finally { inPayout = false; }

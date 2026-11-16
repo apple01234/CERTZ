@@ -2134,6 +2134,10 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     dmg = this.scene.notePlayerHit?.(dmg, this) ?? dmg; // 최고 타격 기록 + 궁극기 예산 인출
     /* v1.4.30 (#2 사냥/보스 밸런스) — 보스 특화 직업(전사·데드아이·아크로드·섀도우로드 등)
      *  체인 합산 bossDmgPct만큼 보스에게 주는 피해 증가 */
+    /* 2026-11-16 (외부 평가 P0) — 궁극기 예산이 바닥났으면(0) 타격 자체를 버린다.
+     *  버리지 않으면 아래 `Math.max(1, …)` 이 0 을 1 로 되살려 잔존 장판·늦은 투사체가
+     *  틱마다 1 씩 계속 넣어 총 피해 상한을 조금씩 넘긴다. */
+    if (dmg <= 0) return;
     const spec = this.scene.playerRef ? (this.scene.playerRef as unknown as { bossDmgBonus?: number }).bossDmgBonus ?? 0 : 0;
     dmg = Math.max(1, Math.round(dmg * (1 + spec / 100)));
     /* v3.0.15 (#16) — 보스도 챕터 테마 원소를 가진다 (상성 배율 적용) */

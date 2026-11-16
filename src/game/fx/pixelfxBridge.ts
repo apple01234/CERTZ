@@ -92,6 +92,17 @@ export function loadFxSheet(scene: Phaser.Scene, key: string, dir = "assets/fx")
  */
 /* 받는 중인 작업 — 게임별로 둔다(이전 게임의 끝난 작업이 새 게임의 받기를 막지 않게). */
 const PENDING = new WeakMap<Phaser.Game, Map<string, Promise<boolean>>>();
+/* 2026-11-16 (외부 평가 P1) — 직업을 빠르게 바꾸면 "내리기(unloadFxSheet)"와 "받는 중인 다운로드"가
+ *  경쟁한다. 시트를 내린 직후 진행 중이던 다운로드가 끝나면 그 텍스처가 **다시 등록**되어
+ *  메모리가 쌓인다(내린 의미가 없어진다). 내린 시각을 게임별로 기록해 두고, 다운로드가 끝났을 때
+ *  "그 사이 내려진 키"면 등록하지 않고 버린다. */
+const DROPPED = new WeakMap<Phaser.Game, Set<string>>();
+const droppedOf = (game: Phaser.Game): Set<string> => {
+  let s = DROPPED.get(game);
+  if (!s) { s = new Set(); DROPPED.set(game, s); }
+  return s;
+};
+
 export function ensureFxSheet(scene: Phaser.Scene, key: string, dir = "assets/fx"): Promise<boolean> {
   if (liveSheet(scene, key)) return Promise.resolve(true);
   const game = scene.game;
@@ -100,11 +111,15 @@ export function ensureFxSheet(scene: Phaser.Scene, key: string, dir = "assets/fx
   const pending = jobs;
   let job = pending.get(key);
   if (!job) {
+    /* 이번에 새로 받는 것이므로 "버릴 키" 표시를 해제한다 — A→B→A 로 돌아왔을 때 다시 받을 수 있게. */
+    droppedOf(game).delete(key);
     job = (async () => {
       const meta = await fetch(`${dir}/${key}.json`).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); });
       if (!game.textures.exists(key)) {
         const img = new Image();
         await new Promise<void>((ok, fail) => { img.onload = () => ok(); img.onerror = () => fail(new Error("image")); img.src = `${dir}/${key}.png`; });
+        /* 내려진 뒤 도착했으면 등록하지 않는다 — 쓰지 않을 텍스처를 올리지 않는다. */
+        if (droppedOf(game).has(key)) return false;
         if (!game.textures.exists(key)) game.textures.addAtlas(key, img, meta);
       }
       if (!game.cache.json.exists(`${key}__meta`)) game.cache.json.add(`${key}__meta`, meta);
@@ -112,7 +127,11 @@ export function ensureFxSheet(scene: Phaser.Scene, key: string, dir = "assets/fx
     })().catch(() => { pending.delete(key); return false; });
     pending.set(key, job);
   }
-  return job.then(ok => ok && !!registerFxSheet(scene, key));
+  return job.then(ok => {
+    pending.delete(key);
+    /* 받는 사이 내려졌으면 등록하지 않는다(경쟁 조건). */
+    return ok && !droppedOf(game).has(key) && !!registerFxSheet(scene, key);
+  });
 }
 
 /**
@@ -227,6 +246,9 @@ export function registerAllFx(scene: Phaser.Scene): number {
  * 지금 화면에서 그 텍스처를 쓰는 오브젝트가 있으면 내리지 않는다(false).
  */
 export function unloadFxSheet(scene: Phaser.Scene, key: string): boolean {
+  /* 2026-11-16 (외부 평가 P1) — "버릴 키" 표시는 **내리기 시도 즉시** 한다. 화면에서 쓰는 중이라
+   *  지금 내리지 못해도, 진행 중인 다운로드가 끝나 뒤늦게 등록되면 내린 의미가 없어지기 때문이다. */
+  droppedOf(scene.game).add(key);
   const inUse = scene.children.list.some((o) => (o as { texture?: { key?: string } }).texture?.key === key);
   if (inUse) return false;
   SHEETS.delete(key);

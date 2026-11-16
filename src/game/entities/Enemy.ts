@@ -885,6 +885,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (!this.alive) return;
     dmg = this.scene.notePlayerHit?.(dmg, this) ?? dmg; // 최고 타격 기록 + 궁극기 예산 인출
     /* v3.3.0 (지시 #6) — 허수아비: 피해 누적만 하고 절대 죽지 않는다 (넉백/HP바 없음) */
+    /* 2026-11-16 (외부 평가 P0) — 궁극기 예산이 바닥났으면(0) 타격 자체를 버린다.
+     *  버리지 않으면 아래 `Math.max(1, …)` 이 0 을 1 로 되살려, 잔존 장판이 틱마다 1 씩
+     *  계속 넣어 총 피해 상한을 조금씩 넘긴다(실측 60틱 → +60). */
+    if (dmg <= 0) return;
     if (this.dummy) {
       const atkElemD = this.scene.playerRef?.attackElem ?? "none";
       const advD = elemAdvantage(atkElemD, this.elem);

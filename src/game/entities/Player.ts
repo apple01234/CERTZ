@@ -9599,7 +9599,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (slot === 1 && this.ultPool === budget) this.ultPool = null;
     };
     if (slot === 1) this.ultPool = budget;
-    /* 종결 뒤에도 잠시 열어 둔다 — 늦게 도착한 투사체가 예산 밖 피해(굴린 값 그대로)를 넣지 못하게. 닫힌 뒤(잔존 장판 등)는 굴린 값 그대로. */
+    /* 2026-11-16 — 종전 주석은 "닫힌 뒤(잔존 장판 등)는 굴린 값 그대로"라고 적혀 있었지만, 그것이
+     *  바로 외부 평가 P0(잔존 공격의 피해 상한 우회)의 원인이었다. 지금은 닫혀도 남은 예산
+     *  안에서만 인출하므로 오히려 **오래 열어 둘수록 상한이 지켜진다**. 늦게 도착한 투사체가
+     *  예산 밖 피해를 넣지 못하게 종결 뒤 15초간 유지한다(장판 지속시간 30초보다는 짧다 — 그 뒤는
+     *  표적의 예산이 이미 소진됐거나 남은 몫만 남아 MIN_DRAW 로 수렴한다). */
     this.scene.time.delayedCall(holdMs + 15000, release);
     for (let wi = 0; wi < n; wi++) {
       this.scene.time.delayedCall(plan.at[wi], () => {
@@ -9609,8 +9613,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         let paid = false;
         budget.paying(() => {
           for (const e of targets) {
-            /* 방어막(피해 무효) 중인 표적에게는 이번 wave 를 지급하지 않는다 — 몫은 다음 wave 로 넘어간다. */
-            if (!e.active || (e as { ultShielded?: boolean }).ultShielded) continue;
+            if (!e.active) continue;
+            /* 방어막(피해 무효) 중인 표적에게는 이번 wave 를 지급하지 않는다 — 몫은 다음 wave 로 넘어간다.
+             *  2026-11-16 (외부 평가 P0) — 마지막 wave 까지 막혔다면 그 몫은 **소멸**시킨다.
+             *  넘겨 둔 채로 두면 시전이 닫힌 뒤 잔존 장판이 "남은 예산"으로 꺼내 써서,
+             *  방어막으로 막은 피해가 몇 초 뒤 그대로 들어간다(방어막이 무의미해진다). */
+            if ((e as { ultShielded?: boolean }).ultShielded) {
+              if (last) budget.settle(wi, e);
+              continue;
+            }
             const amount = budget.payout(wi, e);
             if (amount <= 0) continue;
             paid = true;

@@ -73,6 +73,41 @@ test('세이브 로드 경로가 v3 이전 세이브만 옮기고, 옛 스테이
   assert.equal(resolveStage('howlrstone4x3'), 'lilacworld4x3');
 });
 
+/* 2026-11-16 — 외부 평가 P0 "옛 키와 새 키가 동시에 있으면 데이터가 유실될 수 있다".
+ *  종전엔 새 키 값만 남기고 옛 키 값을 버렸고, 목록은 중복 항목이 생겼다. */
+test('옛 키와 새 키가 동시에 있어도 장비·강화·진행이 사라지지 않는다', async () => {
+  const { migrateLegacyKeys } = await import('../src/game/legacyKeys.ts');
+  const mixed = {
+    v: 2, stage: 'lilacworld2x1',
+    /* 같은 아이템이 옛 키·새 키 두 벌로 존재(이관 중간 상태) */
+    owned: ['bd_nidhog', 'bd_blackwyrm', 'weapon_1'],
+    /* 강화 수치가 두 키로 갈라져 있다 — 낮은 쪽이 사라지면 강화가 내려간다 */
+    starMap: { bd_nidhog: 3, bd_blackwyrm: 7 },
+    questIdx: { howlrstone1x1: 2, lilacworld1x1: 5 },
+    figures: ['fig_fenrir', 'fig_greedwolf'],
+  };
+  const d = migrateLegacyKeys(structuredClone(mixed));
+  /* 목록은 합집합 + 중복 제거 — 아이템이 두 칸이 되지도, 사라지지도 않는다 */
+  assert.deepEqual(d.owned, ['bd_blackwyrm', 'weapon_1']);
+  assert.deepEqual(d.figures, ['fig_greedwolf']);
+  /* 수치 맵은 큰 값(강화 손실 없음) */
+  assert.deepEqual(d.starMap, { bd_blackwyrm: 7 });
+  /* 진행 맵도 큰 값(되돌리지 않음) */
+  assert.deepEqual(d.questIdx, { lilacworld1x1: 5 });
+  /* 옛 키는 남지 않는다 */
+  assert.equal(JSON.stringify(d).includes('nidhog'), false);
+  assert.equal(JSON.stringify(d).includes('howlrstone'), false);
+});
+
+test('옛 키만 있는 구 세이브는 종전과 똑같이 이관된다 (회귀 없음)', async () => {
+  const { migrateLegacyKeys } = await import('../src/game/legacyKeys.ts');
+  const old = { v: 2, starMap: { bd_nidhog: 12 }, owned: ['bd_nidhog'], questIdx: { howlrstone1x1: 3 } };
+  const d = migrateLegacyKeys(structuredClone(old));
+  assert.deepEqual(d.starMap, { bd_blackwyrm: 12 });
+  assert.deepEqual(d.owned, ['bd_blackwyrm']);
+  assert.deepEqual(d.questIdx, { lilacworld1x1: 3 });
+});
+
 test('보스 의뢰문 조사가 이름 받침에 맞는다', async () => {
   const { objJosa, STAGES } = await import('../src/game/stages.ts');
   assert.equal(objJosa('재림의 파수꾼'), '재림의 파수꾼을');
