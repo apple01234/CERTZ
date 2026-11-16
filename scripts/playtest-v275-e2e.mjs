@@ -5,7 +5,7 @@
  *  1) 게임 부팅 + 실제 진입 (pageerror 0)
  *  2) GM 버튼: 비관리자에게 숨김 / 관리자에게 가방 왼쪽에 표시
  *  3) 기록전 버튼이 HUD에 있고 패널을 연다
- *  4) 보스 windup/release 애니메이션이 실제로 등록된다(텍스처 로드 후 anims.exists)
+ *  4) 첫 지역에는 보스 그림을 받지 않고, 보스 구역 관문 뒤 windup/release가 등록된다
  *  5) 궁극기 마무리 지연 상수가 실제 런타임에 반영된다
  *
  * 실행: E2E_URL=http://127.0.0.1:4321 node scripts/playtest-v275-e2e.mjs
@@ -85,6 +85,20 @@ try {
     }));
     results.nonAdminErrors = errors.length;
     await page.screenshot({ path: `${out}/non-admin.png` });
+    // Controlled asset-gate check, separate from normal-progression playtests.
+    await page.evaluate(() => {
+      const s = window.__SERTZ_SCENE__, save = { ...s.buildSave('lilacworld2x3'), tutorialDone: true, introSeen: true };
+      s.tut?.destroy(); s.tut = null; s.dialoguing = false; s.camCinema = false;
+      s.time.paused = false; s.physics.world.resume();
+      s.startTransition('lilacworld2x3', { save });
+    });
+    await page.waitForFunction(() => { const s=window.__SERTZ_SCENE__; return s?.stageDef.key==='lilacworld2x3'&&s.assetsReady&&!s.transitioning; }, null, { timeout: 180000 });
+    results.bossRegion = await page.evaluate(() => {
+      const s=window.__SERTZ_SCENE__;
+      return { stage:s.stageDef.key, texture:s.textures.exists('story_dio'), windup:s.anims.exists('story_dio-windup'), release:s.anims.exists('story_dio-release') };
+    });
+    results.nonAdminErrors = errors.length;
+    await page.screenshot({ path: `${out}/boss-region.png` });
     await ctx.close();
   }
 
@@ -115,8 +129,10 @@ try {
   assert.equal(results.admin.order, 'gm-before-bag', 'GM 버튼은 가방 왼쪽이어야 한다');
   assert.equal(results.nonAdminErrors, 0, '페이지 예외가 없어야 한다');
   assert.ok(results.nonAdmin.anims, '씬 anims 에 접근할 수 있어야 한다');
-  assert.ok(results.nonAdmin.anims.windup > 0, 'windup 애니메이션이 등록되어야 한다');
-  assert.ok(results.nonAdmin.anims.release > 0, 'release 애니메이션이 등록되어야 한다');
+  assert.equal(results.nonAdmin.anims.windup, 0, '첫 지역은 보스 그림을 미리 받지 않는다');
+  assert.equal(results.bossRegion.texture, true, '보스 구역 관문에서 디오 그림을 준비해야 한다');
+  assert.equal(results.bossRegion.windup, true, '보스 구역에서 디오 windup이 등록되어야 한다');
+  assert.equal(results.bossRegion.release, true, '보스 구역에서 디오 release가 등록되어야 한다');
 
   await writeFile(`${out}/result.json`, JSON.stringify(results, null, 1));
   console.log('PASS');

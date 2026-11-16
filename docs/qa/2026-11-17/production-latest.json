@@ -1,0 +1,99 @@
+{
+  "site": "https://sertz.vercel.app",
+  "commitSha": "a45e10e3483a3c4937f0f8845a75c2bcd80dc5bd",
+  "worldLoad": {
+    "clickToReadyMs": 10211,
+    "progress": {
+      "phase": "world-ready",
+      "elapsedMs": 8873,
+      "total": 1204,
+      "complete": 1204,
+      "active": 0,
+      "failed": [],
+      "bundleBytes": 0
+    },
+    "scope": "Fresh browser context, no artificial bandwidth limit, software WebGL."
+  },
+  "tutorialMs": 77503,
+  "continuationMs": 166730,
+  "bossEntry": {
+    "player": {
+      "x": 304,
+      "y": 382.375,
+      "hp": 316,
+      "maxHp": 316,
+      "mp": 132,
+      "maxMp": 132,
+      "lv": 13,
+      "state": "idle",
+      "potions": {
+        "hp": 6,
+        "mp": 4
+      },
+      "atk": 46,
+      "ap": 60,
+      "weapon": "weapon_1",
+      "armor": "armor_1"
+    },
+    "boss": {
+      "x": 1326,
+      "y": 334.88323045267487,
+      "hp": 3600,
+      "maxHp": 3600,
+      "mode": "idle",
+      "charge": {
+        "x": 0,
+        "y": 0
+      },
+      "countdown": 0
+    }
+  },
+  "bossObservedToCompletionMs": 78820,
+  "inputsDuringContinuation": {
+    "x": 134,
+    "z": 134,
+    "c": 134,
+    "Space": 60,
+    "Shift": 18,
+    "d": 6
+  },
+  "finalPlayer": {
+    "hp": 370,
+    "maxHp": 370,
+    "mp": 150,
+    "maxMp": 150,
+    "lv": 16,
+    "potions": {
+      "hp": 7,
+      "mp": 4
+    },
+    "atk": 55,
+    "ap": 75,
+    "weapon": "weapon_1",
+    "armor": "armor_1"
+  },
+  "questIdx": 1,
+  "pageErrors": [],
+  "reconnect": [
+    {
+      "mode": "reconnect",
+      "stage": "lilacworld2x3",
+      "idx": 1,
+      "lv": 16,
+      "ap": 75,
+      "gold": 12941,
+      "boss": false
+    },
+    {
+      "mode": "reload",
+      "stage": "lilacworld2x3",
+      "idx": 1,
+      "lv": 16,
+      "ap": 75,
+      "gold": 12941,
+      "boss": false
+    }
+  ],
+  "reconnectPageErrors": [],
+  "scope": "normal keyboard/UI only; no progress, stats, enemy HP or timers changed"
+}

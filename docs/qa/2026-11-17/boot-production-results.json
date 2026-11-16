@@ -1,0 +1,26 @@
+{
+ "moreOpened": true,
+ "nonAdmin": {
+  "gmButton": false,
+  "contestButton": true,
+  "bag": true,
+  "anims": {
+   "windup": 0,
+   "release": 0,
+   "atk": 0,
+   "windupIds": []
+  }
+ },
+ "nonAdminErrors": 0,
+ "bossRegion": {
+  "stage": "lilacworld2x3",
+  "texture": true,
+  "windup": true,
+  "release": true
+ },
+ "admin": {
+  "gm": true,
+  "bag": true,
+  "order": "gm-before-bag"
+ }
+}

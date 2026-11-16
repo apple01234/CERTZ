@@ -17,8 +17,11 @@ await page.getByRole('button',{name:'캐릭터 생성',exact:true}).first().clic
 await page.locator('input').first().fill('수련검증'+String(Date.now()).slice(-4));
 await page.getByRole('button',{name:/다음/}).click();
 await page.getByRole('button',{name:'모험가로 생성!'}).click();
+const versionAtStart=await page.evaluate(async()=>{const r=await fetch('/api/version');return r.json();});
+const worldRequestedAt=Date.now();
 await page.getByRole('button',{name:'이 캐릭터로 시작'}).click();
-await page.waitForFunction(()=>window.__SERTZ_SCENE__?.player,null,{timeout:120000});
+await page.waitForFunction(()=>window.__SERTZ_SCENE__?.assetsReady,null,{timeout:120000});
+const worldLoad={clickToReadyMs:Date.now()-worldRequestedAt,progress:await page.evaluate(()=>window.__SERTZ_LOAD__),scope:'Fresh browser context, no artificial bandwidth limit, software WebGL.'};
 const press = key => page.keyboard.press(key, { delay: 90 });
 let shotLilac = false;
 let enemyWarning = null;
@@ -131,5 +134,5 @@ await page.keyboard.down('ArrowRight');await page.waitForTimeout(200);await page
 await page.screenshot({path:join(out, 'tutorial-real-finished.png')});
 console.log('ERRORS',errors);if(errors.length)throw Error(errors.join('\n'));
 await page.context().storageState({path:join(out, 'tutorial-complete-storage.json')});
-await writeFile(join(out, 'tutorial-results.json'), JSON.stringify({base,enemyWarning,evadeInput:mobile?'real multitouch joystick + dash button':'keyboard direction + Shift',elapsedMs:Date.now()-started,version:await page.evaluate(async()=>{const r=await fetch('/api/version');return r.json();}),final:await state(),pageErrors:errors},null,2));
+await writeFile(join(out, 'tutorial-results.json'), JSON.stringify({base,enemyWarning,evadeInput:mobile?'real multitouch joystick + dash button':'keyboard direction + Shift',elapsedMs:Date.now()-started,versionAtStart,worldLoad,version:await page.evaluate(async()=>{const r=await fetch('/api/version');return r.json();}),final:await state(),pageErrors:errors},null,2));
 } finally { await browser.close(); }
