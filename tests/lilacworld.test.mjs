@@ -28,6 +28,22 @@ assert.equal(LILACWORLD_CHAPTERS.length, 15, '원문 1기 15화 = 15챕터');
 const hwKeys = LILACWORLD_CHAPTERS.map((c) => c.key);
 assert.deepEqual(hwKeys, Array.from({ length: 15 }, (_, i) => `lilacworld${i + 1}`));
 
+assert.equal(STAGES.lilacworld1x2.quests[0].targetLabel, "수련터 출구");
+assert.equal(STAGES.lilacworld1x3.quests[0].type, "reach");
+assert.equal(STAGES.lilacworld1x3.quests[0].targetLabel, "지하 감옥 입구");
+const [dungeonGate, buriedSword] = STAGES.lilacworld1x4.quests;
+assert.equal(dungeonGate.id, "14-lv", "기존 5레벨 조건과 저장 인덱스를 유지한다");
+assert.equal(dungeonGate.need, 5);
+assert.equal(buriedSword.type, "collect");
+assert.equal(buriedSword.title, "펜던트가 가리킨 검");
+assert.match(DIALOGUES[buriedSword.dialogue].lines.join(" "), /검을 뽑는 순간/);
+const evacuation = STAGES.lilacworld2x2;
+assert.equal(evacuation.quests[0].type, "reach");
+assert.equal(evacuation.quests[0].targetLabel, "마을 안쪽");
+const secondAreaIntros = hwKeys.map((key) => stageIntro(`${key}x2`));
+assert.equal(new Set(secondAreaIntros).size, hwKeys.length);
+assert.ok(secondAreaIntros.every((id) => DIALOGUES[id]));
+
 let stageCount = 0;
 for (const ch of LILACWORLD_CHAPTERS) {
   assert.ok(ch.episodes.length > 0, `${ch.key}: 원문 화 범위 표기`);

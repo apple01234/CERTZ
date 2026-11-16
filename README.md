@@ -1,11 +1,6 @@
-# SERTZ — 기억의 서약
+# CERTZ — 하루는 웨폰마스터가 되었다
 
-초기 15화 연재본을 바탕으로 만든 2D 스토리 어드벤처입니다. 커스텀 연합원으로 왕국 전쟁(15장), 별의 항로(10장), 영점권(9장)을 여행합니다.
-
-- 스토리 진행에 레벨·반복 사냥·결제를 요구하지 않습니다. 보스는 공격 예고·회피·빈틈 공략이 필요합니다.
-- 솔로 도전과 3인 협동전은 별도 Node·Socket.IO 서버가 판정합니다. 외형/슬롯 상품은 전투 능력을 판매하지 않습니다.
-- 사용자 Drive의 SPUM 인물·원본 초상과 숲/마을/던전 소품, 상세 32px 지형·보스를 연결했습니다. 기존 장식 카탈로그·배치 예산을 재사용하고 새 빌드에는 선택한 에셋만 포함합니다.
-- 기존 저장과 자산은 보관용으로 유지하고, 새 캠페인의 저장·거래·랭킹·구매 기록과 분리합니다.
+라일락과의 만남에서 시작하는 2D 액션 RPG입니다. 첫 화면에서 캐릭터를 만든 뒤 라일락 월드로 진입합니다. React는 로비와 게임 UI를, Phaser는 월드와 전투를 담당합니다. 브라우저에서 플레이하거나 Capacitor와 Electron으로 패키징할 수 있습니다.
 
 ## 실행
 
@@ -14,19 +9,22 @@ Node 24 이상을 사용합니다.
 ```sh
 npm ci
 npx prisma generate
-npm run dev:next
+node server.js
 ```
+
+브라우저에서 `http://localhost:3000`을 엽니다. `server.js`는 Next.js, 계정 호환 API, Socket.IO 서버를 함께 시작합니다. 계정과 클라우드 저장 설정은 [개발자 온보딩](ONBOARDING.md)을 참고하세요. 환경 설정 없이 게스트 플레이와 기기 저장을 확인할 수 있습니다.
+
+Next.js 페이지와 라우트만 확인하려면 `npx next dev -p 3000`을 사용합니다.
 
 ```sh
 npm test
-npm run test:campaign:browser # 실행 중인 웹 서버 필요; npx playwright install chromium 선행
 npm run lint:strict
-npm run build
+npx tsc --noEmit
 ```
 
-실시간 서버: `npm run campaign:server`. 서명 키·접속 주소·계정 저장 설정은 [운영 안내](docs/campaign/OPERATIONS.md)를 따릅니다. 설정이 없어도 게스트 본편은 기기 저장으로 플레이할 수 있습니다.
+이미지 검사에는 Pillow를 설치한 Python이 필요합니다. 자동 탐색이 실패하면 `REA_PYTHON`에 해당 실행 파일의 경로를 지정합니다.
 
-[정본/명칭표](docs/campaign/CANON.md) · [아트와 라이선스](docs/campaign/ART_DIRECTION.md) · [검증 기록](docs/campaign/VALIDATION.md) · [13개 레퍼런스 분석](docs/campaign/REFERENCE_ANALYSIS.md)
+`src/game/campaign/`의 ‘기억의 서약’ 구현에는 별도 테스트와 실시간 서버가 있습니다. [캠페인 운영 기록](docs/campaign/OPERATIONS.md)
 
 개발 도구는 [skills 안내](skills/README.md)를 따릅니다. `.mcp.json`에 Playwright와 REA가 구성되어 있으며, REA는 별도 Node 24.22.1 런타임으로 실행됩니다.
 

@@ -287,7 +287,7 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
   {
     key: "lilacworld1",
     title: "영프 1장 — 전설의 시작",
-    subtitle: "왕립도서관 · 「웨폰마스터를 위한 정리서」 · 스칼렛의 왕조 탈환",
+    subtitle: "절벽의 약속 · 기사단 입단 시험 · 펜던트가 가리킨 검",
     episodes: "1화",
     stages: 4,
     intro: "chapterIntroLilacworld1",
@@ -303,8 +303,8 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
     /* ── 1장 비트 — 정본 1.txt (하루). 종전엔 5.txt의 스칼렛+책 장면이 들어와
      *  장소("절벽의 약속")·인트로와 어긋났다. 정본 우선순위(1.txt > 5.txt)에 맞춘다. ── */
     beats: [
-      { sub: 2, dialogue: "lwBook", quest: { id: "hw1", type: "reach", title: "벼랑 끝에서", desc: "무리가 하루를 절벽으로 몰았다. 디오가 밀어붙인 그 순간, 라일락이 손을 잡아 끌어올렸다. 절벽 끝까지 올라가 그녀를 만나라.", targetLabel: "절벽 끝", reward: Math.round(2600 * G), expReward: 93 } },
-      { sub: 3, dialogue: "lwLetter", quest: { id: "hw2", type: "hunt", title: "펜던트가 지켜 준 수련", desc: "펜던트를 받은 뒤로 무리가 하루를 함부로 대하지 않았다. 수련을 방해하는 자들을 정리하고 기사단에 갈 힘을 만들라.", need: 10, targetKey: "x2_reeffish", targetLabel: "수련을 방해하는 무리", reward: Math.round(2900 * G), expReward: 93 } }
+      { sub: 2, dialogue: "lwBook", quest: { id: "hw1", type: "reach", title: "기사단을 향해", desc: "라일락과의 약속을 지키기 위해 레지스터에게 검술을 배웠다. 수련터를 지나 기사단 입단 시험을 보러 가자.", targetLabel: "수련터 출구", reward: Math.round(2600 * G), expReward: 93 } },
+      { sub: 3, dialogue: "lwLetter", quest: { id: "hw2", type: "reach", title: "빛나는 펜던트", desc: "입단 시험을 마친 하루는 디오를 피해 성 안으로 들어왔다. 펜던트가 빛나는 방향을 따라 지하 감옥으로 내려가자.", targetLabel: "지하 감옥 입구", reward: Math.round(2900 * G), expReward: 93 } }
     ],
     repeat: {need: 28, gold: Math.round(210 * G), exp: 210, title: "[반복] 해변 순찰", desc: "석양으로 물든 바다 — 해안선을 계속 지켜야 한다."},
     lvGate: {enter: 1, mid: 5},
@@ -313,7 +313,7 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
   {
     key: "lilacworld2",
     title: "영프 2장 — 어둠이 커지기 시작했을 때",
-    subtitle: "에스테반 왕국 · 아덴하르 총리 · 에벤트왕국의 서신",
+    subtitle: "에델리오나의 마을 습격 · 디오와 사념체 · 피난",
     episodes: "2화",
     stages: 4,
     intro: "chapterIntroLilacworld2",
@@ -327,7 +327,7 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
       { key: "x2_rat", count: 3 }, { key: "minion", count: 3 }],
     main: "x2_reeffish",
     beats: [
-      { sub: 2, dialogue: "lwWar", quest: { id: "hw3", type: "hunt", title: "거대한 해적선", desc: "성이 전함으로 변하고 상어전함들이 맞섰다. 그때 거대한 해적선이 나타났다 — 바다의 군단장 해롤드다.", need: 8, targetKey: "swampbeast", targetLabel: "해롤드의 부하", reward: Math.round(3100 * G), expReward: 416 } }
+      { sub: 2, dialogue: "lwWar", quest: { id: "hw3", type: "reach", title: "연기가 솟는 마을로", desc: "서쪽으로 떠나던 하루는 자신이 살던 마을에서 연기가 솟는 것을 보고 발길을 돌렸다. 골목을 지나 마을 안쪽으로 돌아가자.", targetLabel: "마을 안쪽", reward: Math.round(3100 * G), expReward: 416 } }
     ],
     repeat: {need: 28, gold: Math.round(210 * G), exp: 210, title: "[반복] 해변 순찰", desc: "석양으로 물든 바다 — 해안선을 계속 지켜야 한다."},
     lvGate: {enter: 8, mid: 12},

@@ -10,7 +10,7 @@ const ok = (name, cond) => { assert.ok(cond, name); checks++; };
 
 /* 1) 시나리오 구조 */
 const ids = Object.keys(LILAC_SCENARIOS);
-ok("시나리오 16편", ids.length === 16);
+ok("시나리오 17편", ids.length === 17);
 
 /* vc279 (P7c) — "choice" 추가: 중심 질문에 플레이어가 답하는 스텝. */
 const VALID = new Set(["cam","enter","exit","move","pose","say","wait","flash","fade","shake","choice"]);
@@ -46,6 +46,7 @@ ok("15개 장 모두 연출 있음", Object.keys(LILAC_CHAPTER_MAP).length === 1
 /* 4) Only the fifteen real Lilac chapters carry these directions. */
 ok("lilacworld1/1 → lilac00", lilacScenarioIdAt("lilacworld1", 1) === "lilac00");
 ok("lilacworld1/4 → lilac01", lilacScenarioIdAt("lilacworld1", 4) === "lilac01");
+ok("마을 습격의 결말은 2장 마지막 구역에서 재생", lilacScenarioIdAt("lilacworld2", 4) === "lilac02Aftermath");
 ok("lilacworld15/1 → lilac15", lilacScenarioIdAt("lilacworld15", 1) === "lilac15");
 ok("존재하지 않는 lilacworld5/10 금지", lilacScenarioIdAt("lilacworld5", 10) === null);
 ok("lilacworld1/2 미배치 구역은 null", lilacScenarioIdAt("lilacworld1", 2) === null);

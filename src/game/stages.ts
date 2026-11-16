@@ -125,6 +125,7 @@ export type QuestDef = {
   reward?: number;
   expReward?: number;
   dialogue?: string;
+  storyItemTexture?: string;
 };
 
 /* v1.0.15 (피드백 #5) — 퀘스트 경험치 리밸런싱 승수.
@@ -1818,6 +1819,19 @@ PREV_STAGE.dlcstargatev = "youngprincessv";
         Math.round((22 + (1000 - 22) * hwProgress * hwProgress) / 5) * 5,
       );
 
+      if (key === "lilacworld1x4") {
+        quests.push({
+          id: "14-hw-sword",
+          type: "collect",
+          title: "펜던트가 가리킨 검",
+          desc: "지하 감옥에 박힌 검에 다가가 뽑아라.",
+          targetLabel: "땅에 박힌 검",
+          expReward: Math.round(200 * spec.scaleMul.exp),
+          storyItemTexture: "item_wpn_greatsword",
+          dialogue: "lwSwordDrawn",
+        });
+      }
+
       STAGES[key] = {
         key,
         name: `${spec.title} ${sub}구역`,
@@ -2351,7 +2365,7 @@ export function stageIntro(key: StageKey): string {
     if (hw) {
       const { sub } = parseStage(key);
       if (sub === 1) return hw.intro;
-      const n = hw.key.slice(-1);
+      const n = hw.key.slice("lilacworld".length);
       if (sub === 5) return `lwEliteWarn${n}`;
       if (sub === 10) return `lwBossApproach${n}`;
       return `lwWalk${n}_${((sub - 2) % 3) + 1}`;
@@ -2441,7 +2455,7 @@ for (const [chapter, plan] of Object.entries(CHAPTER_STORY_PLAN)) {
       } else {
         for (const q of stage.quests) {
           if (q.type === "hunt") { q.title = `${place.title}의 길 확보`; q.desc = `${q.targetLabel ?? "적"}을 상대해 통행로를 확보하자.`; }
-          if (q.type === "collect") { q.title = `${place.title} 조사`; q.desc = "주변의 흔적을 확인해 길을 확보하자."; }
+          if (q.type === "collect" && !q.storyItemTexture) { q.title = `${place.title} 조사`; q.desc = "주변의 흔적을 확인해 길을 확보하자."; }
         }
       }
     }

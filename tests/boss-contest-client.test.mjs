@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 
-const scene = readFileSync('src/game/scenes/WorldScene.ts', 'utf8');
+const scene = readFileSync('src/game/scenes/WorldScene.ts', 'utf8').replace(/\r\n/g, '\n');
 const store = readFileSync('src/lib/bossContestStore.ts', 'utf8');
 const hud = readFileSync('src/components/game/HUD.tsx', 'utf8');
 

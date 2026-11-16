@@ -4148,7 +4148,8 @@ export class WorldScene extends Phaser.Scene {
     const fmeta = FRAGMENT_META[parseStage(this.stageDef.key).ch];
     /* vc235 — 퀘스트 목표물에 맞는 텍스처. 로드되지 않은 키는 결정으로 폴백해
      *  Phaser __MISSING(검은 사각형) 글리치를 막는다. */
-    const pick = this.questItemTexture(this.currentQuest()?.targetLabel);
+    const quest = this.currentQuest();
+    const pick = quest?.storyItemTexture ? { key: quest.storyItemTexture } : this.questItemTexture(quest?.targetLabel);
     const tex = this.textures.exists(pick.key) ? pick.key : "fragment";
     this.fragment = this.physics.add.sprite(x, y, tex).setDepth(4);
     if (pick.tint) this.fragment.setTint(pick.tint);
@@ -4194,6 +4195,35 @@ export class WorldScene extends Phaser.Scene {
 
   private collectFragment(glow: Phaser.GameObjects.Image) {
     audio.sfx.pickup();
+    const quest = this.currentQuest();
+    const f = this.fragment!;
+    this.fragment = null;
+    this.tweens.killTweensOf(f);
+    glow.destroy();
+    const beacon = this.beacon;
+    if (beacon) {
+      this.tweens.killTweensOf(beacon);
+      this.tweens.add({ targets: beacon, alpha: 0, duration: 400, onComplete: () => beacon.destroy() });
+    }
+    this.beacon = null;
+    this.fragSparkle?.destroy();
+    this.fragSparkle = null;
+    this.tweens.add({
+      targets: f,
+      y: f.y - 60,
+      alpha: 0,
+      scale: 1.6,
+      duration: 500,
+      onComplete: () => f.destroy(),
+    });
+    if (quest?.storyItemTexture) {
+      this.cameras.main.flash(180, 255, 237, 191);
+      if (quest.dialogue) this.showDialogueOnce(quest.dialogue);
+      this.advanceQuest();
+      this.afterAdvance();
+      this.saveSoon();
+      return;
+    }
     /* v1.4.3 (작업4) — 파티 보드: 결정 조사 카운트 (파티 중일 때만)
      * v1.4.8 — questDone 이중 재생 제거 (pickup 단일 경로) */
     {
@@ -4205,21 +4235,6 @@ export class WorldScene extends Phaser.Scene {
     const meta = FRAGMENT_META[ch] ?? { name: "결정의 흔적", color: 0x9df0ff, atk: 5, lines: ["결정이 손안에서 빛난다."] };
     this.player.atk += meta.atk; // 파편 보너스 — 챕터별 상이 (기존 고정 +5)
     this.player.healFull();
-    glow.destroy();
-    this.tweens.add({ targets: this.beacon, alpha: 0, duration: 400, onComplete: () => this.beacon?.destroy() });
-    this.beacon = null;
-    this.fragSparkle?.destroy();
-    this.fragSparkle = null;
-    const f = this.fragment!;
-    this.tweens.add({
-      targets: f,
-      y: f.y - 60,
-      alpha: 0,
-      scale: 1.6,
-      duration: 500,
-      onComplete: () => f.destroy(),
-    });
-    this.fragment = null;
     this.spawnBurstAt(f.x, f.y, 14, meta.color);
     this.spawnPickupText(this.player.x, this.player.y - 80, `「${meta.name}」 획득! ATK +${meta.atk}`, "#9df0ff");
     /* v3.0.22 (#43) — 수확 멘트 다양화: 챕터 첫 수확은 스토리 대사, 이후엔 3종 랜덤 멘트 */
@@ -17405,7 +17420,7 @@ export class WorldScene extends Phaser.Scene {
     if (q.type === "hunt") return q.targetLabel ? `▶ ${q.targetLabel}` : "";
     if (q.type === "boss") return "▶ 보스";
     if (q.type === "reach") return "▶ 다음 구역 차원문"; /* v3.0.26 (#75) — 목적지 방향 명시 */
-    if (q.type === "collect") return "▶ 결정";
+    if (q.type === "collect") return `▶ ${q.storyItemTexture ? q.targetLabel : "결정"}`;
     return "";
   }
 

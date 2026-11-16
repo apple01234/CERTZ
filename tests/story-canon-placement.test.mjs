@@ -16,7 +16,7 @@
 //  1장에 오면 안 된다(1장은 절벽·라일락·펜던트).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DIALOGUES } from '../src/game/data.ts';
+import { DIALOGUES, STAGES } from '../src/game/data.ts';
 import { LILACWORLD_CHAPTERS } from '../src/game/lilacworld.ts';
 import { CHAPTER_STORY_PLAN } from '../src/game/chapterStoryPlan.ts';
 
@@ -81,18 +81,19 @@ test('퀘스트 진행형이 실제로 완료 가능한 형태다', () => {
       ok(`${spec.key} ${beat.quest.id}: collect 는 targetLabel 필수`, !!beat.quest.targetLabel);
     }
   }
-  /* 1장은 도달(reach) + 사냥(hunt) 으로 정본 사건을 표현한다. */
+  /* 1장의 검은 기존 레벨 조건 뒤에 배치된 별도 목표다. */
   const ch1 = LILACWORLD_CHAPTERS.find((c) => c.key === 'lilacworld1');
   ok('1장: 비트 2개', (ch1?.beats.length ?? 0) === 2);
   ok('1장: collect 없음', !(ch1?.beats ?? []).some((b) => b.quest?.type === 'collect'));
 });
 
-test('보스가 있는 장은 다음 장소로 가는 reach 퀘스트를 자동 주입받는다', () => {
-  /* stages.ts 생성기가 보스 스테이지에 boss+reach 를 넣는다. beat 에 reach 를 또 두면
-   *  퀘스트 인덱스가 어긋나므로, 보스 장의 비트에는 reach 를 두지 않는다. */
+test('보스 구역은 보스전 뒤에만 다음 장소로 가는 reach 퀘스트를 제공한다', () => {
   for (const spec of LILACWORLD_CHAPTERS) {
-    if (!spec.boss) continue;
-    ok(`${spec.key}: 보스 장 비트에 reach 없음`, !spec.beats.some((b) => b.quest?.type === 'reach'));
+    for (let sub = 1; sub <= spec.stages; sub++) {
+      const key = `${spec.key}x${sub}`;
+      const stage = STAGES[key];
+      if (stage.boss) assert.deepEqual(stage.quests.map((quest) => quest.type), ['boss', 'reach'], key);
+    }
   }
 });
 
