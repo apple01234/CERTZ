@@ -505,6 +505,7 @@ export default function TilemapEditor() {
     <div className="flex h-[100dvh] w-full flex-col bg-[#0b0d12] text-[#cfd6e4]">
       {/* 상단 바 */}
       <header className="flex flex-wrap items-center gap-2 border-b border-white/10 px-3 py-2">
+        <nav aria-label="제작 도구" className="flex gap-3 text-[11px] text-sky-200"><a href="/tools">도구 홈</a><a href="/skill-editor" target="_blank" rel="noopener noreferrer">스킬 에디터 ↗</a></nav>
         <span className="text-[13px] font-black tracking-wide text-amber-200">SERTZ 맵 에디터</span>
         <span className="rounded bg-white/5 px-1.5 py-0.5 text-[10px] text-white/50">
           {sc.cols}×{sc.rows} · {sc.cellW.toFixed(0)}×{sc.cellH.toFixed(0)}px

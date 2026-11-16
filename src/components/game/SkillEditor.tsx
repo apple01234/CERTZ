@@ -380,6 +380,9 @@ export default function SkillEditor() {
       {/* 상단 바 */}
       <header className="flex flex-wrap items-center gap-2 border-b border-white/10 px-3 py-2">
         <span className="text-[13px] font-black tracking-wide text-amber-200">SERTZ 스킬 메이커</span>
+        <nav aria-label="제작 도구" className="flex gap-3 text-[11px] text-sky-200">
+          <a href="/tools">도구 홈</a><a href="/editor" target="_blank" rel="noopener noreferrer">맵 메이커 ↗</a>
+        </nav>
         <span className="rounded bg-white/5 px-1.5 py-0.5 text-[10px] text-white/50">
           스킬 {doc.skills.length} · 문제 {setCheck.errors.length} · 경고 {setCheck.warnings.length}
         </span>
