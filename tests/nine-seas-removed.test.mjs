@@ -10,8 +10,11 @@ import { execFileSync } from 'node:child_process';
 const OLD_EN = /(?<![A-Za-z])(howlrstone|alfheim|muspelheim|niflheim|nidavellir|nidhogg?|abudditos|fenrir|skoll|surt|hati|gram|vord|jorm|nagr|hel|helhound|valkyrie|valk|yggfeast)(?![a-z])|HOWLRSTONE|Howlrstone|(?<![A-Za-z])howl[A-Z]/;
 const OLD_KO = /니드호그|수르트|펜리르|아부디토스|베오르드|요르문간드|나그라파르|가르간|하울르스톤|쿠소디아|알프헤임|무스펠|니플헤임|니다벨리르|스바르트|발할라|발키리|라그나로크|요툰/;
 
-/* 역사 기록(docs·worklog·AGENTS)과 금지어 목록을 담은 테스트는 대상이 아니다. */
-const EXEMPT = (f) => /^(docs|skills|tests)\//.test(f) || /^(worklog|AGENTS|ONBOARDING)\.md$/.test(f) || f === 'src/game/legacyKeys.ts' || f === 'scripts/maple_contents.json';
+/* 역사 기록(docs·worklog·AGENTS)과 금지어 목록을 담은 테스트는 대상이 아니다.
+ * 2026-11-16 — 멀티플레이 서버의 구역 키 별칭표(multiplayer/stageAliases.js)는
+ *  이미 배포된 구버전 APK 가 보내는 옛 구역 이름을 받아 주기 위한 **상호운용 표**다.
+ *  클라 이관표·거래소 매물 변환표와 같은 성격이라 여기서만 예외한다. */
+const EXEMPT = (f) => /^(docs|skills|tests)\//.test(f) || /^(worklog|AGENTS|ONBOARDING)\.md$/.test(f) || f === 'src/game/legacyKeys.ts' || f === 'multiplayer/stageAliases.js' || f === 'scripts/maple_contents.json';
 const files = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' }).split('\0').filter(Boolean);
 const TEXT = /\.(ts|tsx|mjs|js|cjs|json|py|html|md|txt|css|sh|yml|yaml|gradle|xml|toml)$/;
 

@@ -14,6 +14,8 @@ const { Server } = require("socket.io");
 /* v1.4.8 (#4 보안) — 소켓 gm 플래그 서버 검증 (계정 세션 토큰 → admin 롤 판정) */
 const { isVerifiedAdmin } = require("../accounts");
 const { ROOM_CAP, TICK_MS, SNAPSHOT_MS, DEFAULT_STAGE } = require("./config");
+/* 2026-11-16 — 구역 키 정규화. 구버전 APK 가 옛 이름을 보내도 같은 방에 모이게. */
+const { normalizeStage } = require("./stageAliases");
 const { createRoomDirectory } = require("./rooms");
 const { metaOf, moveRow, deltaPacket } = require("./packets");
 
@@ -163,7 +165,10 @@ function attachMultiplayer(httpServer) {
         y: Number(p.y) || 300,
         flip: false,
         moving: false,
-        stage: typeof p.stage === "string" ? p.stage.slice(0, 24) : "village",
+        /* 2026-11-16 — 구역 키는 **서버에서 정규화**한다. 구버전 APK 는 옛 이름을
+         *  보내므로, 그대로 방 키로 쓰면 신버전 사용자와 같은 자리에 있어도 서로 보이지 않는다.
+         *  config.normalizeStage 가 양쪽을 같은 새 이름으로 모은다. */
+        stage: normalizeStage(typeof p.stage === "string" ? p.stage : DEFAULT_STAGE) || DEFAULT_STAGE,
         code: typeof p.code === "string" ? p.code.slice(0, 12) : "",
         /* v1.0.16 — GM 계정 플래그 릴레이 (이름표/오라 코스메틱용)
          * v1.4.8 (#4 보안) — 클라 선언 gm 스푸핑 차단: 세션 토큰이 admin 계정으로 검증될 때만 릴레이 */
@@ -208,7 +213,7 @@ function attachMultiplayer(httpServer) {
       p.moving = !!s.moving;
       if (Number.isFinite(s.lv)) p.lv = Math.max(1, Math.min(999, Number(s.lv))); // v1.0.2 — 비정상 레벨 표시 차단
       if (s.cls === null || typeof s.cls === "string") p.cls = s.cls;
-      if (typeof s.stage === "string") p.stage = s.stage.slice(0, 24);
+      if (typeof s.stage === "string") p.stage = normalizeStage(s.stage) || DEFAULT_STAGE;
       /* 바뀐 것만 다음 틱에 보낸다 — 구역 변경은 방 이동, 레벨·직업은 스냅샷, 좌표는 묶음 */
       if (p.stage !== before[6]) { placeInRoom(sock, p.stage); return; }
       const key = rooms.roomOf(sock.id);

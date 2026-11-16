@@ -50,6 +50,9 @@ export function AuthPanel() {
   /* vc272 — 닉네임(선택) 검증 결과. 렌더에서 한 번만 계산해 타입 좁히기를 유지한다. */
   const nameCheck = { nick: validateName(nick) };
   const [msg, setMsg] = useState("");
+  /* 2026-11-16 — 세이브 버전 차단(409)일 때 설치 안내로 보내는 링크. 문구만으로는
+   *  구버전 APK 사용자가 어디서 업데이트하는지 알 수 없어, 서버가 준 경로를 그대로 띄운다. */
+  const [msgGuide, setMsgGuide] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const gate = useKeyGate();
 
@@ -152,6 +155,7 @@ export function AuthPanel() {
 
   const doBackup = async () => {
     setMsg("");
+    setMsgGuide(null);
     setBusy(true);
     try {
       const data = await refreshSaveInfo();
@@ -161,7 +165,12 @@ export function AuthPanel() {
       }
       /* vc149 (#2) — 활성 캐릭터 + 전 캐릭터 동시 백업 */
       const r = await cloudSaveUpload(data, collectLocalChars());
-      setMsg(r.ok ? "클라우드 백업 완료! 전 캐릭터가 저장됐어요 — 어느 기기에서든 복원할 수 있어요" : (r.error ?? "백업 실패"));
+      if (r.ok) {
+        setMsg("클라우드 백업 완료! 전 캐릭터가 저장됐어요 — 어느 기기에서든 복원할 수 있어요");
+      } else {
+        setMsg(r.error ?? "백업 실패");
+        setMsgGuide(r.guide ?? null);
+      }
     } catch (error) {
       setMsg(error instanceof Error ? error.message : "캐릭터 백업을 안전하게 만들 수 없어 업로드를 중단했어요");
     } finally {
@@ -171,11 +180,13 @@ export function AuthPanel() {
 
   const doRestore = async () => {
     setMsg("");
+    setMsgGuide(null);
     setBusy(true);
     const r = await cloudSaveDownload();
     setBusy(false);
     if (!r.ok || !r.data) {
       setMsg(r.error ?? "클라우드에 백업된 세이브가 없어요");
+      setMsgGuide(r.guide ?? null);
       return;
     }
     if (!window.confirm("클라우드 세이브로 이 기기를 덮어쓸까요? 같은 이름 캐릭터가 교체되고, 없으면 새 캐릭터로 들어와요.")) return;
@@ -248,7 +259,7 @@ export function AuthPanel() {
     } catch (e) {
       const msg = String((e as { message?: string })?.message ?? e ?? "").toLowerCase();
       if (msg.includes("cancel") || msg.includes("dismiss") || msg.includes("popup_closed")) {
-        setMsg(""); // 유저가 창을 닫은 것 — 오류 아님
+        setMsg(""); setMsgGuide(null); // 유저가 창을 닫은 것 — 오류 아님
       } else if (msg.includes("developer_error") || msg.includes("apiexception") || msg.includes("10:") || msg.includes("12500") || msg.includes("12501") || msg.includes("not_found") || msg.includes("resources") || msg.includes("not implemented") || msg.includes("firebaseapp") && msg.includes("initialize")) {
         /* v1.0.3-beta — Android DEVELOPER_ERROR(코드 10)·리소스 부재·플러그인 로드 실패
          *  ("plugin is not implemented" = google-services.json 부재로 네이티브 플러그인이
@@ -372,10 +383,10 @@ export function AuthPanel() {
                 </div>
 
                 <div className="mb-1.5 grid grid-cols-2 gap-1.5">
-                  <button onClick={() => { setMode("login"); setMsg(""); }} className={`rounded-lg py-1.5 text-[12px] font-black ${mode === "login" ? "bg-amber-400 text-slate-900" : "border border-white/15 bg-white/5 text-white/60"}`}>
+                  <button onClick={() => { setMode("login"); setMsg(""); setMsgGuide(null); }} className={`rounded-lg py-1.5 text-[12px] font-black ${mode === "login" ? "bg-amber-400 text-slate-900" : "border border-white/15 bg-white/5 text-white/60"}`}>
                     로그인
                   </button>
-                  <button onClick={() => { setMode("signup"); setMsg(""); }} className={`rounded-lg py-1.5 text-[12px] font-black ${mode === "signup" ? "bg-amber-400 text-slate-900" : "border border-white/15 bg-white/5 text-white/60"}`}>
+                  <button onClick={() => { setMode("signup"); setMsg(""); setMsgGuide(null); }} className={`rounded-lg py-1.5 text-[12px] font-black ${mode === "signup" ? "bg-amber-400 text-slate-900" : "border border-white/15 bg-white/5 text-white/60"}`}>
                     회원가입
                   </button>
                 </div>
@@ -401,6 +412,18 @@ export function AuthPanel() {
             )}
 
             {msg && <p className="mt-2 rounded-lg bg-black/50 px-2.5 py-2 text-[11px] font-bold text-amber-200">{msg}</p>}
+            {/* 2026-11-16 — 더 최신 형식의 세이브라 막혔을 때(409). 차단은 그대로 두되(구버전이 v3 를
+                덮어쓰는 것을 막는 보호), 어디서 업데이트하는지 바로 갈 수 있게 한다. */}
+            {msgGuide && (
+              <a
+                href={msgGuide}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1.5 block rounded-lg bg-amber-400 px-2.5 py-2 text-center text-[11px] font-black text-slate-900"
+              >
+                최신 버전 설치 안내 열기
+              </a>
+            )}
           </div>
         </div>
       )}

@@ -33,6 +33,7 @@ import mqtt from "mqtt";
 import { getCachedUser, getAuthToken } from "./account";
 import { resolveApiBase } from "./server";
 import { presenceSessionId } from "./playerIdentity";
+import { rekeyLegacy } from "./legacyKeys"; // 2026-11-16 — 구역 키 정규화(구버전과 같은 방에 모이게)
 
 /* 공개 브로커 후보 — 순차 폴백(첫 번째가 8초 내 연결 실패 시 다음)
  * vc140 실측(2026-10-08): eclipseprojects.io는 connack 타임아웃으로 완전 사망 —
@@ -96,7 +97,9 @@ const clean = (s: unknown, max: number): string =>
     .slice(0, max);
 const num = (v: unknown, lo: number, hi: number): number =>
   Math.max(lo, Math.min(hi, Math.round(Number(v) || 0)));
-const stageKey = (s: unknown): string => clean(s, 24).toLowerCase().replace(/[^a-z0-9_-]/g, "") || "village";
+/* 2026-11-16 — 구역 키 정규화. 옛 '9개의 바다' 이름을 보내는 구버전 사용자와 같은 방(토픽)에
+ *  모이게 한다. 서버 경로(multiplayer/index.js)와 같은 이관표를 쓰므로 양쪽이 같은 값으로 수렴한다. */
+const stageKey = (s: unknown): string => rekeyLegacy(clean(s, 24).toLowerCase().replace(/[^a-z0-9_-]/g, "")) || "village";
 
 /* ---------------- v1.0.13 피드백#11 — 로컬 GM 증명 (검증된 관리자만 전파) ----------------
  *  · 증명 = sha16(token): SHA-256(세션 토큰) 앞 16 hex — Web Crypto로 1회 계산 후 캐시.

@@ -16,3 +16,4 @@ module.exports = {
   /** 구역 정보가 없을 때의 기본 구역 */
   DEFAULT_STAGE: "village",
 };
+

@@ -205,16 +205,17 @@ export async function fetchSnsProviders(): Promise<SnsProviders> {
 }
 
 /** 클라우드 세이브 백업 — 게임 세이브 객체를 그대로 저장 */
-type CloudFailure = { ok: false; error: string; code?: string; minimumSaveVersion?: number };
+type CloudFailure = { ok: false; error: string; code?: string; minimumSaveVersion?: number; guide?: string };
 function cloudFailure(data: Record<string, unknown>, fallback: string): CloudFailure {
   const error = String(data.error ?? fallback);
   if (data.code === "SAVE_VERSION_UNSUPPORTED") reportSaveFailure(error);
   return { ok: false, error,
     code: typeof data.code === "string" ? data.code : undefined,
-    minimumSaveVersion: typeof data.minimumSaveVersion === "number" ? data.minimumSaveVersion : undefined };
+    minimumSaveVersion: typeof data.minimumSaveVersion === "number" ? data.minimumSaveVersion : undefined,
+    guide: typeof data.guide === "string" ? data.guide : undefined };
 }
 
-export async function cloudSaveUpload(data: unknown, chars?: Record<string, unknown>): Promise<{ ok: boolean; error?: string; code?: string; minimumSaveVersion?: number; updatedAt?: number }> {
+export async function cloudSaveUpload(data: unknown, chars?: Record<string, unknown>): Promise<{ ok: boolean; error?: string; code?: string; minimumSaveVersion?: number; guide?: string; updatedAt?: number }> {
   const r = await post("/api/auth/cloud-save", chars ? { data, chars } : { data });
   if (!r.ok) return cloudFailure(r.data, "백업 실패");
   return { ok: true, updatedAt: r.data.updatedAt as number };
@@ -222,7 +223,7 @@ export async function cloudSaveUpload(data: unknown, chars?: Record<string, unkn
 
 /** 클라우드 세이브 복원 — 저장된 세이브 객체 반환 (없으면 null)
  *  vc149 (#2) — chars: 전 캐릭터 백업분 (이름 → 세이브) 동시 반환 */
-export async function cloudSaveDownload(): Promise<{ ok: boolean; data: unknown; chars?: Record<string, unknown>; error?: string; code?: string; minimumSaveVersion?: number }> {
+export async function cloudSaveDownload(): Promise<{ ok: boolean; data: unknown; chars?: Record<string, unknown>; error?: string; code?: string; minimumSaveVersion?: number; guide?: string }> {
   const r = await get(`/api/auth/cloud-save?saveVersion=${saveSchema.version}`);
   if (!r.ok) return { ...cloudFailure(r.data, "복원 실패"), data: null };
   return { ok: true, data: r.data.data ?? null, chars: (r.data.chars as Record<string, unknown>) ?? undefined };
