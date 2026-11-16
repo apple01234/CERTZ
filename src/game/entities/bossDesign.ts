@@ -30,7 +30,7 @@ export const CANON_BOSS_DESIGN = {
     phase(1, "다크엑스칼리버", ["charge", "blinkslash"], "4.txt:100-102", "암흑의 검을 쓰는 인간 기사다."),
     phase(.5, "그림자의 분신", ["shadowcopies", "counter"], "4.txt:100-102", "그림자로 시야를 가리고 분신으로 공격한다. 검은 드래곤의 영혼을 품었다는 설정을 육체 변신으로 바꾸지 않는다."),
   ] },
-  shadow: { name: "군단장의 사념체", motive: "성채의 비밀 통로를 막는다.", power: "사념체 · 군단장의 잔재", visual: "cast_feron", finish: "repel", phases: [
+  shadow: { name: "군단장의 사념체", motive: "성채의 비밀 통로를 막는다.", power: "사념체 · 군단장의 잔재", visual: "story_thought", finish: "repel", phases: [
     phase(1, "군단장의 사념", ["blinkslash", "volley"], "2.txt:158-162", "최상층으로 가는 길을 지키는 군단장들의 사념체."),
     phase(.5, "사념체의 함정", ["shadowcopies", "zones"], "2.txt:158-162", "반란군이 길을 열기 위해 대신 막아선다."),
   ] },
@@ -67,6 +67,11 @@ export const CANON_BOSS_DESIGN = {
   reversecore: { name: "컨트롤타워 AI", motive: "도시에 독가스를 공급하는 장치를 멈춘다.", power: "독가스 · 기계 장치", visual: "story_aicore", finish: "core", phases: [
     phase(1, "독가스 공급", ["cursefield", "zones"], "8.txt:245-304", "환기 통로를 읽고 독가스 예고를 피한다."),
     phase(.5, "중앙 제어", ["beam", "corruption"], "8.txt:245-304", "기계의 직선 방어망 사이 안전 구간."),
+  ] },
+  snorikaking: { name: "클로체스", motive: "얼어붙은 심장 때문에 차가운 왕으로 변했다.", power: "얼어붙은 심장 · 얼음검", visual: "story_snorikaking", phases: [
+    phase(1, "얼음검을 든 왕", ["volley", "frostnova"], "6.txt:58-70", "인간 왕의 왕관과 얼음검. 얼음 거수로 변신하지 않는다."),
+    phase(.66, "얼어붙은 심장", ["zones", "charge"], "6.txt:58-70", "가슴의 푸른 심장과 얼음검을 강조한다."),
+    phase(.33, "차가운 왕의 저항", ["beam"], "6.txt:58-70", "마지막까지 인간의 모습과 왕의 복장을 유지한다."),
   ] },
   fabian: { name: "힘의 부호 파비앙", motive: "컴퍼니가 만든 카르텔의 데이터와 링에서 대련한다.", power: "체술 · 밀어내기", visual: "cast_fabian", finish: "ringout", phases: [
     phase(1, "링 위의 대련", ["charge", "slam"], "8.txt:402-433", "무기를 새로 쥐여 주지 않는다."),

@@ -104,21 +104,57 @@
       "combat": true
     },
     {
-      "id": "jade",
-      "texture": "story_jade",
-      "frames": 16,
-      "sourceSHA256": "782e1494402394533bda8530c7c35945582e41ee1635afdaa1a7149f1b7f8430",
-      "logicalHeightBudget": 72,
-      "prompt": "Production combat animation SPRITE ATLAS of the exact brown-haired apron-clad man in reference. FOUR columns FOUR rows, sixteen cells on true transparent alpha with wide blank gutters. Row1 FOUR front idle breathing poses, row2 FOUR side walk strides, row3 FOUR distinct empty-hand energy strike phases windup/palm thrust/followthrough/recover, row4 FOUR magic absorption poses prepare/channel/release/recover with small cyan-violet energy ball. NO sword. Pixel art game style: hard square pixel clusters, limited cel-shaded palette, dark outlines, NO painting, NO gradient, NO antialiasing. Full head and feet inside each cell, same scale and baseline, character occupies 60 percent of cell, no text/labels/background/shadows. Do not reuse the directional row3 back view: create the ATTACK sequence.",
-      "combat": true
-    },
-    {
       "id": "fabian",
       "texture": "story_fabian",
       "frames": 16,
       "sourceSHA256": "b4f0765a7c5bc3ff722fa4e13b7fa0e4073d826c23a2574192c9d1a265387092",
       "logicalHeightBudget": 72,
       "prompt": "Production sprite animation atlas, preserve the EXACT character, face, hair, costume and weapon in reference. REPLACE the directional walk atlas layout with this combat layout: EXACTLY FOUR COLUMNS and FOUR ROWS, sixteen equally spaced full-body sprites on TRUE transparent alpha. Row1 four subtle front-facing IDLE breathing poses. Row2 four distinct side-facing WALK stride phases alternating legs. Row3 four consecutive ATTACK poses: windup, strike, followthrough, recovery. Row4 four consecutive SPECIAL SKILL poses: prepare, channel, release, recovery. Character action: unarmed martial arts jab, straight punch and recovery; skill lunging two-handed grapple and powerful outward palm shove for ring-out sparring. No weapons or magic. Match our restrained JRPG PIXEL ART style: crisp hard square pixel clusters, native 48x64 logical pixel detail, clear dark outline, three tones per material, NO painting, NO gradients, NO antialiasing. Mature three-head-tall proportions. Occupy at most 65 percent of EACH cell, SAME character height, consistent foot baseline within each row, generous blank margins. Full head, feet, weapons stay strictly inside each cell. NO text, labels, grid, background, ground plane or shadows, no other figures. This is a 4x4 GAME ATLAS, not one illustration.",
+      "combat": true
+    },
+    {
+      "id": "jade",
+      "texture": "story_jade",
+      "frames": 16,
+      "sourceSHA256": "baa7eb2560b49d8bd28259413a2959e41bb1fbb3101b2699fe02a1a815c08100",
+      "logicalHeightBudget": 72,
+      "prompt": "Jade retains his existing brown hair and workshop clothes; replace unarmed poses with a brass and steel magitech gun-hammer, cyan crystal and absorption gestures. Sixteen real idle/walk/hammer attack/cast poses.",
+      "combat": true
+    },
+    {
+      "id": "jadeclone",
+      "texture": "story_jadeclone",
+      "frames": 16,
+      "sourceSHA256": "3a2e99e7285477a54ae08c133c0d9156ce050e1fd9045dd38332b1e6e9368998",
+      "logicalHeightBudget": 72,
+      "prompt": "Edit the reviewed Jade combat sheet into blue energy duplicates, including the face, clothes and gun-hammer. Keep all sixteen poses.",
+      "combat": true
+    },
+    {
+      "id": "dean",
+      "texture": "story_dean",
+      "frames": 16,
+      "sourceSHA256": "850d7ebfa78775aaf9c1c2d4bbbc6fe1cce7a0a9f162df7601871e7c934419fa",
+      "logicalHeightBudget": 72,
+      "prompt": "Edit existing owned cutscene Dean: preserve charcoal robe, dark hair, violet lining and black-magic staff; sixteen idle/walk/staff attack/black-magic cast poses.",
+      "combat": true
+    },
+    {
+      "id": "snorikaking",
+      "texture": "story_snorikaking",
+      "frames": 16,
+      "sourceSHA256": "b283a4fb8195d0d6816f2fdee0edd43a1a02d23944f4bebae58cd9070e31caa2",
+      "logicalHeightBudget": 72,
+      "prompt": "Clochece is a human king with a frozen heart and an ice sword. Art interpretation: silver hair, small crown, navy royal armor, fur cape, cyan heart brooch. Sixteen idle/walk/ice-sword attack/cast poses. No beast transformation.",
+      "combat": true
+    },
+    {
+      "id": "thought",
+      "texture": "story_thought",
+      "frames": 16,
+      "sourceSHA256": "ce14e5d37a68cdb775ae5b6dde0b3fce2da7fbe1a6627e3b806830001e8039bb",
+      "logicalHeightBudget": 72,
+      "prompt": "Pixel monsters in four by four grid. Upper eight: amorphous hatred/darkness thought-form, purple eyes, drifting torn silhouette and claws. Lower eight: Korean dokkaebi bandit, single horn, olive skin, indigo hemp clothes, rope belt, wooden club. Each has two idle, two stride, two attack, two stride poses. Transparent padding.",
       "combat": true
     }
   ]

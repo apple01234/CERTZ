@@ -5,6 +5,7 @@ import { tutorialResume, tutorialStage } from "./tutorialFlow";
 import type { SaveData } from "./config";
 import { rememberTexture } from "./texGuard";
 import { assetUrl, isWorldAsset, TITLE_ASSETS, type AssetDefinition } from "./assetSelection";
+import { storyEnemyRole, STORY_ENEMY_TEXTURES } from "./storyEnemyVisuals";
 
 export type LoadProgress = { phase: string; elapsedMs: number; total: number; complete: number; active: number; failed: string[]; error?: string };
 const PHASE_LIMIT_MS = 30000;
@@ -220,6 +221,11 @@ export async function ensureWorldAssets(scene: Phaser.Scene, data: { stage?: str
   if (stage.elite) monsters.add(stage.elite.key);
   for (const key of ["x2_rat", "golem", "runegolem"]) monsters.add(key); // tutorial and class trials
   for (const boss of Object.values(BOSS_DEFS)) if (boss.summonKey) monsters.add(boss.summonKey);
+  for (const key of [...monsters]) {
+    const role = storyEnemyRole(stage.key, key);
+    if (role) monsters.add(`storymob_${role}`);
+  }
+  allMonsters.unshift(...STORY_ENEMY_TEXTURES);
   const scope = { body: resolveBodyPrefix(data.save ?? {}), bodies: BODY_PREFIXES, monsters: [...monsters], allMonsters };
   const keys = [...manager.definitions.values()].filter(def => isWorldAsset(def, scope)).map(def => def.key);
   // Every region re-enters this gate before spawn; completed/in-flight jobs are

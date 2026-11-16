@@ -10,6 +10,7 @@ export class StoryBossMechanics {
   private timers: Phaser.Time.TimerEvent[] = [];
   private ring: Phaser.GameObjects.Graphics | null = null;
   private dean: Phaser.GameObjects.Sprite | null = null;
+  private deanCasting = false;
   private core: Phaser.GameObjects.Image | null = null;
   private coreLabel: Phaser.GameObjects.Text | null = null;
   private coreHp = 0;
@@ -22,7 +23,10 @@ export class StoryBossMechanics {
     this.key = BOSS_RECORD_ALIASES[boss.def.key] ?? boss.def.key;
     const scene = boss.scene;
     if (this.key === "fabian") this.ring = scene.add.graphics().lineStyle(5, 0xe6b573, .85).strokeCircle(boss.x, boss.y, 235).setDepth(4).setName("story-boss:sparring-ring");
-    if (this.key === "verodin") this.dean = scene.add.sprite(boss.x - 105, boss.y, "cast_dean", "ready").setScale(.95).setDepth(11).setName("story-boss:dean");
+    if (this.key === "verodin") {
+      this.dean = scene.add.sprite(boss.x - 105, boss.y, "story_dean", "idle-0").setOrigin(.5, .65).setScale(.58).setDepth(11).setName("story-boss:dean");
+      this.dean.play("story_dean-idle");
+    }
     if (this.key === "littlestar") this.exposeCore();
     scene.events.once("shutdown", () => this.destroy());
   }
@@ -45,13 +49,15 @@ export class StoryBossMechanics {
     const label = scene.add.text(b.x, b.y - 95, pattern.title, { fontSize: "16px", color: "#fff2dc", stroke: "#1c1729", strokeThickness: 4 }).setOrigin(.5).setDepth(22).setName(`story-boss:label:${kind}`);
     this.objects.push(label);
     if (pattern.clones) for (const h of pattern.hazards) {
-      const tex = scene.textures.exists(`story_${pattern.clones}`) ? `story_${pattern.clones}` : `cast_${pattern.clones}`;
+      const tex = pattern.clones === "jade" && scene.textures.exists("story_jadeclone") ? "story_jadeclone"
+        : scene.textures.exists(`story_${pattern.clones}`) ? `story_${pattern.clones}` : `cast_${pattern.clones}`;
       const clone = scene.add.sprite(h.x, h.y - h.h / 2 + 30, tex, tex.startsWith("story_") ? "cast-1" : "ready")
-        .setScale(tex.startsWith("story_") ? .52 : .95).setTint(pattern.color).setAlpha(.6).setDepth(11).setName(`story-boss:clone:${pattern.clones}`);
+        .setScale(tex.startsWith("story_") ? .52 : .95).setAlpha(.7).setDepth(11).setName(`story-boss:clone:${pattern.clones}`);
+      if (tex !== "story_jadeclone") clone.setTint(pattern.color);
       if (scene.anims.exists(`${tex}-sp1`)) clone.play(`${tex}-sp1`);
       this.objects.push(clone);
     }
-    if (kind === "cursefield" && this.dean?.active) this.dean.play("cast_dean-reach");
+    if (kind === "cursefield" && this.dean?.active) { this.deanCasting = true; this.dean.play("story_dean-sp1"); }
     this.later(telegraphMs(kind), () => {
       warning.clear().fillStyle(pattern.color, .38).lineStyle(4, pattern.color, 1);
       for (const h of pattern.hazards) this.draw(warning, h);
@@ -107,7 +113,11 @@ export class StoryBossMechanics {
 
   tick(): "ringout" | "seal" | null {
     const b = this.boss;
-    if (this.dean?.active) this.dean.setPosition(b.x - 105, b.y);
+    if (this.dean?.active) {
+      const moving = Math.hypot(this.dean.x - (b.x - 105), this.dean.y - b.y) > .2;
+      this.dean.setPosition(b.x - 105, b.y).setFlipX(b.flipX);
+      this.dean.play(this.deanCasting ? "story_dean-sp1" : moving ? "story_dean-walk" : "story_dean-idle", true);
+    }
     this.core?.setPosition(b.x, b.y - 20); this.coreLabel?.setPosition(b.x, b.y - 65);
     if (this.isSealTrial()) {
       if (this.sealFinished) return "seal";
@@ -122,7 +132,8 @@ export class StoryBossMechanics {
   clearAttack(): void {
     for (const t of this.timers) t.remove(); this.timers = [];
     for (const o of this.objects) o.destroy(); this.objects = [];
-    if (this.dean?.active) this.dean.play("cast_dean-ready");
+    this.deanCasting = false;
+    if (this.dean?.active) this.dean.play("story_dean-idle");
   }
   destroy(): void {
     this.sealTimer?.remove();

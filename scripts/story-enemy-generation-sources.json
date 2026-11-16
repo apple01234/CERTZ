@@ -1,0 +1,167 @@
+[
+  {
+    "file": "jade.png",
+    "tool": "image_gen",
+    "brief": "Jade retains his existing brown hair and workshop clothes; replace unarmed poses with a brass and steel magitech gun-hammer, cyan crystal and absorption gestures. Sixteen real idle/walk/hammer attack/cast poses.",
+    "roles": [
+      {
+        "id": "jade",
+        "boss": true,
+        "canon": "8.txt:122-140",
+        "sourceSHA256": "baa7eb2560b49d8bd28259413a2959e41bb1fbb3101b2699fe02a1a815c08100"
+      }
+    ],
+    "generatedFile": "exec-5407801c-0d80-4830-9d7a-4cb19b8bfefa.png",
+    "rights": "Generated with image_gen for this project; not a third-party CC0 asset.",
+    "reference": "public/assets/story-bosses/jade.png at 7ac2782 (existing project art)"
+  },
+  {
+    "file": "jadeclone.png",
+    "tool": "image_gen",
+    "brief": "Edit the reviewed Jade combat sheet into blue energy duplicates, including the face, clothes and gun-hammer. Keep all sixteen poses.",
+    "roles": [
+      {
+        "id": "jadeclone",
+        "boss": true,
+        "canon": "8.txt:131-140",
+        "sourceSHA256": "3a2e99e7285477a54ae08c133c0d9156ce050e1fd9045dd38332b1e6e9368998"
+      },
+      {
+        "id": "jadeclone",
+        "indices": [
+          0,
+          1,
+          4,
+          5,
+          8,
+          10,
+          6,
+          7
+        ],
+        "canon": "8.txt:131-140",
+        "sourceSHA256": "3a2e99e7285477a54ae08c133c0d9156ce050e1fd9045dd38332b1e6e9368998"
+      }
+    ],
+    "generatedFile": "exec-d5d2f64c-2ed1-4ce8-af94-c971e776e6d6.png",
+    "rights": "Generated with image_gen for this project; not a third-party CC0 asset.",
+    "reference": "jade.png from this generation batch"
+  },
+  {
+    "file": "dean.png",
+    "tool": "image_gen",
+    "brief": "Edit existing owned cutscene Dean: preserve charcoal robe, dark hair, violet lining and black-magic staff; sixteen idle/walk/staff attack/black-magic cast poses.",
+    "roles": [
+      {
+        "id": "dean",
+        "boss": true,
+        "canon": "4.txt:103-104",
+        "sourceSHA256": "850d7ebfa78775aaf9c1c2d4bbbc6fe1cce7a0a9f162df7601871e7c934419fa"
+      }
+    ],
+    "generatedFile": "exec-e5ef9891-d8e8-4a86-96f5-c63fc41cd1db.png",
+    "rights": "Generated with image_gen for this project; not a third-party CC0 asset.",
+    "reference": "public/assets/cutscene-cast/dean.png (existing project art)"
+  },
+  {
+    "file": "snorikaking.png",
+    "tool": "image_gen",
+    "brief": "Clochece is a human king with a frozen heart and an ice sword. Art interpretation: silver hair, small crown, navy royal armor, fur cape, cyan heart brooch. Sixteen idle/walk/ice-sword attack/cast poses. No beast transformation.",
+    "roles": [
+      {
+        "id": "snorikaking",
+        "boss": true,
+        "canon": "6.txt:58-70",
+        "sourceSHA256": "b283a4fb8195d0d6816f2fdee0edd43a1a02d23944f4bebae58cd9070e31caa2"
+      }
+    ],
+    "generatedFile": "exec-3d3bfa3f-6e0a-4a60-ac56-736ce3f0cdfb.png",
+    "rights": "Generated with image_gen for this project; not a third-party CC0 asset."
+  },
+  {
+    "file": "thought-dokkaebi.png",
+    "tool": "image_gen",
+    "brief": "Pixel monsters in four by four grid. Upper eight: amorphous hatred/darkness thought-form, purple eyes, drifting torn silhouette and claws. Lower eight: Korean dokkaebi bandit, single horn, olive skin, indigo hemp clothes, rope belt, wooden club. Each has two idle, two stride, two attack, two stride poses. Transparent padding.",
+    "roles": [
+      {
+        "id": "thought",
+        "start": 0,
+        "canon": "1.txt:84-137",
+        "sourceSHA256": "ce14e5d37a68cdb775ae5b6dde0b3fce2da7fbe1a6627e3b806830001e8039bb"
+      },
+      {
+        "id": "dokkaebi",
+        "start": 8,
+        "canon": "2.txt:35-45",
+        "sourceSHA256": "ce14e5d37a68cdb775ae5b6dde0b3fce2da7fbe1a6627e3b806830001e8039bb"
+      },
+      {
+        "id": "thought",
+        "boss": true,
+        "indices": [
+          0,
+          1,
+          0,
+          1,
+          2,
+          3,
+          6,
+          7,
+          4,
+          5,
+          4,
+          5,
+          0,
+          4,
+          5,
+          1
+        ],
+        "canon": "1.txt:84-137; 2.txt:158-162",
+        "sourceSHA256": "ce14e5d37a68cdb775ae5b6dde0b3fce2da7fbe1a6627e3b806830001e8039bb"
+      }
+    ],
+    "generatedFile": "exec-14b7d45b-93fa-492c-85ad-2ab81875e9b7.png",
+    "rights": "Generated with image_gen for this project; not a third-party CC0 asset."
+  },
+  {
+    "file": "drone-robot.png",
+    "tool": "image_gen",
+    "brief": "Pixel monsters in four by four grid. Upper eight: floating industrial security drone, blue steel/brass, cyan lamps and red lens; lower eight: biped combat robot with matching factory hardware, no humanoid flesh. Each has two idle, two stride/hover, two attack, two stride/hover poses.",
+    "roles": [
+      {
+        "id": "drone",
+        "start": 0,
+        "canon": "8.txt:173-196",
+        "sourceSHA256": "30f5af10318a4a7427a7a63f8e48a76a9ad197ef3d9a79b04b5f064f7a5fe681"
+      },
+      {
+        "id": "robot",
+        "start": 8,
+        "canon": "8.txt:173-245",
+        "sourceSHA256": "30f5af10318a4a7427a7a63f8e48a76a9ad197ef3d9a79b04b5f064f7a5fe681"
+      }
+    ],
+    "generatedFile": "exec-0d437cfa-036c-4ba2-aaf2-9b97234ac86a.png",
+    "rights": "Generated with image_gen for this project; not a third-party CC0 asset."
+  },
+  {
+    "file": "deckhand-virus.png",
+    "tool": "image_gen",
+    "brief": "Pixel monsters in four by four grid. Upper eight: art interpretation of cursed sea troops, weathered grey skin, torn navy coat, teal bandana, boarding blade, no commander trident. Lower eight: non-humanoid cosmic virus, fractured irregular star crystal, purple tendrils and cyan cracks. Each has two idle, two stride, two attack, two stride poses.",
+    "roles": [
+      {
+        "id": "deckhand",
+        "start": 0,
+        "canon": "2.txt:59-71",
+        "sourceSHA256": "624bc277e951f7d5d85e798b9b4eda4200d9c7b016eb83df923fb3b3daf54105"
+      },
+      {
+        "id": "virus",
+        "start": 8,
+        "canon": "8.txt:37-65",
+        "sourceSHA256": "624bc277e951f7d5d85e798b9b4eda4200d9c7b016eb83df923fb3b3daf54105"
+      }
+    ],
+    "generatedFile": "exec-90935c9f-e1de-4926-965d-687c56c5f964.png",
+    "rights": "Generated with image_gen for this project; not a third-party CC0 asset."
+  }
+]

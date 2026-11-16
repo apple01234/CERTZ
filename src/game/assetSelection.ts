@@ -7,7 +7,7 @@ export function isWorldAsset(asset: AssetDefinition, scope: AssetScope): boolean
   const key = asset.key;
   const body = scope.bodies.find(prefix => key.startsWith(`${prefix}_`));
   if (body) return body === scope.body;
-  const monster = scope.allMonsters.find(prefix => key.startsWith(`${prefix}_`));
+  const monster = scope.allMonsters.find(prefix => key === prefix || key.startsWith(`${prefix}_`));
   if (monster) return scope.monsters.includes(monster);
   if (key === "wraith_spirit") return scope.monsters.includes("wraith");
   // ponytail: shared FX, lighting, cutscenes and on-map boss summons stay gated

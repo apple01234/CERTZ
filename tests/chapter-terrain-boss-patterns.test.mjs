@@ -67,7 +67,7 @@ test('the cliff road connects both portals without filling the meadow with repea
 test('all active canonical boss visuals and changing attack/cast frames ship offline', () => {
   const cast = read('public/assets/cutscene-cast/manifest.json');
   const combat = read('public/assets/story-bosses/manifest.json');
-  assert.equal(cast.characters.length, 31); assert.equal(combat.bosses.length, 13);
+  assert.equal(cast.characters.length, 31); assert.equal(combat.bosses.length, 17);
   for (const boss of Object.values(BOSS_DEFS)) {
     const design = canonBossOf(boss.key); if (!design) continue;
     /* 2026-11-14 — 전투기록 보스 12종은 자기 전용 아틀라스 그림을 쓴다(스토리 보스와 겹침 해소). 패턴은 기록을 따른다. */

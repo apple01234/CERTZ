@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { preloadStoryBosses, registerStoryBosses } from "../fx/storyBossAssets";
+import { preloadStoryEnemies, registerStoryEnemies } from "../fx/storyEnemyAssets";
 import { AURA_TEXTURE_LOADS } from "../fx/auraTextures";
 import { DECOR_SETS } from "../decorObjects";
 import { TILE_PNG_KEYS } from "../tilePng"; // vc206 (#11) — PNG 원본 우선 로드
@@ -673,6 +674,7 @@ export class BootScene extends Phaser.Scene {
     this.load.atlas("fa_p1", "fa/p1.png", "fa/p1.json");
     preloadCutsceneCast(this);
     preloadStoryBosses(this);
+    preloadStoryEnemies(this);
     preloadChapterTerrain(this);
     /* vc239 — PixelLab 생성 에셋 (지시 #2·#12).
      *  · VFX 3종: 성광 심판 / 공허 붕괴 / 조류 파도 — Phaser 아틀라스(프레임 다수).
@@ -957,6 +959,7 @@ function registerLoadedAnimations(scene: Phaser.Scene) {
   buildAllAnims(scene);
   registerCutsceneCast(scene);
   registerStoryBosses(scene);
+  registerStoryEnemies(scene);
   for (const { key } of Object.values(BOSS_ATLAS)) {
     if (scene.textures.exists(key)) scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR);
   }

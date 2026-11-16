@@ -51,14 +51,9 @@ test('every speaking cutscene character has one portrait-matched identity and a 
     if (!c && boss.tex.startsWith('story_')) {
       assert.ok(fs.existsSync(new URL(`public/assets/story-bosses/${boss.tex.slice(6)}.json`, root))); continue;
     }
-    if (!c && boss.key === 'snorikaking') {
-      assert.equal(boss.tex, 'boss_twinmate');
-      assert.ok(fs.existsSync(new URL('public/assets/boss_frost.png', root)));
-      continue;
-    }
     assert.ok(c, `${boss.introDialogue}: missing boss/guide actor`); used.add(c.id);
   }
-  assert.match(read('src/game/entities/StoryBossMechanics.ts'), /"cast_dean"/);
+  assert.match(read('src/game/entities/StoryBossMechanics.ts'), /"story_dean"/);
   used.add('dean'); // Actual two-caster companion, not a second name for Veronica.
   assert.deepEqual([...used].sort(), CUTSCENE_CAST.map((c) => c.id).sort(), 'no generated atlas is left unconnected');
 });

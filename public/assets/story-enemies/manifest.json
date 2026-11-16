@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "frameWidth": 64,
+  "frameHeight": 64,
+  "monsters": [
+    {
+      "id": "jadeclone",
+      "texture": "storymob_jadeclone",
+      "frames": 8,
+      "sourceSHA256": "3a2e99e7285477a54ae08c133c0d9156ce050e1fd9045dd38332b1e6e9368998",
+      "canon": "8.txt:131-140"
+    },
+    {
+      "id": "thought",
+      "texture": "storymob_thought",
+      "frames": 8,
+      "sourceSHA256": "ce14e5d37a68cdb775ae5b6dde0b3fce2da7fbe1a6627e3b806830001e8039bb",
+      "canon": "1.txt:84-137"
+    },
+    {
+      "id": "dokkaebi",
+      "texture": "storymob_dokkaebi",
+      "frames": 8,
+      "sourceSHA256": "ce14e5d37a68cdb775ae5b6dde0b3fce2da7fbe1a6627e3b806830001e8039bb",
+      "canon": "2.txt:35-45"
+    },
+    {
+      "id": "drone",
+      "texture": "storymob_drone",
+      "frames": 8,
+      "sourceSHA256": "30f5af10318a4a7427a7a63f8e48a76a9ad197ef3d9a79b04b5f064f7a5fe681",
+      "canon": "8.txt:173-196"
+    },
+    {
+      "id": "robot",
+      "texture": "storymob_robot",
+      "frames": 8,
+      "sourceSHA256": "30f5af10318a4a7427a7a63f8e48a76a9ad197ef3d9a79b04b5f064f7a5fe681",
+      "canon": "8.txt:173-245"
+    },
+    {
+      "id": "deckhand",
+      "texture": "storymob_deckhand",
+      "frames": 8,
+      "sourceSHA256": "624bc277e951f7d5d85e798b9b4eda4200d9c7b016eb83df923fb3b3daf54105",
+      "canon": "2.txt:59-71"
+    },
+    {
+      "id": "virus",
+      "texture": "storymob_virus",
+      "frames": 8,
+      "sourceSHA256": "624bc277e951f7d5d85e798b9b4eda4200d9c7b016eb83df923fb3b3daf54105",
+      "canon": "8.txt:37-65"
+    }
+  ]
+}

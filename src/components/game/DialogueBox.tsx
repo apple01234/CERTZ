@@ -99,6 +99,7 @@ function bossPortraitKey(tex: string): string {
 }
 
 function portraitOf(speaker: string, portraitId?: string): { tex: string; tone: string } | null {
+  if (speaker === "클로체스") return { tex: "story_snorikaking", tone: "#b4e5ff" };
   if (speaker === "데스크니스") return { tex: "story_desknis", tone: "#ae85ce" };
   if (speaker === "컨트롤타워 AI") return { tex: "story_aicore", tone: "#72cda0" };
   const original = portraitCrops[portraitId ?? speaker];

@@ -7,6 +7,7 @@ import { assetUrl, isWorldAsset } from '../src/game/assetSelection.ts';
 import { BODY_PREFIXES, STAGES, ENEMIES, BOSS_DEFS, resolveStage } from '../src/game/data.ts';
 import { resolveBodyPrefix } from '../src/game/characterAppearance.ts';
 import { tutorialResume, tutorialStage } from '../src/game/tutorialFlow.ts';
+import { storyEnemyRole, STORY_ENEMY_TEXTURES } from '../src/game/storyEnemyVisuals.ts';
 
 // Execute the real scheduler against controlled network/cache ports.
 const source = readFileSync(new URL('../src/game/stagedAssets.ts', import.meta.url), 'utf8');
@@ -96,7 +97,7 @@ test('atlas frames and effect metadata share one JSON request', async () => {
 
 function worldGate(h) {
   const gate = ast.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === 'ensureWorldAssets').getText(ast).replace(/^export /, '');
-  const ports = { BODY_PREFIXES, STAGES, ENEMIES, BOSS_DEFS, resolveStage, resolveBodyPrefix, tutorialResume, tutorialStage, isWorldAsset };
+  const ports = { BODY_PREFIXES, STAGES, ENEMIES, BOSS_DEFS, resolveStage, resolveBodyPrefix, tutorialResume, tutorialStage, isWorldAsset, storyEnemyRole, STORY_ENEMY_TEXTURES };
   return new Function('managers', 'publish', 'lastProgress', ...Object.keys(ports), ts.transpile(gate, { target: ts.ScriptTarget.ES2022 }) + '; return ensureWorldAssets;')(new WeakMap([[h.scene.game = {}, h.manager]]), () => {}, {}, ...Object.values(ports));
 }
 
@@ -143,6 +144,18 @@ test('region transition fetches new enemies once and keeps cached common assets'
   assert.equal(h.cache.has('dx_hornrabbit_idle0'),true);
   assert.equal(h.starts.filter(key=>key==='glow').length,1);
   assert.equal(h.starts.filter(key=>key==='x2_rat_idle0').length,1);
+});
+
+test('story region transitions fetch only their new faction sheets and reuse earlier ones', async () => {
+  const h = harness(STORY_ENEMY_TEXTURES);
+  h.manager.fetch = async def => { h.starts.push(def.key); h.cache.add(def.key); };
+  const ensure = worldGate(h);
+  await ensure(h.scene, {stage:'lilacworld2x2', save:{tutorialDone:true}});
+  assert.deepEqual(h.starts, ['storymob_thought']);
+  await ensure(h.scene, {stage:'lilacworld3x2', save:{tutorialDone:true}});
+  assert.deepEqual(h.starts, ['storymob_thought', 'storymob_dokkaebi']);
+  await ensure(h.scene, {stage:'lilacworld2x2', save:{tutorialDone:true}});
+  assert.equal(h.starts.length, 2);
 });
 
 test('a progressing full load may exceed the inactivity deadline', async () => {

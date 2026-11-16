@@ -19,6 +19,7 @@ import {
 import { receivedDamageMult, applyStatus, tickStatuses, type ActiveStatus } from "../combat/statusEffects";
 import { makeDamage, resolveDamage, applyDamage } from "../combat/damageData"; // vc277 — 피해 파이프라인 (JENNY DamageData 이식)
 import { makeEntry, updateEntry, type AwarenessEntry } from "../ai/awareness"; // vc277 — 시야/인지 (JENNY AwarenessTrait 이식)
+import { storyEnemyRole, STORY_ENEMY_ROLES } from "../storyEnemyVisuals";
 
 /* vc236 — 사망 폭발 반경(px). 코어는 피해량만 export 하고 반경은 연출 소관이라 여기 둔다.
  * 정예 스케일(1.55) 기준 몸통 2~3배 — 눈에 보이는 폭발 범위와 판정이 어긋나지 않게. */
@@ -265,6 +266,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /* v1.4.3 (작업3 최적화) — 애니 키 캐싱: 매 프레임 문자열 2회 생성(적 20기 × 60fps = 2,400회/s
    *  GC 할당)을 생성 시 1회 계산으로 제거 — 시각 변화 0 */
   private runAnimKey = "";
+  private attackAnimKey = "";
   private idleAnimKey = "";
 
   /* vc214 — Utility AI 사기 판단 상태. 스폰 시 한 번 만들고 매 결정 주기마다
@@ -317,6 +319,15 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
      *  로드돼 있으면 해당 텍스처로 스폰하고, 없으면 기존 경로로 안전 폴백한다. */
     super(scene, x, y, key === "wraith" && scene.textures.exists("wraith_spirit") ? "wraith_spirit" : `${key}_idle0`);
     const base = ENEMIES[key];
+    const fieldElite = opts?.displayName?.startsWith("정예 ") || opts?.displayName === scene.stageDef.elite?.name;
+    const role = !opts?.dummy && (!opts?.displayName || fieldElite) ? storyEnemyRole(scene.stageDef.key, key) : null;
+    const visual = role ? `storymob_${role}` : "";
+    const hasStoryVisual = !!visual && scene.textures.exists(visual);
+    if (hasStoryVisual && role) {
+      this.setTexture(visual, "idle-0");
+      this.displayName = opts?.displayName?.startsWith("정예 ") ? `정예 ${STORY_ENEMY_ROLES[role].name}` : opts?.displayName ?? STORY_ENEMY_ROLES[role].name;
+      this.attackAnimKey = `${visual}-attack`;
+    }
     /* v3.0.15 (#16) — 챕터 테마 원소 부여 */
     this.elem = CHAPTER_ELEM[parseStage(scene.stageDef.key).ch] ?? "none";
     /* v3.3.0 (지시 #6) — 허수아비 모드: AI/사망/넉백 전부 비활성 */
@@ -356,8 +367,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.def = base;
     }
     /* v1.4.3 (작업3 최적화) — 애니 키 생성 1회 캐싱 (tick에서 매 프레임 문자열 생성 제거) */
-    this.runAnimKey = `${this.def.key}-run`;
-    this.idleAnimKey = `${this.def.key}-idle`;
+    this.runAnimKey = `${hasStoryVisual ? visual : this.def.key}-run`;
+    this.idleAnimKey = `${hasStoryVisual ? visual : this.def.key}-idle`;
     if (opts?.scale) this.setScale(opts.scale);
     /* v1.0.2 (#허수아비) — 스쿼시 기준 스케일 고정 캡처. 기존엔 맞을 때마다 '현재' 스케일을 기준으로
      * 잡아서, 연타로 복귀 트윈이 중단되면 중간 스케일이 새 기준이 돼 누적 부풀음/납작해짐 발생
@@ -380,7 +391,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.setTint(opts.tint);
       if (opts.dummy) this.dummyTint = opts.tint; // v3.3.0 — 플래시 후 원색 복원용
     }
-    if (opts?.displayName) this.displayName = opts.displayName;
+    if (opts?.displayName && !hasStoryVisual) this.displayName = opts.displayName;
     this.hp = this.def.hp;
     this.maxHp = this.def.hp;
     if (this.dummy) {
@@ -600,7 +611,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.body!.setOffset((this.width - cfg.bw) / 2, this.height - cfg.bh - 2);
     // 추격/넉백으로 맵 밖으로 밀려 나가지 않도록 경계 충돌
     (this.body as Phaser.Physics.Arcade.Body).setCollideWorldBounds(true);
-    this.play(`${key}-idle`);
+    this.play(this.idleAnimKey);
     // 스프라이트 크기에 맞춘 근접 판정 크기 (v1.4.10 — 정예 등 스케일 스폰분 반영)
     this.hitW = cfg.hw * this.scaleX;
     this.hitH = cfg.hh * this.scaleY;
@@ -633,7 +644,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         if (this.dummyTint !== null) this.setTint(this.dummyTint);
         else this.clearTint();
       }
-      if (this.anims.currentAnim?.key !== `${this.def.key}-idle`) this.play(`${this.def.key}-idle`);
+      if (this.anims.currentAnim?.key !== this.idleAnimKey) this.play(this.idleAnimKey);
       if (this.anims.isPaused) this.anims.resume();
       return;
     }
@@ -643,7 +654,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     // v2.0 프롤로그 보호 — 인트로/입장 유예 중 어그로·공격 차단 (제자리 대기)
     if (this.scene.isPrologueSafe) {
       this.setVelocity(0, 0);
-      if (this.anims.currentAnim?.key !== `${this.def.key}-idle`) this.play(`${this.def.key}-idle`);
+      if (this.anims.currentAnim?.key !== this.idleAnimKey) this.play(this.idleAnimKey);
       this.syncHpBar();
       return;
     }
@@ -719,7 +730,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.setTint(0xb0a0ff);
       } else {
         this.setVelocity(0, 0);
-        if (this.anims.currentAnim?.key !== `${this.def.key}-idle`) this.play(`${this.def.key}-idle`);
+        if (this.anims.currentAnim?.key !== this.idleAnimKey) this.play(this.idleAnimKey);
         if (this.anims.isPaused) this.anims.resume();
       }
       this.syncHpBar();
@@ -826,7 +837,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       c.vy = (dy / dl) * spd;
       if (this.ai.current !== "chase" && this.ai.current !== "wander") this.ai.set("wander");
       this.setVelocity(c.vx + this.knockVec.x, c.vy + this.knockVec.y);
-      if (Math.abs(c.vx) > 0.01) this.setFlipX(c.vx > 0);
+      if (Math.abs(c.vx) > 0.01) this.setFlipX(this.attackAnimKey ? c.vx < 0 : c.vx > 0);
       this.syncHpBar();
       return;
     }
@@ -837,9 +848,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     // 애니메이션 & 방향 — v1.4.3: 키 캐시 사용 (매 프레임 문자열 생성 제거)
     const moving = Math.abs(c.vx) + Math.abs(c.vy) > 12;
-    if (moving && this.anims.currentAnim?.key !== this.runAnimKey) this.play(this.runAnimKey);
-    else if (!moving && this.anims.currentAnim?.key !== this.idleAnimKey) this.play(this.idleAnimKey);
-    if (c.vx !== 0) this.setFlipX(c.vx > 0); // v3.0.10 — 몬스터 시트(32rogues/0x72 등) 기본 왼쪽 향함 → 오른쪽 이동 시 flip
+    const anim = this.attackAnimKey && (this.ai.current === "windup" || this.ai.current === "chargeDash")
+      ? this.attackAnimKey : moving ? this.runAnimKey : this.idleAnimKey;
+    if (this.anims.currentAnim?.key !== anim) this.play(anim);
+    if (c.vx !== 0) this.setFlipX(this.attackAnimKey ? c.vx < 0 : c.vx > 0);
 
     // Idle full-health enemies keep lazy HP bars; engaged enemies are readable before a hit.
     this.syncHpBar();
