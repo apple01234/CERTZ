@@ -57,6 +57,7 @@ import { SkillInputBuffer, type SkillCaster, type SkillId } from "./input/skillB
 import { cine3d } from "../cine3d"; // vc181 — 3D 시네마틱 레이어
 import { writeSave, loadSave, prepareSave, SAVE_VERSION, getFcode, type SaveData, setPlayerName, getPlayerName } from "../config";
 import { STORY_REVISION } from "../storyRevision";
+import { STORY_QUEST_REVISION, storyQuestReward, type StoryQuestMigration } from "../storyQuestMigration";
 import { ensureWorldAssets, markWorldReady, reportLoadingFailure } from "../stagedAssets";
 import { createSimRunner, SIM_STEP_MS } from "../sim/fixedStep"; // vc183 — 20Hz 고정 틱 시뮬레이션
 import { keyLabel, loadKeyMap, loadMoveScheme, moveKeysFor, type KeyMap, type GameAction, type MoveScheme } from "../keymap";
@@ -392,6 +393,7 @@ export class WorldScene extends Phaser.Scene {
   /** vc178 — 구 세이브 튜토리얼 마이그레이션 발생 여부 (1회 안내용) */
   private migratedTutSeen = false;
   private storyRevision = STORY_REVISION;
+  private storyQuestMigration: StoryQuestMigration = { revision: STORY_QUEST_REVISION, credits: {} };
   private assetsReady = false;
   private worldLoadAttempt = 0;
   private npcDialogueSession: CinematicSession | null = null;
@@ -902,6 +904,7 @@ export class WorldScene extends Phaser.Scene {
       if (data.stage === originalStage) data.stage = data.save!.stage as StageKey;
     }
     this.storyRevision = data.save?.storyRevision ?? STORY_REVISION;
+    this.storyQuestMigration = { revision: data.save?.storyQuestMigration?.revision ?? STORY_QUEST_REVISION, credits: { ...data.save?.storyQuestMigration?.credits } };
     this.questIdx = 0;
     this.activeStoryTalk = null;
     this.huntCount = 0;
@@ -8851,6 +8854,7 @@ export class WorldScene extends Phaser.Scene {
     this.pendingJobClass = null;
     /* v1.0.16 — 스토리 초기화: 챕터 퀘스트 진행/클리어 플래그/본 대사/파편 수집 리셋 */
     this.savedQuestIdx = {};
+    this.storyQuestMigration = { revision: STORY_QUEST_REVISION, credits: {} };
     this.questIdx = 0;
     this.cleared = false;
     this.seenSet = new Set();
@@ -17582,23 +17586,25 @@ export class WorldScene extends Phaser.Scene {
       this.youngPrincessCleared = true;
       this.cleared = true;
     }
-    // 퀘스트 보상 — 골드 + 경험치 (2D MMORPG 기본 요소)
-    if (done?.reward) {
-      this.player.addGold(done.reward);
-      this.spawnPickupText(this.player.x, this.player.y - 44, `퀘스트 보상 +${done.reward}G`, "#ffd76a");
+    // A migrated partial chain keeps its earned rewards without paying them twice.
+    const reward = storyQuestReward(this.storyQuestMigration, this.stageDef.key,
+      done?.reward ?? 0, Math.round((done?.expReward ?? 0) * QUEST_EXP_MUL));
+    if (reward.gold) {
+      this.player.addGold(reward.gold);
+      this.spawnPickupText(this.player.x, this.player.y - 44, `퀘스트 보상 +${reward.gold}G`, "#ffd76a");
     }
     /* v1.0.15 (피드백 #5) — 퀘스트 경험치 ×12 리밸런싱: 사냥보다 퀘스트가 크게 이득이도록
      *  (원작 메이플처럼 퀘스트가 성장의 주 수단 — QUEST_EXP_MUL은 stages.ts 참조) */
-    const expGain = done?.expReward ? Math.round(done.expReward * QUEST_EXP_MUL) : 0;
+    const expGain = reward.exp;
     if (expGain > 0) {
       this.player.gainExp(expGain);
       this.spawnPickupText(this.player.x, this.player.y - 62, `경험치 +${expGain}`, "#8fe84a");
       this.emote("star", this.player.x, this.player.y - 44); // v1.0.15 (#6 씽덕요소) — 퀘스트 완료 기뻐하기
     }
     /* v3.0.16 — 퀘스트 보상 수령 팝업 (메이플식 보상 내역 창 — 지급 내역을 명확히 안내) */
-    if (done && (done.reward || done.expReward)) {
+    if (done && (reward.gold || expGain)) {
       const lines: { text: string; color?: string }[] = [];
-      if (done.reward) lines.push({ text: `골드 +${done.reward} G`, color: "#ffd76a" });
+      if (reward.gold) lines.push({ text: `골드 +${reward.gold} G`, color: "#ffd76a" });
       if (expGain) lines.push({ text: `경험치 +${expGain} EXP`, color: "#8fe84a" });
       EventBus.emit("reward:show", { title: `퀘스트 완료 — ${done.title}`, lines } satisfies RewardPopupState);
     }
@@ -18256,6 +18262,7 @@ export class WorldScene extends Phaser.Scene {
       accessories: [...this.player.accessories],
       emerald: this.player.emerald,
       questIdx: { ...this.savedQuestIdx, [this.stageDef.key]: this.questIdx },
+      storyQuestMigration: { ...this.storyQuestMigration, credits: { ...this.storyQuestMigration.credits } },
       cls: this.player.cls,
       startCls: this.player.startCls, // v1.0.18 — 시작 클래스 (환생 복귀용)
       playerName: getPlayerName(),

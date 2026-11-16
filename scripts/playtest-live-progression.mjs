@@ -4,14 +4,15 @@ import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {nextStepToward} from '../src/game/navigation.ts';
 import assert from 'node:assert/strict';
 const out=process.env.PROGRESSION_QA_OUT??'/dev/shm/certz-live-progression';
+const base=process.env.PROGRESSION_QA_URL??'https://sertz.vercel.app?renderer=canvas';
 const storage=JSON.parse(await readFile(out+'/tutorial-complete-storage.json','utf8'));
-const browser=await chromium.launch({args:['--no-sandbox','--enable-unsafe-swiftshader']});
+const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox','--enable-unsafe-swiftshader']});
 const history=[],errors=[];let final;
 await mkdir(out,{recursive:true});
 try{
  const context=await browser.newContext({storageState:storage,viewport:{width:1280,height:800}}),page=await context.newPage();
- page.on('pageerror',e=>errors.push(e.message));
- await page.goto('https://sertz.vercel.app?renderer=canvas',{waitUntil:'domcontentloaded'});
+ page.on('pageerror',e=>errors.push(e.stack??e.message));
+ await page.goto(base,{waitUntil:'domcontentloaded'});
  await page.getByRole('button',{name:/게임 시작/}).first().click({timeout:60000});await page.getByRole('button',{name:'이 캐릭터로 시작'}).click();
  const state=()=>page.evaluate(()=>{
   const s=window.__SERTZ_SCENE__;if(!s?.assetsReady||!s.physics?.world)return null;

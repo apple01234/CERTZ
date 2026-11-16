@@ -7,10 +7,10 @@ const out = process.env.TUTORIAL_QA_OUT ?? '/dev/shm';
 await mkdir(out, {recursive:true});
 const started = Date.now();
 const mobile = process.env.TUTORIAL_QA_TOUCH === '1';
-const browser = await chromium.launch({args:['--no-sandbox','--enable-unsafe-swiftshader']});
+const browser = await chromium.launch({executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox','--enable-unsafe-swiftshader']});
 try {
 const page = await browser.newPage({viewport:mobile?{width:844,height:390}:{width:1280,height:800},isMobile:mobile,hasTouch:mobile});
-const touch = mobile ? await page.context().newCDPSession(page) : null; const errors=[]; page.on('pageerror',e=>errors.push(e.message));
+const touch = mobile ? await page.context().newCDPSession(page) : null; const errors=[]; page.on('pageerror',e=>errors.push(e.stack??e.message));
 await page.goto(base,{waitUntil:'domcontentloaded',timeout:120000});
 await page.getByRole('button',{name:/게임 시작/}).first().click({timeout:120000});
 await page.getByRole('button',{name:'캐릭터 생성',exact:true}).first().click();
@@ -50,6 +50,7 @@ async function walk(point, range=20) {
 async function waitStep(step) { await page.waitForFunction(step=>window.__SERTZ_SCENE__?.tut?.currentId===step,step,{timeout:15000}); console.log('STEP',step); }
 await page.waitForTimeout(1800);
 // During the real opening, force both UI and direct mobile events through their shared guards.
+if (process.env.TUTORIAL_QA_NORMAL_ONLY !== '1') {
 const before = await state();
 await page.keyboard.down('ArrowRight'); await press('x'); await press('z'); await press('Shift');
 await page.evaluate(()=>{for(const e of ['input:attack','input:skill1','input:dash','input:interact'])window.__SERTZ_EB__.emit(e);window.__SERTZ_EB__.emit('ui:panel',{panel:'inv'});window.__SERTZ_SCENE__.player.useSkill1();});
@@ -57,6 +58,7 @@ await page.waitForTimeout(350); await page.keyboard.up('ArrowRight');
 const during=await state();
 if(during.player.mp!==before.player.mp||Math.hypot(during.player.x-before.player.x,during.player.y-before.player.y)>1)throw Error('cinematic input leaked');
 await page.screenshot({path:join(out, 'tutorial-real-opening.png')});
+}
 await settle(); await waitStep('move');
 await walk((await state()).target); await waitStep('talk');
 await walk((await state()).target,55); await press('Space');

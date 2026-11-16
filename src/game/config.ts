@@ -2,6 +2,7 @@ import saveSchema from "../../accounts/save-schema.json" with { type: "json" };
 import { migrateLegacySkillMastery, normalizeSkillMastery } from "./skillMastery";
 import { migrateStoryProgress } from "./storyRevision";
 import { migrateLegacyKeys } from "./legacyKeys";
+import { migrateStoryQuests, type StoryQuestMigration } from "./storyQuestMigration";
 
 /** 게임 전역 상수 */
 export const GAME_W = 960;
@@ -153,6 +154,7 @@ export type SaveData = {
   emerald?: number;
   /* ↓ 퀘스트 진행 (스테이지별 퀘스트 인덱스 — 구 세이브 호환 기본값 {}) */
   questIdx?: Record<string, number>;
+  storyQuestMigration?: StoryQuestMigration;
   /* ↓ 전직 클래스 (v1.7 — 구 세이브 호환 기본값 null) */
   cls?: string | null;
   /* v1.0.18 — 캐릭터 생성 시 선택한 시작(스타트) 1차 클래스 (환생 복귀용 — 구 세이브는 cls 체인 역산) */
@@ -426,7 +428,7 @@ export function migrateSave(d: SaveData): SaveData {
   const from = typeof d.v === "number" && Number.isInteger(d.v) && d.v >= 0 ? d.v : 0;
   if (from > SAVE_VERSION) return d;
   /* v3 (2026-11-14) — 이름을 바꾸기 전의 옛 식별자를 새 키로 옮긴다(이관표: legacyKeys.ts). 다른 단계보다 먼저. */
-  const next = migrateStoryProgress(from < 3 ? migrateLegacyKeys(d) : d);
+  const next = migrateStoryQuests(migrateStoryProgress(from < 3 ? migrateLegacyKeys(d) : d));
   if (typeof next.stage === "string" && REMOVED_REGION_RE.test(next.stage)) next.stage = "village";
   next.skillMastery = from < 2 ? migrateLegacySkillMastery(d.skillMastery) : normalizeSkillMastery(d.skillMastery);
   next.v = SAVE_VERSION;
@@ -461,6 +463,9 @@ export function prepareSave(data: SaveData, key: string, raw = JSON.stringify(da
     throw new Error(reason);
   }
   const next = migrateSave(data);
+  if (!data.storyQuestMigration && data.questIdx && JSON.stringify(next.questIdx) !== JSON.stringify(data.questIdx)) {
+    backupSaveOriginal(`quest-layout:${key}`, raw);
+  }
   if (JSON.stringify(next) !== raw) backupSaveOriginal(key, raw);
   return next;
 }
