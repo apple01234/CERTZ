@@ -336,13 +336,13 @@ export function AuthPanel() {
                      *  이 패널이 실제 진입점이어야 한다. admin 에게만 노출한다. */}
                     <div className="mt-2 grid grid-cols-2 gap-2">
                       <a
-                        href="/editor"
+                        href="/editor" target="_blank" rel="noopener noreferrer"
                         className="flex items-center justify-center gap-1 rounded-xl border-2 border-amber-200/60 bg-amber-500/20 px-2 py-2.5 text-[11px] font-black text-amber-100 transition-transform hover:bg-amber-500/35 active:scale-95"
                       >
                         🗺 맵 에디터
                       </a>
                       <a
-                        href="/skill-editor"
+                        href="/skill-editor" target="_blank" rel="noopener noreferrer"
                         className="flex items-center justify-center gap-1 rounded-xl border-2 border-emerald-200/50 bg-emerald-500/20 px-2 py-2.5 text-[11px] font-black text-emerald-100 transition-transform hover:bg-emerald-500/35 active:scale-95"
                       >
                         ✨ 스킬 메이커

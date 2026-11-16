@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import TilemapEditor from "@/components/game/TilemapEditor";
+export const viewport: Viewport = { width: "device-width", initialScale: 1, maximumScale: 5, userScalable: true };
 
 export const metadata: Metadata = {
   title: "SERTZ 맵 에디터",

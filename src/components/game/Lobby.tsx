@@ -552,13 +552,13 @@ export function Lobby({ onExit }: { onExit: () => void }) {
           <p className="text-[9px] font-black tracking-wide text-amber-200/80">제작 도구 (운영자)</p>
           <div className="mt-1.5 grid grid-cols-2 gap-1.5">
             <a
-              href="/editor"
+              href="/editor" target="_blank" rel="noopener noreferrer"
               className="game-btn-ghost flex items-center justify-center gap-1 px-2 py-2 text-[10px] font-black active:scale-95"
             >
               맵 에디터
             </a>
             <a
-              href="/skill-editor"
+              href="/skill-editor" target="_blank" rel="noopener noreferrer"
               className="game-btn-ghost flex items-center justify-center gap-1 px-2 py-2 text-[10px] font-black active:scale-95"
             >
               스킬 메이커

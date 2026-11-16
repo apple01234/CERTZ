@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import SkillEditor from "@/components/game/SkillEditor";
+export const viewport: Viewport = { width: "device-width", initialScale: 1, maximumScale: 5, userScalable: true };
 
 export const metadata: Metadata = {
   title: "SERTZ 스킬 메이커",
