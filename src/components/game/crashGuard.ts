@@ -15,6 +15,16 @@ let overlayEl: HTMLDivElement | null = null;
 let errorCount = 0;
 let firstErrorAt = 0;
 
+/** Local-only last exception; never records the character save or sends it to a server. */
+export function recordClientError(reason: unknown): void {
+  try {
+    const e = reason as { message?: string; stack?: string } | null;
+    const state = (window as unknown as { __SERTZ_SCENE__?: { stageDef?: { key?: string }; dialoguing?: boolean; camCinema?: boolean; tut?: { currentId?: string } } }).__SERTZ_SCENE__;
+    sessionStorage.setItem("sertz.lastclienterror", JSON.stringify({ at: Date.now(), message: String(e?.message ?? reason).slice(0, 1000),
+      stack: String(e?.stack ?? "").slice(0, 8000), stage: state?.stageDef?.key ?? null, dialogue: !!state?.dialoguing, cinema: !!state?.camCinema, tutorial: state?.tut?.currentId ?? null }));
+  } catch { /* Recording must not interrupt recovery, including when storage is full. */ }
+}
+
 /** v1.4.3 (#무한재부팅) — 치명 상태 공용 복구 오버레이 (크래시 가드·재부팅 루프 차단 공용).
  *  React 밖 순수 DOM — 게임/React가 죽어도 동작한다. */
 export function showRecoveryOverlay(title: string, detail: string, sub = "세이브는 주기적으로 저장되어 대부분 보존된다") {
@@ -28,11 +38,26 @@ export function showRecoveryOverlay(title: string, detail: string, sub = "세이
   el.innerHTML = `
     <div style="width:min(92vw,420px);background:linear-gradient(180deg,#1c2643,#101827);border:2px solid #7a5a2e;border-radius:8px;box-shadow:inset 0 0 0 1px #e8c06466,0 10px 0 rgba(0,0,0,.35),0 22px 44px rgba(0,0,0,.55);padding:22px 20px;text-align:center;">
       <p style="color:#ffd98a;font-weight:900;font-size:16px;margin:0 0 4px;text-shadow:0 2px 0 rgba(0,0,0,.65);">⚠ 모험에 잠시 문제가 생겼다</p>
-      <p style="color:#cbb88a;font-size:11px;margin:0 0 14px;">${title}</p>
-      <p style="color:#6f7d9c;font-size:9px;margin:0 0 16px;word-break:break-all;max-height:52px;overflow:hidden;">${detail}</p>
+      <p id="sertz-crash-title" style="color:#cbb88a;font-size:11px;margin:0 0 14px;"></p>
+      <p id="sertz-crash-detail" style="color:#6f7d9c;font-size:9px;margin:0 0 16px;word-break:break-all;max-height:52px;overflow:hidden;"></p>
       <button id="sertz-crash-reload" style="display:block;width:100%;padding:12px 0;font-family:inherit;font-weight:900;font-size:14px;color:#3a2508;cursor:pointer;border-radius:7px;border:2px solid #6b4a1c;background:linear-gradient(180deg,#ffe49a 0%,#f0b64a 45%,#c8871f 100%);box-shadow:inset 0 1px 0 #fff3c9,0 3px 0 #4a3210;">다시 시작</button>
-      <p style="color:#8a97b8;font-size:9px;margin:10px 0 0;">${sub}</p>
+      <button id="sertz-crash-report" style="margin-top:12px;color:#cbb88a;background:transparent;border:0;text-decoration:underline;cursor:pointer;">오류 기록 내려받기</button>
+      <p id="sertz-crash-sub" style="color:#8a97b8;font-size:9px;margin:10px 0 0;"></p>
     </div>`;
+  el.querySelector("#sertz-crash-title")!.textContent = title;
+  el.querySelector("#sertz-crash-detail")!.textContent = detail;
+  el.querySelector("#sertz-crash-sub")!.textContent = sub;
+  const reportButton = el.querySelector<HTMLButtonElement>("#sertz-crash-report")!;
+  try { reportButton.hidden = !(sessionStorage.getItem("sertz.lastclienterror") || sessionStorage.getItem("sertz.lastcrash")); }
+  catch { reportButton.hidden = true; }
+  el.querySelector("#sertz-crash-report")?.addEventListener("click", () => {
+    try {
+      const raw = sessionStorage.getItem("sertz.lastclienterror") ?? sessionStorage.getItem("sertz.lastcrash");
+      if (!raw) return;
+      const url = URL.createObjectURL(new Blob([raw], { type: "application/json" })), link = document.createElement("a");
+      link.href = url; link.download = "sertz-error.json"; link.click(); setTimeout(() => URL.revokeObjectURL(url), 0);
+    } catch { /* Storage or downloads may be unavailable in an embedded browser. */ }
+  });
   document.body.appendChild(el);
   overlayEl = el;
   el.querySelector("#sertz-crash-reload")?.addEventListener("click", () => {
@@ -51,6 +76,7 @@ export function installCrashGuard() {
   window.addEventListener("error", (e) => {
     // 리소스 로드 실패(img/audio 404 등)는 크래시가 아님 — 무시
     if (e.message) {
+      recordClientError(e.error ?? e.message);
       errorCount++;
       const now = Date.now();
       if (now - firstErrorAt > 10000) {
@@ -65,6 +91,7 @@ export function installCrashGuard() {
     const msg = e?.reason instanceof Error ? e.reason.message : String(e?.reason ?? "");
     // 세이브 업로드/네트워크 실패 등은 조용히 스킵 (게임은 계속 동작)
     if (/network|fetch|timeout|aborted|auth|cloud/i.test(msg)) return;
+    recordClientError(e.reason);
     showRecoveryOverlay("예상치 못한 오류가 발생했다", msg.slice(0, 160));
   });
 }

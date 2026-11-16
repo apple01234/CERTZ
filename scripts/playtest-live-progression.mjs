@@ -8,7 +8,7 @@ const out=process.env.PROGRESSION_QA_OUT??'/dev/shm/certz-live-progression';
 const base=process.env.PROGRESSION_QA_URL??'https://sertz.vercel.app?renderer=canvas';
 const storage=JSON.parse(await readFile(out+'/tutorial-complete-storage.json','utf8'));
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox','--enable-unsafe-swiftshader']});
-const history=[],errors=[];let final;
+const history=[],errors=[],inputs={};let final,bossEntry,bossStartedAt,bossCombatMs;
 await mkdir(out,{recursive:true});
 try{
  const context=await browser.newContext({storageState:storage,viewport:{width:1280,height:800}}),page=await context.newPage();
@@ -25,7 +25,7 @@ try{
    enemies:s.enemies.filter(e=>e.active&&e.alive).map(e=>({x:e.x,y:e.y,key:e.def.key,hp:e.hp})),kills:s.totalKills};
  });
  let lastLog=0,lastStage,started=Date.now(),bossSeen=false;
- const press=key=>page.keyboard.press(key,{delay:60});
+ const press=key=>{inputs[key]=(inputs[key]??0)+1;return page.keyboard.press(key,{delay:60});};
  async function move(s,target,range=16,away=false){
   let point=target;const l=s.layout;
   if(!away&&l){const cell=o=>Math.floor(o.y/l.cellH)*l.cols+Math.floor(o.x/l.cellW),from=cell(s.p),to=cell(target);if(from!==to){const next=nextStepToward(l,from,to);if(next!==null)point={x:(next%l.cols+.5)*l.cellW,y:(Math.floor(next/l.cols)+.5)*l.cellH};}}
@@ -36,14 +36,14 @@ try{
  }
  while(Date.now()-started<15*60*1000){
   const s=await state();if(!s){await page.waitForTimeout(200);continue;}final=s;
-  if(s.stage!==lastStage||Date.now()-lastLog>15000){const snap={...s};delete snap.layout;delete snap.enemies;history.push(snap);console.log('STATE',JSON.stringify(snap));lastLog=Date.now();if(s.stage!==lastStage)await page.screenshot({path:out+'/'+s.stage+'.png'});lastStage=s.stage;}
+  if(s.stage!==lastStage||Date.now()-lastLog>15000){const snap={...s,atMs:Date.now()-started};delete snap.layout;delete snap.enemies;history.push(snap);console.log('STATE',JSON.stringify(snap));lastLog=Date.now();if(s.stage!==lastStage)await page.screenshot({path:out+'/'+s.stage+'.png'});lastStage=s.stage;}
   if(s.p.state==='dead')throw Error('Natural character died: '+JSON.stringify(s.p));
   if(s.dialogue||s.cinema){await press('Space');await page.waitForTimeout(180);continue;}
   if(s.feature){const close=page.getByRole('button',{name:'닫기',exact:true});if(await close.last().isVisible())await close.last().click();continue;}
   if(s.panel){await press('Escape');continue;}
   if(s.auto)await press('b');
-  if(s.stage==='lilacworld2x3'&&s.boss)bossSeen=true;
-  if(bossSeen&&s.stage==='lilacworld2x3'&&!s.boss&&s.questIdx>0){await page.screenshot({path:out+'/first-boss-defeated.png'});console.log('PASS first boss defeated through normal controls');break;}
+  if(s.stage==='lilacworld2x3'&&s.boss&&!bossSeen){bossSeen=true;bossEntry={player:s.p,boss:s.boss};bossStartedAt=Date.now();}
+  if(bossSeen&&s.stage==='lilacworld2x3'&&!s.boss&&s.questIdx>0){bossCombatMs=Date.now()-bossStartedAt;await page.screenshot({path:out+'/first-boss-defeated.png'});console.log('PASS first boss defeated through normal controls');break;}
   if(s.p.hp<s.p.maxHp*.6&&s.p.potions.hp>0)await press('d');
   if(s.p.mp<20&&s.p.potions.mp>0)await press('f');
   if(s.portal){await move(s,s.portal);continue;}
@@ -62,5 +62,5 @@ try{
  assert.equal(errors.length,0,errors.join('\n'));
  await context.storageState({path:out+'/first-boss-storage.json'});
 }finally{
- await writeFile(out+'/progression-results.json',JSON.stringify({history,final,elapsedMs:Date.now()-runStarted,pageErrors:errors,actions:'normal keyboard/UI only; no progress, stats, enemy HP or timers changed'},null,2));await browser.close();
+ await writeFile(out+'/progression-results.json',JSON.stringify({history,final,bossEntry,bossCombatMs,inputs,elapsedMs:Date.now()-runStarted,pageErrors:errors,actions:'normal keyboard/UI only; no progress, stats, enemy HP or timers changed'},null,2));await browser.close();
 }

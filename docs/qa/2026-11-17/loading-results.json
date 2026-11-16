@@ -1,0 +1,61 @@
+{
+  "conditions": "cold cache; 40ms; 2500000 bytes/s; Next dev",
+  "desktop": {
+    "wallMs": 14240,
+    "progress": {
+      "phase": "world-ready",
+      "elapsedMs": 13447,
+      "total": 1204,
+      "complete": 1204,
+      "active": 0,
+      "failed": [],
+      "bundleBytes": 0
+    },
+    "assetRequests": 204,
+    "assetEncodedBytes": 25622597,
+    "memory": null,
+    "passed": true,
+    "pageErrors": []
+  },
+  "mobileEmulation": {
+    "wallMs": 13122,
+    "progress": {
+      "phase": "world-ready",
+      "elapsedMs": 12575,
+      "total": 1204,
+      "complete": 1204,
+      "active": 0,
+      "failed": [],
+      "bundleBytes": 0
+    },
+    "assetRequests": 204,
+    "assetEncodedBytes": 25622573,
+    "memory": {
+      "scope": "Chromium mobile viewport emulation; JS heap/backing storage only, not GPU or a physical phone",
+      "peakUsedBytes": 40857144,
+      "peakBackingBytes": 69986027,
+      "afterGc": {
+        "usedSize": 36886532,
+        "totalSize": 38117376,
+        "embedderHeapUsedSize": 10753096,
+        "backingStorageSize": 29274250
+      }
+    },
+    "passed": true,
+    "pageErrors": []
+  },
+  "forcedBundleFailure": {
+    "passed": true,
+    "world": {
+      "phase": "world-ready",
+      "elapsedMs": 22446,
+      "total": 1204,
+      "complete": 1204,
+      "active": 0,
+      "failed": [],
+      "bundleBytes": 0
+    },
+    "pageErrors": [],
+    "scope": "All package network requests aborted; individual-file fallback. Concurrent unit tests, not a latency benchmark."
+  }
+}

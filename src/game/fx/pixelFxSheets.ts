@@ -15,3 +15,5 @@ export const PIXELFX_SHEETS = [
 export const ADMITTED_PIXELFX = new Set(PIXELFX_SHEETS);
 /** WeaponMasterCombat uses these synchronously, including after an in-place class change. */
 export const SIGNATURE_PIXELFX = ["sunburst", "healing-bloom", "zap-hit", "arcane-orb", "divine-shield", "heal", "shadow-flames", "splash", "hammer-smash"];
+/** Load at the boss-region gate; each boss event also has an already-ready starter fallback. */
+export const BOSS_PIXELFX = ["storm", "shockwave-big", "energy-crack", "rage", "big-explosion", "soul-rise", "summon-rise", "orbit-rings"];

@@ -82,6 +82,6 @@ test('서버 join/state 경로가 정규화를 실제로 거친다 (소스 계�
   assert.match(src, /if \(typeof s\.stage === "string"\) p\.stage = normalizeStage\(s\.stage\)/);
   /* MQTT 경로도 같은 이관표를 쓴다 */
   const mq = readFileSync('src/game/mpMqtt.ts', 'utf8');
-  assert.match(mq, /import \{ rekeyLegacy \} from "\.\/legacyKeys"/);
+  assert.match(mq, /import \{ rekeyLegacy, legacyStageKeys \} from "\.\/legacyKeys"/);
   assert.match(mq, /const stageKey = \(s: unknown\): string => rekeyLegacy\(/);
 });

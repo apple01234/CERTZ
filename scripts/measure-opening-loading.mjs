@@ -12,16 +12,30 @@ const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PAT
 const results = [];
 try {
   for (const mode of ['Space']) {
-    const mobile = mode === 'mobile-tap';
+    const mobile = process.env.LOADING_QA_MOBILE === '1';
     const context = await browser.newContext({ viewport: mobile ? { width: 844, height: 390 } : { width: 1280, height: 800 },
       isMobile: mobile, hasTouch: mobile });
     const page = await context.newPage();
+    if(process.env.LOADING_QA_BUNDLE_FAIL==='1')await page.route('**/assets/startup-bundle/*.bin',route=>route.abort('failed'));
     const result = { mode, pageErrors: [] }; await page.addInitScript(()=>performance.setResourceTimingBufferSize(20000));
     results.push(result);
     page.on('pageerror', e => result.pageErrors.push(e.stack ?? e.message));
     const start = async () => {
-      const cdp=await context.newCDPSession(page); await cdp.send('Network.enable');await cdp.send('Network.setCacheDisabled',{cacheDisabled:true});await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:40,downloadThroughput:2500000,uploadThroughput:1250000});result.started=Date.now();await page.getByRole('button', { name: '이 캐릭터로 시작' }).click();
-      await page.waitForFunction(()=>window.__SERTZ_SCENE__?.assetsReady,null,{timeout:120000}); result.load={wallMs:Date.now()-result.started,...await page.evaluate(()=>({progress:window.__SERTZ_LOAD__,entries:performance.getEntriesByType('resource').filter(r=>r.name.includes('/assets/')).map(r=>({url:r.name,bytes:r.encodedBodySize,duration:r.duration}))}))};await page.getByText('하루 · 회상', { exact: true }).waitFor({ timeout: 120000 });
+      const cdp=await context.newCDPSession(page);
+      await cdp.send('Network.enable');await cdp.send('Network.setCacheDisabled',{cacheDisabled:true});
+      await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:40,downloadThroughput:2500000,uploadThroughput:1250000});
+      const samples=[];
+      const sampler=process.env.LOADING_QA_MEMORY==='1'?setInterval(()=>{void cdp.send('Runtime.getHeapUsage').then(s=>samples.push(s)).catch(()=>{});},250):null;
+      try{
+        result.started=Date.now();await page.getByRole('button', { name: '이 캐릭터로 시작' }).click();
+        await page.waitForFunction(()=>window.__SERTZ_SCENE__?.assetsReady,null,{timeout:120000});
+        result.load={wallMs:Date.now()-result.started,...await page.evaluate(()=>({progress:window.__SERTZ_LOAD__,entries:performance.getEntriesByType('resource').filter(r=>r.name.includes('/assets/')).map(r=>({url:r.name,bytes:r.encodedBodySize,duration:r.duration}))}))};
+        if(samples.length){
+          clearInterval(sampler);await cdp.send('HeapProfiler.collectGarbage');
+          result.memory={scope:'Chromium mobile viewport emulation; JS heap/backing storage only, not GPU or a physical phone',peakUsedBytes:Math.max(...samples.map(s=>s.usedSize)),peakBackingBytes:Math.max(...samples.map(s=>s.backingStorageSize??0)),afterGc:await cdp.send('Runtime.getHeapUsage')};
+        }
+      }finally{if(sampler)clearInterval(sampler);}
+      await page.getByText('하루 · 회상', { exact: true }).waitFor({ timeout: 120000 });
     };
     const slots = () => page.evaluate(() => JSON.parse(localStorage.getItem('sertz_slots_v1')));
     try {

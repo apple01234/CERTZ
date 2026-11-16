@@ -52,10 +52,10 @@ export type FxSheet = { key: string; meta: FxMeta };
 const SHEETS = new Map<string, FxSheet>();
 
 /** 2026-11-15 — SHEETS 는 모듈 전역이라 게임이 다시 만들어지면(검은 화면 자가 복구 재부팅 등) 텍스처는 사라지고
- *  기록만 남는다. 그러면 "이미 받음"으로 보고 다시 받지 않아 이펙트가 영영 안 나왔다. 텍스처가 지금 게임에 있을 때만 유효하다. */
+ *  기록만 남는다. 텍스처와 애니메이션이 모두 지금 게임에 등록돼 있을 때만 유효하다. */
 function liveSheet(scene: Phaser.Scene, key: string): FxSheet | undefined {
   const hit = SHEETS.get(key);
-  if (hit && !scene.textures.exists(key)) { SHEETS.delete(key); return undefined; }
+  if (hit && (!scene.textures.exists(key) || !scene.anims.exists(`${key}-play`))) { SHEETS.delete(key); return undefined; }
   return hit;
 }
 

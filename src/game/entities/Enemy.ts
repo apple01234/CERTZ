@@ -19,7 +19,7 @@ import {
 import { receivedDamageMult, applyStatus, tickStatuses, type ActiveStatus } from "../combat/statusEffects";
 import { makeDamage, resolveDamage, applyDamage } from "../combat/damageData"; // vc277 — 피해 파이프라인 (JENNY DamageData 이식)
 import { makeEntry, updateEntry, type AwarenessEntry } from "../ai/awareness"; // vc277 — 시야/인지 (JENNY AwarenessTrait 이식)
-import { storyEnemyRole, STORY_ENEMY_ROLES } from "../storyEnemyVisuals";
+import { storyEnemyRole, storyEnemyStyle, STORY_ENEMY_ROLES } from "../storyEnemyVisuals";
 
 /* vc236 — 사망 폭발 반경(px). 코어는 피해량만 export 하고 반경은 연출 소관이라 여기 둔다.
  * 정예 스케일(1.55) 기준 몸통 2~3배 — 눈에 보이는 폭발 범위와 판정이 어긋나지 않게. */
@@ -267,6 +267,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
    *  GC 할당)을 생성 시 1회 계산으로 제거 — 시각 변화 0 */
   private runAnimKey = "";
   private attackAnimKey = "";
+  private combatBadge: Phaser.GameObjects.Text | null = null;
   private idleAnimKey = "";
 
   /* vc214 — Utility AI 사기 판단 상태. 스폰 시 한 번 만들고 매 결정 주기마다
@@ -325,8 +326,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const hasStoryVisual = !!visual && scene.textures.exists(visual);
     if (hasStoryVisual && role) {
       this.setTexture(visual, "idle-0");
-      this.displayName = opts?.displayName?.startsWith("정예 ") ? `정예 ${STORY_ENEMY_ROLES[role].name}` : opts?.displayName ?? STORY_ENEMY_ROLES[role].name;
+      const style = storyEnemyStyle(base.profile);
+      this.displayName = (opts?.displayName?.startsWith("정예 ") ? `정예 ${STORY_ENEMY_ROLES[role].name}` : opts?.displayName ?? STORY_ENEMY_ROLES[role].name) + ` · ${style.label}`;
       this.attackAnimKey = `${visual}-attack`;
+      this.combatBadge = scene.add.text(x, y, `${style.mark} ${style.label}`, { fontFamily: "Galmuri11, monospace", fontSize: "10px", color: style.color, backgroundColor: "#17131fe0", padding: { x: 2, y: 1 } }).setOrigin(.5, 1).setDepth(22).setVisible(false);
+      this.once(Phaser.GameObjects.Events.DESTROY, () => { this.combatBadge?.destroy(); this.combatBadge = null; });
     }
     /* v3.0.15 (#16) — 챕터 테마 원소 부여 */
     this.elem = CHAPTER_ELEM[parseStage(scene.stageDef.key).ch] ?? "none";
@@ -848,9 +852,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     // 애니메이션 & 방향 — v1.4.3: 키 캐시 사용 (매 프레임 문자열 생성 제거)
     const moving = Math.abs(c.vx) + Math.abs(c.vy) > 12;
-    const anim = this.attackAnimKey && (this.ai.current === "windup" || this.ai.current === "chargeDash")
-      ? this.attackAnimKey : moving ? this.runAnimKey : this.idleAnimKey;
-    if (this.anims.currentAnim?.key !== anim) this.play(anim);
+    const anim = this.attackAnimKey && this.ai.current === "windup" ? `${this.texture.key}-windup`
+      : this.attackAnimKey && (this.ai.current === "chargeDash" || this.ai.current === "cooldown") ? this.attackAnimKey : moving ? this.runAnimKey : this.idleAnimKey;
+    if (this.anims.currentAnim?.key !== anim) {
+      this.play(anim);
+      this.anims.timeScale = anim.endsWith("-windup") ? (this.anims.currentAnim?.duration ?? 333) / Math.max(1, this.modeTimer) : 1;
+    }
     if (c.vx !== 0) this.setFlipX(this.attackAnimKey ? c.vx < 0 : c.vx > 0);
 
     // Idle full-health enemies keep lazy HP bars; engaged enemies are readable before a hit.
@@ -872,6 +879,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
     const engaged = this.ai.current !== null && this.ai.current !== "wander" && !this.dummy && !this.flee && !this.scene.isPrologueSafe;
     const show = this.alive && this.active && this.visible && !this.tutorialPause && (this.hp < this.maxHp || engaged);
+    if (this.combatBadge) {
+      const zoom = Math.max(.25, this.scene.cameras.main.zoom);
+      this.combatBadge.setVisible(show).setScale(Math.min(2, 1 / zoom)).setPosition(this.x, this.y - this.hitH / 2 - 12 / zoom);
+    }
     if (!show) {
       if (this.hpBarBg?.visible) this.hpBarBg.setVisible(false);
       if (this.hpBar?.visible) this.hpBar.setVisible(false);

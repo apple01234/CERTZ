@@ -74,14 +74,14 @@ export type BossFxEvent =
   | "boss.enrage" | "boss.death" | "boss.summon" | "boss.telegraph";
 
 const BOSS_FX: Record<BossFxEvent, string[]> = {
-  "boss.intro":     ["explosions/nuke", "shadow/eclipse", "holy/sunburst"],
-  "boss.phase":     ["explosions/plasma-explosion", "arcane/time-stop", "lightning/storm-cloud"],
-  "boss.pattern":   ["explosions/dirt-explosion", "impacts/ground-slam", "melee/heavy-cleave"],
-  "boss.charge":    ["lightning/charge-up", "arcane/spell-charge"],
-  "boss.enrage":    ["shadow/black-hole", "fire/fire-tornado", "lightning/ball-lightning"],
-  "boss.death":     ["explosions/big-explosion", "spawn/soul-rise", "explosions/implosion"],
-  "boss.summon":    ["shadow/necro-skulls", "spawn/summon-rise"],
-  "boss.telegraph": ["impacts/hit-flash", "arcane/rune-circle"],
+  "boss.intro":     ["sunburst"],
+  "boss.phase":     ["storm", "sunburst"],
+  "boss.pattern":   ["shockwave-big", "blunt-hit"],
+  "boss.charge":    ["energy-crack", "hit-spark"],
+  "boss.enrage":    ["rage", "sunburst"],
+  "boss.death":     ["big-explosion", "soul-rise", "shatter-death"],
+  "boss.summon":    ["summon-rise", "blink-in"],
+  "boss.telegraph": ["orbit-rings", "shield-block"],
 };
 
 /** 게임 ElemKey → pixelfx 이벤트. data.ts 의 ElemKey 9종 + 한글 별칭. */
@@ -143,8 +143,8 @@ export class PixelFxManager {
   /** 이벤트 재생. 중복·상한·스로틀을 모두 통과해야 실제로 그린다. */
   play(ev: FxEvent, x: number, y: number, opts: PlayFxOpts = {}): void {
     const now = this.scene.time.now;
-    const last = this.lastAt.get(ev) ?? 0;
-    if (now - last < THROTTLE_MS) return;
+    const last = this.lastAt.get(ev);
+    if (last !== undefined && now - last < THROTTLE_MS) return;
 
     if (this.live.size >= this.maxLive) {
       /* 풀 포화 — 가장 오래된 것 제거 후 재생 (새로 만들지 않는다) */
@@ -161,11 +161,12 @@ export class PixelFxManager {
     try {
       sp = playFx(this.scene, key, x, y, {
         ...opts,
-        onComplete: () => { if (sp) this.live.delete(sp); opts.onComplete?.(); },
+        onComplete: () => { if (sp) { this.live.delete(sp); sp.destroy(); } opts.onComplete?.(); },
       });
     } catch { /* 연출 실패는 게임을 막지 않는다 */ }
 
     if (sp) {
+      sp.anims.setRepeat(0);
       const cap = /^(hit\.|death.normal|pickup\.)/.test(ev) ? 44 : ev === "levelup" ? 120 : 80;
       sp.setScale(Math.min(sp.scaleX, cap / Math.max(1, sp.width, sp.height)));
       this.lastAt.set(ev, now);
@@ -182,8 +183,8 @@ export class PixelFxManager {
   /** 보스 연출 — 페이즈·패턴·사망 등. 일반 이벤트보다 크게, 상한도2배 허용 */
   boss(ev: BossFxEvent, x: number, y: number, opts: PlayFxOpts = {}): void {
     const now = this.scene.time.now;
-    const last = this.lastAt.get(ev) ?? 0;
-    if (now - last < 120) return;          // 보스 연출은 길게 유지
+    const last = this.lastAt.get(ev);
+    if (last !== undefined && now - last < 120) return;
 
     if (this.live.size >= this.maxLive + 3) {
       const oldest = this.live.values().next().value as Phaser.GameObjects.Sprite | undefined;
@@ -201,10 +202,10 @@ export class PixelFxManager {
       sp = playFx(this.scene, key, x, y, {
         ...opts,
         depth: opts.depth ?? 9200,
-        onComplete: () => { if (sp) this.live.delete(sp); opts.onComplete?.(); },
+        onComplete: () => { if (sp) { this.live.delete(sp); sp.destroy(); } opts.onComplete?.(); },
       });
     } catch { /* 무시 */ }
-    if (sp) { sp.setScale(Math.min(sp.scaleX, 220 / Math.max(1, sp.width, sp.height))); this.lastAt.set(ev, now); this.live.add(sp); }
+    if (sp) { sp.anims.setRepeat(0); sp.setScale(Math.min(sp.scaleX, 220 / Math.max(1, sp.width, sp.height))); this.lastAt.set(ev, now); this.live.add(sp); }
   }
 
   /** 화면 흔들림 + 이펙트 (보스·크리티컬용). 보스 이벤트도 받는다. */

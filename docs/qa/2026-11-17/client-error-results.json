@@ -1,0 +1,10 @@
+{
+  "scope": "Injected diagnostic events only; no character-save mutation.",
+  "report": {
+    "stage": "lilacworld1x1",
+    "dialogue": false,
+    "cinema": false,
+    "stackLength": 223
+  },
+  "passed": true
+}

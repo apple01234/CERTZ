@@ -24,17 +24,38 @@ try{
   if(stage==='lilacworld2x2'){
    const specials=await page.evaluate(()=>{const s=window.__SERTZ_SCENE__,Constructor=s.enemies[0].constructor,key=s.enemies[0].def.key;
     return [{displayName:'정예 원래 적'},{displayName:'시험 상대 — 룬 제령'},{dummy:true}].map(opts=>{const e=new Constructor(s,s.player.x+80,s.player.y,key,opts);const result={opts,texture:e.texture.key,name:e.displayName};e.destroy();return result;});});
-   assert.equal(specials[0].texture,'storymob_thought');assert.equal(specials[0].name,'정예 사념체');assert.notEqual(specials[1].texture,'storymob_thought');assert.notEqual(specials[2].texture,'storymob_thought');actual.specialSpawns=specials;
+   assert.equal(specials[0].texture,'storymob_thought');assert.match(specials[0].name,/^정예 사념체 · /);assert.notEqual(specials[1].texture,'storymob_thought');assert.notEqual(specials[2].texture,'storymob_thought');actual.specialSpawns=specials;
+   const styles=await page.evaluate(()=>{const s=window.__SERTZ_SCENE__,Constructor=s.enemies[0].constructor;
+    return ['minion','wraith','x2_stonegolem','x2_frog'].map((key,i)=>{const e=new Constructor(s,s.player.x+60+i*75,s.player.y,key);e.ai.set('chase');e.syncHpBar();e.combatBadge.setVisible(true);s.__styleQa??=[];s.__styleQa.push(e);return {key,name:e.displayName,mark:e.combatBadge.text,texture:e.texture.key,hitW:e.hitW,hitH:e.hitH};});});
+   assert.equal(new Set(styles.map(s=>s.mark)).size,4);actual.styles=styles;
+   await page.evaluate(()=>{const s=window.__SERTZ_SCENE__,cam=s.cameras.main;s.framedRoom=false;s.camCinema=true;cam.zoomEffect.reset();cam.panEffect.reset();s.tweens.killTweensOf(cam);cam.stopFollow();cam.setZoom(2).centerOn(s.player.x+170,s.player.y-10);for(const e of s.__styleQa){e.syncHpBar();e.combatBadge.setVisible(true);}});
+   await page.waitForTimeout(100);await page.screenshot({path:out+'/combat-style-marks.png'});
+   for(const motion of ['windup','attack']){
+    await page.evaluate(motion=>{const s=window.__SERTZ_SCENE__,e=s.__styleQa[0];s.camCinema=true;e.play(e.texture.key+'-'+motion);},motion);
+    const frames=[];for(let n=0;n<11;n++){await page.waitForTimeout(65);frames.push(await page.evaluate(()=>window.__SERTZ_SCENE__.__styleQa[0].frame.name));}
+    assert.ok(new Set(frames).size>=(motion==='attack'?4:3));actual[motion+'Frames']=frames;
+   }
+   const cleanup=await page.evaluate(()=>{const s=window.__SERTZ_SCENE__,badges=s.__styleQa.map(e=>e.combatBadge);for(const e of s.__styleQa)e.destroy();s.__styleQa=[];s.camCinema=false;return badges.every(b=>!b.active);});assert.equal(cleanup,true);
   }
   await page.screenshot({path:out+'/'+stage+'.png'});
+  if(process.env.ART_QA_MARKS_ONLY)break;
  }
- for(const [boss,stage,expected] of [['jade','dlcprisma10','story_jade'],['snorikaking','snorika5','story_snorikaking'],['verodin','lilacworld7x3','story_veronica'],['shadow','lilacworld10x2','story_thought']]){
+ for(const [boss,stage,expected] of (process.env.ART_QA_MARKS_ONLY?[]:[['jade','dlcprisma10','story_jade'],['snorikaking','snorika5','story_snorikaking'],['verodin','lilacworld7x3','story_veronica'],['shadow','lilacworld10x2','story_thought']])){
   if(stage!==old.stage)await transition(stage);
   await page.evaluate(key=>{const s=window.__SERTZ_SCENE__;if(!s.boss)s.spawnGmBoss(key,true);s.boss.setAlpha(1);s.camCinema=true;const b=s.boss;s.player.setPosition(b.x-120,b.y+30);s.cameras.main.setZoom(1.3).centerOn(b.x,b.y);},boss);
   await page.waitForTimeout(350);
+  await page.evaluate(()=>{const s=window.__SERTZ_SCENE__,cam=s.cameras.main;cam.zoomEffect.reset();cam.panEffect.reset();s.tweens.killTweensOf(cam);cam.stopFollow();cam.setZoom(1.3).centerOn(s.boss.x,s.boss.y);});
   const actual=await page.evaluate(()=>{const s=window.__SERTZ_SCENE__,b=s.boss;return {boss:b.def.key,texture:b.texture.key,frame:b.frame.name,anim:b.anims.currentAnim?.key,companions:s.children.list.filter(o=>o.name?.startsWith('story-boss:')).map(o=>({name:o.name,texture:o.texture?.key,anim:o.anims?.currentAnim?.key}))};});results.push(actual);console.log('BOSS',actual.boss,actual.texture);assert.equal(actual.texture,expected);
   if(boss==='verodin')assert.ok(actual.companions.some(c=>c.name==='story-boss:dean'&&c.texture==='story_dean'));
   await page.screenshot({path:out+'/'+boss+'-idle.png'});
+  actual.firstFx=await page.evaluate(()=>{const s=window.__SERTZ_SCENE__,events=['intro','phase','pattern','charge','enrage','death','summon','telegraph'],probe=new s.pxFx.constructor(s);try{return events.map(ev=>{const before=probe.liveCount;probe.boss('boss.'+ev,s.player.x,s.player.y);return {ev,rendered:probe.liveCount>before};});}finally{probe.destroy();}});
+  assert.ok(actual.firstFx.every(f=>f.rendered),'every first boss effect must render');
+  await page.evaluate(()=>{const s=window.__SERTZ_SCENE__;s.__firstFxProbe=new s.pxFx.constructor(s);s.__firstFxProbe.boss('boss.intro',s.boss.x,s.boss.y);});
+  await page.waitForTimeout(80);
+  actual.introPixels=await page.evaluate(()=>{const s=window.__SERTZ_SCENE__;return [...s.__firstFxProbe.live].map(sp=>({active:sp.active,visible:sp.visible,texture:sp.texture.key,frame:sp.frame.name}));});
+  assert.ok(actual.introPixels.some(sp=>sp.active&&sp.visible&&sp.texture==='sunburst'));
+  await page.screenshot({path:out+'/'+boss+'-first-fx.png'});
+  await page.evaluate(()=>{window.__SERTZ_SCENE__.__firstFxProbe.destroy();});
   const frames=[];
   await page.evaluate(()=>{const b=window.__SERTZ_SCENE__.boss;b.play(b.texture.key+'-release');});
   for(let n=0;n<5;n++){await page.waitForTimeout(80);frames.push(await page.evaluate(()=>window.__SERTZ_SCENE__.boss.frame.name));}

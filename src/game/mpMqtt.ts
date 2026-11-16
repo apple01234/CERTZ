@@ -33,7 +33,7 @@ import mqtt from "mqtt";
 import { getCachedUser, getAuthToken } from "./account";
 import { resolveApiBase } from "./server";
 import { presenceSessionId } from "./playerIdentity";
-import { rekeyLegacy } from "./legacyKeys"; // 2026-11-16 — 구역 키 정규화(구버전과 같은 방에 모이게)
+import { rekeyLegacy, legacyStageKeys } from "./legacyKeys";
 
 /* 공개 브로커 후보 — 순차 폴백(첫 번째가 8초 내 연결 실패 시 다음)
  * vc140 실측(2026-10-08): eclipseprojects.io는 connack 타임아웃으로 완전 사망 —
@@ -197,6 +197,7 @@ class MqttBusImpl implements MqttBus {
   private lastSentAt = 0;
   private stage = "village";
   private subscribedStage = "";
+  private subscribedTopics: string[] = [];
   private started = false;
   private timers: ReturnType<typeof setInterval>[] = [];
   private brokerIdx = 0;
@@ -262,6 +263,7 @@ class MqttBusImpl implements MqttBus {
         closeFails = 0;
         this.connected = true;
         this.subscribedStage = "";
+        this.subscribedTopics = [];
         this.presenceSubbed = false;
         this.syncStageSub();
         /* vc149 (#20) — 접속 즉시 내 개인 거래 토픽 구독.
@@ -311,11 +313,12 @@ class MqttBusImpl implements MqttBus {
     if (!this.client || !this.connected) return;
     const want = ROOT + "stage/" + this.stage;
     if (this.subscribedStage !== want) {
-      if (this.subscribedStage) {
-        try { this.client.unsubscribe(this.subscribedStage); } catch { /* 무시 */ }
+      if (this.subscribedTopics.length) {
+        try { this.client.unsubscribe(this.subscribedTopics); } catch { /* 무시 */ }
       }
       this.subscribedStage = want;
-      try { this.client.subscribe(want, { qos: 0 }); } catch { /* 무시 */ }
+      this.subscribedTopics = legacyStageKeys(this.stage).map(key => ROOT + "stage/" + key);
+      try { this.client.subscribe(this.subscribedTopics, { qos: 0 }); } catch { /* 무시 */ }
     }
     /* vc134 — presence 토픽도 구독(친구 온라인 목록·LWT 즉시 퇴장 수신).
      *  기존엔 stage 토픽만 구독해 friends 이벤트가 영원히 안 왔다. */
@@ -331,7 +334,12 @@ class MqttBusImpl implements MqttBus {
 
   private publish(obj: Record<string, unknown>, topic: string) {
     if (!this.client || !this.connected) return;
-    try { this.client.publish(topic, JSON.stringify(obj), { qos: 0, retain: false }); } catch { /* 무시 */ }
+    const stages = topic === ROOT + "stage/" + this.stage ? legacyStageKeys(this.stage) : null;
+    try {
+      if (stages) for (const stage of stages) {
+        this.client.publish(ROOT + "stage/" + stage, JSON.stringify({ ...obj, aoi: this.stage, ...(obj.stage ? { stage } : {}) }), { qos: 0, retain: false });
+      } else this.client.publish(topic, JSON.stringify(obj), { qos: 0, retain: false });
+    } catch { /* 무시 */ }
   }
 
   /* ---------- 수신 ---------- */
@@ -371,7 +379,9 @@ class MqttBusImpl implements MqttBus {
     }
 
     /* Ignore in-flight messages from the previous map subscription. */
-    if (topic !== ROOT + "stage/" + this.stage) return;
+    if (!this.subscribedTopics.includes(topic)) return;
+    // New clients receive the canonical copy once; legacy clients only see their own topic.
+    if (m.aoi === this.stage && topic !== ROOT + "stage/" + this.stage) return;
     /* stage/<key> 토픽 */
     if (k === "hi" || k === "st") {
       const prev = this.peers.get(pid);

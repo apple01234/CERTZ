@@ -1,0 +1,45 @@
+{
+  "site": "https://sertz.vercel.app",
+  "commitSha": "56e52e24e600609be38eb0aa0ec848a75676064a",
+  "tutorialMs": 83053,
+  "continuationMs": 127281,
+  "finalPlayer": {
+    "hp": 352,
+    "maxHp": 352,
+    "mp": 144,
+    "maxMp": 144,
+    "lv": 15,
+    "potions": {
+      "hp": 2,
+      "mp": 5
+    },
+    "atk": 52,
+    "ap": 70,
+    "weapon": "weapon_1",
+    "armor": "armor_1"
+  },
+  "questIdx": 1,
+  "pageErrors": [],
+  "reconnect": [
+    {
+      "mode": "reconnect",
+      "stage": "lilacworld2x3",
+      "idx": 1,
+      "lv": 15,
+      "ap": 70,
+      "gold": 11692,
+      "boss": false
+    },
+    {
+      "mode": "reload",
+      "stage": "lilacworld2x3",
+      "idx": 1,
+      "lv": 15,
+      "ap": 70,
+      "gold": 11692,
+      "boss": false
+    }
+  ],
+  "reconnectPageErrors": [],
+  "scope": "normal keyboard/UI only; no progress, stats, enemy HP or timers changed"
+}

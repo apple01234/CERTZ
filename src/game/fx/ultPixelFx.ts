@@ -13,6 +13,7 @@
  */
 import Phaser from "phaser";
 import { ensureFxSheet, playFx, unloadFxSheet } from "./pixelfxBridge";
+import { STARTER_PIXELFX } from "../assetSelection";
 
 type UltFx = { cast: string; finale: string };
 type Pair = { s5: UltFx; s5b: UltFx };
@@ -46,11 +47,11 @@ export function hasUltFx(cls: string | null | undefined): boolean {
 
 /** 현재 직업의 궁극기 시트 4장을 미리 받고, 다른 직업의 궁극기 시트는 내린다(직업을 바꿔도 메모리가 쌓이지 않게). */
 export function prefetchUltFx(scene: Phaser.Scene, cls: string | null | undefined): void {
-  const keep = new Set(sheetsOf(cls));
+  const keep = new Set([...STARTER_PIXELFX, ...sheetsOf(cls)]);
   for (const other of Object.keys(ULT_PIXELFX)) {
     for (const key of sheetsOf(other)) if (!keep.has(key)) unloadFxSheet(scene, key);
   }
-  for (const key of keep) void ensureFxSheet(scene, key);
+  for (const key of sheetsOf(cls)) void ensureFxSheet(scene, key);
 }
 
 /** 시트가 늦게 도착했을 때 그래도 재생해 줄 최대 지연 — 이보다 늦으면 이미 지난 연출이라 생략한다. */

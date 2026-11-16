@@ -1,0 +1,1442 @@
+{
+  "results": [
+    {
+      "stage": "lilacworld2x2",
+      "monsters": [
+        {
+          "id": "x2_frog",
+          "name": "사념체 · 맹독",
+          "texture": "storymob_thought",
+          "frame": "idle-0",
+          "anim": "storymob_thought-idle",
+          "hitW": 34,
+          "hitH": 30
+        },
+        {
+          "id": "x2_frog",
+          "name": "사념체 · 맹독",
+          "texture": "storymob_thought",
+          "frame": "idle-0",
+          "anim": "storymob_thought-idle",
+          "hitW": 34,
+          "hitH": 30
+        },
+        {
+          "id": "x2_frog",
+          "name": "사념체 · 맹독",
+          "texture": "storymob_thought",
+          "frame": "idle-0",
+          "anim": "storymob_thought-idle",
+          "hitW": 34,
+          "hitH": 30
+        },
+        {
+          "id": "x2_frog",
+          "name": "사념체 · 맹독",
+          "texture": "storymob_thought",
+          "frame": "idle-0",
+          "anim": "storymob_thought-idle",
+          "hitW": 34,
+          "hitH": 30
+        },
+        {
+          "id": "x2_frog",
+          "name": "사념체 · 맹독",
+          "texture": "storymob_thought",
+          "frame": "idle-0",
+          "anim": "storymob_thought-idle",
+          "hitW": 34,
+          "hitH": 30
+        },
+        {
+          "id": "x2_frog",
+          "name": "사념체 · 맹독",
+          "texture": "storymob_thought",
+          "frame": "idle-0",
+          "anim": "storymob_thought-idle",
+          "hitW": 34,
+          "hitH": 30
+        },
+        {
+          "id": "x2_frog",
+          "name": "사념체 · 맹독",
+          "texture": "storymob_thought",
+          "frame": "idle-0",
+          "anim": "storymob_thought-idle",
+          "hitW": 34,
+          "hitH": 30
+        },
+        {
+          "id": "x2_reeffish",
+          "name": "사념체 · 원거리",
+          "texture": "storymob_thought",
+          "frame": "idle-0",
+          "anim": "storymob_thought-idle",
+          "hitW": 36,
+          "hitH": 28
+        },
+        {
+          "id": "x2_reeffish",
+          "name": "사념체 · 원거리",
+          "texture": "storymob_thought",
+          "frame": "idle-0",
+          "anim": "storymob_thought-idle",
+          "hitW": 36,
+          "hitH": 28
+        },
+        {
+          "id": "x2_reeffish",
+          "name": "사념체 · 원거리",
+          "texture": "storymob_thought",
+          "frame": "idle-0",
+          "anim": "storymob_thought-idle",
+          "hitW": 36,
+          "hitH": 28
+        }
+      ],
+      "loaded": [
+        "storymob_thought"
+      ],
+      "specialSpawns": [
+        {
+          "opts": {
+            "displayName": "정예 원래 적"
+          },
+          "texture": "storymob_thought",
+          "name": "정예 사념체 · 맹독"
+        },
+        {
+          "opts": {
+            "displayName": "시험 상대 — 룬 제령"
+          },
+          "texture": "x2_frog_idle0",
+          "name": "시험 상대 — 룬 제령"
+        },
+        {
+          "opts": {
+            "dummy": true
+          },
+          "texture": "x2_frog_idle0",
+          "name": null
+        }
+      ],
+      "styles": [
+        {
+          "key": "minion",
+          "name": "사념체 · 근접",
+          "mark": "◆ 근접",
+          "texture": "storymob_thought",
+          "hitW": 30,
+          "hitH": 32
+        },
+        {
+          "key": "wraith",
+          "name": "사념체 · 원거리",
+          "mark": "◎ 원거리",
+          "texture": "storymob_thought",
+          "hitW": 30,
+          "hitH": 32
+        },
+        {
+          "key": "x2_stonegolem",
+          "name": "사념체 · 돌진",
+          "mark": "▲ 돌진",
+          "texture": "storymob_thought",
+          "hitW": 38,
+          "hitH": 38
+        },
+        {
+          "key": "x2_frog",
+          "name": "사념체 · 맹독",
+          "mark": "✚ 맹독",
+          "texture": "storymob_thought",
+          "hitW": 34,
+          "hitH": 30
+        }
+      ],
+      "windupFrames": [
+        "idle-1",
+        "run-0",
+        "attack-0",
+        "attack-0",
+        "attack-0",
+        "attack-0",
+        "attack-0",
+        "attack-0",
+        "attack-0",
+        "attack-0",
+        "attack-0"
+      ],
+      "attackFrames": [
+        "attack-0",
+        "attack-0",
+        "attack-1",
+        "attack-1",
+        "run-1",
+        "run-1",
+        "idle-0",
+        "idle-0",
+        "idle-0",
+        "idle-0",
+        "idle-0"
+      ]
+    },
+    {
+      "stage": "lilacworld3x2",
+      "monsters": [
+        {
+          "id": "x2_frog",
+          "name": "도깨비 산적 · 맹독",
+          "texture": "storymob_dokkaebi",
+          "frame": "idle-1",
+          "anim": "storymob_dokkaebi-idle",
+          "hitW": 34,
+          "hitH": 30
+        },
+        {
+          "id": "x2_frog",
+          "name": "도깨비 산적 · 맹독",
+          "texture": "storymob_dokkaebi",
+          "frame": "idle-1",
+          "anim": "storymob_dokkaebi-idle",
+          "hitW": 34,
+          "hitH": 30
+        },
+        {
+          "id": "x2_frog",
+          "name": "도깨비 산적 · 맹독",
+          "texture": "storymob_dokkaebi",
+          "frame": "idle-1",
+          "anim": "storymob_dokkaebi-idle",
+          "hitW": 34,
+          "hitH": 30
+        },
+        {
+          "id": "x2_frog",
+          "name": "도깨비 산적 · 맹독",
+          "texture": "storymob_dokkaebi",
+          "frame": "idle-1",
+          "anim": "storymob_dokkaebi-idle",
+          "hitW": 34,
+          "hitH": 30
+        },
+        {
+          "id": "x3_chort",
+          "name": "도깨비 산적 · 돌진",
+          "texture": "storymob_dokkaebi",
+          "frame": "idle-1",
+          "anim": "storymob_dokkaebi-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "도깨비 산적 · 돌진",
+          "texture": "storymob_dokkaebi",
+          "frame": "idle-1",
+          "anim": "storymob_dokkaebi-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "도깨비 산적 · 돌진",
+          "texture": "storymob_dokkaebi",
+          "frame": "idle-1",
+          "anim": "storymob_dokkaebi-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x2_reeffish",
+          "name": "도깨비 산적 · 원거리",
+          "texture": "storymob_dokkaebi",
+          "frame": "idle-1",
+          "anim": "storymob_dokkaebi-idle",
+          "hitW": 36,
+          "hitH": 28
+        },
+        {
+          "id": "x2_reeffish",
+          "name": "도깨비 산적 · 원거리",
+          "texture": "storymob_dokkaebi",
+          "frame": "idle-1",
+          "anim": "storymob_dokkaebi-idle",
+          "hitW": 36,
+          "hitH": 28
+        },
+        {
+          "id": "x2_reeffish",
+          "name": "도깨비 산적 · 원거리",
+          "texture": "storymob_dokkaebi",
+          "frame": "idle-1",
+          "anim": "storymob_dokkaebi-idle",
+          "hitW": 36,
+          "hitH": 28
+        }
+      ],
+      "loaded": [
+        "storymob_thought",
+        "storymob_dokkaebi"
+      ]
+    },
+    {
+      "stage": "lilacworld5x3",
+      "monsters": [
+        {
+          "id": "x3_chort",
+          "name": "저주받은 선원 · 돌진",
+          "texture": "storymob_deckhand",
+          "frame": "idle-1",
+          "anim": "storymob_deckhand-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "저주받은 선원 · 돌진",
+          "texture": "storymob_deckhand",
+          "frame": "idle-1",
+          "anim": "storymob_deckhand-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "저주받은 선원 · 돌진",
+          "texture": "storymob_deckhand",
+          "frame": "idle-1",
+          "anim": "storymob_deckhand-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "저주받은 선원 · 돌진",
+          "texture": "storymob_deckhand",
+          "frame": "idle-1",
+          "anim": "storymob_deckhand-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "저주받은 선원 · 돌진",
+          "texture": "storymob_deckhand",
+          "frame": "idle-1",
+          "anim": "storymob_deckhand-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "저주받은 선원 · 돌진",
+          "texture": "storymob_deckhand",
+          "frame": "idle-1",
+          "anim": "storymob_deckhand-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_imp",
+          "name": "저주받은 선원 · 원거리",
+          "texture": "storymob_deckhand",
+          "frame": "idle-1",
+          "anim": "storymob_deckhand-idle",
+          "hitW": 34,
+          "hitH": 30
+        },
+        {
+          "id": "x3_imp",
+          "name": "저주받은 선원 · 원거리",
+          "texture": "storymob_deckhand",
+          "frame": "idle-1",
+          "anim": "storymob_deckhand-idle",
+          "hitW": 34,
+          "hitH": 30
+        },
+        {
+          "id": "x3_imp",
+          "name": "저주받은 선원 · 원거리",
+          "texture": "storymob_deckhand",
+          "frame": "idle-1",
+          "anim": "storymob_deckhand-idle",
+          "hitW": 34,
+          "hitH": 30
+        },
+        {
+          "id": "x3_imp",
+          "name": "저주받은 선원 · 원거리",
+          "texture": "storymob_deckhand",
+          "frame": "idle-1",
+          "anim": "storymob_deckhand-idle",
+          "hitW": 34,
+          "hitH": 30
+        }
+      ],
+      "loaded": [
+        "storymob_thought",
+        "storymob_dokkaebi",
+        "storymob_deckhand"
+      ]
+    },
+    {
+      "stage": "dlcstargate8",
+      "monsters": [
+        {
+          "id": "x3_necromancer",
+          "name": "우주의 감염체 · 원거리",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_necromancer",
+          "name": "우주의 감염체 · 원거리",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_necromancer",
+          "name": "우주의 감염체 · 원거리",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_necromancer",
+          "name": "우주의 감염체 · 원거리",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_necromancer",
+          "name": "우주의 감염체 · 원거리",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x2_darkhound",
+          "name": "우주의 감염체 · 근접",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 54,
+          "hitH": 30
+        },
+        {
+          "id": "x2_darkhound",
+          "name": "우주의 감염체 · 근접",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 54,
+          "hitH": 30
+        },
+        {
+          "id": "x2_darkhound",
+          "name": "우주의 감염체 · 근접",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 54,
+          "hitH": 30
+        },
+        {
+          "id": "x2_darkhound",
+          "name": "우주의 감염체 · 근접",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 54,
+          "hitH": 30
+        },
+        {
+          "id": "x2_darkhound",
+          "name": "우주의 감염체 · 근접",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 54,
+          "hitH": 30
+        },
+        {
+          "id": "golem",
+          "name": "우주의 감염체 · 돌진",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "golem",
+          "name": "우주의 감염체 · 돌진",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "golem",
+          "name": "우주의 감염체 · 돌진",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "golem",
+          "name": "우주의 감염체 · 돌진",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "golem",
+          "name": "우주의 감염체 · 돌진",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "golem",
+          "name": "우주의 감염체 · 돌진",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "golem",
+          "name": "우주의 감염체 · 돌진",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "golem",
+          "name": "우주의 감염체 · 돌진",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "golem",
+          "name": "우주의 감염체 · 돌진",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "golem",
+          "name": "우주의 감염체 · 돌진",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "golem",
+          "name": "우주의 감염체 · 돌진",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "golem",
+          "name": "우주의 감염체 · 돌진",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "golem",
+          "name": "우주의 감염체 · 돌진",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "golem",
+          "name": "우주의 감염체 · 돌진",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "golem",
+          "name": "우주의 감염체 · 돌진",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "wraith",
+          "name": "우주의 감염체 · 원거리",
+          "texture": "storymob_virus",
+          "frame": "idle-1",
+          "anim": "storymob_virus-idle",
+          "hitW": 30,
+          "hitH": 32
+        }
+      ],
+      "loaded": [
+        "storymob_thought",
+        "storymob_dokkaebi",
+        "storymob_deckhand",
+        "storymob_virus"
+      ]
+    },
+    {
+      "stage": "dlcprisma7",
+      "monsters": [
+        {
+          "id": "x2_stonegolem",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 38,
+          "hitH": 38
+        },
+        {
+          "id": "x2_stonegolem",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 38,
+          "hitH": 38
+        },
+        {
+          "id": "x2_stonegolem",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 38,
+          "hitH": 38
+        },
+        {
+          "id": "x2_stonegolem",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 38,
+          "hitH": 38
+        },
+        {
+          "id": "x2_stonegolem",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 38,
+          "hitH": 38
+        },
+        {
+          "id": "x2_stonegolem",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 38,
+          "hitH": 38
+        },
+        {
+          "id": "x2_stonegolem",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 38,
+          "hitH": 38
+        },
+        {
+          "id": "x2_stonegolem",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 38,
+          "hitH": 38
+        },
+        {
+          "id": "x2_stonegolem",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 38,
+          "hitH": 38
+        },
+        {
+          "id": "x2_stonegolem",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 38,
+          "hitH": 38
+        },
+        {
+          "id": "x2_stonegolem",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 38,
+          "hitH": 38
+        },
+        {
+          "id": "x2_stonegolem",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 38,
+          "hitH": 38
+        },
+        {
+          "id": "x2_stonegolem",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 38,
+          "hitH": 38
+        },
+        {
+          "id": "x3_orcshaman",
+          "name": "전투 로봇 · 원거리",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "x3_orcshaman",
+          "name": "전투 로봇 · 원거리",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "x3_orcshaman",
+          "name": "전투 로봇 · 원거리",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "x3_orcshaman",
+          "name": "전투 로봇 · 원거리",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "x3_orcshaman",
+          "name": "전투 로봇 · 원거리",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "x3_orcshaman",
+          "name": "전투 로봇 · 원거리",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "x3_orcshaman",
+          "name": "전투 로봇 · 원거리",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "x3_orcshaman",
+          "name": "전투 로봇 · 원거리",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "x3_orcshaman",
+          "name": "전투 로봇 · 원거리",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "x3_orcshaman",
+          "name": "전투 로봇 · 원거리",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 36,
+          "hitH": 36
+        },
+        {
+          "id": "minion",
+          "name": "전투 로봇 · 근접",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 30,
+          "hitH": 32
+        },
+        {
+          "id": "minion",
+          "name": "전투 로봇 · 근접",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 30,
+          "hitH": 32
+        },
+        {
+          "id": "minion",
+          "name": "전투 로봇 · 근접",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 30,
+          "hitH": 32
+        },
+        {
+          "id": "minion",
+          "name": "전투 로봇 · 근접",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 30,
+          "hitH": 32
+        },
+        {
+          "id": "minion",
+          "name": "전투 로봇 · 근접",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 30,
+          "hitH": 32
+        },
+        {
+          "id": "minion",
+          "name": "전투 로봇 · 근접",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 30,
+          "hitH": 32
+        },
+        {
+          "id": "runegolem",
+          "name": "제이드의 에너지 분신 · 원거리",
+          "texture": "storymob_jadeclone",
+          "frame": "idle-1",
+          "anim": "storymob_jadeclone-idle",
+          "hitW": 36,
+          "hitH": 36
+        }
+      ],
+      "loaded": [
+        "storymob_thought",
+        "storymob_dokkaebi",
+        "storymob_deckhand",
+        "storymob_virus",
+        "storymob_robot",
+        "storymob_jadeclone"
+      ]
+    },
+    {
+      "stage": "dlcreverse3",
+      "monsters": [
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_chort",
+          "name": "전투 로봇 · 돌진",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_necromancer",
+          "name": "전투 로봇 · 원거리",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_necromancer",
+          "name": "전투 로봇 · 원거리",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_necromancer",
+          "name": "전투 로봇 · 원거리",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_necromancer",
+          "name": "전투 로봇 · 원거리",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_necromancer",
+          "name": "전투 로봇 · 원거리",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_necromancer",
+          "name": "전투 로봇 · 원거리",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_necromancer",
+          "name": "전투 로봇 · 원거리",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "x3_necromancer",
+          "name": "전투 로봇 · 원거리",
+          "texture": "storymob_robot",
+          "frame": "idle-1",
+          "anim": "storymob_robot-idle",
+          "hitW": 34,
+          "hitH": 34
+        },
+        {
+          "id": "minion",
+          "name": "전투 드론 · 근접",
+          "texture": "storymob_drone",
+          "frame": "idle-1",
+          "anim": "storymob_drone-idle",
+          "hitW": 30,
+          "hitH": 32
+        }
+      ],
+      "loaded": [
+        "storymob_thought",
+        "storymob_dokkaebi",
+        "storymob_deckhand",
+        "storymob_virus",
+        "storymob_robot",
+        "storymob_jadeclone",
+        "storymob_drone"
+      ]
+    },
+    {
+      "boss": "jade",
+      "texture": "story_jade",
+      "frame": "idle-1",
+      "anim": "story_jade-idle",
+      "companions": [],
+      "firstFx": [
+        {
+          "ev": "intro",
+          "rendered": true
+        },
+        {
+          "ev": "phase",
+          "rendered": true
+        },
+        {
+          "ev": "pattern",
+          "rendered": true
+        },
+        {
+          "ev": "charge",
+          "rendered": true
+        },
+        {
+          "ev": "enrage",
+          "rendered": true
+        },
+        {
+          "ev": "death",
+          "rendered": true
+        },
+        {
+          "ev": "summon",
+          "rendered": true
+        },
+        {
+          "ev": "telegraph",
+          "rendered": true
+        }
+      ],
+      "introPixels": [
+        {
+          "active": true,
+          "visible": true,
+          "texture": "sunburst",
+          "frame": "sunburst 2"
+        }
+      ],
+      "attackFrames": [
+        "attack-1",
+        "attack-2",
+        "attack-3",
+        "attack-3",
+        "attack-3"
+      ],
+      "clones": [
+        {
+          "texture": "story_jadeclone",
+          "frame": "cast-0",
+          "anim": "story_jadeclone-sp1"
+        },
+        {
+          "texture": "story_jadeclone",
+          "frame": "cast-0",
+          "anim": "story_jadeclone-sp1"
+        }
+      ]
+    },
+    {
+      "boss": "snorikaking",
+      "texture": "story_snorikaking",
+      "frame": "idle-1",
+      "anim": "story_snorikaking-idle",
+      "companions": [],
+      "firstFx": [
+        {
+          "ev": "intro",
+          "rendered": true
+        },
+        {
+          "ev": "phase",
+          "rendered": true
+        },
+        {
+          "ev": "pattern",
+          "rendered": true
+        },
+        {
+          "ev": "charge",
+          "rendered": true
+        },
+        {
+          "ev": "enrage",
+          "rendered": true
+        },
+        {
+          "ev": "death",
+          "rendered": true
+        },
+        {
+          "ev": "summon",
+          "rendered": true
+        },
+        {
+          "ev": "telegraph",
+          "rendered": true
+        }
+      ],
+      "introPixels": [
+        {
+          "active": true,
+          "visible": true,
+          "texture": "sunburst",
+          "frame": "sunburst 2"
+        }
+      ],
+      "attackFrames": [
+        "attack-0",
+        "attack-1",
+        "attack-2",
+        "attack-3",
+        "attack-3"
+      ]
+    },
+    {
+      "boss": "verodin",
+      "texture": "story_veronica",
+      "frame": "idle-1",
+      "anim": "story_veronica-idle",
+      "companions": [
+        {
+          "name": "story-boss:dean",
+          "texture": "story_dean",
+          "anim": "story_dean-idle"
+        }
+      ],
+      "firstFx": [
+        {
+          "ev": "intro",
+          "rendered": true
+        },
+        {
+          "ev": "phase",
+          "rendered": true
+        },
+        {
+          "ev": "pattern",
+          "rendered": true
+        },
+        {
+          "ev": "charge",
+          "rendered": true
+        },
+        {
+          "ev": "enrage",
+          "rendered": true
+        },
+        {
+          "ev": "death",
+          "rendered": true
+        },
+        {
+          "ev": "summon",
+          "rendered": true
+        },
+        {
+          "ev": "telegraph",
+          "rendered": true
+        }
+      ],
+      "introPixels": [
+        {
+          "active": true,
+          "visible": true,
+          "texture": "sunburst",
+          "frame": "sunburst 0"
+        }
+      ],
+      "attackFrames": [
+        "attack-1",
+        "attack-2",
+        "attack-3",
+        "attack-3",
+        "attack-3"
+      ],
+      "deanCast": "story_dean-sp1"
+    },
+    {
+      "boss": "shadow",
+      "texture": "story_thought",
+      "frame": "idle-0",
+      "anim": "story_thought-idle",
+      "companions": [],
+      "firstFx": [
+        {
+          "ev": "intro",
+          "rendered": true
+        },
+        {
+          "ev": "phase",
+          "rendered": true
+        },
+        {
+          "ev": "pattern",
+          "rendered": true
+        },
+        {
+          "ev": "charge",
+          "rendered": true
+        },
+        {
+          "ev": "enrage",
+          "rendered": true
+        },
+        {
+          "ev": "death",
+          "rendered": true
+        },
+        {
+          "ev": "summon",
+          "rendered": true
+        },
+        {
+          "ev": "telegraph",
+          "rendered": true
+        }
+      ],
+      "introPixels": [
+        {
+          "active": true,
+          "visible": true,
+          "texture": "sunburst",
+          "frame": "sunburst 2"
+        }
+      ],
+      "attackFrames": [
+        "attack-1",
+        "attack-2",
+        "attack-3",
+        "attack-3",
+        "attack-3"
+      ]
+    }
+  ],
+  "errors": [],
+  "assetFailures": [],
+  "scope": "Controlled art QA using a fixture, scene transitions and boss summons. Not natural-play or P0 crash verification."
+}

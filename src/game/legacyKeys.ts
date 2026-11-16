@@ -46,6 +46,14 @@ export function rekeyLegacy(s: string): string {
   return s;
 }
 
+/** Transport-only aliases: old APKs subscribe to their original map topic. */
+export function legacyStageKeys(stage: string): string[] {
+  const m = /^([a-z]+)(\d+x\d+)$/.exec(stage);
+  if (!m) return [stage];
+  const old = m[1] === "lilacworld" ? ["howlrstone"] : LOWER.filter(([, next]) => next === m[1]).map(([previous]) => previous);
+  return [stage, ...old.map(prefix => prefix + m[2])];
+}
+
 /** 사람이 입력한 글(이름·친구 이름·채팅 등)은 건드리지 않는다. */
 const FREE_TEXT_FIELDS = new Set(["playerName", "name", "title", "friends", "chat", "memo", "nick"]);
 

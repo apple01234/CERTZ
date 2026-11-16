@@ -9,7 +9,7 @@ import { storyEnemyRole, STORY_ENEMY_TEXTURES } from "./storyEnemyVisuals";
 import { LILAC_SCENARIOS } from "./lilacScenarios";
 import { StartupBundle } from "./startupBundle";
 
-export type LoadProgress = { phase: string; elapsedMs: number; total: number; complete: number; active: number; failed: string[]; error?: string };
+export type LoadProgress = { phase: string; elapsedMs: number; total: number; complete: number; active: number; failed: string[]; error?: string; bundleBytes?: number };
 const PHASE_LIMIT_MS = 30000;
 // 동시 24개가 대역폭을 나눠 쓰므로 큰 파일(최대 6.7MB) 하나의 제한도 넉넉히 둔다. 멈춤 감지는 PHASE_LIMIT_MS 가 맡는다.
 const FILE_LIMIT_MS = 20000;
@@ -94,7 +94,7 @@ class AssetManager {
   private phase = 0;
   constructor(private game: Phaser.Game, definitions: AssetDefinition[], private register: (scene: Phaser.Scene) => void) {
     this.definitions = new Map(definitions.map(def => [def.key, def]));
-    game.events.once("destroy", () => { this.disposed = true; retryAction = undefined; });
+    game.events.once("destroy", () => { this.disposed = true; this.startupBundle.release(); retryAction = undefined; });
   }
   private exists(def: AssetDefinition) {
     return def.type === "audio" ? this.game.cache.audio.exists(def.key) : def.type === "json" ? this.game.cache.json.exists(def.key) : this.game.textures.exists(def.key);
@@ -170,10 +170,11 @@ class AssetManager {
     const generation = ++this.phase, started = performance.now();
     const uniqueKeys = [...new Set(keys)];
     const definitions = uniqueKeys.map(key => this.definitions.get(key)).filter((def): def is AssetDefinition => !!def);
+    this.startupBundle.begin(definitions.filter(def => !this.exists(def)).map(def => def.urls[0]));
     let complete = 0, cancelled = false, settled = false;
     const failed = uniqueKeys.filter(key => !this.definitions.has(key));
     retryAction = undefined;
-    const emit = (error?: string) => { if (this.phase === generation && !cancelled && !settled) publish({ phase, elapsedMs: Math.round(performance.now() - started), total: definitions.length, complete, active: this.active, failed, ...(error ? { error } : {}) }); };
+    const emit = (error?: string) => { if (this.phase === generation && !cancelled && !settled) publish({ phase, elapsedMs: Math.round(performance.now() - started), total: definitions.length, complete, active: this.active, failed, bundleBytes: this.startupBundle.retainedBytes, ...(error ? { error } : {}) }); };
     let rejectCancelled!: (error: Error) => void;
     const cancellation = new Promise<never>((_, reject) => { rejectCancelled = reject; });
     const onShutdown = () => { cancelled = true; rejectCancelled(new DOMException("Scene closed", "AbortError")); };
@@ -195,7 +196,7 @@ class AssetManager {
         deadline, cancellation,
       ]);
       if (cancelled || this.disposed) throw new DOMException("Scene closed", "AbortError");
-      this.register(scene); emit();
+      this.startupBundle.release(); this.register(scene); emit();
     } catch (error) {
       if (!cancelled) {
         retryAction = () => {
@@ -205,7 +206,7 @@ class AssetManager {
         emit("자료를 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.");
       }
       throw error;
-    } finally { settled = true; clearTimeout(timer); scene.events.off("shutdown", onShutdown); scene.events.off("destroy", onShutdown); }
+    } finally { settled = true; if (this.phase === generation) this.startupBundle.release(); clearTimeout(timer); scene.events.off("shutdown", onShutdown); scene.events.off("destroy", onShutdown); }
   }
 }
 
@@ -239,7 +240,7 @@ export async function ensureWorldAssets(scene: Phaser.Scene, data: { stage?: str
   const presentation = /^lilacworld1x[1-4]$/.test(stage.key) && !data.gmBoss && !data.replayBoss
     ? ["cast_register", "cast_recorder", ...Object.values(LILAC_SCENARIOS).filter(s => s.chapter === 1)
       .flatMap(s => s.steps.flatMap(step => step.t === "enter" && step.actor.tex ? [step.actor.tex] : []))] : undefined;
-  const scope = { body: resolveBodyPrefix(data.save ?? {}), bodies: BODY_PREFIXES, monsters: [...monsters], allMonsters, demandFx: true, presentation };
+  const scope = { body: resolveBodyPrefix(data.save ?? {}), bodies: BODY_PREFIXES, monsters: [...monsters], allMonsters, demandFx: true, bossFx: !!(stage.bossKey || data.gmBoss || data.replayBoss), presentation };
   const keys = [...manager.definitions.values()].filter(def => isWorldAsset(def, scope)).map(def => def.key);
   // Every region re-enters this gate before spawn; completed/in-flight jobs are
   // reused. Do not start a full-catalog background burst during gameplay.

@@ -59,8 +59,8 @@ test('전직하면 바로 새 직업의 궁극기 시트를 받는다 (첫 시�
 test('게임을 다시 만들어도 시트를 다시 받고, 직업을 바꾸면 이전 직업 시트를 내린다', () => {
   /* pixelfxBridge 는 Phaser 를 불러와 노드에서 바로 돌릴 수 없다 — 계약을 소스로 고정하고 실제 동작은 브라우저에서 본다. */
   const bridge = readFileSync('src/game/fx/pixelfxBridge.ts', 'utf8');
-  /* 기록(SHEETS)은 지금 게임에 텍스처가 있을 때만 믿는다 */
-  assert.match(bridge, /if \(hit && !scene\.textures\.exists\(key\)\) \{ SHEETS\.delete\(key\); return undefined; \}/);
+  /* 게임 재생성 후 텍스처와 애니메이션이 모두 현재 게임에 속해야 한다. */
+  assert.match(bridge, /if \(hit && \(!scene\.textures\.exists\(key\) \|\| !scene\.anims\.exists\(`\$\{key\}-play`\)\)\)/);
   assert.equal((bridge.match(/SHEETS\.get\(/g) ?? []).length, 1, 'liveSheet 밖에서 SHEETS 를 직접 믿는 곳이 있다');
   /* 받는 중 작업은 게임별 */
   assert.match(bridge, /const PENDING = new WeakMap<Phaser\.Game, Map<string, Promise<boolean>>>\(\)/);

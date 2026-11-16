@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
-import { storyEnemyRole, STORY_ENEMY_ROLES, STORY_ENEMY_TEXTURES } from '../src/game/storyEnemyVisuals.ts';
+import { storyEnemyRole, storyEnemyStyle, STORY_ENEMY_ROLES, STORY_ENEMY_TEXTURES } from '../src/game/storyEnemyVisuals.ts';
 import { preloadStoryEnemies, registerStoryEnemies } from '../src/game/fx/storyEnemyAssets.ts';
 import { isWorldAsset } from '../src/game/assetSelection.ts';
 import { BOSS_DEFS } from '../src/game/stages.ts';
@@ -30,18 +30,26 @@ test('atlas registration waits for each regional sheet and never duplicates anim
   assert.equal(loads.length, Object.keys(STORY_ENEMY_ROLES).length);
   registerStoryEnemies(scene); assert.equal(animations.size, 0);
   textures.add('storymob_drone'); registerStoryEnemies(scene); registerStoryEnemies(scene);
-  assert.equal(animations.size, 3);
-  for (const [mode, count] of [['idle', 2], ['run', 4], ['attack', 2]]) {
+  assert.equal(animations.size, 4);
+  for (const [mode, count] of [['idle', 2], ['run', 4], ['windup', 3], ['attack', 4]]) {
     const animation = animations.get(`storymob_drone-${mode}`);
     assert.equal(animation.frames.length, count);
     const atlas = JSON.parse(readFileSync('public/assets/story-enemies/drone.json', 'utf8'));
     for (const { frame } of animation.frames) assert.ok(atlas.frames[frame]);
+    assert.equal(animation.repeat, ['idle','run'].includes(mode)?-1:0,'attacks never loop through their warning');
   }
   for (const [texture, png, json] of loads) {
     assert.ok(existsSync('public/assets/' + png)); assert.ok(existsSync('public/assets/' + json));
     const metadata = JSON.parse(readFileSync('public/assets/' + json, 'utf8'));
     assert.equal(Object.keys(metadata.frames).length, 8, texture);
   }
+});
+
+test('shared faction art exposes attack style through both words and distinct marks',()=>{
+ const profiles=[undefined,{ranged:{}},{charge:{}},{apply:{kind:'poison'}}];
+ const styles=profiles.map(storyEnemyStyle);
+ for(const key of ['label','mark','color'])assert.equal(new Set(styles.map(s=>s[key])).size,4);
+ assert.equal(storyEnemyStyle({fieldOnDeath:{kind:'poison'}}).label,'맹독');
 });
 
 test('exact atlas keys stay regional rather than joining the shared initial download', () => {
