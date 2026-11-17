@@ -37,8 +37,9 @@ if(process.env.MQTT_QA_LOCAL==='1'){
   });
  }
 }
+const proxyAgent=!servers.length&&process.env.HTTPS_PROXY?new (await import('https-proxy-agent')).HttpsProxyAgent(process.env.HTTPS_PROXY):undefined;
 const realConnect=mqtt.connect.bind(mqtt);
-const connect=(url,options)=>{const idx=urls.indexOf(url);const c=realConnect(servers.length?'ws://127.0.0.1:'+servers[idx].address().port:url,options);clients.push(c);return c;};
+const connect=(url,options)=>{const idx=urls.indexOf(url);const c=realConnect(servers.length?'ws://127.0.0.1:'+servers[idx].address().port:url,{...options,...(proxyAgent?{wsOptions:{agent:proxyAgent}}:{})});clients.push(c);return c;};
 vm.runInNewContext(`(function(require,module,exports){${code}})`,{Buffer,console,Date,setInterval:(...args)=>{const t=setInterval(...args);intervals.push(t);return t;},setTimeout:(...args)=>{const t=setTimeout(...args);timeouts.push(t);return t;},window:{addEventListener(){},localStorage:{getItem(){return null;}}}})(name=>{
  if(name==='mqtt')return{connect};if(name==='./legacyKeys')return{rekeyLegacy,legacyStageKeys};if(name==='./account')return{getCachedUser:()=>null,getAuthToken:()=>null};if(name==='./server')return{resolveApiBase:()=>''};if(name==='./playerIdentity')return{presenceSessionId:()=>'qa_'+nonce+'_'+(++seq)};throw Error(name);
 },module,module.exports);

@@ -19,7 +19,7 @@
   "current": {
     "act": [
       {
-        "id": "qa_mwk81cmx_1",
+        "id": "qa_mwk8l2d7_1",
         "kind": "s5",
         "x": 10,
         "y": 20,
@@ -27,7 +27,7 @@
         "cls": null
       },
       {
-        "id": "qa_mwk81cmx_1",
+        "id": "qa_mwk8l2d7_1",
         "kind": "s5f",
         "x": 10,
         "y": 20,
@@ -35,7 +35,7 @@
         "cls": null
       },
       {
-        "id": "qa_mwk81cmx_1",
+        "id": "qa_mwk8l2d7_1",
         "kind": "s1",
         "x": 10,
         "y": 20,
@@ -43,8 +43,8 @@
         "cls": null
       },
       {
-        "id": "qa_mwk81cmx_1",
-        "kind": "s1",
+        "id": "qa_mwk8l2d7_1",
+        "kind": "s2",
         "x": 10,
         "y": 20,
         "flip": false,
@@ -53,14 +53,14 @@
     ],
     "boss": [
       {
-        "id": "qa_mwk81cmx_1",
+        "id": "qa_mwk8l2d7_1",
         "n": 123
       }
     ],
     "trade": [
       {
         "k": "treq",
-        "from": "qa_mwk81cmx_1",
+        "from": "qa_mwk8l2d7_1",
         "name": "통신QA",
         "offer": {
           "items": [],
