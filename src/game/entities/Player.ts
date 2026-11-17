@@ -9637,7 +9637,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.impactFX.shake(finale ? 220 : 60, finale ? 0.012 : 0.004);
           if (finale && paid) this.scene.spawnShockwave(this.x, this.y, hex, 2.2, 480, 0.55);
           if (last) {
-            playUltFx(this.scene, resolveSkill5Of(this.cls), slot, "finale", this.x, this.y);
+            const aim = this.aimDirFree();
+            playUltFx(this.scene, resolveSkill5Of(this.cls), slot, "finale", this.x, this.y, aim.x < 0, aim.angle());
           }
         } catch { /* 연출 실패가 판정을 막지 않는다 */ }
       });

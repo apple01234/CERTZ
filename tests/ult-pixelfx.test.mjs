@@ -3,6 +3,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
+import vm from 'node:vm';
+import ts from 'typescript';
 
 const { ULT_CLASSES } = await import('../src/game/classes.ts');
 const src = readFileSync('src/game/fx/ultPixelFx.ts', 'utf8');
@@ -78,4 +80,47 @@ test('이터널 2차 궁극기 설명이 실제 동작(시간 역행 + 피해 �
   assert.match(SKILL5B_INFO.eternal.desc, /되돌|역행/);
   assert.match(SKILL5B_INFO.eternal.desc, /재현/);
   assert.doesNotMatch(SKILL5B_INFO.eternal.desc, /블랙홀|지옥의 문/);
+});
+
+test('궁극기 종결 도트는 조준점으로 향하며 절전 모드와 지연 로드에도 같은 배치를 쓴다', async () => {
+  const draws = [];
+  let loaded = true;
+  const bridge = {
+    async ensureFxSheet() { loaded = true; return true; },
+    playFx(_scene, key, x, y, opts) {
+      if (!loaded) return null;
+      const draw = { key, x, y, flip: opts.flip };
+      draws.push(draw);
+      return {
+        width: 200, height: 100, anims: { currentAnim: { duration: 3500, repeat: 0 } },
+        setScale(value) { draw.scale = value; },
+        setRotation(value) { draw.rotation = value; },
+      };
+    },
+  };
+  const module = { exports: {} };
+  const { outputText } = ts.transpileModule(src, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  });
+  vm.runInNewContext(`(function(require, module, exports) { ${outputText} })`)(
+    id => id === './pixelfxBridge' ? bridge : { STARTER_PIXELFX: [] }, module, module.exports,
+  );
+  const { playUltFx } = module.exports;
+  const scene = { fxLevel: 1, sys: { isActive: () => true } };
+  playUltFx(scene, 'warbringer', 1, 'finale', 100, 120, false, Math.PI / 2);
+  assert.deepEqual(draws[0], {
+    key: 'hammer-smash', x: 100, y: 195, flip: false, scale: 1.95, rotation: Math.PI / 2,
+  });
+  playUltFx(scene, 'warbringer', 2, 'finale', 100, 120);
+  assert.deepEqual(draws[1], { key: 'quake', x: 100, y: 120, flip: false, scale: 2.55 });
+
+  loaded = false;
+  scene.fxLevel = 0;
+  playUltFx(scene, 'warbringer', 1, 'finale', 100, 120, true);
+  assert.equal(draws.length, 2);
+  await Promise.resolve();
+  assert.deepEqual({ ...draws[2], y: Math.round(draws[2].y) }, {
+    key: 'hammer-smash', x: 25, y: 120, flip: false,
+    scale: 390 * 0.65 / 200, rotation: Math.PI,
+  });
 });

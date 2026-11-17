@@ -3,7 +3,7 @@
  *
  * 4차 10직업 × 1·2차 궁극기 = 20종에 픽셀 이펙트 2개씩을 붙인다.
  *   cast   — 시전 순간, 시전자 발밑
- *   finale — 마지막 wave(남은 예산 전액이 들어가는 종결 타격) 순간, 시전자 발밑
+ *   finale — 마지막 wave 순간, 직업과 슬롯에 맞춘 크기와 조준 위치
  * 피해·판정에는 관여하지 않는다(연출만). 같은 직업의 1·2차는 서로 다른 이펙트를 쓴다.
  *
  * 로딩: 부팅 목록(BootScene PIXELFX_SHEETS)에 넣지 않는다 — 넣으면 모든 직업이 40장을 받는다.
@@ -11,7 +11,7 @@
  *  아직 못 받았으면 받기를 걸고, 1.5초 안에 도착하면 그때 늦게라도 재생한다(첫 시전 누락 방지).
  * 크기: 시트 한 장의 풀린 메모리를 약 13MB 이하로 골랐다(모바일). 운석·대폭발·핵 등 30~97MB 시트는 제외.
  */
-import Phaser from "phaser";
+import type Phaser from "phaser";
 import { ensureFxSheet, playFx, unloadFxSheet } from "./pixelfxBridge";
 import { STARTER_PIXELFX } from "../assetSelection";
 
@@ -33,7 +33,25 @@ export const ULT_PIXELFX: Record<string, Pair> = {
 
 /** 반복(loop) 시트는 스스로 끝나지 않는다 — 이 시간 뒤 서서히 지운다. */
 const LOOP_MS = { cast: 1600, finale: 2200 } as const;
-const SCALE = { cast: 1.2, finale: 1.6 } as const;
+const CAST_SCALE = 1.2;
+
+type FinaleLayout = { size: number; forward?: number; directional?: boolean };
+
+/** 긴 변의 월드 크기와 전방 배치. 픽셀 시트마다 프레임 크기가 다르다. */
+const FINALE_LAYOUT: Record<string, readonly [FinaleLayout, FinaleLayout]> = {
+  warbringer:  [{ size: 390, forward: 75, directional: true }, { size: 510 }],
+  crusader:    [{ size: 395 }, { size: 480 }],
+  deadeye:     [{ size: 340, forward: 200 }, { size: 425, forward: 155 }],
+  skylord:     [{ size: 420, forward: 105 }, { size: 465 }],
+  arclord:     [{ size: 450 }, { size: 520, directional: true }],
+  eternal:     [{ size: 425 }, { size: 495 }],
+  shadowlord:  [{ size: 380 }, { size: 475 }],
+  blademaster: [{ size: 395, forward: 70 }, { size: 460, directional: true }],
+  seaking:     [{ size: 435, forward: 125, directional: true }, { size: 485 }],
+  dreadnought: [{ size: 420, forward: 140 }, { size: 510 }],
+};
+
+type UltFxScene = Phaser.Scene & { fxLevel?: number };
 
 function sheetsOf(cls: string | null | undefined): string[] {
   const p = cls ? ULT_PIXELFX[cls] : undefined;
@@ -57,29 +75,46 @@ export function prefetchUltFx(scene: Phaser.Scene, cls: string | null | undefine
 /** 시트가 늦게 도착했을 때 그래도 재생해 줄 최대 지연 — 이보다 늦으면 이미 지난 연출이라 생략한다. */
 const LATE_MS = 1500;
 
-/** 궁극기 이펙트 재생. 시트가 아직 없으면 받기만 걸어 두고 이번엔 생략한다. */
-export function playUltFx(scene: Phaser.Scene, cls: string | null | undefined, slot: 1 | 2, phase: "cast" | "finale", x: number, y: number, flip = false): void {
-  const p = cls ? ULT_PIXELFX[cls] : undefined;
+/** 궁극기 이펙트 재생. 늦게 받은 시트에도 같은 배치를 적용한다. */
+export function playUltFx(
+  scene: UltFxScene, cls: string | null | undefined, slot: 1 | 2, phase: "cast" | "finale",
+  x: number, y: number, flip = false, angle = flip ? Math.PI : 0,
+): void {
+  if (!cls) return;
+  const p = ULT_PIXELFX[cls];
   if (!p) return;
   const key = (slot === 1 ? p.s5 : p.s5b)[phase];
-  let sp: Phaser.GameObjects.Sprite | null = null;
-  try { sp = playFx(scene, key, x, y, { scale: SCALE[phase], flip }); } catch { /* 연출 실패는 게임을 막지 않는다 */ }
-  if (!sp) {
-    const t0 = Date.now();
-    void ensureFxSheet(scene, key).then((ok) => {
-      if (!ok || Date.now() - t0 > LATE_MS || !scene.sys?.isActive()) return;
-      let late: Phaser.GameObjects.Sprite | null = null;
-      try { late = playFx(scene, key, x, y, { scale: SCALE[phase], flip }); } catch { /* 무시 */ }
-      if (late) fadeLoop(scene, late, phase);
-    });
-    return;
-  }
-  fadeLoop(scene, sp, phase);
+  const layout = phase === "finale" ? FINALE_LAYOUT[cls]?.[slot - 1] : undefined;
+  const forward = layout?.forward ?? 0;
+  const spawn = () => {
+    try {
+      const fx = playFx(scene, key, x + forward * Math.cos(angle), y + forward * Math.sin(angle), {
+        scale: CAST_SCALE,
+        flip: layout?.directional ? false : flip,
+      });
+      if (!fx) return false;
+      const lite = scene.fxLevel === 0;
+      if (layout) {
+        fx.setScale(layout.size * (lite ? 0.65 : 1) / Math.max(fx.width, fx.height));
+        if (layout.directional) fx.setRotation(angle);
+        const anim = fx.anims.currentAnim;
+        if (anim && anim.repeat !== -1) fx.anims.timeScale = Math.max(1, anim.duration / 1750);
+      }
+      fadeLoop(scene, fx, phase, lite);
+      return true;
+    } catch { return false; /* 연출 실패는 게임을 막지 않는다 */ }
+  };
+
+  if (spawn()) return;
+  const t0 = Date.now();
+  void ensureFxSheet(scene, key).then(ok => {
+    if (ok && Date.now() - t0 <= LATE_MS && scene.sys?.isActive()) spawn();
+  });
 }
 
-function fadeLoop(scene: Phaser.Scene, fx: Phaser.GameObjects.Sprite, phase: "cast" | "finale"): void {
+function fadeLoop(scene: Phaser.Scene, fx: Phaser.GameObjects.Sprite, phase: "cast" | "finale", lite: boolean): void {
   if (fx.anims.currentAnim?.repeat === -1) {
-    scene.time.delayedCall(LOOP_MS[phase], () => {
+    scene.time.delayedCall(phase === "finale" && lite ? 1200 : LOOP_MS[phase], () => {
       if (!fx.active) return;
       scene.tweens.add({ targets: fx, alpha: 0, duration: 300, onComplete: () => fx.destroy() });
     });

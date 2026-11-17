@@ -14186,7 +14186,7 @@ export class WorldScene extends Phaser.Scene {
     const flip = r ? r.flip : a.flip;
     const cls = r?.cls ?? a.cls;
     if (a.kind === "s5f" || a.kind === "s5bf") {
-      try { playUltFx(this, cls, a.kind === "s5bf" ? 2 : 1, "finale", x, y, flip); } catch { /* cosmetic only */ }
+      try { playUltFx(this, a.cls ?? cls, a.kind === "s5bf" ? 2 : 1, "finale", x, y, !a.flip); } catch { /* cosmetic only */ }
       return;
     }
     const fam = familyOf(cls ?? undefined);
@@ -14300,7 +14300,7 @@ export class WorldScene extends Phaser.Scene {
        *  ("내가 쓰는 스킬 ≠ 상대가 보는 스킬" 의 마지막 남은 조각 — 외부 평가 P1).
        *  시트는 직업별로만 받으므로, 원격 화면에 그 직업 시트가 없으면 playUltFx 가
        *  받기만 걸고 이번엔 생략한다(게임을 막지 않는다). 판정과 무관한 순수 연출. */
-      try { playUltFx(this, cls, kind === "s5b" ? 2 : 1, "cast", x, y, flip); } catch { /* 연출 실패 무시 */ }
+      try { playUltFx(this, cls, kind === "s5b" ? 2 : 1, "cast", x, y, !flip); } catch { /* 연출 실패 무시 */ }
       if (fam === "ranger") {
         /* 천강 — 하늘에서 화살비 + 부채꼴 연사 */
         for (let i = 0; i < 10; i++) {
