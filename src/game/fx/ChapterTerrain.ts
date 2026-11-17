@@ -1,15 +1,29 @@
 import type Phaser from "phaser";
 import terrain from "../../../public/assets/chapter-terrain/manifest.json" with { type: "json" };
-import { chapterPlace, type Place, type TerrainMaterial } from "../chapterStoryPlan";
+import storyTerrain from "../../../public/assets/chapter-terrain/story-terrain.json" with { type: "json" };
+import { storyPlaceOf, type Place, type TerrainMaterial } from "../chapterStoryPlan";
 import type { RoomLayout } from "../mapgen";
 import { nextStepToward } from "../navigation";
 import type { AuthoredMapRender } from "./AuthoredMapLayers";
 
 export const TERRAIN_KEY = "chapter_terrain";
 const materials = terrain.materials as Record<TerrainMaterial, { tiles: number[]; center: number; edge: boolean }>;
+const details = storyTerrain.groups;
+const ROSE_KEY = "story_rose_core";
+type Detail = keyof typeof details;
+
+const INLAYS: Partial<Record<Place["role"], Detail>> = {
+  observatory: "mosaic", court: "marble", throne: "marble", city: "marble",
+  garden: "flowers", sanctuary: "flowers", rail: "grates", factory: "grates",
+  deck: "grates", rift: "crystal", snowfield: "ice", domain: "crystal", ruin: "gravel",
+};
+const WALL_TILES: Partial<Record<TerrainMaterial, Detail>> = {
+  castle: "masonry", ruin: "brick", machine: "metal", snow: "ice",
+};
 
 export function preloadChapterTerrain(scene: Phaser.Scene): void {
-  scene.load.image(TERRAIN_KEY, "chapter-terrain/terrain.png");
+  scene.load.image(TERRAIN_KEY, "chapter-terrain/story-terrain.png");
+  scene.load.image(ROSE_KEY, "chapter-terrain/stargate-rose-core.png");
   for (const name of Object.keys(materials)) scene.load.image(`terrain_${name}`, `chapter-terrain/${name}.png`);
 }
 
@@ -20,6 +34,7 @@ export function chapterTerrainData(lay: RoomLayout, place: Place, framedRoom = f
   const detail = 4, cols = lay.cols * detail, rows = lay.rows * detail;
   const cellOf = (c: number, r: number) => Math.floor(r / detail) * lay.cols + Math.floor(c / detail);
   const open = (c: number, r: number) => c >= 0 && r >= 0 && c < cols && r < rows && lay.open[cellOf(c, r)];
+  const variation = (ids: readonly number[], c: number, r: number) => ids[((c * 37 + r * 61) ^ (c * r * 7)) % ids.length];
   const tile = (material: TerrainMaterial, c: number, r: number) => {
     const mat = materials[material];
     if (mat.edge && material !== "rock") {
@@ -27,7 +42,7 @@ export function chapterTerrainData(lay: RoomLayout, place: Place, framedRoom = f
       const y = !open(c, r - 1) ? 0 : !open(c, r + 1) ? 2 : 1;
       return mat.tiles[y * 3 + x];
     }
-    return mat.tiles[((c * 37 + r * 61) ^ (c * r * 7)) % mat.tiles.length];
+    return variation(mat.tiles, c, r);
   };
   // Reuse gameplay navigation to draw ONE continuous road, rather than a cross in every cell.
   const road = new Set<number>();
@@ -46,21 +61,46 @@ export function chapterTerrainData(lay: RoomLayout, place: Place, framedRoom = f
     for (let i = 0; i <= detail; i++) paint(x0 + Math.sign(x1 - x0) * i, y0 + Math.sign(y1 - y0) * i);
     cur = next;
   }
+  const accents = new Map<number, Detail>();
+  const isScarlet = lay.authored?.stageKey?.startsWith("lilacworld11") || place.boss === "scarlet_blood";
+  const accent = place.floor === "snow" ? "ice" : isScarlet ? "redStone" : INLAYS[place.role];
+  if (accent) for (const { cell } of lay.authored?.landmarks ?? []) {
+    const x = cell % lay.cols * detail + 2, y = Math.floor(cell / lay.cols) * detail + 2;
+    const ring = place.role === "observatory" || place.role === "domain" || !!place.boss;
+    const garden = accent === "flowers";
+    for (let dy = -5; dy <= 5; dy++) for (let dx = -5; dx <= 5; dx++) {
+      if (!open(x + dx, y + dy)) continue;
+      const radius = dx * dx + dy * dy;
+      const decorative = ring ? radius >= 14 && radius <= 27
+        : garden ? Math.abs(dy) === 3 && Math.abs(dx) < 4
+        : (place.role === "rail" || place.role === "deck") ? Math.abs(dy) === 2
+        : Math.abs(dx) <= 3 && Math.abs(dy) <= 3 && radius <= 17;
+      if (decorative) accents.set((y + dy) * cols + x + dx, accent);
+    }
+  }
+
+  const boundary = WALL_TILES[place.border];
   const ground: number[][] = [], border: number[][] = [];
   for (let r = 0; r < rows; r++) {
     const g: number[] = [], b: number[] = [];
     for (let c = 0; c < cols; c++) {
       const isOpen = open(c, r);
-      const mat = road.has(r * cols + c) ? place.path : place.floor;
-      /* vc278 — framedRoom: 열린 셀 밖은 아무것도 그리지 않는다(-1) → 카메라 배경(검정)이 보인다. */
-      if (!isOpen && framedRoom) { g.push(-1); b.push(-1); continue; }
-      g.push(isOpen ? tile(mat, c, r) : -1);
-      if (isOpen) b.push(-1);
-      else if (place.border === "water") b.push(materials.water.center);
-      else if (open(c, r - 1)) b.push(materials.rock.tiles[9 + c % 3]); // actual vertical rock face, not another floor texture
-      else if (place.role === "cliff" || place.role === "road" || place.role === "garden" || place.role === "sanctuary" || place.role === "village" || place.role === "camp") {
-        b.push(open(c, r + 1) || open(c - 1, r) || open(c + 1, r) ? materials.rock.tiles[4] : -1);
-      } else b.push(materials.rock.tiles[4]);
+      const index = r * cols + c;
+      const mat = road.has(index) ? place.path : place.floor;
+      const overlay = accents.get(index);
+      if (isOpen) {
+        const floor = overlay ? details[overlay] : mat === "grass" ? details.meadow : undefined;
+        g.push(floor ? variation(floor, c, r) : tile(mat, c, r));
+        b.push(-1);
+        continue;
+      }
+      g.push(-1);
+      const edge = open(c, r - 1) || open(c, r + 1) || open(c - 1, r) || open(c + 1, r);
+      if (framedRoom && !edge) b.push(-1);
+      else if (boundary) b.push(variation(details[boundary], c, r));
+      else if (place.border !== "rock") b.push(variation(materials[place.border].tiles, c, r));
+      else if (open(c, r - 1)) b.push(materials.rock.tiles[9 + c % 3]);
+      else b.push(edge ? materials.rock.center : -1);
     }
     ground.push(g); border.push(b);
   }
@@ -69,9 +109,8 @@ export function chapterTerrainData(lay: RoomLayout, place: Place, framedRoom = f
 
 /** Rendering only; existing WorldScene route bodies remain the sole source of collision. */
 export function renderChapterTerrain(scene: Phaser.Scene, lay: RoomLayout, onDecor?: (image: Phaser.GameObjects.Image) => void, framedRoom = false): AuthoredMapRender | null {
-  const match = /^(lilacworld\d+)x(\d+)$/.exec(lay.authored?.stageKey ?? "")
-    ?? /^(dlc[a-z]+)(\d+)$/.exec(lay.authored?.stageKey ?? "");
-  const place = match ? chapterPlace(match[1], Number(match[2])) : undefined;
+  const site = storyPlaceOf(lay.authored?.stageKey ?? "");
+  const place = site?.place;
   if (!place || !scene.textures.exists(TERRAIN_KEY)) return null;
   const data = chapterTerrainData(lay, place, framedRoom);
   const maps: Phaser.Tilemaps.Tilemap[] = [], layers: AuthoredMapRender["layers"] = [], images: Phaser.GameObjects.Image[] = [];
@@ -90,21 +129,42 @@ export function renderChapterTerrain(scene: Phaser.Scene, lay: RoomLayout, onDec
     inn: ["obj_dungeon_barrel", "obj_dungeon_bookshelf"], dungeon: ["obj_dungeon_torch", "obj_dungeon_barrel"],
     camp: ["obj_dungeon_chest", "obj_dungeon_barrel"], harbor: ["obj_dungeon_barrel", "obj_forest_sign"], deck: ["obj_dungeon_barrel"],
     observatory: ["obj_dungeon_bookshelf", "obj_dungeon_candle"], throne: ["obj_dungeon_throne", "obj_dungeon_torch"],
-    factory: ["obj_dungeon_anvil", "obj_town_bench"], city: ["obj_town_bench", "obj_town_planter"],
+    factory: ["obj_dungeon_anvil", "obj_town_bench"], city: ["obj_town_bench", "obj_town_planter", "obj_town_waterfall"],
     village: ["house_a", "house_b"], ruin: ["obj_dungeon_tree_dead__2", "obj_forest_rock__1"], tunnel: ["obj_dungeon_torch"],
+    court: ["obj_forest_rock_monument", "obj_dungeon_torch"], shore: ["obj_forest_rock__1", "obj_forest_sign"],
+    snowfield: ["obj_forest_tree_dried", "obj_forest_rock__1"], rail: ["obj_dungeon_barrel", "obj_dungeon_anvil"],
+    rift: ["obj_forest_rock_monument"], domain: ["obj_dungeon_candle", "obj_forest_rock_monument"],
   };
   const pool = props[place.role] ?? [];
-  // At most six complete, role-appropriate props, with solid feet inside closed cells.
-  for (let r = 1; r < lay.rows - 1 && images.length < 6; r++) for (let c = 1; c < lay.cols - 1 && images.length < 6; c++) {
+  const closedEdges: number[] = [];
+  for (let r = 1; r < lay.rows - 1; r++) for (let c = 1; c < lay.cols - 1; c++) {
     const cell = r * lay.cols + c;
-    if (lay.open[cell] || (c + r) % 3 || !pool.length) continue;
+    if (lay.open[cell]) continue;
     if (![cell - 1, cell + 1, cell - lay.cols, cell + lay.cols].some((n) => lay.open[n])) continue;
     if ([lay.entry, lay.exit].some((n) => Math.abs(c - n % lay.cols) + Math.abs(r - Math.floor(n / lay.cols)) <= 2)) continue;
-    const key = pool[(c + r) % pool.length];
-    if (!scene.textures.exists(key)) continue;
+    closedEdges.push(cell);
+  }
+  const addProp = (key: string, cell: number, scale = 1) => {
+    if (!scene.textures.exists(key)) return;
+    const c = cell % lay.cols, r = Math.floor(cell / lay.cols);
     const x = (c + .5) * lay.cellW, y = (r + .8) * lay.cellH;
-    const image = scene.add.image(x, y, key).setOrigin(.5, 1).setDepth(9 + y / (lay.rows * lay.cellH) - .001).setName(`chapter-prop:${place.role}:${key}`);
+    const image = scene.add.image(x, y, key).setOrigin(.5, 1).setScale(scale).setDepth(9 + y / (lay.rows * lay.cellH) - .001).setName(`chapter-prop:${place.role}:${key}`);
     images.push(image); onDecor?.(image);
+  };
+  const focus = lay.authored?.focus;
+  let roseCell: number | undefined;
+  if (site?.chapter === "dlcstargate" && [3, 4, 9].includes(site.sub) && focus !== undefined) {
+    const distance = (cell: number) => Math.abs(cell % lay.cols - focus % lay.cols) + Math.abs(Math.floor(cell / lay.cols) - Math.floor(focus / lay.cols));
+    roseCell = closedEdges.reduce<number | undefined>((best, cell) => best === undefined || distance(cell) < distance(best) ? cell : best, undefined);
+    if (roseCell !== undefined) addProp(ROSE_KEY, roseCell, 1.35);
+  }
+  // Sample across the entire field so decor does not collect only along the first wall.
+  if (pool.length) {
+    const count = Math.min(place.boss ? 6 : 10, closedEdges.length);
+    for (let i = 0; i < count; i++) {
+      const cell = closedEdges[Math.floor((i + .5) * closedEdges.length / count)];
+      if (cell !== roseCell) addProp(pool[i % pool.length], cell);
+    }
   }
   scene.events.once("shutdown", () => { for (const map of maps) map.destroy(); for (const img of images) img.destroy(); });
   return { maps, layers, images };

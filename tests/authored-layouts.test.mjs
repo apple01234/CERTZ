@@ -21,7 +21,7 @@ function reachable(lay) {
   return visited;
 }
 
-test('all 65 story rooms and 100 planet fields have one connected, protected route', () => {
+test('all 171 authored fields have one connected, protected route', () => {
   const cases = LILACWORLD_CHAPTERS.flatMap(spec => Array.from({ length: spec.stages }, (_, i) => ({
     key: `${spec.key}x${i + 1}`, width: spec.width + (i + 1) * 130, height: spec.height + (i + 1) * 30,
     boss: !!chapterEncounter(spec.key, i + 1),
@@ -30,6 +30,7 @@ test('all 65 story rooms and 100 planet fields have one connected, protected rou
   for (const planet of ['stargate','prisma','ocean','reverse','neocity','mech','swallow','opinicia','novel','sernium']) {
     for (let sub = 1; sub <= 10; sub++) cases.push({ key: `dlc${planet}${sub}`, width: 2200 + sub * 130, height: 1200 + sub * 30, boss: !!chapterEncounter(`dlc${planet}`, sub) });
   }
+  for (let sub = 1; sub <= 6; sub++) cases.push({ key: `snorika${sub}`, width: 2400, height: 1280, boss: sub === 5 });
   for (const { key, width, height, boss } of cases) {
     const lay = authoredRoomLayout(key, width, height);
     assert.ok(lay, key);
@@ -50,6 +51,7 @@ test('all 65 story rooms and 100 planet fields have one connected, protected rou
       }
     }
     for (const { cell } of lay.authored.landmarks) assert.ok(seen.has(cell), `${key}: unreachable landmark`);
+    if (lay.authored.focus !== undefined) assert.ok(seen.has(lay.authored.focus), `${key}: unreachable objective`);
     // Existing entryHome adds70px; its whole player footprint must remain on walkable cells.
     const entryX = (lay.entry % lay.cols + 0.5) * lay.cellW + 70;
     const entryY = (Math.floor(lay.entry / lay.cols) + 0.5) * lay.cellH;

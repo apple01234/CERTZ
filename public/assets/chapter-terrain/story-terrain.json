@@ -1,0 +1,247 @@
+{
+  "source": "https://opengameart.org/content/dungeon-crawl-32x32-tiles",
+  "archive": "https://opengameart.org/sites/default/files/Dungeon%20Crawl%20Stone%20Soup%20Full_0.zip",
+  "archiveSha256": "41b4dc79632be19c47bf4555fd61e949189bb4496771b72e2dec5715b2d7bab4",
+  "author": "Dungeon Crawl Stone Soup tile contributors",
+  "license": "CC0-1.0",
+  "licenseFile": "public/assets/campaign/drive/LICENSE.txt",
+  "base": "terrain.png",
+  "groups": {
+    "meadow": [
+      56,
+      57,
+      58
+    ],
+    "flowers": [
+      59,
+      60,
+      61
+    ],
+    "gravel": [
+      62,
+      63,
+      64
+    ],
+    "marble": [
+      65,
+      66,
+      67
+    ],
+    "mosaic": [
+      68,
+      69,
+      70
+    ],
+    "ice": [
+      71,
+      72,
+      73
+    ],
+    "crystal": [
+      74,
+      75,
+      76
+    ],
+    "redStone": [
+      77,
+      78,
+      79
+    ],
+    "grates": [
+      80,
+      81,
+      82
+    ],
+    "brick": [
+      83,
+      84,
+      85
+    ],
+    "masonry": [
+      86,
+      87
+    ],
+    "metal": [
+      88,
+      89,
+      90
+    ]
+  },
+  "tiles": [
+    {
+      "id": 56,
+      "source": "dungeon/floor/grass/grass_0_new.png",
+      "sha256": "b4226e1cc007756eaaf40e02cc1b31fda61420d9d45b98ce6a22723d295e4b1d"
+    },
+    {
+      "id": 57,
+      "source": "dungeon/floor/grass/grass_1_new.png",
+      "sha256": "772c4c4e3f706e0ad207622558937758f8b878ea62d3bddcd4b93ce49e51f31c"
+    },
+    {
+      "id": 58,
+      "source": "dungeon/floor/grass/grass_2_new.png",
+      "sha256": "5959b95142872dc7eb549e50ded79ebaabee6b5cccca13ac6ca43562ab3986c3"
+    },
+    {
+      "id": 59,
+      "source": "dungeon/floor/grass/grass_flowers_blue_1_new.png",
+      "sha256": "9b57f9f9e104dcb842623bfc544108af3532e614f3589ba67b3f4e56ca0a95d8"
+    },
+    {
+      "id": 60,
+      "source": "dungeon/floor/grass/grass_flowers_red_1_new.png",
+      "sha256": "3a5a8b65c7afbdcc9c4fb665416d67290793ca8be164131c3c5a0e808a6b6d79"
+    },
+    {
+      "id": 61,
+      "source": "dungeon/floor/grass/grass_flowers_yellow_1_new.png",
+      "sha256": "2dbd59e7c0ffc8fde5b0839224c121ba3614916817e8ba71ffe8e683f3c60e64"
+    },
+    {
+      "id": 62,
+      "source": "dungeon/floor/pebble_brown_0_new.png",
+      "sha256": "b7f797868f4888232a6e2df829f1afff8120d9fcffcbd5c92396c7beb5541032"
+    },
+    {
+      "id": 63,
+      "source": "dungeon/floor/pebble_brown_1_new.png",
+      "sha256": "a5cf5e248646a76f15f585cf4208f062f36a201a001b31c07634269728c2e07a"
+    },
+    {
+      "id": 64,
+      "source": "dungeon/floor/pebble_brown_2_new.png",
+      "sha256": "93607e1b8a0c820f77eafbfd383058d9295378c7b50d7aa1a9e0810410f7d5a1"
+    },
+    {
+      "id": 65,
+      "source": "dungeon/floor/marble_floor_1.png",
+      "sha256": "2e29bd6a662f62a36f47a5cf53e16a62fc33e3fd4ad0f51bacd5d56e01f981b0"
+    },
+    {
+      "id": 66,
+      "source": "dungeon/floor/marble_floor_2.png",
+      "sha256": "5622fdb475c7bbadaf534ad75bfbe56648af628f668c237ff85781d5edcd537f"
+    },
+    {
+      "id": 67,
+      "source": "dungeon/floor/marble_floor_3.png",
+      "sha256": "f762cf8b43540432703f385a6bee70ab5ab182a987106775f3fd2d4a1f03183d"
+    },
+    {
+      "id": 68,
+      "source": "dungeon/floor/mosaic_0.png",
+      "sha256": "6d834a404e016ca78c9d353d9ec1e5ffdba0d4a54299a4c3a31ff7a469967fbe"
+    },
+    {
+      "id": 69,
+      "source": "dungeon/floor/mosaic_1.png",
+      "sha256": "d406c4a427fd5f0ab8baff72d6e2f7c8f78567366cfa2872f23092a7f8505d12"
+    },
+    {
+      "id": 70,
+      "source": "dungeon/floor/mosaic_2.png",
+      "sha256": "1dc5ee884bc0753d7863910b697b61a3365d2e5c22da3d5b5035c3b21744d529"
+    },
+    {
+      "id": 71,
+      "source": "dungeon/floor/frozen_0.png",
+      "sha256": "3ad993a8117201873b00c75bd94702e371a8902419c672dfeef667a3c1e987a9"
+    },
+    {
+      "id": 72,
+      "source": "dungeon/floor/frozen_1.png",
+      "sha256": "74625410bf4e337d69c9b3fbd65ed197a0f43b95d519f461b9d66b8efab84018"
+    },
+    {
+      "id": 73,
+      "source": "dungeon/floor/frozen_2.png",
+      "sha256": "c9bed2d3226f668a179ce030d4c5c3ee47d849472bfcd30e93d1e2d3eee645eb"
+    },
+    {
+      "id": 74,
+      "source": "dungeon/floor/crystal_floor_0.png",
+      "sha256": "0e036b6e1e336ceefc5e3e934482749eddd2d5bb289bb401f384da583095b73c"
+    },
+    {
+      "id": 75,
+      "source": "dungeon/floor/crystal_floor_1.png",
+      "sha256": "09bea52654a6fa6537dd291cda093ded67f58041de0dff709fbd470250ea1bd1"
+    },
+    {
+      "id": 76,
+      "source": "dungeon/floor/crystal_floor_2.png",
+      "sha256": "b5fc6ab43cdb8d4593c3afe7311411875f3eea2b7783346a9d95e1d5db7e997c"
+    },
+    {
+      "id": 77,
+      "source": "dungeon/floor/demonic_red_1.png",
+      "sha256": "d4c66b38c4b6f5813dd62bf5c8cb1dcd769e1264681e84e621aedb532133f428"
+    },
+    {
+      "id": 78,
+      "source": "dungeon/floor/demonic_red_2.png",
+      "sha256": "4ffcd26ac38083e2a905304b1da1f0188f0c67b3debdd488cdb3f910a5f1f536"
+    },
+    {
+      "id": 79,
+      "source": "dungeon/floor/demonic_red_3.png",
+      "sha256": "933f127a4963d7308294e0a7cf8a52ffc52784f315075cc9e72f6ed10286d38c"
+    },
+    {
+      "id": 80,
+      "source": "dungeon/floor/cage_0.png",
+      "sha256": "09f9974ad9612868e409a5fe83e486accb6f639563ec23b4e4d2e2fb3d8154a3"
+    },
+    {
+      "id": 81,
+      "source": "dungeon/floor/cage_1.png",
+      "sha256": "289ffe751977e62e2c7ae522c0528bb5f07fed2fd124a91dd9cae896c42530e8"
+    },
+    {
+      "id": 82,
+      "source": "dungeon/floor/cage_2.png",
+      "sha256": "cdcf8471ae94d6b40739a28d7986db4f37e9341fe13a4fdd8ac0561151849948"
+    },
+    {
+      "id": 83,
+      "source": "dungeon/wall/brick_dark_0.png",
+      "sha256": "b8d9da3137f16bd4a307ec6d1f9c4d11e072ba7044971deb1ca7970ab531e2f5"
+    },
+    {
+      "id": 84,
+      "source": "dungeon/wall/brick_dark_1.png",
+      "sha256": "a97e693e70481f20d5e68199e2ad8f2545651956a210ac327cca837332bd97b7"
+    },
+    {
+      "id": 85,
+      "source": "dungeon/wall/brick_dark_2.png",
+      "sha256": "276570ec4a0e0009b0ccd86c144d88b698293582b5b1ed862011a806ccaef9f4"
+    },
+    {
+      "id": 86,
+      "source": "dungeon/wall/stone_2_gray_0.png",
+      "sha256": "bb1953092d45d75a7207acda0731cfa602b95bb428d0fb7371c579c5124978d5"
+    },
+    {
+      "id": 87,
+      "source": "dungeon/wall/stone_2_gray_1.png",
+      "sha256": "6d6dbb36f6954befe89e5c7c329a9c30343ae2a7a5ab238235b68a309de4299d"
+    },
+    {
+      "id": 88,
+      "source": "dungeon/wall/lab-metal_0.png",
+      "sha256": "000199e10ac20f7efdcb957f02acba1803e9e6caeb9d55bc875c4fed2ed15a6a"
+    },
+    {
+      "id": 89,
+      "source": "dungeon/wall/lab-metal_1.png",
+      "sha256": "7a07bfb8aa83739f0b53174680c5f01249bcee88122cd9df0ec6cc07d4d706eb"
+    },
+    {
+      "id": 90,
+      "source": "dungeon/wall/lab-metal_2.png",
+      "sha256": "2217a5c18fc5077c05b5bc1d5f3d8d27d6afabdb1ee84cf5c967e6b62d29328f"
+    }
+  ]
+}

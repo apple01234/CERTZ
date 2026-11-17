@@ -12,8 +12,10 @@ const BOSS_ATLAS = Object.fromEntries([...fs.readFileSync(new URL('../src/game/t
 import { telegraphMs, recoveryMs } from '../src/game/entities/bossPhases.ts';
 const read = p => JSON.parse(fs.readFileSync(new URL('../' + p, import.meta.url)));
 const terrain = read('public/assets/chapter-terrain/manifest.json');
+const additions = read('public/assets/chapter-terrain/story-terrain.json');
+const tileIds = new Set([...terrain.tiles, ...additions.tiles].map(tile => tile.id));
 
-test('all 165 native chapter maps preserve the exact collision mask and world dimensions', () => {
+test('all 171 native chapter maps preserve the exact collision mask and world dimensions', () => {
   let rooms = 0;
   for (const [key, chapter] of Object.entries(CHAPTER_STORY_PLAN)) for (const [n, place] of chapter.places.entries()) {
     const stage = STAGES[`${key}${key.startsWith('lilacworld') ? 'x' : ''}${n + 1}`];
@@ -23,13 +25,13 @@ test('all 165 native chapter maps preserve the exact collision mask and world di
     for (let y = 0; y < data.ground.length; y++) for (let x = 0; x < data.ground[y].length; x++) {
       const cell = Math.floor(y / data.detail) * layout.cols + Math.floor(x / data.detail);
       assert.equal(data.ground[y][x] >= 0, layout.open[cell], `${stage.key}: floor/collision mismatch`);
-      for (const index of [data.ground[y][x], data.border[y][x]]) assert.ok(index === -1 || terrain.tiles[index], `${stage.key}: missing native tile ${index}`);
+      for (const index of [data.ground[y][x], data.border[y][x]]) assert.ok(index === -1 || tileIds.has(index), `${stage.key}: missing native tile ${index}`);
     }
     assert.equal(stage.bossKey, place.boss);
     if (!stage.enemies.length) assert.equal(stage.repeat, undefined, `${stage.key}: impossible repeat quest`);
     rooms++;
   }
-  assert.equal(rooms, 165);
+  assert.equal(rooms, 171);
 });
 
 test('danger warnings retain readable safe corridors and a bounded recovery opportunity', () => {

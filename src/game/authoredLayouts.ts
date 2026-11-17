@@ -1,7 +1,6 @@
-import { LILACWORLD_CHAPTERS } from "./lilacworld";
 import type { RoomLayout } from "./mapgen";
 import { overrideToLayout } from "./mapOverrides";
-import { chapterPlace } from "./chapterStoryPlan";
+import { storyPlaceOf, type Place } from "./chapterStoryPlan";
 
 export type AuthoredTheme = "library" | "cliff" | "coast" | "grove" | "citadel" | "town" | "ruins" | "conduit" | "arena";
 export type AuthoredPresentation = {
@@ -10,6 +9,7 @@ export type AuthoredPresentation = {
   /** Walkable route surface; never a second collision definition. */
   paths: boolean[];
   landmarks: { kind: string; cell: number }[];
+  focus?: number;
   ground: string;
   path: string;
   structure: string;
@@ -32,10 +32,12 @@ const THEMES: Record<AuthoredTheme, Pick<AuthoredPresentation, "ground" | "path"
   arena: { ground: "ground_slate", path: "ground_ash", structure: "ground_cavern", structureTint: 0x81788f },
 };
 
-const CHAPTER_THEMES: AuthoredTheme[] = ["library", "town", "coast", "coast", "town", "grove", "ruins", "ruins", "grove", "citadel", "citadel", "ruins", "citadel", "ruins", "town"];
-const PLANET_THEMES: Record<string, AuthoredTheme> = {
-  stargate: "conduit", prisma: "ruins", ocean: "coast", reverse: "conduit", neocity: "town",
-  mech: "conduit", swallow: "coast", opinicia: "ruins", novel: "grove", sernium: "citadel",
+const ROLE_THEME: Record<Place["role"], AuthoredTheme> = {
+  cliff: "cliff", snowfield: "cliff", village: "town", camp: "town", city: "town",
+  inn: "library", observatory: "conduit", rail: "conduit", factory: "conduit",
+  harbor: "coast", deck: "coast", shore: "coast", road: "grove", garden: "grove",
+  sanctuary: "grove", court: "citadel", dungeon: "citadel", tunnel: "citadel",
+  throne: "citadel", ruin: "ruins", rift: "ruins", domain: "citadel",
 };
 
 /** Clearance spans adjacent open cells; a visual grid seam is not an obstacle. */
@@ -72,143 +74,205 @@ export function authoredRoomLayout(seed: string, mapW: number, mapH: number): Ro
     };
   }
 
-  const story = /^lilacworld(\d+)x(\d+)$/.exec(seed);
-  const planet = /^dlc([a-z]+)([1-9]|10)$/.exec(seed);
-  let theme: AuthoredTheme;
-  let variant: number;
-  if (story) {
-    const chapter = Number(story[1]), sub = Number(story[2]);
-    const spec = LILACWORLD_CHAPTERS.find((item) => item.key === `lilacworld${chapter}`);
-    if (!spec || sub < 1 || sub > spec.stages) return null;
-    // 1.txt:5-18: Lilac rescues the young Haru at a cliff, before the later castle scenes.
-    theme = chapter === 1 && sub === 1 ? "cliff" : spec.boss && sub === spec.stages ? "arena" : CHAPTER_THEMES[chapter - 1];
-    const p = chapterPlace(`lilacworld${chapter}`, sub);
-    if (p) {
-      const roleTheme: Record<string, AuthoredTheme> = { cliff: "cliff", village: "town", inn: "library", road: "grove", camp: "town", court: "arena", observatory: "conduit", harbor: "coast", deck: "coast", shore: "coast", sanctuary: "grove", garden: "grove", tunnel: "citadel", throne: "citadel", domain: "arena", rift: "ruins", dungeon: "citadel", ruin: "ruins" };
-      theme = p.boss ? "arena" : roleTheme[p.role] === "arena" ? "citadel" : roleTheme[p.role] ?? theme;
-    }
-    variant = sub;
-  } else if (planet && PLANET_THEMES[planet[1]]) {
-    variant = Number(planet[2]);
-    theme = chapterPlace(`dlc${planet[1]}`, variant)?.boss ? "arena" : PLANET_THEMES[planet[1]];
-  } else {
-    return null;
-  }
-
+  const site = storyPlaceOf(seed);
+  if (!site) return null;
+  const { place, sub } = site;
+  const theme = place.boss ? "arena" : ROLE_THEME[place.role];
   const cols = Math.max(10, Math.floor(mapW / 144));
   const rows = Math.max(8, Math.floor(mapH / 128));
   const open = new Array<boolean>(cols * rows).fill(false);
   const paths = new Array<boolean>(open.length).fill(false);
   const landmarks: AuthoredPresentation["landmarks"] = [];
-  const mid = Math.floor((rows - 1) / 2);
-  const left = Math.max(3, Math.floor(cols * 0.28));
-  const right = Math.min(cols - 4, Math.floor(cols * 0.7));
-  const upper = 1, lower = rows - 3;
+  const mid = Math.floor((rows - 1) / 2), center = Math.floor(cols / 2);
+  const left = Math.max(3, Math.floor(cols * .26)), right = cols - 4;
+  const top = 1, bottom = rows - 2;
+  const bend = sub % 2 ? Math.max(top + 1, mid - 2) : Math.min(bottom - 1, mid + 2);
   const rect = (x0: number, y0: number, x1: number, y1: number, path = false) => {
-    for (let y = Math.max(1, y0); y <= Math.min(rows - 2, y1); y++) {
+    for (let y = Math.max(top, y0); y <= Math.min(bottom, y1); y++) {
       for (let x = Math.max(1, x0); x <= Math.min(cols - 2, x1); x++) {
-        const index = y * cols + x;
-        open[index] = true;
-        if (path) paths[index] = true;
+        const cell = y * cols + x;
+        open[cell] = true;
+        if (path) paths[cell] = true;
       }
     }
   };
-  /* 유저 지시 — 주요 이동 통로를 4칸 폭으로 넓힌다.
-   *  종전 주 통로는 2칸(+1 확장)이라 돌진·몬스터 몸체가 벽에 걸리고 이동이 답답했다.
-   *  이제 경로 중심선에서 ±1칸을 더 열어 4칸을 확보한다. 퍼즐용으로 의도적으로 좁힌
-   *  통로(문/게이트)는 route 를 쓰지 않으므로 그대로 좁게 유지된다. */
-  const route = (points: number[][]) => {
+  type Cell = [number, number];
+  const start: Cell = [1, mid], end: Cell = [cols - 2, mid];
+  const route = (points: Cell[], width = 2) => {
     for (let i = 1; i < points.length; i++) {
       const [ax, ay] = points[i - 1], [bx, by] = points[i];
-      rect(
-        Math.min(ax, bx) - 1, Math.min(ay, by) - 1,
-        Math.max(ax, bx) + 2, Math.max(ay, by) + 2,
-        true,
-      );
+      rect(Math.min(ax, bx) - width + 1, Math.min(ay, by) - width + 1,
+        Math.max(ax, bx) + width, Math.max(ay, by) + width, true);
     }
   };
-  const mark = (kind: string, x: number, y: number) => landmarks.push({ kind, cell: y * cols + x });
+  const court = (x: number, y: number, rx: number, ry: number) => {
+    for (let dy = -ry; dy <= ry; dy++) {
+      const corner = Math.abs(dy) === ry ? 1 : 0;
+      rect(x - rx + corner, y + dy, x + rx - corner, y + dy);
+    }
+  };
+  const mark = (kind: string, x: number, y: number) => {
+    const cell = y * cols + x;
+    if (open[cell]) landmarks.push({ kind, cell });
+  };
+  const turningRoad = () => route([start, [left, mid], [left, bend], [right, bend], [right, mid], end]);
 
-  if (theme === "cliff") {
-    // A broad ledge above an unwalkable rock face; the existing entry/exit route stays connected.
-    route([[1, mid], [left, mid], [right, mid], [cols - 3, mid]]);
-    rect(left - 1, Math.max(1, mid - 2), right + 1, mid + 1);
-    mark("cliff", right, mid + 1);
-  } else if (theme === "library") {
-    // Reading rooms above/below a spine, with solid stack islands between aisles.
-    route([[1, mid], [cols - 3, mid]]);
-    for (let x = 2; x <= cols - 4; x += 4) {
-      rect(x, 1, x + 2, mid - 1);
-      rect(x, mid + 2, x + 2, rows - 2);
-      route([[x + (variant % 2), 1], [x + (variant % 2), rows - 3]]);
-      mark("archive", x + 1, 1);
-    }
-  } else if (theme === "coast") {
-    const bend = variant % 2 ? upper : Math.max(1, mid - 1);
-    route([[1, mid], [left, mid], [left, bend], [cols - 3, bend], [cols - 3, mid]]);
-    for (const x of [left + 2, right]) {
-      route([[x, bend], [x, lower]]);
-      rect(x - 1, lower, x + 1, rows - 2, true);
-      mark("pier", x, rows - 2);
-    }
-  } else if (theme === "grove") {
-    // A connected ring around an unwalkable grove, with broad clearing rooms.
-    route([[1, mid], [left, mid], [left, upper], [right, upper], [right, lower], [left, lower], [left, mid]]);
-    route([[right, mid], [cols - 3, mid]]);
-    rect(1, mid - 1, left, mid + 1);
-    rect(right, mid - 1, cols - 2, mid + 1);
-    if (variant % 2 === 0) route([[left, mid], [right, mid]]);
-    mark("grove", left, upper);
-  } else if (theme === "citadel") {
-    const cx = Math.floor(cols / 2);
-    rect(cx - 1, mid - 1, cx + 1, mid + 1, true);
-    route([[1, mid], [cols - 3, mid]]);
-    route([[cx, upper], [cx, lower]]);
-    // Four gated side rooms, each reached through a two-cell passage.
-    for (const [kind, x, y] of [["gate-water", 3, upper], ["gate-wind", cols - 4, upper], ["gate-lightning", 3, lower], ["gate-fire", cols - 4, lower]] as const) {
-      rect(x - 1, y, x + 1, y + 1);
-      route([[x, y], [x, mid]]);
-      mark(kind, x, y);
-    }
-  } else if (theme === "arena") {
-    // Combat ground has no internal collision islands or narrow random tunnels.
-    rect(2, 1, cols - 3, rows - 2);
-    route([[1, mid], [cols - 3, mid]]);
-    rect(left, mid - 1, right + 1, mid + 1, true);
-    mark("arena", Math.floor(cols / 2), mid);
-  } else if (theme === "town") {
-    // Staggered courtyards joined by a dogleg street, not a random cavern.
-    const bend = variant % 2 ? upper : lower;
-    rect(1, mid - 1, left, mid + 1);
-    rect(right, mid - 1, cols - 2, mid + 1);
-    rect(left, bend, right + 1, bend + 1);
-    route([[1, mid], [left, mid], [left, bend], [right, bend], [right, mid], [cols - 3, mid]]);
-    mark("court", left, bend);
-  } else if (theme === "conduit") {
-    // Three linked platforms and two bends form an industrial transit route.
-    const bend = variant % 2 ? upper : lower;
-    route([[1, mid], [left, mid], [left, bend], [right, bend], [right, mid], [cols - 3, mid]]);
-    rect(1, mid - 1, 3, mid + 1);
-    rect(left, bend, right, bend + 1);
-    rect(cols - 4, mid - 1, cols - 2, mid + 1);
-    mark("relay", Math.floor((left + right) / 2), bend);
-  } else {
-    // Ruin chambers vary which side the cross passage runs along.
-    const bend = variant % 2 ? upper : lower;
-    rect(1, mid - 1, left, mid + 1);
-    rect(right, mid - 1, cols - 2, mid + 1);
-    route([[1, mid], [left, mid], [left, bend], [right, bend], [right, mid], [cols - 3, mid]]);
-    rect(left + 1, bend, right - 1, bend + 1);
-    mark("ruin", right, mid);
+  if (place.boss) {
+    // Keep boss bodies and telegraphed attacks inside one uninterrupted combat floor.
+    rect(2, top, cols - 3, bottom);
+    route([start, end]);
+    mark("arena", center, mid);
+  } else switch (place.role) {
+    case "cliff":
+      route([start, end]);
+      court(left + 1, mid - 1, 3, 2);
+      rect(center, mid + 2, right, mid + 3);
+      mark("cliff", right, mid + 2);
+      break;
+    case "village":
+      route([start, end]);
+      court(left, mid - 1, 3, 2);
+      court(right, mid + (sub % 2 ? -1 : 1), 2, 2);
+      rect(center - 1, mid + 2, center + 2, bottom);
+      mark("village", right - 1, mid);
+      break;
+    case "inn":
+      route([start, end]);
+      rect(left - 1, top, center - 1, mid);
+      rect(center + 1, mid + 1, right + 1, bottom);
+      mark("inn", left + 1, mid - 1);
+      break;
+    case "harbor":
+      route([start, end]);
+      rect(left - 1, top, right + 1, mid);
+      for (const x of [left + 1, right]) {
+        route([[x, mid], [x, bottom - 1]], 1);
+        rect(x - 1, bottom - 1, x + 1, bottom);
+        mark("pier", x, bottom);
+      }
+      break;
+    case "deck":
+      route([start, end]);
+      for (let x = 2; x < cols - 2; x++) {
+        const beam = Math.min(x - 1, cols - 2 - x, Math.max(2, mid - 1));
+        rect(x, mid - beam, x, mid + beam);
+      }
+      mark("deck", center, mid);
+      break;
+    case "shore":
+      turningRoad();
+      court(left + 1, mid, 4, 2);
+      rect(right - 1, bend - 1, right + 2, mid + 1);
+      route([[right, mid], [right, bottom - 1]], 1);
+      mark("pier", right, bottom - 1);
+      break;
+    case "observatory":
+      route([start, end]);
+      court(center, mid, Math.max(3, right - center), Math.max(2, mid - 1));
+      rect(left, top, left + 1, mid);
+      rect(right, mid, right + 1, bottom);
+      mark("observatory", center, mid);
+      break;
+    case "road":
+    case "snowfield":
+      turningRoad();
+      court(left, mid, 2, 2);
+      court(center, bend, 2, 2);
+      court(right, mid, 2, 2);
+      mark(place.role, center, bend);
+      break;
+    case "garden":
+    case "sanctuary":
+      turningRoad();
+      court(left, mid, 2, 2);
+      court(right, mid, 3, 2);
+      if (place.role === "garden") {
+        const branch = bend < mid ? bottom - 1 : top + 1;
+        route([[left, mid], [left, branch], [right, branch], [right, mid]], 1);
+      }
+      mark(place.role, right - 1, mid);
+      break;
+    case "camp":
+      route([start, end]);
+      for (const x of [left, right]) {
+        rect(x - 1, top, x + 1, mid);
+        rect(x - 1, mid + 1, x + 1, bottom);
+        mark("camp", x, mid + 1);
+      }
+      break;
+    case "tunnel":
+    case "dungeon":
+      route([start, end]);
+      if (seed === "lilacworld10x3") {
+        for (const [kind, x, y] of [["gate-water", 3, top], ["gate-wind", right, top], ["gate-lightning", 3, bottom - 1], ["gate-fire", right, bottom - 1]] as const) {
+          route([[x, mid], [x, y]]);
+          mark(kind, x, y);
+        }
+      } else {
+        rect(left - 1, top, left + 1, mid);
+        rect(right - 2, mid, right + 1, bottom);
+        if (sub % 2 === 0) rect(center - 1, top, center, mid);
+        mark(place.role, right - 1, mid + 1);
+      }
+      break;
+    case "throne":
+      route([start, end]);
+      court(right - 1, mid, 3, Math.max(2, mid - 1));
+      rect(left - 1, top + 1, left + 1, bottom - 1);
+      mark("throne", right, mid);
+      break;
+    case "court":
+    case "domain":
+      route([start, end]);
+      court(center, mid, Math.max(3, right - center), Math.max(2, mid - 1));
+      if (place.role === "court") rect(left, bend - 1, left + 2, mid + 1);
+      mark(place.role, center, mid);
+      break;
+    case "rift":
+      route([start, [left, mid], [center, mid], [center, bend], [right, bend], [right, mid], end], 1);
+      court(left, mid, 2, 2);
+      court(center, bend, 2, 2);
+      court(right, mid, 2, 2);
+      mark("rift", center, bend);
+      break;
+    case "rail":
+      route([start, end]);
+      rect(left - 1, mid - 2, center - 1, mid);
+      rect(center + 1, mid, right + 1, mid + 3);
+      mark("rail", center, mid);
+      break;
+    case "factory":
+      turningRoad();
+      rect(left - 1, top, left + 2, mid + 1);
+      rect(right - 2, mid, right + 1, bottom);
+      mark("factory", right - 1, mid);
+      break;
+    case "city":
+      turningRoad();
+      court(left + 1, mid, 3, 2);
+      court(right, mid, 2, 2);
+      if (sub % 2 === 0) route([[left, mid], [right, mid]], 1);
+      mark("city", left + 1, mid);
+      break;
+    case "ruin":
+      turningRoad();
+      court(left, mid, 2, 2);
+      rect(center - 1, bend - 1, center + 1, bend + 1);
+      court(right, mid + 1, 2, 2);
+      mark("ruin", right - 1, mid);
+      break;
   }
 
   const entry = mid * cols + 1;
   const exit = mid * cols + cols - 2;
-  // Keep both portals on the authored main route, even in small map variants.
-  rect(1, mid, 2, mid + 1, true);
-  rect(cols - 3, mid, cols - 2, mid + 1, true);
+  rect(1, mid - 1, 2, mid + 1, true);
+  rect(cols - 3, mid - 1, cols - 2, mid + 1, true);
   return {
     cols, rows, cellW: mapW / cols, cellH: mapH / rows, open, entry, exit,
-    authored: { stageKey: seed, theme, paths, landmarks, ...THEMES[theme] },
+    authored: {
+      stageKey: seed, theme, paths, landmarks,
+      focus: landmarks.find(marker => !marker.kind.startsWith("gate-"))?.cell,
+      ...THEMES[theme],
+    },
   };
 }

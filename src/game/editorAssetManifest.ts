@@ -6,7 +6,7 @@
  * 손으로 적은 목록은 반드시 디스크와 어긋난다(실제로 그런 주석이 있었다).
  * 이 파일은 디스크를 실제로 훑은 결과이며, 에셋을 추가/삭제하면 재생성 후 커밋한다.
  *
- * 총 1596개 · 카테고리 30종 · 생성 2026-11-16
+ * 총 1598개 · 카테고리 30종 · 생성 2026-11-17
  */
 
 export type EditorAsset = {
@@ -1413,6 +1413,8 @@ export const EDITOR_ASSETS: EditorAsset[] = [
   { url:"/assets/chapter-terrain/ruin.png", name:"ruin", category:"chapter-terrain", group:"" },
   { url:"/assets/chapter-terrain/sand.png", name:"sand", category:"chapter-terrain", group:"" },
   { url:"/assets/chapter-terrain/snow.png", name:"snow", category:"chapter-terrain", group:"" },
+  { url:"/assets/chapter-terrain/stargate-rose-core.png", name:"stargate-rose-core", category:"chapter-terrain", group:"" },
+  { url:"/assets/chapter-terrain/story-terrain.png", name:"story-terrain", category:"chapter-terrain", group:"" },
   { url:"/assets/chapter-terrain/terrain.png", name:"terrain", category:"chapter-terrain", group:"" },
   { url:"/assets/chapter-terrain/volcano.png", name:"volcano", category:"chapter-terrain", group:"" },
   { url:"/assets/chapter-terrain/water.png", name:"water", category:"chapter-terrain", group:"" },

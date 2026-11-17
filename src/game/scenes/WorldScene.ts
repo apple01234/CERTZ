@@ -2035,10 +2035,11 @@ export class WorldScene extends Phaser.Scene {
 
     /* ---------- 플레이어 (v2.2 — 실내는 문 앞 스폰, 복귀 entry 좌표 우선) ---------- */
     const savedPlayer = save;
+    const entry = this.entryPos && this.inOpenArea(this.entryPos.x, this.entryPos.y) ? this.entryPos : null;
     this.player = new Player(
       this,
-      this.entryPos?.x ?? (this.isInterior ? this.stageW / 2 : this.entryHome.x),
-      this.entryPos?.y ?? (this.isInterior ? this.stageH - 70 : this.entryHome.y)
+      entry?.x ?? (this.isInterior ? this.stageW / 2 : this.entryHome.x),
+      entry?.y ?? (this.isInterior ? this.stageH - 70 : this.entryHome.y)
     );
     /* vc206 (#13 RE 반영) — 캐릭터 발밑 타원 그림자 (Bloodkeeper `Shadow` 레이어 대응).
      *  실측: Bloodkeeper(Construct 3) 21레이어 스택에서 `Shadow` 가 `Char` 바로 뒤,
@@ -16947,8 +16948,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** 수확(collect) 퀘스트용 파편 스폰 — 맵 우측 원영역 무작위 */
   private spawnFragmentForQuest() {
-    /* v3.0 (#7) — 개방 셀 안, 플레이어와 충분히 먼 지점에 파편 배치 */
-    const p = this.openPointAny({ minDist: Math.max(420, this.stageW * 0.28) });
+    const p = this.storyLandmarkPosition() ?? this.openPointAny({ minDist: Math.max(420, this.stageW * 0.28) });
     this.spawnFragment(p.x, p.y);
   }
 
@@ -18869,11 +18869,17 @@ export class WorldScene extends Phaser.Scene {
 
   /* ═════════ v1.0.11 — 튜토리얼 지원 (Tutorial.ts 호출 API) ═════════ */
 
+  private storyLandmarkPosition() {
+    const focus = this.layout?.authored?.focus;
+    return this.layout && focus !== undefined ? cellCenterOf(this.layout, focus) : undefined;
+  }
+
   private addStoryMarker(label: string, dlg: string, speaker?: string) {
     if (this.interactables.some(item => item.dlg === dlg)) return;
+    const landmark = dlg.startsWith("storyTalk|") ? this.storyLandmarkPosition() : undefined;
     const p = this.stageDef.isVillage
       ? this.cutsceneActorPosition({ x: this.stageW / 2 - 300, y: this.stageH / 2 + 165 })
-      : this.tutorialPoint(120, -75);
+      : landmark ?? this.tutorialPoint(120, -75);
     const who = cutsceneCharacter(speaker)?.id ?? "recorder";
     createCastSprite(this, who, p.x, p.y)?.setDepth(this.yDepthFor(p.y));
     this.add.text(p.x, p.y - 42, label, { fontFamily: "Galmuri11, sans-serif", fontSize: "12px", color: "#ffedbf", stroke: "#101522", strokeThickness: 3 })
