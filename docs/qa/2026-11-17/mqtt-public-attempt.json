@@ -1,0 +1,5 @@
+{
+  "scope": "Actual MqttBus implementation over MQTT 3.1.1/WebSocket; old protocol clients use mqtt.js, not an Android APK.",
+  "events": [],
+  "failure": "Error: Timed out: both current clients connected to both existing public brokers\n    at until (file:///workspace/CERTZ/scripts/playtest-mqtt-wire.mjs:19:106)\n    at async file:///workspace/CERTZ/scripts/playtest-mqtt-wire.mjs:22:2"
+}

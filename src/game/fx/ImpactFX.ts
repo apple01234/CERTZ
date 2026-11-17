@@ -5,20 +5,20 @@ import { shakeFactor } from "./shakeScale"; // vc222 — 흔들림 강도(접근
  * 타격감 통합 모듈 (Hit Stop + Camera Shake)
  *
  * Hit Stop  : 명중 순간 게임 월드(물리)를 아주 짧게 정지시켜 "단단히 맞고 멈춘" 느낌을 준다.
- *             (세르츠 프로젝트 기본 65ms — 프레임 감소 없이 체감 타격감을 만드는 핵심 장치)
+ *             (기본 공격 35ms — 프레임 감소 없이 체감 타격감을 만드는 핵심 장치)
  * Camera Shake : 흔들림 강도(intensity)는 게임 크기(960x540) 대비 비율.
  *             0.002 ≈ 약 2px — "느껴지지만 눈에 거슬리지 않는" 절제선.
  *             기본공격은 절제하고, 크리티컬/스킬처럼 강한 순간만 강조해 대비를 만든다.
  */
 export const IMPACT_PROFILES = {
   /** 기본 공격 — 히트스톱으로 타격감 유지, 셰이크는 최소로 절제 (기존 0.006 → 과다 피드백 반영)
-   *  v2.2: 65→55ms — 이동 중 공격 시 세계 정지 체감을 줄여 스터터 완화 */
-  basic: { hitStopMs: 55, shakeMs: 45, shakeInt: 0.0018 },
+   *  35ms: movement stays responsive while the stronger critical hit remains distinct. */
+  basic: { hitStopMs: 35, shakeMs: 45, shakeInt: 0.0018 },
   /** 크리티컬 — 기본보다 확실히 강조 (히트스톱 연장 + 더 큰 흔들림)
    *  v1.0.7 — 셰이크 0.0035/110ms → 0.0027/90ms (유저 지시: 이펙트 가림 축소 — 타격감은 히트스톱이 담당) */
-  crit: { hitStopMs: 90, shakeMs: 90, shakeInt: 0.0027 },
+  crit: { hitStopMs: 65, shakeMs: 90, shakeInt: 0.0027 },
   /** 스킬(회전베기/돌진베기) — 중간 강도 */
-  skill: { hitStopMs: 70, shakeMs: 110, shakeInt: 0.003 },
+  skill: { hitStopMs: 50, shakeMs: 110, shakeInt: 0.003 },
 } as const;
 
 export type ImpactKind = keyof typeof IMPACT_PROFILES;
@@ -28,6 +28,8 @@ export class ImpactFX {
   /** vc221 — 히트스톱 세대/종료 시각. 최신 호출만 resume 하도록 판별한다. */
   private hitStopSeq = 0;
   private hitStopUntil = 0;
+  private burstStarted = 0;
+  private resumeWindowUntil = 0;
 
   /** vc221 — 현재 히트스톱 종료 시각(time.now 기준). 씬의 물리 자가치유 블록이
    *  "정지가 히트스톱 때문인지" 판정하는 데 쓴다. 이 값을 노출하지 않으면
@@ -40,7 +42,7 @@ export class ImpactFX {
 
   /**
    * Hit Stop — 월드 물리를 ms 동안 정지.
-   * 연타로 여러 번 걸려도 한 번만 정지(frozen 가드), 정지 중 새 요청은 무시된다.
+   * 겹치는 타격은 최장 120ms까지 연장하고, 이후 최소 40ms 동안 이동을 허용한다.
    * v1.3.1 (#8 게임 멈춤 수정) — 재개 시 대사/전환/부활이 물리를 정지 중이면 건너뛴다.
    *  기존엔 무조건 resume() → 대사 중 히트스톱이 물리를 깨워 정지 규약을 깨고,
    *  씬 전환 경합 시 정지/재개 순서가 어긋나면 "조작 죽은 멈춤"으로 이어졌다.
@@ -58,7 +60,10 @@ export class ImpactFX {
     if (ms <= 0) return;
     const world = this.scene.physics.world;
     const now = this.scene.time.now;
-    const target = Math.max(this.hitStopUntil, now + ms);
+    if (now < this.resumeWindowUntil) return;
+    if (!this.frozen) this.burstStarted = now;
+    // Fast multi-hit skills must leave a movement window instead of freezing the whole combo.
+    const target = Math.min(this.burstStarted + 120, Math.max(this.hitStopUntil, now + ms));
     this.hitStopUntil = target;
     const myId = ++this.hitStopSeq;
     if (!this.frozen) {
@@ -68,6 +73,7 @@ export class ImpactFX {
     this.scene.time.delayedCall(Math.max(0, target - now), () => {
       if (myId !== this.hitStopSeq) return; // 최신 호출이 소유권을 갖는다
       this.frozen = false;
+      if (target >= this.burstStarted + 120) this.resumeWindowUntil = target + 40;
       const s = this.scene as unknown as { dialoguing?: boolean; transitioning?: boolean };
       if (s.dialoguing || s.transitioning) return; // 정지한 주인(대사/전환)이 회수 — 무단 재개 금지
       if (this.scene.scene.isActive() && this.scene.physics.world === world) world.resume();

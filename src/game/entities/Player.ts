@@ -946,7 +946,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /** v4.1.0 — 내 공격/스킬을 같은 구역 플레이어에게 브로드캐스트 (코스메틱 전용) */
-  protected netEmitAction(kind: "atk" | "s1" | "s2" | "s3" | "s4" | "s5" | "s5b") {
+  protected netEmitAction(kind: "atk" | "s1" | "s2" | "s3" | "s4" | "s5" | "s5b" | "s5f" | "s5bf") {
     try {
       /* v1.0.14 — flip을 물리 방향(오른쪽=true)으로 정규화해 전송. 원격의
        *  fireRemoteProj/spawnBow는 걷기 컨벤션(오른쪽=true)으로 해석하므로
@@ -9629,13 +9629,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             e.takeDamage(amount, away, last ? 380 : 0, last);
           }
         });
+        if (last) this.netEmitAction(slot === 1 ? "s5f" : "s5bf");
         /* 큰 연출은 case 가 담당한다. 마지막 한 번만 종결답게 키운다. */
         try {
           const finale = last && n > 1;
           this.scene.spawnBurstAt(this.x, this.y, finale ? 40 : 18, hex);
           this.scene.impactFX.shake(finale ? 220 : 60, finale ? 0.012 : 0.004);
           if (finale && paid) this.scene.spawnShockwave(this.x, this.y, hex, 2.2, 480, 0.55);
-          if (last) playUltFx(this.scene, resolveSkill5Of(this.cls), slot, "finale", this.x, this.y); // 2026-11-14 — pixelfx 종결(남은 예산 전액)
+          if (last) {
+            playUltFx(this.scene, resolveSkill5Of(this.cls), slot, "finale", this.x, this.y);
+          }
         } catch { /* 연출 실패가 판정을 막지 않는다 */ }
       });
     }

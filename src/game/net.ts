@@ -303,7 +303,7 @@ export function netSendChat(text: string) {
 
 export type NetAction = {
   id?: string; // 서버가 채움 (보낸 사람 sock id)
-  kind: "atk" | "s1" | "s2" | "s3" | "s4" | "s5" | "s5b"; // vc146 — s5b = 제2궁극기
+  kind: "atk" | "s1" | "s2" | "s3" | "s4" | "s5" | "s5b" | "s5f" | "s5bf"; // finale events are cosmetic; old clients safely ignore them
   x: number;
   y: number;
   flip: boolean;

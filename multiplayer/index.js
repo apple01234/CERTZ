@@ -241,7 +241,7 @@ function attachMultiplayer(httpServer) {
      *  같은 구역(AOI) 플레이어에게만 전달, 보낸 사람 제외. 페이로드 화이트리스트로 위생 처리.
      *  2026-11-16 — `s5b`(제2궁극기) 누락 수정. vc146 에서 클라·MQTT 경로에만 넣고 이 화이트리스트를
      *  빠뜨려, 소켓 서버 경유 시 제2궁극기 연출이 원격에 **전혀** 보이지 않았다. */
-    const ACT_KINDS = new Set(["atk", "s1", "s2", "s3", "s4", "s5", "s5b"]);
+    const ACT_KINDS = new Set(["atk", "s1", "s2", "s3", "s4", "s5", "s5b", "s5f", "s5bf"]);
     sock.on("act", (raw = {}) => {
       const p = players.get(sock.id);
       if (!p || !ACT_KINDS.has(raw.kind)) return;

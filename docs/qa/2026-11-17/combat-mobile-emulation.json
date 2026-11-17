@@ -1,0 +1,25 @@
+{
+  "scope": "Desktop Chromium with mobile viewport and software WebGL. 40ms latency, 2,500,000 bytes/s, cache disabled. Other local QA processes were running: not comparable to earlier timings and not a physical-device benchmark. No initial-loading code changed.",
+  "wallMs": 17744,
+  "progress": {
+    "phase": "world-ready",
+    "elapsedMs": 16639,
+    "total": 1204,
+    "complete": 1204,
+    "active": 0,
+    "failed": [],
+    "bundleBytes": 0
+  },
+  "memory": {
+    "scope": "Chromium mobile viewport emulation; JS heap/backing storage only, not GPU or a physical phone",
+    "peakUsedBytes": 40261180,
+    "peakBackingBytes": 62255472,
+    "afterGc": {
+      "usedSize": 37125672,
+      "totalSize": 38641664,
+      "embedderHeapUsedSize": 11296464,
+      "backingStorageSize": 29286687
+    }
+  },
+  "pageErrors": []
+}

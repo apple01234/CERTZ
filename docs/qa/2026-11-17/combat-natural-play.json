@@ -1,0 +1,836 @@
+{
+  "scope": "Development server, original game, UI/keyboard only. Coordinates are read to choose input. No GM, level/HP/progress/timer changes or tutorial skip. Before the final cosmetic release-pose duration adjustment.",
+  "tutorial": {
+    "base": "http://127.0.0.1:3100",
+    "enemyWarning": {
+      "x": 457.3713680615933,
+      "y": 589.2232100797193,
+      "active": true,
+      "hp": 9999,
+      "maxHp": 9999,
+      "hitH": 24,
+      "bar": {
+        "visible": true,
+        "color": 16757852,
+        "width": 24,
+        "x": 457.18698922379934,
+        "y": 569.2232100797193
+      }
+    },
+    "evadeInput": "keyboard direction + Shift",
+    "elapsedMs": 84358,
+    "versionAtStart": {
+      "latest": "2.2.27",
+      "code": 285,
+      "note": "v2.2.27 (vc285) — 기존 작업 호환 병합: 원본 SPUM NPC·초상화, 로딩 입력 보호, 컷씬 재방문·관리자 인증·대시 취소 보완.",
+      "apk": "https://github.com/apple01234/CERTZ/releases/download/v2.2.27/SERTZ-vc285.apk",
+      "exe": "https://github.com/apple01234/CERTZ/releases/download/v2.2.27/SERTZ-vc285-setup.exe",
+      "guide": "/apk-guide.html",
+      "commitSha": null
+    },
+    "worldLoad": {
+      "clickToReadyMs": 9918,
+      "progress": {
+        "phase": "world-ready",
+        "elapsedMs": 7836,
+        "total": 1204,
+        "complete": 1204,
+        "active": 0,
+        "failed": [],
+        "bundleBytes": 0
+      },
+      "scope": "Fresh browser context, no artificial bandwidth limit, software WebGL."
+    },
+    "version": {
+      "latest": "2.2.27",
+      "code": 285,
+      "note": "v2.2.27 (vc285) — 기존 작업 호환 병합: 원본 SPUM NPC·초상화, 로딩 입력 보호, 컷씬 재방문·관리자 인증·대시 취소 보완.",
+      "apk": "https://github.com/apple01234/CERTZ/releases/download/v2.2.27/SERTZ-vc285.apk",
+      "exe": "https://github.com/apple01234/CERTZ/releases/download/v2.2.27/SERTZ-vc285-setup.exe",
+      "guide": "/apk-guide.html",
+      "commitSha": null
+    },
+    "final": {
+      "stage": "lilacworld1x2",
+      "step": null,
+      "cinema": false,
+      "dialogue": false,
+      "paused": false,
+      "player": {
+        "x": 481.5671925180097,
+        "y": 546.0401330885516,
+        "mp": 84,
+        "gold": 5693,
+        "potions": {
+          "hp": 6,
+          "mp": 4
+        }
+      },
+      "target": null,
+      "enemy": null,
+      "windup": false,
+      "done": true,
+      "near": null,
+      "allow": true,
+      "nav": false,
+      "kb": true
+    },
+    "pageErrors": []
+  },
+  "progression": {
+    "history": [
+      {
+        "stage": "lilacworld1x2",
+        "dialogue": false,
+        "cinema": false,
+        "feature": false,
+        "panel": false,
+        "auto": false,
+        "p": {
+          "x": 296,
+          "y": 590,
+          "hp": 172,
+          "maxHp": 172,
+          "mp": 84,
+          "maxMp": 84,
+          "lv": 5,
+          "state": "idle",
+          "potions": {
+            "hp": 6,
+            "mp": 4
+          },
+          "atk": 22,
+          "ap": 20,
+          "weapon": "weapon_1",
+          "armor": "armor_1"
+        },
+        "quest": {
+          "id": "12-hw1",
+          "type": "reach",
+          "title": "기사단을 향해",
+          "desc": "라일락과의 약속을 지키기 위해 레지스터에게 검술을 배웠다. 수련터를 지나 기사단 입단 시험을 보러 가자.",
+          "targetLabel": "수련터 출구",
+          "reward": 1664,
+          "expReward": 93
+        },
+        "hunt": 0,
+        "fragment": null,
+        "portal": {
+          "x": 2033.9999999999998,
+          "y": 590
+        },
+        "boss": null,
+        "questIdx": 0,
+        "kills": 0,
+        "atMs": 13096
+      },
+      {
+        "stage": "lilacworld1x3",
+        "dialogue": false,
+        "cinema": false,
+        "feature": false,
+        "panel": false,
+        "auto": false,
+        "p": {
+          "x": 294.0625,
+          "y": 605,
+          "hp": 208,
+          "maxHp": 208,
+          "mp": 96,
+          "maxMp": 96,
+          "lv": 7,
+          "state": "idle",
+          "potions": {
+            "hp": 6,
+            "mp": 4
+          },
+          "atk": 28,
+          "ap": 30,
+          "weapon": "weapon_1",
+          "armor": "armor_1"
+        },
+        "quest": {
+          "id": "13-hw2",
+          "type": "reach",
+          "title": "빛나는 펜던트",
+          "desc": "입단 시험을 마친 하루는 디오를 피해 성 안으로 들어왔다. 펜던트가 빛나는 방향을 따라 지하 감옥으로 내려가자.",
+          "targetLabel": "지하 감옥 입구",
+          "reward": 1856,
+          "expReward": 93
+        },
+        "hunt": 0,
+        "fragment": null,
+        "portal": {
+          "x": 2165.9375,
+          "y": 605
+        },
+        "boss": null,
+        "questIdx": 0,
+        "kills": 0,
+        "atMs": 27780
+      },
+      {
+        "stage": "lilacworld1x4",
+        "dialogue": true,
+        "cinema": true,
+        "feature": false,
+        "panel": false,
+        "auto": false,
+        "p": {
+          "x": 292.3529411764706,
+          "y": 620,
+          "hp": 226,
+          "maxHp": 226,
+          "mp": 102,
+          "maxMp": 102,
+          "lv": 8,
+          "state": "idle",
+          "potions": {
+            "hp": 6,
+            "mp": 4
+          },
+          "atk": 31,
+          "ap": 35,
+          "weapon": "weapon_1",
+          "armor": "armor_1"
+        },
+        "quest": {
+          "id": "14-hw-sword",
+          "type": "collect",
+          "title": "펜던트가 가리킨 검",
+          "desc": "지하 감옥에 박힌 검에 다가가 뽑아라.",
+          "targetLabel": "땅에 박힌 검",
+          "expReward": 25,
+          "storyItemTexture": "item_wpn_greatsword",
+          "dialogue": "lwSwordDrawn"
+        },
+        "hunt": 0,
+        "fragment": {
+          "x": 1734.5681493718555,
+          "y": 600.1462130258157
+        },
+        "portal": null,
+        "boss": null,
+        "questIdx": 1,
+        "kills": 0,
+        "atMs": 39096
+      },
+      {
+        "stage": "lilacworld1x4",
+        "dialogue": false,
+        "cinema": false,
+        "feature": false,
+        "panel": false,
+        "auto": false,
+        "p": {
+          "x": 1773.5554411126882,
+          "y": 616.15,
+          "hp": 226,
+          "maxHp": 226,
+          "mp": 102,
+          "maxMp": 102,
+          "lv": 8,
+          "state": "idle",
+          "potions": {
+            "hp": 6,
+            "mp": 4
+          },
+          "atk": 31,
+          "ap": 35,
+          "weapon": "weapon_1",
+          "armor": "armor_1"
+        },
+        "quest": null,
+        "hunt": 0,
+        "fragment": null,
+        "portal": {
+          "x": 2297.6470588235297,
+          "y": 620
+        },
+        "boss": null,
+        "questIdx": 2,
+        "kills": 0,
+        "atMs": 54245
+      },
+      {
+        "stage": "lilacworld2x1",
+        "dialogue": true,
+        "cinema": true,
+        "feature": false,
+        "panel": false,
+        "auto": false,
+        "p": {
+          "x": 298.2142857142857,
+          "y": 503.125,
+          "hp": 244,
+          "maxHp": 244,
+          "mp": 108,
+          "maxMp": 108,
+          "lv": 9,
+          "state": "idle",
+          "potions": {
+            "hp": 6,
+            "mp": 4
+          },
+          "atk": 34,
+          "ap": 40,
+          "weapon": "weapon_1",
+          "armor": "armor_1"
+        },
+        "quest": null,
+        "hunt": 0,
+        "fragment": null,
+        "portal": {
+          "x": 1901.7857142857142,
+          "y": 503.125
+        },
+        "boss": null,
+        "questIdx": 1,
+        "kills": 0,
+        "atMs": 57941
+      },
+      {
+        "stage": "lilacworld2x1",
+        "dialogue": false,
+        "cinema": false,
+        "feature": false,
+        "panel": false,
+        "auto": false,
+        "p": {
+          "x": 767.9142857142886,
+          "y": 503.125,
+          "hp": 244,
+          "maxHp": 244,
+          "mp": 108,
+          "maxMp": 108,
+          "lv": 9,
+          "state": "idle",
+          "potions": {
+            "hp": 6,
+            "mp": 4
+          },
+          "atk": 34,
+          "ap": 40,
+          "weapon": "weapon_1",
+          "armor": "armor_1"
+        },
+        "quest": null,
+        "hunt": 0,
+        "fragment": null,
+        "portal": {
+          "x": 1901.7857142857142,
+          "y": 503.125
+        },
+        "boss": null,
+        "questIdx": 1,
+        "kills": 0,
+        "atMs": 73250
+      },
+      {
+        "stage": "lilacworld2x2",
+        "dialogue": false,
+        "cinema": false,
+        "feature": false,
+        "panel": false,
+        "auto": false,
+        "p": {
+          "x": 296,
+          "y": 590,
+          "hp": 244,
+          "maxHp": 244,
+          "mp": 108,
+          "maxMp": 108,
+          "lv": 9,
+          "state": "idle",
+          "potions": {
+            "hp": 6,
+            "mp": 4
+          },
+          "atk": 34,
+          "ap": 40,
+          "weapon": "weapon_1",
+          "armor": "armor_1"
+        },
+        "quest": {
+          "id": "22-hw3",
+          "type": "reach",
+          "title": "연기가 솟는 마을로",
+          "desc": "서쪽으로 떠나던 하루는 자신이 살던 마을에서 연기가 솟는 것을 보고 발길을 돌렸다. 골목을 지나 마을 안쪽으로 돌아가자.",
+          "targetLabel": "마을 안쪽",
+          "reward": 1984,
+          "expReward": 416
+        },
+        "hunt": 0,
+        "fragment": null,
+        "portal": {
+          "x": 2033.9999999999998,
+          "y": 590
+        },
+        "boss": null,
+        "questIdx": 0,
+        "kills": 0,
+        "atMs": 88017
+      },
+      {
+        "stage": "lilacworld2x3",
+        "dialogue": false,
+        "cinema": false,
+        "feature": false,
+        "panel": false,
+        "auto": false,
+        "p": {
+          "x": 304,
+          "y": 382.375,
+          "hp": 316,
+          "maxHp": 316,
+          "mp": 132,
+          "maxMp": 132,
+          "lv": 13,
+          "state": "idle",
+          "potions": {
+            "hp": 6,
+            "mp": 4
+          },
+          "atk": 46,
+          "ap": 60,
+          "weapon": "weapon_1",
+          "armor": "armor_1"
+        },
+        "quest": {
+          "id": "lilacworld2x3-boss",
+          "type": "boss",
+          "title": "디오 · 다크니스 크리스탈의 힘",
+          "desc": "디오와 사념체의 전투 국면을 돌파하자.",
+          "targetLabel": "디오 · 다크니스 크리스탈의 힘",
+          "reward": 266,
+          "expReward": 196
+        },
+        "hunt": 0,
+        "fragment": null,
+        "portal": null,
+        "boss": null,
+        "questIdx": 0,
+        "kills": 0,
+        "atMs": 102891
+      },
+      {
+        "stage": "lilacworld2x3",
+        "dialogue": false,
+        "cinema": false,
+        "feature": false,
+        "panel": false,
+        "auto": false,
+        "p": {
+          "x": 1366.598575917681,
+          "y": 351.5655554421825,
+          "hp": 285,
+          "maxHp": 316,
+          "mp": 102,
+          "maxMp": 132,
+          "lv": 13,
+          "state": "dash",
+          "potions": {
+            "hp": 7,
+            "mp": 4
+          },
+          "atk": 46,
+          "ap": 60,
+          "weapon": "weapon_1",
+          "armor": "armor_1"
+        },
+        "quest": {
+          "id": "lilacworld2x3-boss",
+          "type": "boss",
+          "title": "디오 · 다크니스 크리스탈의 힘",
+          "desc": "디오와 사념체의 전투 국면을 돌파하자.",
+          "targetLabel": "디오 · 다크니스 크리스탈의 힘",
+          "reward": 266,
+          "expReward": 196
+        },
+        "hunt": 0,
+        "fragment": null,
+        "portal": null,
+        "boss": {
+          "x": 1374.8579410400869,
+          "y": 364.5716948390936,
+          "hp": 2971,
+          "maxHp": 3600,
+          "mode": "idle",
+          "charge": {
+            "x": 0.9999999606537251,
+            "y": -0.0002805219212610156
+          },
+          "countdown": 0
+        },
+        "questIdx": 0,
+        "kills": 1,
+        "atMs": 117893
+      },
+      {
+        "stage": "lilacworld2x3",
+        "dialogue": false,
+        "cinema": false,
+        "feature": false,
+        "panel": false,
+        "auto": false,
+        "p": {
+          "x": 1250.3453414997261,
+          "y": 275.2304329463099,
+          "hp": 334,
+          "maxHp": 334,
+          "mp": 138,
+          "maxMp": 138,
+          "lv": 14,
+          "state": "idle",
+          "potions": {
+            "hp": 7,
+            "mp": 4
+          },
+          "atk": 49,
+          "ap": 65,
+          "weapon": "weapon_1",
+          "armor": "armor_1"
+        },
+        "quest": {
+          "id": "lilacworld2x3-boss",
+          "type": "boss",
+          "title": "디오 · 다크니스 크리스탈의 힘",
+          "desc": "디오와 사념체의 전투 국면을 돌파하자.",
+          "targetLabel": "디오 · 다크니스 크리스탈의 힘",
+          "reward": 266,
+          "expReward": 196
+        },
+        "hunt": 0,
+        "fragment": null,
+        "portal": null,
+        "boss": {
+          "x": 1337.4670188898767,
+          "y": 251.07052511981556,
+          "hp": 2401,
+          "maxHp": 3600,
+          "mode": "idle",
+          "charge": {
+            "x": -0.00018275375627311292,
+            "y": -0.9999999833005321
+          },
+          "countdown": 0
+        },
+        "questIdx": 0,
+        "kills": 3,
+        "atMs": 132924
+      },
+      {
+        "stage": "lilacworld2x3",
+        "dialogue": false,
+        "cinema": false,
+        "feature": false,
+        "panel": false,
+        "auto": false,
+        "p": {
+          "x": 1187.4448333971059,
+          "y": 269.8297271277247,
+          "hp": 245,
+          "maxHp": 334,
+          "mp": 118,
+          "maxMp": 138,
+          "lv": 14,
+          "state": "idle",
+          "potions": {
+            "hp": 6,
+            "mp": 4
+          },
+          "atk": 49,
+          "ap": 65,
+          "weapon": "weapon_1",
+          "armor": "armor_1"
+        },
+        "quest": {
+          "id": "lilacworld2x3-boss",
+          "type": "boss",
+          "title": "디오 · 다크니스 크리스탈의 힘",
+          "desc": "디오와 사념체의 전투 국면을 돌파하자.",
+          "targetLabel": "디오 · 다크니스 크리스탈의 힘",
+          "reward": 266,
+          "expReward": 196
+        },
+        "hunt": 0,
+        "fragment": null,
+        "portal": null,
+        "boss": {
+          "x": 1323.4424565660067,
+          "y": 496.3599029312936,
+          "hp": 1310,
+          "maxHp": 3600,
+          "mode": "recover",
+          "charge": {
+            "x": -0.0026615190808810265,
+            "y": 0.9999964581518186
+          },
+          "countdown": 0
+        },
+        "questIdx": 0,
+        "kills": 3,
+        "atMs": 147930
+      },
+      {
+        "stage": "lilacworld2x3",
+        "dialogue": false,
+        "cinema": false,
+        "feature": false,
+        "panel": false,
+        "auto": false,
+        "p": {
+          "x": 1325.368520642487,
+          "y": 418.7633774246307,
+          "hp": 352,
+          "maxHp": 352,
+          "mp": 144,
+          "maxMp": 144,
+          "lv": 15,
+          "state": "dash",
+          "potions": {
+            "hp": 5,
+            "mp": 4
+          },
+          "atk": 52,
+          "ap": 70,
+          "weapon": "weapon_1",
+          "armor": "armor_1"
+        },
+        "quest": {
+          "id": "lilacworld2x3-next",
+          "type": "reach",
+          "title": "다음 장소로",
+          "desc": "열린 차원문으로 다음 장소에 가자.",
+          "targetLabel": "차원문"
+        },
+        "hunt": 0,
+        "fragment": null,
+        "portal": null,
+        "boss": null,
+        "questIdx": 1,
+        "kills": 5,
+        "atMs": 164329
+      }
+    ],
+    "final": {
+      "stage": "lilacworld2x3",
+      "dialogue": false,
+      "cinema": false,
+      "feature": false,
+      "panel": false,
+      "auto": false,
+      "p": {
+        "x": 1325.368520642487,
+        "y": 418.7633774246307,
+        "hp": 352,
+        "maxHp": 352,
+        "mp": 144,
+        "maxMp": 144,
+        "lv": 15,
+        "state": "dash",
+        "potions": {
+          "hp": 5,
+          "mp": 4
+        },
+        "atk": 52,
+        "ap": 70,
+        "weapon": "weapon_1",
+        "armor": "armor_1"
+      },
+      "quest": {
+        "id": "lilacworld2x3-next",
+        "type": "reach",
+        "title": "다음 장소로",
+        "desc": "열린 차원문으로 다음 장소에 가자.",
+        "targetLabel": "차원문"
+      },
+      "hunt": 0,
+      "fragment": null,
+      "portal": null,
+      "boss": null,
+      "questIdx": 1,
+      "layout": {
+        "cols": 10,
+        "rows": 8,
+        "open": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          false,
+          false,
+          false,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          false,
+          false,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          false,
+          false,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          false,
+          false,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          false,
+          false,
+          false,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "cellW": 156,
+        "cellH": 109.25
+      },
+      "enemies": [
+        {
+          "x": 406.18701380195074,
+          "y": 104,
+          "key": "wraith",
+          "hp": 34
+        },
+        {
+          "x": 1053.9541087114985,
+          "y": 441.6281341948958,
+          "key": "wraith",
+          "hp": 215
+        }
+      ],
+      "kills": 5
+    },
+    "bossEntry": {
+      "player": {
+        "x": 304,
+        "y": 382.375,
+        "hp": 316,
+        "maxHp": 316,
+        "mp": 132,
+        "maxMp": 132,
+        "lv": 13,
+        "state": "idle",
+        "potions": {
+          "hp": 6,
+          "mp": 4
+        },
+        "atk": 46,
+        "ap": 60,
+        "weapon": "weapon_1",
+        "armor": "armor_1"
+      },
+      "boss": {
+        "x": 1326,
+        "y": 337.0150462962963,
+        "hp": 3600,
+        "maxHp": 3600,
+        "mode": "idle",
+        "charge": {
+          "x": 0,
+          "y": 0
+        },
+        "countdown": 0
+      }
+    },
+    "bossCombatMs": 60317,
+    "inputs": {
+      "Space": 60,
+      "x": 110,
+      "z": 110,
+      "c": 110,
+      "Shift": 9,
+      "d": 3
+    },
+    "elapsedMs": 172583,
+    "pageErrors": [],
+    "actions": "normal keyboard/UI only; no progress, stats, enemy HP or timers changed"
+  },
+  "reconnect": {
+    "base": "http://127.0.0.1:3100",
+    "errors": [],
+    "checks": [
+      {
+        "mode": "reconnect",
+        "stage": "lilacworld2x3",
+        "idx": 1,
+        "lv": 15,
+        "ap": 70,
+        "gold": 12889,
+        "boss": false
+      },
+      {
+        "mode": "reload",
+        "stage": "lilacworld2x3",
+        "idx": 1,
+        "lv": 15,
+        "ap": 70,
+        "gold": 12889,
+        "boss": false
+      }
+    ],
+    "version": {
+      "latest": "2.2.27",
+      "code": 285,
+      "note": "v2.2.27 (vc285) — 기존 작업 호환 병합: 원본 SPUM NPC·초상화, 로딩 입력 보호, 컷씬 재방문·관리자 인증·대시 취소 보완.",
+      "apk": "https://github.com/apple01234/CERTZ/releases/download/v2.2.27/SERTZ-vc285.apk",
+      "exe": "https://github.com/apple01234/CERTZ/releases/download/v2.2.27/SERTZ-vc285-setup.exe",
+      "guide": "/apk-guide.html",
+      "commitSha": null
+    },
+    "passed": true
+  }
+}

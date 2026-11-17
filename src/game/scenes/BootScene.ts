@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { preloadOwnedEnemyFrames } from "../fx/ownedEnemyMotions";
 import { PIXELFX_SHEETS } from "../fx/pixelFxSheets";
 import { preloadStoryBosses, registerStoryBosses } from "../fx/storyBossAssets";
 import { preloadStoryEnemies, registerStoryEnemies } from "../fx/storyEnemyAssets";
@@ -774,6 +775,7 @@ export class BootScene extends Phaser.Scene {
      *  x3/ll 의 run0..3 규격으로는 5·6번째 프레임이 로드되지 않는다.
      *  vc290 — dx_hornbunny 는 원본에 Attack 시트가 없어 atk 프레임을 요청하면
      *  404 가 난다. 종별로 실제 존재하는 프레임만 로드한다. */
+    preloadOwnedEnemyFrames(this);
     for (const k of DX_MONSTERS) {
       const frames = ["idle0", "idle1", "idle2", "idle3",
         "run0", "run1", "run2", "run3", "run4", "run5"];

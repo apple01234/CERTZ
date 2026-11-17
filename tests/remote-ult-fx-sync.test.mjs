@@ -18,7 +18,7 @@ const server = readFileSync('multiplayer/index.js', 'utf8');
 const mqtt = readFileSync('src/game/mpMqtt.ts', 'utf8');
 const netTs = readFileSync('src/game/net.ts', 'utf8');
 
-const KINDS = ['atk', 's1', 's2', 's3', 's4', 's5', 's5b'];
+const KINDS = ['atk', 's1', 's2', 's3', 's4', 's5', 's5b', 's5f', 's5bf'];
 
 test('서버 act 화이트리스트에 모든 스킬 종류가 있다 — s5b 누락 회귀 방지', () => {
   const m = /const ACT_KINDS = new Set\(\[([^\]]+)\]\)/.exec(server);

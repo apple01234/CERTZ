@@ -35,17 +35,12 @@ import { resolveApiBase } from "./server";
 import { presenceSessionId } from "./playerIdentity";
 import { rekeyLegacy, legacyStageKeys } from "./legacyKeys";
 
-/* 공개 브로커 후보 — 순차 폴백(첫 번째가 8초 내 연결 실패 시 다음)
- * vc140 실측(2026-10-08): eclipseprojects.io는 connack 타임아웃으로 완전 사망 —
- *  여기에 폴백하면 그 클라이언트만 영원히 오프라인 → "서로 캐릭터/스킬 안보임" 재발의 원인.
- *  HiveMQ 공개 브로커(WSS 8884) 실측 연결 866ms + st 라운드트립 OK로 교체했다.
- *  emqx↔hivemq 두 브로커 모두 살아있는 한 세션 중단 시 로테이션으로 자가복귀한다(아래 open 참조). */
+/* Both existing brokers stay connected so fallback clients remain visible. */
 const BROKERS = [
   "wss://broker.emqx.io:8084/mqtt",
   "wss://broker.hivemq.com:8884/mqtt",
 ];
-/** vc140 — 세션 중 브로커가 죽었을 때 재접속 실패 누적 회수(이 횟수 초과 시 다음 브로커로 로테이션).
- *  reconnectPeriod 4s이므로 4회 ≈ 16초 — 죽은 브로커에 영원히 매달리지 않는다. */
+/** Back off a failing broker after four reconnects; the other link stays active. */
 const RECONNECT_ROTATE_AT = 4;
 const ROOT = "sertz/mp/v2/";
 /** 원격 유실 판정(ms) — 이동 상태가 이보다 오래 안 오면 화면에서 제거 */
@@ -185,7 +180,12 @@ class MqttBusImpl implements MqttBus {
   connected = false;
   readonly id = presenceSessionId();
 
-  private client: mqtt.MqttClient | null = null;
+  private links = new Map<number, mqtt.MqttClient>();
+  private liveLinks = new Set<mqtt.MqttClient>();
+  private linkTopics = new WeakMap<mqtt.MqttClient, string[]>();
+  private peerLinks = new Map<string, Map<number, number>>();
+  private seenCommands = new Map<string, true>();
+  private packetSeq = 0;
   private listeners = new Map<string, Listener>();
   private peers = new Map<string, PeerState>();
   private friends = new Map<string, PeerState>();
@@ -204,6 +204,7 @@ class MqttBusImpl implements MqttBus {
 
   constructor() {
     this.open(0);
+    this.open(1);
     /* vc134 진단 훅 — E2E/운영 진단용 버스 내부 상태 (기능 영향 없음) */
     try {
       (window as unknown as { __SERTZ_MQTT__?: unknown }).__SERTZ_MQTT__ = {
@@ -230,6 +231,10 @@ class MqttBusImpl implements MqttBus {
         const now = Date.now();
         for (const [id, p] of this.peers) if (now - p.t > PEER_TTL_MS) this.peers.delete(id);
         for (const [id, p] of this.friends) if (now - p.t > FRIEND_TTL_MS) this.friends.delete(id);
+        for (const [id, links] of this.peerLinks) {
+          for (const [link, at] of links) if (now - at > FRIEND_TTL_MS) links.delete(link);
+          if (!links.size) this.peerLinks.delete(id);
+        }
       }, 2000),
     );
     try {
@@ -237,118 +242,119 @@ class MqttBusImpl implements MqttBus {
     } catch { /* 무시 */ }
   }
 
-  /* ---------- 브로커 접속 (순차 폴백) ---------- */
+  /* ---------- 브로커 접속 ---------- */
   private open(idx: number) {
-    if (idx >= BROKERS.length) {
-      console.info("[SERTZ] 공개 멀티 릴레이(브로커) 접속 실패 — 오프라인 모드 유지");
-      return;
-    }
+    if (idx >= BROKERS.length || this.links.has(idx)) return;
     try {
-      this.brokerIdx = idx;
       const c = mqtt.connect(BROKERS[idx], {
-        clientId: this.id.slice(0, 32),
-        keepalive: 30,
-        connectTimeout: 8000,
-        reconnectPeriod: 4000,
-        protocolVersion: 4,
-        /* 끊기면 즉시 퇴장 통지 — 원격 화면에서 바로 사라지게 */
-        will: { topic: ROOT + "presence", payload: Buffer.from(JSON.stringify({ k: "bye", pid: this.id })), qos: 0, retain: false },
+        clientId: this.id.slice(0, 32), keepalive: 30, connectTimeout: 8000,
+        reconnectPeriod: 4000, protocolVersion: 4,
+        // A lost broker connection is not a departure from the other broker.
+        will: { topic: ROOT + "presence", payload: Buffer.from(JSON.stringify({ k: "bye", pid: this.id, linkBye: true })), qos: 0, retain: false },
       });
-      this.client = c;
-      let connectedOnce = false;
-      /* vc140 — 재접속 실패 누적 카운터(브로커 로테이션 트리거) */
-      let closeFails = 0;
+      this.links.set(idx, c);
+      let connectedOnce = false, closeFails = 0;
+      const offline = () => {
+        this.liveLinks.delete(c);
+        this.connected = this.liveLinks.size > 0;
+      };
+      const retry = () => {
+        if (this.links.get(idx) !== c) return;
+        this.links.delete(idx);
+        offline();
+        try { c.end(true); } catch { /* 무시 */ }
+        setTimeout(() => this.open(idx), 30000);
+      };
       c.on("connect", () => {
+        if (this.links.get(idx) !== c) return;
+        const wasConnected = this.connected;
         connectedOnce = true;
         closeFails = 0;
+        this.liveLinks.add(c);
         this.connected = true;
-        this.subscribedStage = "";
-        this.subscribedTopics = [];
-        this.presenceSubbed = false;
+        this.brokerIdx = idx;
+        this.linkTopics.delete(c);
         this.syncStageSub();
-        /* vc149 (#20) — 접속 즉시 내 개인 거래 토픽 구독.
-         *  기존엔 tradeSend(보내기) 시에만 구독됐다 → 거래를 '받기만' 하는 쪽은
-         *  자기 토픽을 구독한 적이 없어 treq가 도착해도 수신 불가 = "거래 신청했는데
-         *  상대에게 안 보인다"의 근본 원인. 재접속 시에도 tradeSubbed를 초기화해 재구독. */
-        this.tradeSubbed = false;
-        this.ensureTradeSub();
         this.publishPresence();
         if (this.lastState) this.sendState(true);
-        this.fire("connect");
+        if (!wasConnected) this.fire("connect");
       });
       c.on("close", () => {
-        this.connected = false;
-        /* vc140 — 세션 중단 후 재접속이 RECONNECT_ROTATE_AT회 연속 실패하면 다음 브로커로.
-         *  기존엔 같은 브로커에 영원히 재시도 — 브로커가 죽으면 그 클라이언트만 영구 오프라인이었고,
-         *  새로 접속한 상대는 다른(살아있는) 브로커에 붙어 서로 안 보이는 분열이 생겼다. */
-        if (connectedOnce && this.client === c) {
-          closeFails++;
-          if (closeFails >= RECONNECT_ROTATE_AT) {
-            try { c.end(true); } catch { /* 무시 */ }
-            if (this.client === c) {
-              this.client = null;
-              this.open((idx + 1) % BROKERS.length); // 순환 — 두 브로커 중 살아있는 쪽을 계속 찾는다
-            }
-          }
-        }
+        offline();
+        if (++closeFails >= RECONNECT_ROTATE_AT) retry();
       });
-      c.on("offline", () => { this.connected = false; });
-      c.on("error", () => { /* reconnectPeriod로 자동 재시도 */ });
-      c.on("message", (topic, payload) => this.onMessage(topic, payload));
-      /* 8초 내 미연결 + 1회도 성공 없음 → 다음 브로커 */
-      setTimeout(() => {
-        if (!connectedOnce && this.client === c) {
-          try { c.end(true); } catch { /* 무시 */ }
-          this.client = null;
-          this.open(idx + 1);
-        }
-      }, 8000);
+      c.on("offline", offline);
+      c.on("error", () => { /* mqtt reconnects, then retry backs off for 30 seconds */ });
+      c.on("message", (topic, payload) => this.onMessage(topic, payload, idx));
+      setTimeout(() => { if (!connectedOnce) retry(); }, 8000);
     } catch {
-      this.open(idx + 1);
+      setTimeout(() => this.open(idx), 30000);
     }
   }
 
   /* ---------- 구독/발행 ---------- */
   private syncStageSub() {
-    if (!this.client || !this.connected) return;
+    if (!this.connected) return;
     const want = ROOT + "stage/" + this.stage;
-    if (this.subscribedStage !== want) {
-      if (this.subscribedTopics.length) {
-        try { this.client.unsubscribe(this.subscribedTopics); } catch { /* 무시 */ }
-      }
-      this.subscribedStage = want;
-      this.subscribedTopics = legacyStageKeys(this.stage).map(key => ROOT + "stage/" + key);
-      try { this.client.subscribe(this.subscribedTopics, { qos: 0 }); } catch { /* 무시 */ }
-    }
-    /* vc134 — presence 토픽도 구독(친구 온라인 목록·LWT 즉시 퇴장 수신).
-     *  기존엔 stage 토픽만 구독해 friends 이벤트가 영원히 안 왔다. */
-    if (!this.presenceSubbed) {
+    this.subscribedStage = want;
+    this.subscribedTopics = legacyStageKeys(this.stage).map(key => ROOT + "stage/" + key);
+    for (const c of this.liveLinks) {
+      const previous = this.linkTopics.get(c);
+      if (previous?.[0] === want) continue;
       try {
-        this.client.subscribe(ROOT + "presence", { qos: 0 });
-        this.presenceSubbed = true;
-      } catch { /* 무시 */ }
+        if (previous?.length) c.unsubscribe(previous);
+        // Receiving a trade must work before this client sends its first trade.
+        c.subscribe([...this.subscribedTopics, ROOT + "presence", ROOT + "trade/" + this.id], { qos: 0 });
+        this.linkTopics.set(c, this.subscribedTopics);
+      } catch { /* retry on the next state/join */ }
     }
+    this.presenceSubbed = true;
   }
 
   private presenceSubbed = false;
 
   private publish(obj: Record<string, unknown>, topic: string) {
-    if (!this.client || !this.connected) return;
+    if (!this.connected) return;
+    const mid = this.id + ":" + (++this.packetSeq);
     const stages = topic === ROOT + "stage/" + this.stage ? legacyStageKeys(this.stage) : null;
-    try {
-      if (stages) for (const stage of stages) {
-        this.client.publish(ROOT + "stage/" + stage, JSON.stringify({ ...obj, aoi: this.stage, ...(obj.stage ? { stage } : {}) }), { qos: 0, retain: false });
-      } else this.client.publish(topic, JSON.stringify(obj), { qos: 0, retain: false });
-    } catch { /* 무시 */ }
+    const messages = stages
+      ? stages.map(stage => ({ topic: ROOT + "stage/" + stage, payload: JSON.stringify({ ...obj, mid, aoi: this.stage, ...(obj.stage ? { stage } : {}) }) }))
+      : [{ topic, payload: JSON.stringify({ ...obj, mid }) }];
+    for (const c of this.liveLinks) for (const m of messages) {
+      try { c.publish(m.topic, m.payload, { qos: 0, retain: false }); } catch { /* other broker stays usable */ }
+    }
   }
 
   /* ---------- 수신 ---------- */
-  private onMessage(topic: string, payload: Uint8Array) {
+  private onMessage(topic: string, payload: Uint8Array, link = 0) {
     let m: Record<string, unknown>;
     try { m = JSON.parse(Buffer.from(payload).toString("utf8")) as Record<string, unknown>; } catch { return; }
     const pid = clean(m.pid, 40);
     if (!pid || pid === this.id) return; // 자기 메시지 무시
     const k = String(m.k ?? "");
+    const global = topic === ROOT + "presence" || topic === ROOT + "trade/" + this.id;
+    if (!global && (!this.subscribedTopics.includes(topic) || (m.aoi === this.stage && topic !== ROOT + "stage/" + this.stage))) return;
+    if (k === "pr" || k === "hi" || k === "st") {
+      let links = this.peerLinks.get(pid);
+      if (!links) this.peerLinks.set(pid, links = new Map());
+      links.set(link, Date.now());
+    }
+    if (k === "bye") {
+      const links = this.peerLinks.get(pid);
+      if (m.linkBye) {
+        links?.delete(link);
+        if (links && [...links.values()].some(at => Date.now() - at < PEER_TTL_MS)) return;
+      }
+      this.peerLinks.delete(pid);
+    }
+    // State/presence are idempotent; only commands need bounded cross-broker deduplication.
+    if (!["pr", "hi", "st"].includes(k) && m.mid) {
+      const key = pid + ":" + clean(m.mid, 80);
+      if (this.seenCommands.has(key)) return;
+      this.seenCommands.set(key, true);
+      if (this.seenCommands.size > 4096) this.seenCommands.delete(this.seenCommands.keys().next().value!);
+    }
+
 
     /* vc142 (#3) — 1:1 거래 개인 토픽 */
     if (topic === ROOT + "trade/" + this.id) {
@@ -422,7 +428,7 @@ class MqttBusImpl implements MqttBus {
     }
     if (k === "act") {
       const kind = String(m.kind ?? "");
-      if (!["atk", "s1", "s2", "s3", "s4", "s5", "s5b"].includes(kind)) return;
+      if (!["atk", "s1", "s2", "s3", "s4", "s5", "s5b", "s5f", "s5bf"].includes(kind)) return;
       this.fire("act", {
         id: pid,
         kind,
@@ -499,7 +505,7 @@ class MqttBusImpl implements MqttBus {
       case "act": {
         const a = (args[0] ?? {}) as Record<string, unknown>;
         const kind = String(a.kind ?? "");
-        if (!["atk", "s1", "s2", "s3", "s4", "s5", "s5b"].includes(kind)) return;
+        if (!["atk", "s1", "s2", "s3", "s4", "s5", "s5b", "s5f", "s5bf"].includes(kind)) return;
         /* 도폭 방지 250ms 스로틀 */
         const now = Date.now();
         if (now - this.lastSentAt < 250 && this.lastActKind === kind) return;
@@ -569,14 +575,8 @@ class MqttBusImpl implements MqttBus {
    *  · 메시지: treq(요청)·tacc(수락)·tdeny(거절)·toff(오버 갱신)·tlock(확정)·tcancel(취소)
    *  · 검증은 각 클라이언트가 로컬 세이브 기준으로 수행 (브로커는 중계만) */
 
-  private tradeSubbed = false;
-
   private ensureTradeSub() {
-    if (!this.client || !this.connected || this.tradeSubbed) return;
-    try {
-      this.client.subscribe(ROOT + "trade/" + this.id, { qos: 0 });
-      this.tradeSubbed = true;
-    } catch { /* 무시 */ }
+    this.syncStageSub();
   }
 
   /** 거래 메시지 전송 — 상대 개인 토픽으로 */

@@ -1,0 +1,379 @@
+{
+  "results": [
+    {
+      "mode": "desktop",
+      "motions": [
+        {
+          "key": "ll_goblin",
+          "constructor": "Enemy",
+          "mode": "windup",
+          "plan": {
+            "kind": "melee",
+            "angle": 0,
+            "reach": 58,
+            "halfAngle": 1.0471975511965976
+          },
+          "warningObject": true,
+          "attack": 8,
+          "hit": 4,
+          "death": 4,
+          "warning": "enemy:attack-warning",
+          "anim": "ll_goblin-windup",
+          "body": {
+            "w": 20,
+            "h": 22
+          },
+          "hitbox": {
+            "w": 34,
+            "h": 32
+          }
+        },
+        {
+          "key": "ll_skeleton",
+          "constructor": "Enemy",
+          "mode": "windup",
+          "plan": {
+            "kind": "melee",
+            "angle": 0,
+            "reach": 58,
+            "halfAngle": 1.0471975511965976
+          },
+          "warningObject": true,
+          "attack": 8,
+          "hit": 4,
+          "death": 4,
+          "warning": "enemy:attack-warning",
+          "anim": "ll_skeleton-windup",
+          "body": {
+            "w": 24,
+            "h": 28
+          },
+          "hitbox": {
+            "w": 40,
+            "h": 42
+          }
+        },
+        {
+          "key": "ll_mushroom",
+          "constructor": "Enemy",
+          "mode": "windup",
+          "plan": {
+            "kind": "melee",
+            "angle": 0,
+            "reach": 58,
+            "halfAngle": 1.0471975511965976
+          },
+          "warningObject": true,
+          "attack": 8,
+          "hit": 4,
+          "death": 4,
+          "warning": "enemy:attack-warning",
+          "anim": "ll_mushroom-windup",
+          "body": {
+            "w": 26,
+            "h": 22
+          },
+          "hitbox": {
+            "w": 40,
+            "h": 34
+          }
+        },
+        {
+          "key": "ll_flyingeye",
+          "constructor": "Enemy",
+          "mode": "windup",
+          "plan": {
+            "kind": "ranged",
+            "angle": 0,
+            "reach": 300,
+            "halfAngle": 1.0471975511965976
+          },
+          "warningObject": true,
+          "attack": 8,
+          "hit": 4,
+          "death": 4,
+          "warning": "enemy:attack-warning",
+          "anim": "ll_flyingeye-windup",
+          "body": {
+            "w": 22,
+            "h": 18
+          },
+          "hitbox": {
+            "w": 40,
+            "h": 30
+          }
+        }
+      ],
+      "lockedAim": {
+        "mode": "cooldown",
+        "anim": "ll_goblin-release",
+        "flip": false,
+        "angle": 0,
+        "warningGone": true
+      },
+      "releaseRecovery": "ll_goblin-run",
+      "stun": {
+        "mode": "cooldown",
+        "warningGone": true,
+        "released": false
+      },
+      "damage": {
+        "hp": 144,
+        "shown": [
+          56
+        ],
+        "anim": "ll_goblin-hit",
+        "hitFlash": 90
+      },
+      "tint": {
+        "isTinted": false,
+        "mode": 0
+      },
+      "atkObserved": [
+        8,
+        8,
+        8,
+        8
+      ],
+      "hitObserved": [
+        4,
+        4,
+        4,
+        4
+      ],
+      "deathObserved": [
+        4,
+        4,
+        4,
+        4
+      ],
+      "remoteFinale": true,
+      "cleanup": {
+        "warnings": 0,
+        "corpses": 0
+      },
+      "soak": {
+        "cycles": 5,
+        "samples": [
+          {
+            "cycle": 0,
+            "usedSize": 38688640,
+            "totalSize": 40214528,
+            "embedderHeapUsedSize": 11574216,
+            "backingStorageSize": 30168101,
+            "objects": 144
+          }
+        ],
+        "scope": "Controlled spawn/death cycles; mobile viewport uses desktop Chromium software WebGL, JS heap/backing storage only. No physical GPU measurement."
+      }
+    },
+    {
+      "mode": "mobile-viewport",
+      "motions": [
+        {
+          "key": "ll_goblin",
+          "constructor": "Enemy",
+          "mode": "windup",
+          "plan": {
+            "kind": "melee",
+            "angle": 0,
+            "reach": 58,
+            "halfAngle": 1.0471975511965976
+          },
+          "warningObject": true,
+          "attack": 8,
+          "hit": 4,
+          "death": 4,
+          "warning": "enemy:attack-warning",
+          "anim": "ll_goblin-windup",
+          "body": {
+            "w": 20,
+            "h": 22
+          },
+          "hitbox": {
+            "w": 34,
+            "h": 32
+          }
+        },
+        {
+          "key": "ll_skeleton",
+          "constructor": "Enemy",
+          "mode": "windup",
+          "plan": {
+            "kind": "melee",
+            "angle": 0,
+            "reach": 58,
+            "halfAngle": 1.0471975511965976
+          },
+          "warningObject": true,
+          "attack": 8,
+          "hit": 4,
+          "death": 4,
+          "warning": "enemy:attack-warning",
+          "anim": "ll_skeleton-windup",
+          "body": {
+            "w": 24,
+            "h": 28
+          },
+          "hitbox": {
+            "w": 40,
+            "h": 42
+          }
+        },
+        {
+          "key": "ll_mushroom",
+          "constructor": "Enemy",
+          "mode": "windup",
+          "plan": {
+            "kind": "melee",
+            "angle": 0,
+            "reach": 58,
+            "halfAngle": 1.0471975511965976
+          },
+          "warningObject": true,
+          "attack": 8,
+          "hit": 4,
+          "death": 4,
+          "warning": "enemy:attack-warning",
+          "anim": "ll_mushroom-windup",
+          "body": {
+            "w": 26,
+            "h": 22
+          },
+          "hitbox": {
+            "w": 40,
+            "h": 34
+          }
+        },
+        {
+          "key": "ll_flyingeye",
+          "constructor": "Enemy",
+          "mode": "windup",
+          "plan": {
+            "kind": "ranged",
+            "angle": 0,
+            "reach": 300,
+            "halfAngle": 1.0471975511965976
+          },
+          "warningObject": true,
+          "attack": 8,
+          "hit": 4,
+          "death": 4,
+          "warning": "enemy:attack-warning",
+          "anim": "ll_flyingeye-windup",
+          "body": {
+            "w": 22,
+            "h": 18
+          },
+          "hitbox": {
+            "w": 40,
+            "h": 30
+          }
+        }
+      ],
+      "lockedAim": {
+        "mode": "cooldown",
+        "anim": "ll_goblin-release",
+        "flip": false,
+        "angle": 0,
+        "warningGone": true
+      },
+      "releaseRecovery": "ll_goblin-run",
+      "stun": {
+        "mode": "cooldown",
+        "warningGone": true,
+        "released": false
+      },
+      "damage": {
+        "hp": 144,
+        "shown": [
+          56
+        ],
+        "anim": "ll_goblin-hit",
+        "hitFlash": 90
+      },
+      "tint": {
+        "isTinted": false,
+        "mode": 0
+      },
+      "atkObserved": [
+        8,
+        8,
+        8,
+        8
+      ],
+      "hitObserved": [
+        4,
+        4,
+        4,
+        4
+      ],
+      "deathObserved": [
+        4,
+        4,
+        4,
+        4
+      ],
+      "cleanup": {
+        "warnings": 0,
+        "corpses": 0
+      },
+      "soak": {
+        "cycles": 60,
+        "samples": [
+          {
+            "cycle": 0,
+            "usedSize": 38518180,
+            "totalSize": 40738816,
+            "embedderHeapUsedSize": 11472600,
+            "backingStorageSize": 30168506,
+            "objects": 147
+          },
+          {
+            "cycle": 10,
+            "usedSize": 39716284,
+            "totalSize": 41787392,
+            "embedderHeapUsedSize": 11713800,
+            "backingStorageSize": 30169177,
+            "objects": 158
+          },
+          {
+            "cycle": 20,
+            "usedSize": 39758784,
+            "totalSize": 41787392,
+            "embedderHeapUsedSize": 11800080,
+            "backingStorageSize": 30169106,
+            "objects": 161
+          },
+          {
+            "cycle": 30,
+            "usedSize": 39944324,
+            "totalSize": 42049536,
+            "embedderHeapUsedSize": 11528920,
+            "backingStorageSize": 30169163,
+            "objects": 161
+          },
+          {
+            "cycle": 40,
+            "usedSize": 40286092,
+            "totalSize": 42573824,
+            "embedderHeapUsedSize": 11615184,
+            "backingStorageSize": 30169140,
+            "objects": 160
+          },
+          {
+            "cycle": 50,
+            "usedSize": 40371952,
+            "totalSize": 42311680,
+            "embedderHeapUsedSize": 11780352,
+            "backingStorageSize": 30169398,
+            "objects": 161
+          }
+        ],
+        "scope": "Controlled spawn/death cycles; mobile viewport uses desktop Chromium software WebGL, JS heap/backing storage only. No physical GPU measurement."
+      }
+    }
+  ],
+  "pageErrors": [],
+  "scope": "Disposable fixture in original game engine; no natural-play or physical-device claim."
+}

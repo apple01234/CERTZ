@@ -20,6 +20,8 @@ import { receivedDamageMult, applyStatus, tickStatuses, type ActiveStatus } from
 import { makeDamage, resolveDamage, applyDamage } from "../combat/damageData"; // vc277 — 피해 파이프라인 (JENNY DamageData 이식)
 import { makeEntry, updateEntry, type AwarenessEntry } from "../ai/awareness"; // vc277 — 시야/인지 (JENNY AwarenessTrait 이식)
 import { storyEnemyRole, storyEnemyStyle, STORY_ENEMY_ROLES } from "../storyEnemyVisuals";
+import { OWNED_ENEMY_MOTIONS } from "../fx/ownedEnemyMotions";
+import { enemyAttackPlan, enemyMeleeConnects, type EnemyAttackPlan } from "../combat/enemyAttack";
 
 /* vc236 — 사망 폭발 반경(px). 코어는 피해량만 export 하고 반경은 연출 소관이라 여기 둔다.
  * 정예 스케일(1.55) 기준 몸통 2~3배 — 눈에 보이는 폭발 범위와 판정이 어긋나지 않게. */
@@ -109,23 +111,26 @@ const AWARE_OMNISCIENT_MS = 1000;
  */
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
   declare scene: WorldScene;
-  private tutorialPause: { active: boolean; visible: boolean; body: boolean; shadow: boolean; hp: boolean; bg: boolean } | null = null;
+  private tutorialPause: { active: boolean; visible: boolean; body: boolean; shadow: boolean; hp: boolean; bg: boolean; warning: boolean; badge: boolean } | null = null;
 
   /** Park the original population during practice, then restore its exact prior state. */
   setTutorialPaused(on: boolean) {
     if (on) {
       if (this.tutorialPause) return;
       this.tutorialPause = { active: this.active, visible: this.visible, body: this.body?.enable ?? false,
-        shadow: this.shadow?.visible ?? false, hp: this.hpBar?.visible ?? false, bg: this.hpBarBg?.visible ?? false };
+        shadow: this.shadow?.visible ?? false, hp: this.hpBar?.visible ?? false, bg: this.hpBarBg?.visible ?? false,
+        warning: this.attackWarning?.visible ?? false, badge: this.combatBadge?.visible ?? false };
       this.setVelocity(0, 0).setActive(false).setVisible(false);
       if (this.body) this.body.enable = false;
       this.shadow?.setVisible(false); this.hpBar?.setVisible(false); this.hpBarBg?.setVisible(false);
+      this.attackWarning?.setVisible(false); this.combatBadge?.setVisible(false);
     } else if (this.tutorialPause) {
       const old = this.tutorialPause;
       this.tutorialPause = null;
       this.setActive(old.active).setVisible(old.visible);
       if (this.body) this.body.enable = old.body;
       this.shadow?.setVisible(old.shadow); this.hpBar?.setVisible(old.hp); this.hpBarBg?.setVisible(old.bg);
+      this.attackWarning?.setVisible(old.warning); this.combatBadge?.setVisible(old.badge);
     }
   }
 
@@ -162,6 +167,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private lastReactAt = 0;
   /** 돌진형 전용 — 돌진 방향 캐시 */
   private chargeDir = new Phaser.Math.Vector2();
+  private attackAim = new Phaser.Math.Vector2();
+  private attackPlan: EnemyAttackPlan | null = null;
+  private attackReleased = false;
+  private attackPoseUntil = 0;
+  private attackWarning: Phaser.GameObjects.Graphics | null = null;
 
   /* vc183 — 적 방어력 (EnemyDef.def / defPct). 보스 raid 규약과 동일한 이름을 쓴다. */
   private get defDef(): number { return this.def.def ?? 0; }
@@ -182,6 +192,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   applyStun(durMs: number) {
     this.stunUntil = Math.max(this.stunUntil, this.scene.time.now + durMs);
+    if (this.ai?.current === "windup" || this.ai?.current === "chargeDash") {
+      this.attackReleased = false;
+      this.ai.set("cooldown");
+      this.modeTimer = Math.max(300, durMs);
+    }
   }
 
   /* vc183 (극딜 문서) — 적 지속 피해(출혈/중독). 종전엔 적에게 도트를 거는 수단이
@@ -267,6 +282,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
    *  GC 할당)을 생성 시 1회 계산으로 제거 — 시각 변화 0 */
   private runAnimKey = "";
   private attackAnimKey = "";
+  private windupAnimKey = "";
+  private hitAnimKey = "";
+  private deathAnimKey = "";
+  private hitPoseUntil = 0;
   private combatBadge: Phaser.GameObjects.Text | null = null;
   private idleAnimKey = "";
 
@@ -329,8 +348,15 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       const style = storyEnemyStyle(base.profile);
       this.displayName = (opts?.displayName?.startsWith("정예 ") ? `정예 ${STORY_ENEMY_ROLES[role].name}` : opts?.displayName ?? STORY_ENEMY_ROLES[role].name) + ` · ${style.label}`;
       this.attackAnimKey = `${visual}-attack`;
+      this.windupAnimKey = `${visual}-windup`;
       this.combatBadge = scene.add.text(x, y, `${style.mark} ${style.label}`, { fontFamily: "Galmuri11, monospace", fontSize: "10px", color: style.color, backgroundColor: "#17131fe0", padding: { x: 2, y: 1 } }).setOrigin(.5, 1).setDepth(22).setVisible(false);
       this.once(Phaser.GameObjects.Events.DESTROY, () => { this.combatBadge?.destroy(); this.combatBadge = null; });
+    }
+    if (!hasStoryVisual && OWNED_ENEMY_MOTIONS[key] && scene.anims.exists(`${key}-release`)) {
+      this.attackAnimKey = `${key}-release`;
+      this.windupAnimKey = `${key}-windup`;
+      this.hitAnimKey = `${key}-hit`;
+      this.deathAnimKey = `${key}-death`;
     }
     /* v3.0.15 (#16) — 챕터 테마 원소 부여 */
     this.elem = CHAPTER_ELEM[parseStage(scene.stageDef.key).ch] ?? "none";
@@ -509,7 +535,16 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const windupState: FSMState<AICtx> = {
       name: "windup", // SHORT — 공격 예고: 제자리 부들부들 / 원거리는 주문 시전 / 돌진형은 조준 플래시
       enter: (c) => {
-        c.enemy.setTint(prof?.charge ? 0xffd0b0 : 0xffb0a0);
+        const e = c.enemy;
+        e.attackPlan = null;
+        e.attackReleased = false;
+        if (!e.dummy && !e.getData("tutorialOwned")) {
+          e.attackAim.copy(c.toPlayer);
+          if (!e.attackAim.lengthSq()) e.attackAim.set(e.flipX ? -1 : 1, 0);
+          e.attackPlan = enemyAttackPlan(prof, e.attackAim.x, e.attackAim.y);
+          e.showAttackWarning();
+        }
+        if (c.enemy.hitFlash <= 0) c.enemy.setTint(prof?.charge ? 0xffd0b0 : 0xffb0a0).setTintMode(Phaser.TintModes.MULTIPLY);
         if (c.enemy.getData("tutorialEvade")) {
           c.enemy.modeTimer = 1100;
           c.enemy.scene.tut?.notify("evade_windup", { enemy: c.enemy });
@@ -520,11 +555,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         c.vx = Math.sin(e.scene.time.now * 0.06) * 12;
         c.vy = 0;
         if (e.modeTimer > 0) return;
+        e.attackReleased = true;
+        e.attackPoseUntil = e.scene.time.now + (e.scene.anims.get(e.attackAnimKey)?.duration ?? 0);
         const rng = prof?.ranged;
         if (rng) {
           // 원거리 — 투사체 발사 (사거리 이탈했으면 재추격)
           if (c.dist <= rng.range * 1.1 && c.player.hp > 0) {
-            const ang = Math.atan2(c.player.y - e.y, c.player.x - e.x);
+            const ang = e.attackPlan?.angle ?? Math.atan2(c.player.y - e.y, c.player.x - e.x);
             e.scene.fireEnemyProj({
               x: e.x, y: e.y - 6,
               angle: ang, speed: rng.projSpeed,
@@ -540,12 +577,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         }
         if (prof?.charge) {
           // 돌진형 — 조준 후 직선 돌진 (돌진 경로 스윕 판정은 chargeDash에서)
-          e.chargeDir.copy(c.toPlayer);
+          e.chargeDir.copy(e.attackPlan ? e.attackAim : c.toPlayer);
           e.modeTimer = prof.charge.time;
           return "chargeDash";
         }
         if (e.getData("tutorialEvade")) e.scene.tut?.notify("evade_resolved", { enemy: e, missed: c.dist > 58 });
-        if (c.dist <= 58) {
+        if (c.dist <= 58 && (!e.attackPlan || enemyMeleeConnects(e.attackPlan, c.player.x - e.x, c.player.y - e.y))) {
           c.player.takeDamage(e.def.atk, c.toPlayer, 0, 0); /* v1.4.41 (#8) — 유저 지시: 고정 % 피해는 '식인초·카오스 보스 특정 패턴'에만.
          *  일반 몹 접촉에 4.5% 고정 하한이 걸려 밸런스가 무너져 있었다 → 수치 피해만. */
           /* v3.0.3 — 접촉 공격 상태이상 (출혈/독/감속) */
@@ -557,6 +594,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         e.modeTimer = 620;
         return "cooldown";
       },
+      exit: c => c.enemy.clearAttackWarning(),
     };
     const chargeDashState: FSMState<AICtx> = {
       name: "chargeDash", // v3.0.3 — 돌진형 전용: 조준 방향 직선 돌진 (접촉 판정)
@@ -587,7 +625,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     };
     const cooldownState: FSMState<AICtx> = {
       name: "cooldown", // 공격 후 — 살짝 물러남
-      enter: (c) => c.enemy.clearTint(),
+      enter: (c) => { if (c.enemy.hitFlash <= 0) c.enemy.clearTint(); },
       update: (c) => {
         c.vx = -c.toPlayer.x * c.enemy.effSpeed * 0.3;
         c.vy = -c.toPlayer.y * c.enemy.effSpeed * 0.3;
@@ -644,17 +682,14 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (this.dummy) {
       this.setVelocity(0, 0);
       this.hitFlash = Math.max(0, this.hitFlash - dt);
-      if (this.hitFlash <= 0 && this.tintTopLeft !== 0xffffff) {
-        if (this.dummyTint !== null) this.setTint(this.dummyTint);
-        else this.clearTint();
-      }
+      this.refreshDamageTint();
       if (this.anims.currentAnim?.key !== this.idleAnimKey) this.play(this.idleAnimKey);
       if (this.anims.isPaused) this.anims.resume();
       return;
     }
     this.modeTimer -= dt;
     this.hitFlash = Math.max(0, this.hitFlash - dt);
-    if (this.hitFlash <= 0 && this.tintTopLeft !== 0xffffff) this.clearTint();
+    this.refreshDamageTint();
     // v2.0 프롤로그 보호 — 인트로/입장 유예 중 어그로·공격 차단 (제자리 대기)
     if (this.scene.isPrologueSafe) {
       this.setVelocity(0, 0);
@@ -850,18 +885,46 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     this.setVelocity(c.vx + this.knockVec.x, c.vy + this.knockVec.y);
 
+    this.attackWarning?.setPosition(this.x, this.y);
+
     // 애니메이션 & 방향 — v1.4.3: 키 캐시 사용 (매 프레임 문자열 생성 제거)
     const moving = Math.abs(c.vx) + Math.abs(c.vy) > 12;
-    const anim = this.attackAnimKey && this.ai.current === "windup" ? `${this.texture.key}-windup`
-      : this.attackAnimKey && (this.ai.current === "chargeDash" || this.ai.current === "cooldown") ? this.attackAnimKey : moving ? this.runAnimKey : this.idleAnimKey;
+    const anim = this.hitAnimKey && this.scene.time.now < this.hitPoseUntil ? this.hitAnimKey
+      : this.windupAnimKey && this.ai.current === "windup" ? this.windupAnimKey
+      : this.attackAnimKey && (this.ai.current === "chargeDash" || this.ai.current === "cooldown" && this.attackReleased && this.scene.time.now < this.attackPoseUntil) ? this.attackAnimKey : moving ? this.runAnimKey : this.idleAnimKey;
     if (this.anims.currentAnim?.key !== anim) {
       this.play(anim);
       this.anims.timeScale = anim.endsWith("-windup") ? (this.anims.currentAnim?.duration ?? 333) / Math.max(1, this.modeTimer) : 1;
     }
-    if (c.vx !== 0) this.setFlipX(this.attackAnimKey ? c.vx < 0 : c.vx > 0);
+    const facingX = this.attackPlan && (this.ai.current === "windup" || this.ai.current === "chargeDash" || this.ai.current === "cooldown" && this.attackReleased)
+      ? this.attackAim.x : c.vx;
+    if (facingX !== 0) this.setFlipX(this.attackAnimKey ? facingX < 0 : facingX > 0);
 
     // Idle full-health enemies keep lazy HP bars; engaged enemies are readable before a hit.
     this.syncHpBar();
+  }
+
+  private showAttackWarning() {
+    this.clearAttackWarning();
+    const p = this.attackPlan;
+    if (!p) return;
+    const color = p.kind === "ranged" ? 0x8fd7ff : p.kind === "charge" ? 0xffbd78 : 0xffa27c;
+    const g = this.scene.add.graphics().setPosition(this.x, this.y).setRotation(p.angle).setDepth(5).setName("enemy:attack-warning");
+    g.fillStyle(color, .12).lineStyle(1.5, color, .85);
+    if (p.kind === "melee") g.slice(0, 0, p.reach, -p.halfAngle, p.halfAngle).fillPath().strokePath();
+    else if (p.kind === "charge") g.fillRect(0, -40, p.reach, 80).strokeRect(0, -40, p.reach, 80);
+    else g.lineBetween(0, 0, Math.min(260, p.reach), 0);
+    this.attackWarning = g;
+  }
+  private clearAttackWarning() { this.attackWarning?.destroy(); this.attackWarning = null; }
+
+  /** White FILL is tinted too; comparing RGB alone leaves a permanent white silhouette. */
+  private refreshDamageTint() {
+    if (this.hitFlash > 0) return;
+    const mode = this.ai?.current;
+    if (this.dummyTint !== null) this.setTint(this.dummyTint).setTintMode(Phaser.TintModes.MULTIPLY);
+    else if (mode === "windup" || mode === "chargeDash") this.setTint(mode === "chargeDash" ? 0xff8060 : this.def.profile?.charge ? 0xffd0b0 : 0xffb0a0).setTintMode(Phaser.TintModes.MULTIPLY);
+    else if (this.isTinted) this.clearTint();
   }
 
   /** Reuse the same HP bars for pre-hit combat feedback and damage updates. */
@@ -982,7 +1045,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       { def: this.defDef, defPct: this.defPctVal },
     );
     trackDamage(dealt); // v1.4.30 (#9) — 교실 모드: 공유 보스 레이드 딜 합산 (교실 밖 no-op)
+    dmgData.damage = dealt;
     this.hp = applyDamage(dmgData, this.hp, this.maxHp).health;
+    this.hitPoseUntil = this.scene.time.now + 140;
     this.hitFlash = 90;
     // 타격감: 화이트 플래시 (기존 빨간 틴트보다 명확한 피격 피드백)
     this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
@@ -1114,9 +1179,18 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   private die() {
     this.alive = false;
+    this.clearAttackWarning();
     this.scene.sfxEnemyDie();
+    const bodyDeath = !!this.deathAnimKey && this.scene.anims.exists(this.deathAnimKey);
+    if (bodyDeath) {
+      const corpse = this.scene.add.sprite(this.x, this.y, `${this.def.key}_death0`)
+        .setOrigin(this.originX, this.originY).setScale(this.baseSX, this.baseSY).setFlipX(this.flipX).setDepth(this.depth);
+      corpse.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => corpse.destroy());
+      corpse.play(this.deathAnimKey);
+      this.setVisible(false);
+    }
     /* v4.9.3 — pixelfx 사망 연출 (몸이 부서지며 흩어진다) */
-    try { this.scene.pxFx?.play("death.normal", this.x, this.y, { scale: 0.7 }); } catch { /* 무시 */ }
+    try { if (!bodyDeath) this.scene.pxFx?.play("death.normal", this.x, this.y, { scale: 0.7 }); } catch { /* 무시 */ }
     /* v1.2.0 (#10) — 격파 히트스톱 70ms — 처치 순간의 무게감 */
     this.scene.hitStop(70);
     /* vc214 — 소멸 dissolve. 기존엔 파티클만 터지고 60ms 뒤 스프라이트가 즉시
@@ -1126,7 +1200,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
      * (Canvas 폴백에서도 기존 연출 그대로 동작 — 안전). */
     /* fxLevel 0(적응형 절전)에서는 dissolve 를 생략한다 — 이 프로젝트는 약한 GPU 에서
      * 셰이더 경합으로 컨텍스트 유실을 겪은 이력이 있고, 사망 연출은 그 우선순위가 낮다. */
-    const dis = this.scene.fxLevel >= 1 && this.scene.game.renderer.type === Phaser.WEBGL
+    const dis = !bodyDeath && this.scene.fxLevel >= 1 && this.scene.game.renderer.type === Phaser.WEBGL
       ? spawnDissolve(this.scene, this.texture.key, this.x, this.y, {
           frame: this.frame?.name,
           duration: 380,
@@ -1140,8 +1214,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     void dis;
     this.scene.spawnDeathBurst(this.x, this.y);
     /* v1.3.0 (#에셋통합) — 사망 폭발 퍼프 + 충격파 (Drive 팩 5-explosion/UNI 코어) */
-    this.scene.driveFx?.explosion(this.x, this.y, 0xffb08a);
-    this.scene.driveFx?.shockRing(this.x, this.y, 0xffd0a0, 0.8);
+    if (!bodyDeath) {
+      this.scene.driveFx?.explosion(this.x, this.y, 0xffb08a);
+      this.scene.driveFx?.shockRing(this.x, this.y, 0xffd0a0, 0.8);
+    }
     /* v1.4.11 — pk_smoke 사망 잔연기 (소멸 후 여운 — Particle Kit 활성화) */
     this.scene.driveFx?.deathPuff(this.x, this.y, 0xcfc6de);
     /* v3.0.3 — 사망 장판 (늪지 독괴물 등 — 죽어도 독 구덩이를 남긴다) */
@@ -1199,6 +1275,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
    *  "검은색 네모 이펙트")가 남는 일을 원천 차단한다. die()의 선정리와 중복돼도
    *  null 가드로 무해 (이중 destroy는 Phaser가 no-op 처리). */
   destroy(fromScene?: boolean) {
+    this.clearAttackWarning();
     /* vc183 — 액터 난수 스트림 해제. 몬스터는 계속 스폰/소멸하므로
      *  해제하지 않으면 Map 이 무한히 자란다. */
     releaseActor(this.actorId);

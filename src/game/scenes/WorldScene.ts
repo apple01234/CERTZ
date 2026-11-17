@@ -905,6 +905,8 @@ export class WorldScene extends Phaser.Scene {
       if (data.stage === originalStage) data.stage = data.save!.stage as StageKey;
     }
     this.storyRevision = data.save?.storyRevision ?? STORY_REVISION;
+    this.lastRemoteActAt = -Infinity;
+    this.lastRemoteActById.clear();
     this.storyQuestMigration = { ...data.save?.storyQuestMigration, revision: data.save?.storyQuestMigration?.revision ?? STORY_QUEST_REVISION, credits: { ...data.save?.storyQuestMigration?.credits }, review: Array.isArray(data.save?.storyQuestMigration?.review) ? [...data.save.storyQuestMigration.review] : [] };
     this.questIdx = 0;
     this.activeStoryTalk = null;
@@ -14159,7 +14161,7 @@ export class WorldScene extends Phaser.Scene {
    *  로컬에서 쓴 공격/스킬이 같은 구역 원격 플레이어 화면에서도 보인다.
    *  데미지 판정은 각 클라 자기 자신 — 여기선 보기용 연출만 재생 (경량). */
 
-  private lastRemoteActAt = 0;
+  private lastRemoteActAt = -Infinity;
   /* vc147 (#6) — 스로틀을 원격별(id)로 분리: 기존 전역 80ms 스로틀은 여러 유저가 동시에
    *  공격/스킬을 쓰면 서로의 액션을 유실시켰다("내 화면과 상대 화면이 다름" 재제보의 한 축). */
   private lastRemoteActById = new Map<string, number>();
@@ -14168,12 +14170,14 @@ export class WorldScene extends Phaser.Scene {
     if (!a || a.id === net.netId()) return;
     /* 스로틀 — 동일 유저 연타 도폭 방지(90ms) + 전체 도폭 상한(25ms) 이중 컷 (최적화 #12) */
     const now = this.time.now;
-    const prevAt = a.id ? (this.lastRemoteActById.get(a.id) ?? 0) : 0;
-    if (now - prevAt < 90) return;
-    if (now - this.lastRemoteActAt < 25) return;
-    this.lastRemoteActAt = now;
+    const finale = a.kind === "s5f" || a.kind === "s5bf";
+    const throttleKey = a.id ? finale ? `${a.id}:${a.kind}` : a.id : undefined;
+    const prevAt = throttleKey ? this.lastRemoteActById.get(throttleKey) : undefined;
+    if (prevAt !== undefined && now - prevAt < 90) return;
+    if (!finale && now - this.lastRemoteActAt < 25) return;
+    if (!finale) this.lastRemoteActAt = now;
     if (a.id) {
-      this.lastRemoteActById.set(a.id, now);
+      this.lastRemoteActById.set(throttleKey!, now);
       if (this.lastRemoteActById.size > 48) this.lastRemoteActById.clear(); // 메모리 상한
     }
     const r = a.id ? this.remotes.get(a.id) : undefined;
@@ -14181,6 +14185,10 @@ export class WorldScene extends Phaser.Scene {
     const y = r ? r.sp.y : a.y;
     const flip = r ? r.flip : a.flip;
     const cls = r?.cls ?? a.cls;
+    if (a.kind === "s5f" || a.kind === "s5bf") {
+      try { playUltFx(this, cls, a.kind === "s5bf" ? 2 : 1, "finale", x, y, flip); } catch { /* cosmetic only */ }
+      return;
+    }
     const fam = familyOf(cls ?? undefined);
     const hex = Number(classDef(cls ?? undefined)?.color?.replace("#", "0x") ?? 0xffffff) || 0xffe9b0;
     const dir = new Phaser.Math.Vector2(flip ? 1 : -1, 0);

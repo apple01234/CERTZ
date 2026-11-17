@@ -1,0 +1,75 @@
+{
+  "scope": "Actual MqttBus implementation over MQTT 3.1.1/WebSocket; old protocol clients use mqtt.js, not an Android APK. Controlled local brokers replace the two public endpoints.",
+  "events": [
+    {
+      "broker": 0,
+      "legacyToCurrent": true,
+      "currentToLegacy": true
+    },
+    {
+      "broker": 1,
+      "legacyToCurrent": true,
+      "currentToLegacy": true
+    }
+  ],
+  "connectedBrokers": [
+    0,
+    1
+  ],
+  "current": {
+    "act": [
+      {
+        "id": "qa_mwk81cmx_1",
+        "kind": "s5",
+        "x": 10,
+        "y": 20,
+        "flip": false,
+        "cls": null
+      },
+      {
+        "id": "qa_mwk81cmx_1",
+        "kind": "s5f",
+        "x": 10,
+        "y": 20,
+        "flip": false,
+        "cls": null
+      },
+      {
+        "id": "qa_mwk81cmx_1",
+        "kind": "s1",
+        "x": 10,
+        "y": 20,
+        "flip": false,
+        "cls": null
+      },
+      {
+        "id": "qa_mwk81cmx_1",
+        "kind": "s1",
+        "x": 10,
+        "y": 20,
+        "flip": false,
+        "cls": null
+      }
+    ],
+    "boss": [
+      {
+        "id": "qa_mwk81cmx_1",
+        "n": 123
+      }
+    ],
+    "trade": [
+      {
+        "k": "treq",
+        "from": "qa_mwk81cmx_1",
+        "name": "통신QA",
+        "offer": {
+          "items": [],
+          "gold": 0,
+          "emerald": 0
+        }
+      }
+    ]
+  },
+  "singleBrokerSurvival": true,
+  "passed": true
+}
