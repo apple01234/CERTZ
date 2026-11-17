@@ -308,15 +308,10 @@ export type NetAction = {
   y: number;
   flip: boolean;
   cls: string | null;
+  angle?: number;
 };
 
-export function netAction(a: {
-  kind: NetAction["kind"];
-  x: number;
-  y: number;
-  flip: boolean;
-  cls: string | null;
-}) {
+export function netAction(a: Omit<NetAction, "id">) {
   if (socket?.connected) socket.emit("act", a);
 }
 

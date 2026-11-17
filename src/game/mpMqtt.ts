@@ -436,6 +436,7 @@ class MqttBusImpl implements MqttBus {
         y: num(m.y, -9999, 99999),
         flip: !!m.flip,
         cls: typeof m.cls === "string" && m.cls ? m.cls.slice(0, 16) : null,
+        angle: typeof m.angle === "number" && Math.abs(m.angle) <= 2 * Math.PI ? m.angle : undefined,
       });
       return;
     }
@@ -511,7 +512,9 @@ class MqttBusImpl implements MqttBus {
         if (now - this.lastSentAt < 250 && this.lastActKind === kind) return;
         this.lastActKind = kind;
         this.lastSentAt = now;
-        this.publish({ k: "act", pid: this.id, kind, x: num(a.x, -9999, 99999), y: num(a.y, -9999, 99999), flip: !!a.flip, cls: this.me.cls, t: now }, ROOT + "stage/" + this.stage);
+        const angle = typeof a.angle === "number" && Math.abs(a.angle) <= 2 * Math.PI ? a.angle : undefined;
+        const cls = angle !== undefined && typeof a.cls === "string" ? a.cls.slice(0, 16) : this.me.cls;
+        this.publish({ k: "act", pid: this.id, kind, x: num(a.x, -9999, 99999), y: num(a.y, -9999, 99999), flip: !!a.flip, cls, angle, t: now }, ROOT + "stage/" + this.stage);
         break;
       }
       /* vc143 (#4 공유 보스 체력) — n 있으면 딜 릴레이(bdmg), 없으면 호스트 HP 브로드캐스트(bhp).

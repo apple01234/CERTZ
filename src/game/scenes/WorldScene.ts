@@ -14186,7 +14186,8 @@ export class WorldScene extends Phaser.Scene {
     const flip = r ? r.flip : a.flip;
     const cls = r?.cls ?? a.cls;
     if (a.kind === "s5f" || a.kind === "s5bf") {
-      try { playUltFx(this, a.cls ?? cls, a.kind === "s5bf" ? 2 : 1, "finale", x, y, !a.flip); } catch { /* cosmetic only */ }
+      const angle = Number.isFinite(a.angle) ? a.angle : undefined;
+      try { playUltFx(this, a.cls ?? cls, a.kind === "s5bf" ? 2 : 1, "finale", a.x, a.y, !a.flip, angle); } catch { /* cosmetic only */ }
       return;
     }
     const fam = familyOf(cls ?? undefined);

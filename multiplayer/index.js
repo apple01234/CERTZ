@@ -252,6 +252,7 @@ function attachMultiplayer(httpServer) {
         y: Math.max(-9999, Math.min(99999, Number(raw.y) || 0)),
         flip: !!raw.flip,
         cls: typeof raw.cls === "string" ? raw.cls.slice(0, 16) : null,
+        angle: typeof raw.angle === "number" && Math.abs(raw.angle) <= 2 * Math.PI ? raw.angle : undefined,
       };
       /* 같은 방(AOI)에만, 보낸 사람 제외 — 종전엔 전체 소켓을 돌며 구역을 비교했다 */
       const key = rooms.roomOf(sock.id);

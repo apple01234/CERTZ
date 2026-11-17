@@ -66,5 +66,6 @@ test('원격 재생 경로가 스로틀 뒤에 있고, 자기 액션은 무시�
   const fn = scene.slice(scene.indexOf('private playRemoteAction('), scene.indexOf('private playRemoteSkillFx('));
   assert.match(fn, /if \(!a \|\| a\.id === net\.netId\(\)\) return;/, '자기 액션이 원격으로 재생된다');
   assert.ok(fn.indexOf('lastRemoteActById') < fn.indexOf('playRemoteSkillFx'), '스로틀보다 먼저 재생한다');
-  assert.match(fn, /playUltFx\(this, a\.cls \?\? cls, a\.kind === "s5bf" \? 2 : 1, "finale", x, y, !a\.flip\)/);
+  assert.match(fn, /playUltFx\(this, a\.cls \?\? cls, a\.kind === "s5bf" \? 2 : 1, "finale", a\.x, a\.y, !a\.flip, angle\)/);
+  assert.match(fn, /Number\.isFinite\(a\.angle\) \? a\.angle : undefined/);
 });

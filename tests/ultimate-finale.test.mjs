@@ -5,6 +5,8 @@ import { readFileSync } from 'node:fs';
 import { stripTypeScriptTypes } from 'node:module';
 import vm from 'node:vm';
 import ts from 'typescript';
+import { createUltBudget, planUltWaves } from '../src/game/combat/ultWaves.ts';
+import { finalePlanReach } from '../src/game/fx/ultFinalePlan.ts';
 const path = new URL('../src/game/fx/ultFinale.ts', import.meta.url);
 let source = stripTypeScriptTypes(readFileSync(path, 'utf8'));
 source = source.replace(/import Phaser from "phaser";/, 'const Phaser = { BlendModes: { ADD: 1 } };');
@@ -109,6 +111,8 @@ assert.ok(callback, 'Player slot 1 geometry callback wired');
 // Extract the entire real method using the TS AST, never a source-presence probe.
 const playerAst = ts.createSourceFile('Player.ts', playerSrc, ts.ScriptTarget.Latest, true);
 const playerClass = playerAst.statements.find(n => ts.isClassDeclaration(n) && n.name?.text === 'Player');
+const wavesMethod = playerClass.members.find(n => n.name?.getText(playerAst) === 'startUltBudget');
+const wavePlayer = stripTypeScriptTypes(`class WavePlayer { ${wavesMethod.getText(playerAst)} }`);
 const method = playerClass?.members.find(n => ts.isMethodDeclaration(n) && n.name.getText(playerAst) === 'useSkill5b');
 assert.ok(method?.body, 'real Player.useSkill5b method found');
 const gate = playerClass.members.find(n => n.name?.getText(playerAst) === "actionAllowed");
@@ -422,6 +426,51 @@ const actor = {targetsAround:()=>[target(500,200),target(100,500)],
 const invoke = vm.runInNewContext('(function(){return ('+callback+');})',{finaleTargetOrder:order}).call(actor);
 invoke(100,200,2,false,1401,{plan:plan('deadeye',1),angle:0});
 assert.equal(damageCalls,1,'off-beam target must not take circular splash damage');
+
+// Execute the delayed waves on the real Player method, including the cue's committed aim.
+const timers = [], hits = [], patterns = [], network = [];
+let aim = 0, cue, now = 0;
+const hold = 2400;
+const timing = planUltWaves(hold);
+const makeTarget = (id, x, y, ultShielded = false) => ({
+  id, x, y, active: true, ultShielded,
+  takeDamage(damage) { hits.push({ id, now, damage }); },
+});
+const first = makeTarget('first', 400, -160);
+const second = makeTarget('second', 400, 0);
+const between = makeTarget('between', 400, -80);
+const finish = makeTarget('finish', 100, 400);
+const shield = makeTarget('shield', 100, 400, true);
+const waveActor = vm.runInNewContext(`${wavePlayer}; new WavePlayer();`, {
+  createUltBudget, planUltWaves, finalePlanReach, finaleTargetOrder: order,
+  resolveSkill5Of: cls => cls, ultimateFinalePlan: plan, ULT_FINALE_CUE_MS: { 2: 260 },
+  playUltPattern(_scene, _class, _slot, pattern, angle) { patterns.push({ pattern, angle }); },
+  playUltFinaleCue(_scene, _class, _slot, angle, follow) { cue = { angle, follow }; return () => {}; },
+  playUltFx() {},
+});
+Object.assign(waveActor, {
+  active: true, state: 'idle', cls: 'warbringer', x: 0, y: 0, aimDirFree: () => ({ angle: () => aim }),
+  ultBudgetOf: () => 10000, awayScratch: new Vector(),
+  getAllTargetsIn: reach => [first, second, between, finish, shield].filter(t => Math.hypot(t.x - waveActor.x, t.y - waveActor.y) <= reach),
+  netEmitAction: (...args) => network.push(args),
+  scene: { time: { delayedCall: (at, fire) => timers.push({ at, fire }) }, spawnBurstAt() {}, spawnShockwave() {}, impactFX: { shake() {} } },
+});
+const waveBudget = waveActor.startUltBudget(2, hold, 0);
+const finaleAt = timing.at.at(-1);
+for (const { at, fire } of timers.sort((a, b) => a.at - b.at)) {
+  now = at;
+  if (at === finaleAt - 260) aim = Math.PI / 2;
+  if (at === finaleAt) { aim = Math.PI; waveActor.x = 100; }
+  fire();
+}
+assert.deepEqual(hits.filter(h => h.now === timing.at[0]).map(h => h.id), ['first']);
+assert.deepEqual(hits.filter(h => h.now === timing.at[1]).map(h => h.id), ['second']);
+assert.deepEqual(hits.filter(h => h.now === finaleAt).map(h => h.id), ['finish']);
+assert.ok(patterns.every(({ pattern, angle }) => pattern.zones.length === 1 && angle === 0));
+assert.equal(cue.angle, Math.PI / 2);
+assert.equal(cue.follow().x, 100);
+assert.deepEqual(network, [['s5bf', Math.PI / 2, 'warbringer']]);
+assert.equal(waveBudget.draw(shield, 9999), 0);
 
 console.log(`ALL CHECKS PASS: ${classes.length} classes / ${classes.length*2} slot traces / slot collisions 0`);
 console.log('PASS: independent geometry boundaries / historical schedules+damage / lite parity / shared shake / Player slot 1 narrowphase');

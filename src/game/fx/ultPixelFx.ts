@@ -15,90 +15,84 @@ import type Phaser from "phaser";
 import { ensureFxSheet, playFx, unloadFxSheet } from "./pixelfxBridge";
 import { STARTER_PIXELFX } from "../assetSelection";
 import { classDef } from "../classes";
+import { BOSS_PIXELFX } from "./pixelFxSheets";
+import { ultimateFinalePlan, type FinalePlan } from "./ultFinalePlan";
 
 type UltFx = { cast: string; finale: string };
 type Pair = { s5: UltFx; s5b: UltFx };
 
 export const ULT_PIXELFX: Record<string, Pair> = {
-  warbringer:  { s5: { cast: "heavy-cleave", finale: "hammer-smash" },   s5b: { cast: "heavy-landing", finale: "quake" } },
-  crusader:    { s5: { cast: "halo", finale: "sunburst" },               s5b: { cast: "divine-shield", finale: "heal-aoe" } },
-  deadeye:     { s5: { cast: "spell-charge", finale: "crit-hit" },       s5b: { cast: "hex-sigil", finale: "plasma-explosion" } },
-  skylord:     { s5: { cast: "tornado", finale: "thunderclap" },         s5b: { cast: "spark-arc", finale: "ball-lightning" } },
-  arclord:     { s5: { cast: "rune-circle", finale: "mana-burst" },      s5b: { cast: "storm-cloud", finale: "chain-lightning" } },
-  eternal:     { s5: { cast: "time-stop", finale: "implosion" },         s5b: { cast: "blessing", finale: "star-fall" } },
-  shadowlord:  { s5: { cast: "necro-skulls", finale: "curse" },          s5b: { cast: "eclipse", finale: "black-hole" } },
-  blademaster: { s5: { cast: "double-slash", finale: "spin-slash" },     s5b: { cast: "whip-crack", finale: "scythe-reap" } },
-  seaking:     { s5: { cast: "whirlpool", finale: "wave-crash" },        s5b: { cast: "water-jet", finale: "splash" } },
-  dreadnought: { s5: { cast: "muzzle-shotgun", finale: "plasma-explosion" }, s5b: { cast: "hit-flash", finale: "implosion" } },
+  warbringer:  { s5: { cast: "rage", finale: "energy-crack" },          s5b: { cast: "heavy-cleave", finale: "hammer-smash" } },
+  crusader:    { s5: { cast: "shield-block", finale: "healing-bloom" },         s5b: { cast: "blessing", finale: "divine-shield" } },
+  deadeye:     { s5: { cast: "sparks-glow", finale: "hit-spark" },        s5b: { cast: "orbit-rings", finale: "bullet-impact" } },
+  skylord:     { s5: { cast: "haste", finale: "leaf-storm" },           s5b: { cast: "storm", finale: "thunderclap" } },
+  arclord:     { s5: { cast: "arcane-orb", finale: "plasma-explosion" }, s5b: { cast: "pentagram", finale: "ball-lightning" } },
+  eternal:     { s5: { cast: "crystal-shard", finale: "ice-spikes" },    s5b: { cast: "time-stop", finale: "implosion" } },
+  shadowlord:  { s5: { cast: "shadow-flames", finale: "scythe-reap" },   s5b: { cast: "summon-rise", finale: "eclipse" } },
+  blademaster: { s5: { cast: "sword-slash", finale: "double-slash" },   s5b: { cast: "blink-in", finale: "whip-crack" } },
+  seaking:     { s5: { cast: "splash", finale: "water-jet" },            s5b: { cast: "whirlpool", finale: "wave-crash" } },
+  dreadnought: { s5: { cast: "blunt-hit", finale: "shockwave-big" }, s5b: { cast: "muzzle-shotgun", finale: "fire-tornado" } },
 };
 
 const CAST_SCALE = 1.2;
 export const ULT_FINALE_CUE_MS = { 1: 190, 2: 260 } as const;
 
-type FinaleMark = "sweep" | "ray" | "cross" | "ring";
-type FinaleLayout = { size: number; mark: FinaleMark; forward?: number; directional?: boolean };
+type FinaleLayout = { size: number; forward?: number; directional?: boolean };
 
 /** 긴 변의 월드 크기와 전방 배치. 픽셀 시트마다 프레임 크기가 다르다. */
 const FINALE_LAYOUT: Record<string, readonly [FinaleLayout, FinaleLayout]> = {
-  warbringer:  [{ size: 390, mark: "sweep", forward: 75, directional: true }, { size: 510, mark: "cross" }],
-  crusader:    [{ size: 395, mark: "cross" }, { size: 480, mark: "ring" }],
-  deadeye:     [{ size: 340, mark: "ray", forward: 200 }, { size: 425, mark: "cross", forward: 155 }],
-  skylord:     [{ size: 420, mark: "sweep", forward: 105 }, { size: 465, mark: "ring" }],
-  arclord:     [{ size: 450, mark: "ring" }, { size: 520, mark: "cross", directional: true }],
-  eternal:     [{ size: 425, mark: "cross" }, { size: 495, mark: "ring" }],
-  shadowlord:  [{ size: 380, mark: "sweep" }, { size: 475, mark: "ring" }],
-  blademaster: [{ size: 395, mark: "ray", forward: 70 }, { size: 460, mark: "cross", directional: true }],
-  seaking:     [{ size: 435, mark: "sweep", forward: 125, directional: true }, { size: 485, mark: "ring" }],
-  dreadnought: [{ size: 420, mark: "cross", forward: 140 }, { size: 510, mark: "ring" }],
+  warbringer:  [{ size: 390, forward: 75, directional: true }, { size: 510 }],
+  crusader:    [{ size: 395 }, { size: 480 }],
+  deadeye:     [{ size: 340, forward: 200 }, { size: 425, forward: 155 }],
+  skylord:     [{ size: 420, forward: 105 }, { size: 465 }],
+  arclord:     [{ size: 450 }, { size: 520, directional: true }],
+  eternal:     [{ size: 425 }, { size: 495 }],
+  shadowlord:  [{ size: 380 }, { size: 475 }],
+  blademaster: [{ size: 395, forward: 70 }, { size: 460, directional: true }],
+  seaking:     [{ size: 435, forward: 125, directional: true }, { size: 485 }],
+  dreadnought: [{ size: 420, forward: 140 }, { size: 510 }],
 };
 
 type UltFxScene = Phaser.Scene & { fxLevel?: number };
 type UltAnchor = { x: number; y: number };
 
-/** 한 가지 도형을 수축시켜 예고하고, 타격에서 같은 도형을 펼친다. */
-function playFinaleMark(
-  scene: UltFxScene, cls: string, slot: 1 | 2, layout: FinaleLayout, angle: number,
-  follow: () => UltAnchor | null, cue: boolean,
+/** The cue and impact outline use the same world-space shapes as the hit test. */
+export function playUltPattern(
+  scene: UltFxScene, cls: string, slot: 1 | 2, plan: FinalePlan, angle: number,
+  follow: () => UltAnchor | null, cue = false, finale = false,
 ): (() => void) | undefined {
   const anchor = follow();
   if (!anchor) return;
   const lite = scene.fxLevel === 0;
-  const r = layout.size * (lite ? 0.13 : 0.22);
   const tint = Number.parseInt(classDef(cls)?.color?.slice(1) ?? "fff2cc", 16);
-  const mark = scene.add.graphics().setDepth(cue ? 23 : 26);
-  const forward = layout.forward ?? 0;
-  const dx = forward * Math.cos(angle);
-  const dy = forward * Math.sin(angle);
-  mark.setPosition(anchor.x + dx, anchor.y + dy);
-  mark.lineStyle(cue ? 2 : 5, tint, 0.95);
-  switch (layout.mark) {
-    case "sweep":
-      mark.setRotation(angle).beginPath();
-      mark.arc(-r * 0.5, 0, r, -1.1, 1.1);
-      mark.strokePath();
-      break;
-    case "ray":
-      mark.setRotation(angle).lineBetween(-r, 0, r, 0);
-      break;
-    case "cross":
-      mark.setRotation(angle).lineBetween(-r, 0, r, 0);
-      mark.lineBetween(0, -r * 0.65, 0, r * 0.65);
-      break;
-    case "ring":
-      mark.strokeEllipse(0, 0, r * 2, r * 1.25);
-      break;
+  const mark = scene.add.graphics().setDepth(cue ? 8 : 26).setName("ultimate-pattern");
+  mark.setPosition(anchor.x, anchor.y).setRotation(angle);
+  mark.lineStyle(cue || lite ? 2 : finale ? 5 : 3, tint, cue ? .85 : .95);
+  for (const zone of plan.zones) {
+    if (zone.kind === "beam") {
+      const dx = Math.cos(zone.angle), dy = Math.sin(zone.angle), w = zone.width / 2;
+      const ax = zone.x - dy * w, ay = zone.y + dx * w;
+      const bx = zone.x + dy * w, by = zone.y - dx * w;
+      const ex = dx * zone.length, ey = dy * zone.length;
+      mark.lineBetween(ax, ay, ax + ex, ay + ey).lineBetween(bx, by, bx + ex, by + ey);
+      mark.lineBetween(ax, ay, bx, by).lineBetween(ax + ex, ay + ey, bx + ex, by + ey);
+    } else if (zone.kind === "fan") {
+      const from = zone.angle - zone.arc / 2, to = zone.angle + zone.arc / 2;
+      mark.beginPath().arc(zone.x, zone.y, zone.radius, from, to).strokePath();
+      for (const side of [from, to]) mark.lineBetween(zone.x, zone.y, zone.x + Math.cos(side) * zone.radius, zone.y + Math.sin(side) * zone.radius);
+    } else {
+      const width = zone.kind === "ring" ? zone.width : 0;
+      const outer = zone.radius * 2 + width;
+      mark.strokeEllipse(zone.x, zone.y, outer, outer);
+      if (width) mark.strokeEllipse(zone.x, zone.y, zone.radius * 2 - width, zone.radius * 2 - width);
+    }
   }
-  if (!cue) mark.fillStyle(0xfff7e7, 0.9).fillCircle(0, 0, lite ? 4 : 7);
-  mark.setAlpha(cue ? 0.2 : 0.95).setScale(cue ? 1.3 : 0.8);
+  mark.setAlpha(cue ? .25 : finale ? .85 : .52);
   const tween = scene.tweens.add({
-    targets: mark,
-    alpha: cue ? 0.8 : 0,
-    scale: cue ? 0.72 : 1.45,
-    duration: cue ? ULT_FINALE_CUE_MS[slot] : lite ? 125 : 190,
-    ease: cue ? "Quad.in" : "Cubic.out",
+    targets: mark, alpha: cue ? .86 : 0, duration: cue ? ULT_FINALE_CUE_MS[slot] : lite ? 115 : 195,
     onUpdate: cue ? () => {
       const point = follow();
-      if (point) mark.setPosition(point.x + dx, point.y + dy);
+      if (point) mark.setPosition(point.x, point.y);
       else mark.setVisible(false);
     } : undefined,
     onComplete: () => mark.destroy(),
@@ -111,8 +105,8 @@ function playFinaleMark(
 }
 
 export function playUltFinaleCue(scene: UltFxScene, cls: string, slot: 1 | 2, angle: number, follow: () => UltAnchor | null) {
-  const layout = FINALE_LAYOUT[cls]?.[slot - 1];
-  if (layout) return playFinaleMark(scene, cls, slot, layout, angle, follow, true);
+  const plan = ultimateFinalePlan(cls, slot);
+  if (plan) return playUltPattern(scene, cls, slot, plan, angle, follow, true);
 }
 
 function sheetsOf(cls: string | null | undefined): string[] {
@@ -127,7 +121,7 @@ export function hasUltFx(cls: string | null | undefined): boolean {
 
 /** 현재 직업의 궁극기 시트 4장을 미리 받고, 다른 직업의 궁극기 시트는 내린다(직업을 바꿔도 메모리가 쌓이지 않게). */
 export function prefetchUltFx(scene: Phaser.Scene, cls: string | null | undefined): void {
-  const keep = new Set([...STARTER_PIXELFX, ...sheetsOf(cls)]);
+  const keep = new Set([...STARTER_PIXELFX, ...BOSS_PIXELFX, ...sheetsOf(cls)]);
   for (const other of Object.keys(ULT_PIXELFX)) {
     for (const key of sheetsOf(other)) if (!keep.has(key)) unloadFxSheet(scene, key);
   }
@@ -149,8 +143,9 @@ export function playUltFx(
   const layout = phase === "finale" ? FINALE_LAYOUT[cls]?.[slot - 1] : undefined;
   const forward = layout?.forward ?? 0;
   // The hit accent lands even when the atlas still needs to load.
-  if (layout) {
-    try { playFinaleMark(scene, cls, slot, layout, angle, () => ({ x, y }), false); } catch { /* 시트는 계속 재생 */ }
+  const plan = layout && ultimateFinalePlan(cls, slot);
+  if (plan) {
+    try { playUltPattern(scene, cls, slot, plan, angle, () => ({ x, y }), false, true); } catch { /* 시트는 계속 재생 */ }
   }
   const spawn = () => {
     try {

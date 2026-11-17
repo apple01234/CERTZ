@@ -28,8 +28,8 @@ import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUl
 import { DEATH_SLASH_CFG, runDeathSlashCinematic } from "../fx/DeathSlash"; // vc153 — 도적 제2궁극기 「사(死)의 일섬」 3D 시네마틱
 import { playUltLayers } from "../fx/ultLayers";
 import { runUltFinale } from "../fx/ultFinale"; // vc204 (#10) — 직업별 고유 마무리
-import { playUltFx, prefetchUltFx, hasUltFx, playUltFinaleCue, ULT_FINALE_CUE_MS } from "../fx/ultPixelFx";
-import { finaleTargetOrder, ultimateFinalePlan } from "../fx/ultFinalePlan";
+import { playUltFx, prefetchUltFx, hasUltFx, playUltFinaleCue, playUltPattern, ULT_FINALE_CUE_MS } from "../fx/ultPixelFx";
+import { finalePlanReach, finaleTargetOrder, ultimateFinalePlan } from "../fx/ultFinalePlan";
 import * as audio from "../audio";
 import { netAction } from "../net"; // v4.1.0 — 파티원 공격/스킬 동기화
 import type { Enemy } from "./Enemy";
@@ -946,12 +946,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /** v4.1.0 — 내 공격/스킬을 같은 구역 플레이어에게 브로드캐스트 (코스메틱 전용) */
-  protected netEmitAction(kind: "atk" | "s1" | "s2" | "s3" | "s4" | "s5" | "s5b" | "s5f" | "s5bf") {
+  protected netEmitAction(kind: "atk" | "s1" | "s2" | "s3" | "s4" | "s5" | "s5b" | "s5f" | "s5bf", angle?: number, cls = this.cls) {
     try {
       /* v1.0.14 — flip을 물리 방향(오른쪽=true)으로 정규화해 전송. 원격의
        *  fireRemoteProj/spawnBow는 걷기 컨벤션(오른쪽=true)으로 해석하므로
        *  공격 중 flipX를 그대로 보내면 화살이 항상 반대로 나갔다. */
-      netAction({ kind, x: Math.round(this.x), y: Math.round(this.y), flip: this.netFacingFlip, cls: this.cls });
+      netAction({ kind, x: Math.round(this.x), y: Math.round(this.y), flip: angle === undefined ? this.netFacingFlip : Math.cos(angle) >= 0, cls, angle });
     } catch {
       /* 오프라인 — 무시 */
     }
@@ -4491,17 +4491,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
      *  마법사만 마법진, 전사=대지 균열 / 궁수=화살 부채꼴 / 도적=공허 섬광 / 해적=대폭발
      *  (전 직업 동일 펜타클 "마법진 우려먹기" 해소) */
     spawnUltIntroSig(this.scene, this.x, this.y, hex, (familyOf(this.cls) ?? "default") as FamKey | "pirate" | "default");
-    /* vc181 (지시 #1·#2) — 3D 시네마틱: 궁극기 발동 순간 three.js 레이어가 올라와
-     *  실제 GLB 메시(해골·고리·톱니)를 3D 카메라 워크로 보여준다.
-     *  실패해도 2D 연출은 그대로 남으므로 게임 진행에 영향 없음. */
-    /* 2026-11-15 — pixelfx 시전 이펙트가 있는 직업은 3D 인트로를 줄이고, 시전 이펙트를 인트로가 걷힌 뒤에 띄운다.
-     *  3D 레이어(DOM)가 캔버스 위를 1.75초 덮어 시전 이펙트가 통째로 가려졌다(외부 평가 지적). */
+    /* 전용 시전 시트를 즉시 띄워 시전 중에도 캐릭터와 전장을 읽을 수 있게 한다. */
     const castFx = hasUltFx(key5);
-    const introMs = castFx ? 800 : 1750;
-    void cine3d().play({ preset: "ultimate", x: this.x, y: this.y, tint: hex, duration: introMs, fam: this.ultKeyFor3D() });
+    if (!castFx) void cine3d().play({ preset: "ultimate", x: this.x, y: this.y, tint: hex, duration: 1750, fam: this.ultKeyFor3D() });
     /* v1.4.0 (Task 3-1 — 유저 지시 #13) — 직업별 고유 VFX2 시그니처 연출 (8직업 1:1 매핑) */
     spawnUltFlourish(this.scene, this.x, this.y, key5, hex);
-    { const cx = this.x, cy = this.y, flip = this.facing.x < 0; ultLater(castFx ? introMs : 0, () => playUltFx(this.scene, key5, 1, "cast", cx, cy, flip)); } // pixelfx 시전 — 3D 인트로 뒤
+    if (castFx) playUltFx(this.scene, key5, 1, "cast", this.x, this.y, this.facing.x < 0);
     /* vc183 — 극딜 연출(후면오라/지면룬/전면폭발과 히트스톱·흔들림·줌).
      *  계열별 강도표(ultLayers.ts)로 전사는 묵직, 도적은 짧고 날카롭게 자동 분기된다. */
     /* v1.4.41 (#3) — 연출 길이를 시전 시간에 비례시킨다.
@@ -6300,12 +6295,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.scene.spawnBurstAt(this.x, this.y, 36, 0xb06aff);
     this.scene.vfx3dFx("spiral", this.x, this.y, 0xb06aff, 1.1);
 
-    /* vc181 (지시 #1·#2) — 제2궁극기는 3D 나선 카메라 워크 (1차보다 길고 웅장하게) */
-    /* 2026-11-15 — 1차와 같이: pixelfx 직업은 3D 인트로를 줄이고 시전 이펙트를 그 뒤에 띄운다(가림 방지). */
+    /* 1번과 같은 즉시 시전 경로. 계열 폴백은 기존 3D 인트로에 남겨 둔다. */
     const castFx2 = hasUltFx(key5);
-    const introMs2 = castFx2 ? 1000 : 2400;
-    void cine3d().play({ preset: "ultimate2", x: this.x, y: this.y, tint: hex, duration: introMs2, fam: this.ultKeyFor3D() });
-    { const cx = this.x, cy = this.y, flip = this.facing.x < 0; ultLater(castFx2 ? introMs2 : 0, () => playUltFx(this.scene, key5, 2, "cast", cx, cy, flip)); } // pixelfx 시전 — 3D 인트로 뒤
+    if (castFx2) playUltFx(this.scene, key5, 2, "cast", this.x, this.y, this.facing.x < 0);
+    else void cine3d().play({ preset: "ultimate2", x: this.x, y: this.y, tint: hex, duration: 2400, fam: this.ultKeyFor3D() });
     /* vc183 — 제2궁극기(120초)는 오라와 타격 이펙트를 1차보다 크게 표시한다. */
     /* v1.4.41 (#3) — 2차 궁극기(쿨 120초)는 1차(60초)보다 길게. 연출 6초대 유지. */
     playUltLayers(this.scene, this.x, this.y, 0xb06aff, key5, {
@@ -9554,6 +9547,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private startUltBudget(slot: 1 | 2, holdMs: number, hex: number): UltBudget<Enemy | Boss> {
     const plan = planUltWaves(holdMs);
     const n = plan.at.length;
+    const castClass = resolveSkill5Of(this.cls);
+    const pattern = ultimateFinalePlan(castClass, slot);
+    const castAngle = this.aimDirFree().angle();
     const budget = createUltBudget<Enemy | Boss>(n, this.ultBudgetOf(slot));
     const release = () => {
       budget.close();
@@ -9575,7 +9571,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (!this.active || this.state === "dead") return;
         try {
           finaleAngle = this.aimDirFree().angle();
-          stopCue = playUltFinaleCue(this.scene, resolveSkill5Of(this.cls), slot, finaleAngle,
+          stopCue = playUltFinaleCue(this.scene, castClass, slot, finaleAngle,
             () => this.active && this.state !== "dead" ? this : null);
         } catch { /* 연출 실패가 판정을 막지 않는다 */ }
       });
@@ -9583,8 +9579,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     for (let wi = 0; wi < n; wi++) {
       this.scene.time.delayedCall(plan.at[wi], () => {
         const last = wi === n - 1;
-        if (this.state === "dead") { release(); return; }
-        const targets = new Set<Enemy | Boss>([...budget.targets(), ...this.getAllTargetsIn(420)]);
+        if (!this.active || this.state === "dead") { stopCue?.(); release(); return; }
+        const hitPattern = pattern && (last ? pattern : { motion: pattern.motion, zones: [pattern.zones[wi % pattern.zones.length]] });
+        const angle = last ? finaleAngle ?? castAngle : castAngle;
+        const { x, y } = this;
+        const reach = hitPattern ? finalePlanReach(hitPattern) : 420;
+        const targets = new Set<Enemy | Boss>([...budget.targets(), ...this.getAllTargetsIn(reach)]);
         let paid = false;
         budget.paying(() => {
           for (const e of targets) {
@@ -9597,6 +9597,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               if (last) budget.settle(wi, e);
               continue;
             }
+            if (hitPattern && finaleTargetOrder(hitPattern, x, y, angle, e.x, e.y) < 0) continue;
             const amount = budget.payout(wi, e);
             if (amount <= 0) continue;
             paid = true;
@@ -9604,17 +9605,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             e.takeDamage(amount, away, last ? 380 : 0, last);
           }
         });
-        if (last) this.netEmitAction(slot === 1 ? "s5f" : "s5bf");
+        if (last) this.netEmitAction(slot === 1 ? "s5f" : "s5bf", angle, castClass);
         /* 큰 연출은 case 가 담당한다. 마지막 한 번만 종결답게 키운다. */
         try {
           const finale = last && n > 1;
-          this.scene.spawnBurstAt(this.x, this.y, finale ? 40 : 18, hex);
+          this.scene.spawnBurstAt(x, y, finale ? 32 : 10, hex);
           this.scene.impactFX.shake(finale ? 220 : 60, finale ? 0.012 : 0.004);
           if (finale && paid) this.scene.spawnShockwave(this.x, this.y, hex, 2.2, 480, 0.55);
           if (last) {
             stopCue?.();
-            const angle = finaleAngle ?? this.aimDirFree().angle();
-            playUltFx(this.scene, resolveSkill5Of(this.cls), slot, "finale", this.x, this.y, Math.cos(angle) < 0, angle);
+            playUltFx(this.scene, castClass, slot, "finale", x, y, Math.cos(angle) < 0, angle);
+          } else if (hitPattern) {
+            playUltPattern(this.scene, castClass, slot, hitPattern, angle, () => ({ x, y }));
           }
         } catch { /* 연출 실패가 판정을 막지 않는다 */ }
       });

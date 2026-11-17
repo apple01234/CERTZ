@@ -7,6 +7,7 @@ import vm from 'node:vm';
 import ts from 'typescript';
 import sharp from 'sharp';
 import { assetUrl } from '../src/game/assetSelection.ts';
+import { ultimateFinalePlan } from '../src/game/fx/ultFinalePlan.ts';
 
 const { ULT_CLASSES } = await import('../src/game/classes.ts');
 const src = readFileSync('src/game/fx/ultPixelFx.ts', 'utf8');
@@ -72,9 +73,9 @@ test('전직하면 바로 새 직업의 궁극기 시트를 받는다 (첫 시�
   }
   /* 시트가 늦게 와도 1.5초 안이면 그 회차에 재생한다 */
   assert.match(src, /LATE_MS = 1500/);
-  /* 시전 이펙트는 3D 인트로가 걷힌 뒤에 뜬다 */
-  assert.match(player, /ultLater\(castFx \? introMs : 0, \(\) => playUltFx\(this\.scene, key5, 1, "cast"/);
-  assert.match(player, /ultLater\(castFx2 \? introMs2 : 0, \(\) => playUltFx\(this\.scene, key5, 2, "cast"/);
+  /* 전용 시트는 전장을 덮는 3D 인트로 없이 즉시 뜬다. */
+  assert.match(player, /if \(castFx\) playUltFx\(this\.scene, key5, 1, "cast"/);
+  assert.match(player, /if \(castFx2\) playUltFx\(this\.scene, key5, 2, "cast"/);
 });
 
 test('게임을 다시 만들어도 시트를 다시 받고, 직업을 바꾸면 이전 직업 시트를 내린다', () => {
@@ -124,7 +125,7 @@ test('궁극기 예고·타격·잔상은 같은 배치를 쓰고 늦게 로드�
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   });
   vm.runInNewContext(`(function(require, module, exports) { ${outputText} })`)(
-    id => id === './pixelfxBridge' ? bridge : { STARTER_PIXELFX: [], classDef: () => ({ color: '#ff7654' }) },
+    id => id === './pixelfxBridge' ? bridge : { STARTER_PIXELFX: [], BOSS_PIXELFX: [], classDef: () => ({ color: '#ff7654' }), ultimateFinalePlan },
     module, module.exports,
   );
   const { playUltFx, playUltFinaleCue } = module.exports;
@@ -135,10 +136,11 @@ test('궁극기 예고·타격·잔상은 같은 배치를 쓰고 늦게 로드�
       graphics() {
         const mark = {
           active: true,
-          setPosition(x, y) { this.x = x; this.y = y; },
+          setPosition(x, y) { this.x = x; this.y = y; return this; },
+          setRotation(angle) { this.angle = angle; return this; },
           destroy() { this.active = false; },
         };
-        for (const method of ['setDepth', 'lineStyle', 'setRotation', 'beginPath', 'arc', 'strokePath', 'lineBetween',
+        for (const method of ['setDepth', 'setName', 'lineStyle', 'beginPath', 'arc', 'strokePath', 'lineBetween',
           'strokeEllipse', 'fillStyle', 'fillCircle', 'setAlpha', 'setScale']) mark[method] = () => mark;
         marks.push(mark);
         return mark;
@@ -149,21 +151,24 @@ test('궁극기 예고·타격·잔상은 같은 배치를 쓰고 늦게 로드�
   const anchor = { x: 100, y: 120 };
   const stop = playUltFinaleCue(scene, 'warbringer', 1, Math.PI / 2, () => anchor);
   assert.equal(tweens[0].duration, 190);
-  assert.equal(marks[0].y, 195);
+  assert.equal(marks[0].y, 120);
+  assert.equal(marks[0].angle, Math.PI / 2);
   anchor.y += 20;
   tweens[0].onUpdate();
-  assert.equal(marks[0].y, 215);
+  assert.equal(marks[0].y, 140);
   stop();
   assert.equal(marks[0].active, false);
 
   playUltFx(scene, 'warbringer', 1, 'finale', 100, 120, false, Math.PI / 2);
   assert.deepEqual(draws[0], {
-    key: 'hammer-smash', x: 100, y: 195, flip: false, scale: 1.95, rotation: Math.PI / 2,
+    key: 'energy-crack', x: 100, y: 195, flip: false, scale: 1.95, rotation: Math.PI / 2,
   });
-  assert.equal(tweens[1].duration, 190);
+  assert.equal(marks[1].y, 120);
+  assert.equal(marks[1].angle, marks[0].angle);
+  assert.equal(tweens[1].duration, 195);
   assert.equal(tweens[2].delay + tweens[2].duration, 1250);
   playUltFx(scene, 'warbringer', 2, 'finale', 100, 120);
-  assert.deepEqual(draws[1], { key: 'quake', x: 100, y: 120, flip: false, scale: 2.55 });
+  assert.deepEqual(draws[1], { key: 'hammer-smash', x: 100, y: 120, flip: false, scale: 2.55 });
 
   loaded = false;
   scene.fxLevel = 0;
@@ -174,7 +179,7 @@ test('궁극기 예고·타격·잔상은 같은 배치를 쓰고 늦게 로드�
   assert.equal(marks.length, 4, 'the late atlas does not replay the impact mark');
   assert.equal(tweens.at(-1).delay + tweens.at(-1).duration, 850);
   assert.deepEqual({ ...draws[2], y: Math.round(draws[2].y) }, {
-    key: 'hammer-smash', x: 25, y: 120, flip: false,
+    key: 'energy-crack', x: 25, y: 120, flip: false,
     scale: 390 * 0.65 / 200, rotation: Math.PI,
   });
 });

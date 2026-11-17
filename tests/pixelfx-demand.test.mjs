@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';import ts from 'typescript';
-import {pixelFxKey,STARTER_PIXELFX} from '../src/game/assetSelection.ts';import{ADMITTED_PIXELFX}from'../src/game/fx/pixelFxSheets.ts';
+import {pixelFxKey,STARTER_PIXELFX} from '../src/game/assetSelection.ts';import{ADMITTED_PIXELFX,BOSS_PIXELFX}from'../src/game/fx/pixelFxSheets.ts';
 function rig(){
  const loaded=new Set(['sword-slash']),demands=[],sprites=[],scene={textures:{exists:key=>loaded.has(key)},time:{now:200}};
  const module={exports:{}};
@@ -41,9 +41,10 @@ test('class FX cleanup preserves shared starter art and downloads only the selec
  const code=ts.transpileModule(fs.readFileSync('src/game/fx/ultPixelFx.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText;
  vm.runInNewContext(`(function(require,module,exports){${code}})`,{})(id=>{
   if(id==='phaser')return{};if(id.endsWith('/assetSelection'))return{STARTER_PIXELFX};if(id==='../classes')return{};
+  if(id==='./pixelFxSheets')return{BOSS_PIXELFX};if(id==='./ultFinalePlan')return{};
   if(id==='./pixelfxBridge')return{unloadFxSheet:(_s,key)=>removed.push(key),ensureFxSheet:(_s,key)=>{demanded.push(key);return Promise.resolve(true);}};throw Error(id);
  },module,module.exports);
  const {prefetchUltFx}=module.exports;prefetchUltFx({},null);assert.ok(removed.length>0);assert.deepEqual(demanded,[]);
  prefetchUltFx({},'warbringer');assert.equal(demanded.length,4);prefetchUltFx({},'crusader');assert.equal(demanded.length,8);
- assert.ok(removed.every(key=>!STARTER_PIXELFX.includes(key)),'first boss and native weapon effects must survive class cleanup');
+ assert.ok(removed.every(key=>!STARTER_PIXELFX.includes(key)&&!BOSS_PIXELFX.includes(key)),'shared boss and native weapon effects must survive class cleanup');
 });
