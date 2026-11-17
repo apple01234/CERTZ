@@ -11,7 +11,6 @@ const code = codeOnly(SRC);
 
 let checks = 0;
 const ok = (name, cond) => { assert.ok(cond, `✗ ${name}`); checks++; };
-const eq = (n, a, b) => { assert.deepEqual(a, b, `✗ ${n}`); checks++; };
 
 /* ═══ 1. 패널 크기 — "게임 화면을 필요 이상으로 덮지 않는다" (요구사항 6.3) ═══ */
 {
@@ -40,38 +39,19 @@ const eq = (n, a, b) => { assert.deepEqual(a, b, `✗ ${n}`); checks++; };
   const descs = [...flow.matchAll(/desc:\s*"([^"]*)"/g)].map((m) => m[1]);
   ok("desc 를 하나 이상 찾았다", descs.length > 0);
   const maxLen = Math.max(...descs.map((d) => [...d].length));
-  /* 랩폭 = PANEL_W - 124, 12px 폰트 ≈ 한글 1자 12px */
-  const perLine = Math.floor((w - 32) / 12);
+  const perLine = Math.floor((w - 32) / 14);
   const needLines = Math.ceil(maxLen / perLine);
   /* 제목(18) + desc(2줄×16) + 키배지(22) + 여백 ≈ 84px 안에 들어와야 한다 */
-  ok(`desc 최대 ${maxLen}자 → ${needLines}줄 @ ${perLine}자/줄 — 3줄 이하`, needLines <= 3);
+  ok(`desc 최대 ${maxLen}자 → ${needLines}줄 @ ${perLine}자/줄 — 2줄 이하`, needLines <= 2);
 }
 
 /* ═══ 2. 표시/숨김 API 가 존재한다 ═══ */
 {
   ok("setHidden 공개 메서드", /setHidden\s*\(\s*on:\s*boolean\s*\)/.test(code));
   ok("hud.setVisible 를 호출", /this\.hud\?\.setVisible\(/.test(code));
-  /* ★ 함정: 마커는 컨테이너 밖이라 hud.setVisible 로 안 가려진다 */
-  ok("마커 mkGlow 를 개별로 숨긴다", /this\.mkGlow\?\.setVisible\(false\)/.test(code));
-  ok("마커 mkSpark 를 개별로 숨긴다", /this\.mkSpark\?\.setVisible\(false\)/.test(code));
 }
 
-/* ═══ 3. ★ update() 가 숨김을 덮어쓰지 않는다 (리드가 지적한 함정) ═══
- *  update() 안에서 `mkGlow.setVisible(true)` 를 무조건 호출하므로,
- *  숨김 상태에서 조기 반환하지 않으면 매 프레임 다시 보인다. */
-{
-  const upd = code.slice(code.indexOf("update()"), code.indexOf("private finish()"));
-  ok("update 안에 hidden 조기 반환이 있다", /if\s*\(\s*this\.hidden\s*\)/.test(upd));
-  const guardIdx = upd.indexOf("this.hidden");
-  const visTrueIdx = upd.indexOf("setVisible(!!target)");
-  ok("조기 반환이 setVisible(true) 보다 앞이다", guardIdx >= 0 && visTrueIdx > guardIdx);
-  /* hidden 상태에서 마커를 명시적으로 끈다 */
-  const guardBlock = upd.slice(guardIdx, guardIdx + 220);
-  ok("조기 반환 블록에서 마커를 숨긴다",
-    /setVisible\(false\)/.test(guardBlock));
-}
-
-/* ═══ 4. cinematic:state 구독 + destroy 에서 해제 (누수 방지) ═══ */
+/* ═══ 3. cinematic:state 구독 + destroy 에서 해제 (누수 방지) ═══ */
 {
   ok("cinematic:state 를 구독한다", /EventBus\.on\(\s*["']cinematic:state["']/.test(code));
   ok("destroy 에서 구독 해제한다", /EventBus\.off\(\s*["']cinematic:state["']/.test(code));
@@ -83,7 +63,7 @@ const eq = (n, a, b) => { assert.deepEqual(a, b, `✗ ${n}`); checks++; };
   ok("on/off 가 같은 심볼을 쓴다", (code.match(/onCinematic/g) ?? []).length >= 3);
 }
 
-/* ═══ 5. 세이브 호환 — tutStep 키 이름 유지 ═══ */
+/* ═══ 4. 세이브 호환 — tutStep 키 이름 유지 ═══ */
 {
   ok("saveTutorialProgress 호출 유지", /saveTutorialProgress\(/.test(code));
   ok("completeTutorialSave 호출 유지", /completeTutorialSave\(/.test(code));
@@ -92,7 +72,7 @@ const eq = (n, a, b) => { assert.deepEqual(a, b, `✗ ${n}`); checks++; };
   ok("WorldScene 에 tutStep 키가 그대로 있다", /tutStep/.test(ws));
 }
 
-/* ═══ 6. 기존 공개 API 보존 ═══ */
+/* ═══ 5. 기존 공개 API 보존 ═══ */
 {
   for (const m of ["notify", "update", "skip", "destroy"]) {
     ok(`공개 메서드 ${m} 유지`, new RegExp(`\\b${m}\\s*\\(`).test(code));

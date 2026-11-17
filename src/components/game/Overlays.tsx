@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type Phaser from "phaser";
 import { loadSave, clearSave, type SaveData } from "@/game/config";
 import { EventBus, type EndState, type RewardPopupState } from "./EventBus";
 import { STAGES, STAGE_SHORT, resolveStage } from "@/game/data";
@@ -458,23 +459,23 @@ export function InteractPrompt() {
     if (!isTouch || !st.active || st.x === undefined || st.y === undefined) return;
     const wx = st.x;
     const wy = st.y;
+    const projected = { x: 0, y: 0 };
     let raf = 0;
     const tick = () => {
       raf = requestAnimationFrame(tick);
       const el = ref.current;
-      const g = (window as unknown as { __SERTZ__?: { game?: { scene: { getScene: (k: string) => { cameras?: { main?: { scrollX: number; scrollY: number; zoom: number } } } } } } }).__SERTZ__;
+      const g = (window as Window & { __SERTZ__?: { game: Phaser.Game } }).__SERTZ__;
       const cam = g?.game?.scene.getScene("world")?.cameras?.main;
       if (!el || !cam) return;
-      const zoom = cam.zoom || 1;
-      const vw = window.innerWidth;
-      const sx = Math.min(Math.max((wx - cam.scrollX) * zoom, 84), vw - 84);
-      const sy = Math.max((wy - cam.scrollY) * zoom - 66 * zoom, 10);
+      cam.matrixCombined.transformPoint(wx, wy - 66, projected);
+      const sx = Math.min(Math.max(projected.x, 96), cam.width - 96);
+      const sy = Math.min(Math.max(projected.y, 64), cam.height - 12);
       el.style.left = `${sx}px`;
       el.style.top = `${sy}px`;
     };
     tick();
     return () => cancelAnimationFrame(raf);
-  }, [st.active, st.x, st.y]);
+  }, [isTouch, st.active, st.x, st.y]);
 
   if (!st.active || !st.label) return null;
 

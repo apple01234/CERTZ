@@ -2,17 +2,17 @@
 export const TUTORIAL_VERSION = 2;
 export const TUTORIAL_STEPS = [
   { id: "opening", title: "절벽의 약속", desc: "라일락의 이야기를 듣고 대답하세요." },
-  { id: "move", title: "첫걸음", desc: "빛나는 지점까지 직접 걸어가세요." },
-  { id: "talk", title: "라일락과의 약속", desc: "라일락 곁에서 NPC/채집을 누르세요." },
+  { id: "move", title: "첫걸음", desc: "목표 표시를 따라 걸어가세요." },
+  { id: "talk", title: "라일락과의 약속", desc: "라일락에게 다가가 말을 거세요." },
   { id: "training", title: "레지스터의 수련", desc: "약속을 품고 기초 수련을 시작합니다." },
-  { id: "attack", title: "검을 맞히기", desc: "앞의 수련 골렘을 기본 공격으로 맞히세요." },
-  { id: "evade", title: "공격 예고 피하기", desc: "예고가 보이면 방향을 잡고 돌진해 공격 범위를 벗어나세요." },
-  { id: "skill", title: "기본 검술", desc: "주력 스킬로 수련 골렘을 맞히세요." },
-  { id: "pickup", title: "수련 보급품", desc: "빛나는 보급품까지 걸어가 직접 주우세요." },
-  { id: "inventory", title: "가방 확인", desc: "가방을 열어 방금 주운 물약을 확인하세요." },
-  { id: "accept", title: "첫 의뢰", desc: "레지스터에게 말을 걸어 수련 의뢰를 받으세요." },
-  { id: "mission", title: "의뢰 수행", desc: "의뢰의 수련용 쥐 한 마리를 직접 처치하세요." },
-  { id: "reward", title: "수련 보고", desc: "레지스터에게 보고하고 보상을 받으세요." },
+  { id: "attack", title: "검을 맞히기", desc: "수련 표적 가까이에서 표적을 향해 공격하세요." },
+  { id: "evade", title: "공격 예고 피하기", desc: "수련용 쥐에게 다가가 공격 예고를 기다리세요." },
+  { id: "skill", title: "기본 검술", desc: "가까이에서 수련 표적에 첫 스킬을 맞히세요." },
+  { id: "pickup", title: "수련 보급품", desc: "물약 위를 걸어가면 자동으로 주워요." },
+  { id: "inventory", title: "가방 확인", desc: "가방에서 물약을 확인하고 닫으세요." },
+  { id: "accept", title: "첫 의뢰", desc: "레지스터와 대화한 뒤 ‘의뢰 받기’를 선택하세요." },
+  { id: "mission", title: "의뢰 수행", desc: "수련용 쥐 한 마리를 처치하세요." },
+  { id: "reward", title: "수련 보고", desc: "레지스터에게 돌아가 보상을 받으세요." },
   { id: "ending", title: "모험의 시작", desc: "배운 것을 가지고 자유롭게 모험하세요." },
 ] as const;
 export type TutorialStepId = typeof TUTORIAL_STEPS[number]["id"];

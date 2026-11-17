@@ -625,7 +625,13 @@ export function HUD({
                 <ScrollText size={11} />
               </button>
               {quest.pending && (
-                <span className="shrink-0 rounded bg-amber-400/25 px-1 py-px text-[8px] font-black text-amber-200">수락 대기</span>
+                <button
+                  type="button"
+                  onClick={() => EventBus.emit("rpg:questAccept")}
+                  className="tap-safe shrink-0 rounded bg-amber-300 px-2 py-1 text-[11px] font-black text-slate-950 hover:bg-amber-200 active:scale-95"
+                >
+                  수락하기
+                </button>
               )}
             </div>
             <>

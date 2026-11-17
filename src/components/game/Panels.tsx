@@ -1861,10 +1861,10 @@ function InvBtn({ children, onClick, disabled, tone = "amber", title }: { childr
   );
 }
 
-export function InventoryPanel({ rpg, onClose, initialTab = "equip" }: { rpg: RpgState; onClose: () => void; initialTab?: InvTab }) {
+export function InventoryPanel({ rpg, onClose, tutorial = false }: { rpg: RpgState; onClose: () => void; tutorial?: boolean }) {
   useEscClose(onClose);
   const modal = useModal("가방"); // v1.0.16 (F2)
-  const [tab, setTab] = useState<InvTab>(initialTab);
+  const [tab, setTab] = useState<InvTab>(tutorial ? "pot" : "equip");
   /* v1.1.4 (#개편) — 아이템 검색어. 소문자 비교로 영문/한글 모두 부분 일치. */
   const [q, setQ] = useState("");
   const [sel, setSel] = useState<InvSel | null>(null);
@@ -2055,6 +2055,12 @@ export function InventoryPanel({ rpg, onClose, initialTab = "equip" }: { rpg: Rp
           </button>
         </div>
 
+        {tutorial && (
+          <p className="shrink-0 bg-emerald-950 px-3 py-2 text-[12px] font-bold leading-snug text-emerald-100">
+            물약 탭에서 체력을 회복하는 HP 물약을 확인하세요.
+          </p>
+        )}
+
         {/* 탭 행 — 탭마다 고유 색 (장비=주황 · 캐시=청록 · 기타=보라 · AD=장미) */}
         <div className="flex shrink-0 gap-1 border-b-2 border-[#211c17] bg-[#332d26] px-2 pt-1.5">
           {TABS.map((tb) => (
@@ -2189,7 +2195,7 @@ export function InventoryPanel({ rpg, onClose, initialTab = "equip" }: { rpg: Rp
             <>
               {/* v4.6.0 — 자동 사용 설정을 기타 탭 최상단(그리드 위)으로 이동:
                   기존엔 소모품 그리드 아래 깊숙이 있어 "자동 물약·버프 어디감?" 제기 → 열자마자 보이는 자리로 */}
-              <div className="mb-2 rounded-lg border-2 border-[#211c17] bg-[#2a241e] p-2.5">
+              <div hidden={tutorial} className="mb-2 rounded-lg border-2 border-[#211c17] bg-[#2a241e] p-2.5">
                 <p className="mb-1.5 text-[11px] font-black text-amber-100/80">
                   ⚙️ 자동 물약 · 버프 <span className="font-bold text-white/55">— 전투 중 자동으로 사용됩니다</span>
                 </p>
@@ -2757,10 +2763,10 @@ export function InventoryPanel({ rpg, onClose, initialTab = "equip" }: { rpg: Rp
           <div className="flex items-center gap-2">
             <span className="text-[9px] font-bold text-white/55">ESC 닫기</span>
             <button
-              onClick={() => EventBus.emit("rpg:sortInv")}
+              onClick={tutorial ? onClose : () => EventBus.emit("rpg:sortInv")}
               className="rounded-md border-2 border-amber-200/70 bg-gradient-to-b from-amber-300 to-orange-500 px-3.5 py-1.5 text-[12px] font-black text-white shadow-[0_2px_0_#92400e] hover:brightness-110 active:translate-y-[2px] active:shadow-none"
             >
-              정리
+              {tutorial ? "확인 완료" : "정리"}
             </button>
           </div>
         </div>
@@ -3929,10 +3935,10 @@ export function GamePanels({
   hud,
   questLog,
   onClose,
-  inventoryTab,
+  tutorialInventory = false,
   tutorialQuest = false,
 }: {
-  inventoryTab?: InvTab;
+  tutorialInventory?: boolean;
   tutorialQuest?: boolean;
   panel: PanelKind;
   rpg: RpgState;
@@ -3958,7 +3964,7 @@ export function GamePanels({
   if (panel === "trade") return <TradePanel rpg={rpg} onClose={onClose} />; // v3.0.7 — 유저 거래소
   if (panel === "trade2") return <Trade2Panel rpg={rpg} onClose={onClose} />; // vc142 — 1:1 플레이어 거래
   if (panel === "playerinfo") return <PlayerInfoPanel onClose={onClose} />; // v1.0.13 피드백#12 — 상대 정보창
-  if (panel === "inv") return <InventoryPanel rpg={rpg} onClose={onClose} initialTab={inventoryTab} />;
+  if (panel === "inv") return <InventoryPanel rpg={rpg} onClose={onClose} tutorial={tutorialInventory} />;
   if (panel === "warp") return <WarpPanel rpg={rpg} onClose={onClose} />;
   if (panel === "job") return <JobPanel rpg={rpg} hud={hud} onClose={onClose} />;
   /* vc291 — 보스 러시. 세이브에서 최고 기록·해금 여부를 읽어 넘긴다.
@@ -5553,10 +5559,7 @@ function QuestLogPanel({ questLog, rpg, onClose }: { questLog: QuestLogState; rp
                 {q.canAccept && (
                   <div className="mt-1.5 pl-4">
                     <button
-                      onClick={() => {
-                        const cur = questLog.trackedList?.find((t) => t.isCurrent);
-                        if (cur) EventBus.emit("rpg:questAccept", { stage: cur.stage });
-                      }}
+                      onClick={() => EventBus.emit("rpg:questAccept")}
                       className="rounded-md bg-amber-400 px-3 py-1.5 text-[11px] font-black text-slate-900 hover:bg-amber-300 active:scale-95"
                     >
                       ▶ 수락하기

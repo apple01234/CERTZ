@@ -40,6 +40,7 @@ export default function GameRoot() {
   const learning = tutorial.active && tutorial.step !== null;
   const ordinaryUiHidden = cinematic || learning;
   const panelHidden = cinematic || (learning && !!panel && !tutorialAllows(tutorial.step, panel));
+  const showInteract = state === "playing" && !cinematic && !dialogue && !panel && (!learning || tutorialAllows(tutorial.step, "interact"));
   /* v4.1.7 — 패널 개폐 UI음 (유니티 에셋스토어 유료 SFX): HUD 버튼 토글 클릭음 + 열림 사운드 */
   const togglePanelSfx = (key: "inv" | "job" | "stat" | "quest" | "boss" | "benefit" | "content" | "opt" | "union" | "trade" | "rank" | "guide" | "gm") => { // v1.3.0 — +rank · v1.4.12 — +guide · vc270 — +gm
     if (!canOpenPanel(key)) return;
@@ -317,9 +318,6 @@ export default function GameRoot() {
                 />
               </div>
             )}
-            <div className={!learning || tutorialAllows(tutorial.step, "interact") ? "contents" : "hidden"} data-tutorial-control="interact">
-              <InteractPrompt />
-            </div>
             {learning && (tutorial.step === "inventory" || tutorialAllows(tutorial.step, "quest")) && (
               <button
                 data-tutorial-control={tutorial.step === "inventory" ? "inv" : "quest"}
@@ -332,6 +330,11 @@ export default function GameRoot() {
             )}
           </div>
         )}
+
+        {/* 이어하기 직후의 첫 근접 이벤트도 받을 수 있게 먼저 구독한다. */}
+        <div className={showInteract ? "contents" : "hidden"} data-tutorial-control="interact">
+          <InteractPrompt />
+        </div>
 
         {state === "title" && (
           <div className="pointer-events-auto contents">
@@ -380,7 +383,12 @@ export default function GameRoot() {
         </div>
 
         <div className={panelHidden ? "hidden" : "contents"}>
-          <GamePanels tutorialQuest={learning && tutorialAllows(tutorial.step, "quest")} inventoryTab={learning && tutorial.step === "inventory" ? "pot" : undefined} panel={panel} rpg={rpg} hud={hud} questLog={questLog} onClose={() => { audio.sfx.uiClose(); setPanel(null); }} />
+          <GamePanels
+            tutorialQuest={learning && tutorialAllows(tutorial.step, "quest")}
+            tutorialInventory={learning && tutorial.step === "inventory"}
+            panel={panel} rpg={rpg} hud={hud} questLog={questLog}
+            onClose={() => { audio.sfx.uiClose(); setPanel(null); }}
+          />
         </div>
 
         {/* v1.0.18 — 유니온 패널 (GamePanels 밖 — 스토어 직접 참조라 rpg 상태 불요) */}

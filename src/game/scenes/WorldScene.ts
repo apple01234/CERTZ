@@ -2499,7 +2499,7 @@ export class WorldScene extends Phaser.Scene {
       } else if (sub >= 1 && sub <= 9 && !this.stageDef.isVillage) {
         this.hintOnce(
           "field",
-          "사냥터에 도착! 몬스터를 잡아 레벨을 올리자. 왼쪽 위 퀘스트 트래커가 다음 목표를 알려준다."
+          "오른쪽 위 퀘스트 안내에서 다음 목표를 확인하세요."
         );
       }
     }
@@ -3297,6 +3297,7 @@ export class WorldScene extends Phaser.Scene {
       }
       this.cameras.main.setZoom(this.isInterior ? Math.min(3, viewZoom() * 1.45) : viewZoom());
       this.applyFollowZoomOffset(); // v4.10.0 — 줌이 바뀔 때마다 follow 보정 재계산
+      this.tut?.layoutHud();
       this.redrawMinimap();
     };
     if (first) {
@@ -5653,7 +5654,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private updatePortalGuides() {
-    if (sceneCinematicPlaying(this)) { this.retGuide?.setVisible(false); return; }
+    if (this.tut || sceneCinematicPlaying(this)) { this.retGuide?.setVisible(false); return; }
     /* v1.4.3 (작업3 최적화) — 150ms 스로틀: 화살표 이동은 프레임당 갱신 없이도 부드럽다.
     *  매 프레임 배열 할당+삼각함수 2회를 1/9 빈도로 절감 — 시각 동일. */
     if (this.time.now - this.portalGuideMs < 150) return;
@@ -12050,16 +12051,16 @@ export class WorldScene extends Phaser.Scene {
       this.emitHud();
     };
     /* #8 — 퀘스트 수락 */
-    const onQuestAccept = (v: { stage: string }) => {
-      const idx = v.stage === this.stageDef.key ? this.questIdx : this.savedQuestIdx[v.stage] ?? 0;
-      const def = STAGES[v.stage as StageKey];
+    const onQuestAccept = ({ stage = this.stageDef.key }: { stage?: string } = {}) => {
+      const idx = stage === this.stageDef.key ? this.questIdx : this.savedQuestIdx[stage] ?? 0;
+      const def = STAGES[stage as StageKey];
       if (!def || idx >= def.quests.length) {
         notice("수락할 퀘스트가 없습니다");
         return;
       }
-      this.acceptedQuests[v.stage] = idx;
+      this.acceptedQuests[stage] = idx;
       // 현재 구역 퀘스트를 수락했다면 즉시 활성화 (기준선/파편/보스 배치)
-      if (v.stage === this.stageDef.key) {
+      if (stage === this.stageDef.key) {
         this.syncQuestBaseline();
         this.afterAdvance();
       }
@@ -12821,6 +12822,7 @@ export class WorldScene extends Phaser.Scene {
       /* v5.0.1 — 카메라 수동 추적 (엔진 follow 폐지 — applyManualCameraFollow 주석 참조).
        *  대화 중에도 갱신 — 내부에서 camCinema(팬 시네마틱)만 존중 */
       this.applyManualCameraFollow(dt);
+      this.updateEdgeArrow();
 
       /* vc146 (#5) — 2.5D 카메라: y-depth 정렬 + 심도 안개 유지 (80ms 스로틀) */
       this.tickPersp(dt);
@@ -12844,7 +12846,7 @@ export class WorldScene extends Phaser.Scene {
       if (this.player?.hp > 0 && this.player.maxHp > 0 && this.player.hp <= this.player.maxHp * 0.3) {
         this.hintOnce(
           "lowhp",
-          "HP가 위험하다! 공격 버튼 옆 빨간 물약 버튼(PC는 D 키)으로 회복하자 — 물약이 없으면 상점에서 사자!"
+          `체력이 낮아요. 빨간 물약 버튼이나 ${keyLabel(this.keymap.potHp)} 키로 회복하세요.`
         );
       }
 
@@ -13304,9 +13306,6 @@ export class WorldScene extends Phaser.Scene {
           this.emitRpgState();
         }
       }
-
-      // F2 핵심 2: 화면 가장자리 화살표 — 목표물이 안 보일 때 방향 안내
-      this.updateEdgeArrow();
 
       // 멀티플레이 상태 송신 (약 8Hz — v1.7)
       this.netAcc += dt;
@@ -15853,8 +15852,9 @@ export class WorldScene extends Phaser.Scene {
   private updateInteractPrompt() {
     let best: (typeof this.interactables)[number] | null = null;
     let bd = 130;
+    const tutorialStep = this.tut?.currentId ?? null;
     for (const it of this.interactables) {
-      if (this.tut && !it.dlg?.startsWith("tutorial|")) continue;
+      if (tutorialStep && (!tutorialAllows(tutorialStep, "interact") || !it.dlg?.startsWith("tutorial|"))) continue;
       if (it.kind === "gm" && this.adminRole !== "admin") continue; // 비관리자에게 GM 접속 UI는 존재하지 않는다
       const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, it.x, it.y);
       if (d < bd) {
@@ -15886,7 +15886,7 @@ export class WorldScene extends Phaser.Scene {
    *   ⑦ NPC 대사 말풍선(y-70)과 E원(y-58)이 12px 차이라 겹쳤다 — 대사는 y-84,
    *     E원은 y-58로 벌리고, 말풍선이 뜬 NPC에서는 E원을 더 위로 올린다. */
   private syncEBubble() {
-    const it = this.nearInteract;
+    const it = this.tut ? null : this.nearInteract;
     if (!it) {
       if (this.eBubble) { this.eBubble.destroy(); this.eBubble = null; }
       if (this.eBubbleText) { this.eBubbleText.destroy(); this.eBubbleText = null; }
@@ -17449,20 +17449,21 @@ export class WorldScene extends Phaser.Scene {
     const travel = this.autoTravelPortal();
     if (travel) {
       const t = this.trackedStage ? STAGES[this.trackedStage as StageKey] : null;
-      return t ? `▶ ${t.name}` : "▶ 목표 구역";
+      return t?.name ?? "목표 구역";
     }
     const q = this.currentQuest();
-    if (!q) return this.portalActive ? "▶ 차원문" : "";
-    if (q.type === "hunt") return q.targetLabel ? `▶ ${q.targetLabel}` : "";
-    if (q.type === "boss") return "▶ 보스";
-    if (q.type === "reach") return "▶ 다음 구역 차원문"; /* v3.0.26 (#75) — 목적지 방향 명시 */
-    if (q.type === "collect") return `▶ ${q.storyItemTexture ? q.targetLabel : "결정"}`;
-    if (q.type === "talk" && q.story) return `▶ ${q.targetLabel}`;
+    if (!q) return this.portalActive ? "차원문" : "";
+    if (q.type === "hunt") return q.targetLabel ?? "";
+    if (q.type === "boss") return "보스";
+    if (q.type === "reach") return q.targetLabel || "다음 구역 차원문";
+    if (q.type === "collect") return q.storyItemTexture ? q.targetLabel ?? "" : "결정";
+    if (q.type === "talk" && q.story) return q.targetLabel ?? "";
     return "";
   }
 
   private updateEdgeArrow() {
-    const target = this.tut || sceneCinematicPlaying(this) ? null : this.questTargetPos();
+    const hidden = !this.player || this.dialoguing || this.transitioning || this.camCinema || sceneCinematicPlaying(this);
+    const target = hidden ? null : this.tut ? this.tut.waypoint : this.questTargetPos();
     if (!target) {
       if (this.edgeArrow) {
         this.edgeArrow.destroy();
@@ -17479,33 +17480,29 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
 
-    // 목표물 바로 위 퀘스트 마커(?) — 외부 에셋(Zelda-like CC0 말풍선)
-    // v3.0.25 — 16px 텍스처 → 스케일 2.1 (기존 1.3은 너무 작음)
-    if (!this.questMark) {
-      this.questMark = this.add.image(target.x, target.y - 34, "quest_mark").setDepth(22).setScale(2.1);
-    }
-    this.questMark.setPosition(target.x, target.y - 34 + Math.sin(this.time.now / 200) * 3);
-
-    // 카메라 뷰 밖이면 가장자리 화살표 표시
-    const view = this.cameras.main.worldView;
-    const margin = 40;
+    const cam = this.cameras.main;
+    const zoom = cam.zoom || 1;
+    const cx = cam.width / 2;
+    const cy = cam.height / 2;
+    const goalX = (target.x - cam.scrollX - cx) * zoom;
+    const goalY = (target.y - cam.scrollY - cy) * zoom;
+    const markerOffset = this.tut?.currentId === "move" ? 14 : this.tut ? 56 : 34;
     const inside =
-      target.x > view.x + margin &&
-      target.x < view.right - margin &&
-      target.y > view.y + margin &&
-      target.y < view.bottom - margin;
+      Math.abs(goalX) < cx - 24 &&
+      goalY > -cy + markerOffset * zoom + 18 &&
+      goalY < cy - 24;
+
+    if (!this.questMark) this.questMark = this.add.image(0, 0, "quest_mark").setDepth(90).setTint(0xffd76a);
+    this.questMark.setVisible(inside).setScale(2.1 / zoom)
+      .setPosition(target.x, target.y - markerOffset + Math.sin(this.time.now / 200) * 3);
 
     if (!inside) {
-      /* v3.0.25 (#화살표 가독성) — 16px 텍스처 → 스케일 2.7 + 맥동 강화 + 목표명 라벨
-       *  (기존 1.0 스케일 16px는 어시스트 화살표 역할을 못함 — #2 요청) */
       if (!this.edgeArrow)
         this.edgeArrow = this.add
           .image(0, 0, "edge_arrow")
-          .setDepth(50)
+          .setDepth(91)
           .setScrollFactor(0)
-          .setTint(0xffd76a)
-          .setBlendMode(Phaser.BlendModes.ADD)
-          .setScale(2.7);
+          .setTint(0xffd76a);
       if (!this.edgeLabel)
         this.edgeLabel = this.add
           .text(0, 0, "", {
@@ -17516,30 +17513,23 @@ export class WorldScene extends Phaser.Scene {
             stroke: "#3a2400",
             strokeThickness: 4,
           })
-          .setDepth(50)
+          .setDepth(91)
           .setScrollFactor(0)
           .setOrigin(0.5, 0);
-      const cx = this.cameras.main.width / 2;
-      const cy = this.cameras.main.height / 2;
-      const angle = Phaser.Math.Angle.Between(cx, cy, target.x - view.x, target.y - view.y);
-      // 화면 중심에서 끝까지 레이캐스트하여 클램프 (큰 화살표 여유 64px)
-      const halfW = this.cameras.main.width / 2 - 64;
-      const halfH = this.cameras.main.height / 2 - 64;
-      const t = Math.min(
-        Math.abs(halfW / Math.cos(angle)) || Infinity,
-        Math.abs(halfH / Math.sin(angle)) || Infinity
-      );
-      this.edgeArrow.setPosition(cx + Math.cos(angle) * t, cy + Math.sin(angle) * t);
-      this.edgeArrow.setRotation(angle);
-      this.edgeArrow.setScale(2.7 + Math.sin(this.time.now / 140) * 0.3);
-      this.edgeArrow.setAlpha(0.72 + Math.sin(this.time.now / 140) * 0.28);
-      const label = this.questTargetLabel();
-      this.edgeLabel.setText(label);
-      this.edgeLabel.setVisible(label.length > 0);
-      // 라벨은 화살표 안쪽에 붙이되 화면 밖으로 못 나가게 클램프
-      const lx = Phaser.Math.Clamp(cx + Math.cos(angle) * Math.max(0, t - 84), 70, this.cameras.main.width - 70);
-      const ly = Phaser.Math.Clamp(cy + Math.sin(angle) * Math.max(0, t - 24) + 12, 20, this.cameras.main.height - 34);
-      this.edgeLabel.setPosition(lx, ly);
+      const angle = Math.atan2(goalY, goalX);
+      const dx = Math.cos(angle);
+      const dy = Math.sin(angle);
+      const insetY = this.tut && dy < 0 ? 154 : 64;
+      const t = Math.min(Math.max(0, cx - 64) / (Math.abs(dx) || 1e-6), Math.max(0, cy - insetY) / (Math.abs(dy) || 1e-6));
+      // 스크롤 고정 오브젝트도 카메라 줌을 받으므로 화면 좌표를 게임 좌표로 되돌린다.
+      this.edgeArrow.setPosition(cx + dx * t / zoom, cy + dy * t / zoom)
+        .setRotation(angle).setScale((2.7 + Math.sin(this.time.now / 140) * 0.3) / zoom);
+      const label = this.tut ? "수련 목표" : this.questTargetLabel();
+      this.edgeLabel.setText(label).setVisible(!!label).setScale(1 / zoom);
+      const pad = Math.min(cx, this.edgeLabel.width / 2 + 12);
+      const lx = Phaser.Math.Clamp(cx + dx * Math.max(0, t - 64), pad, cam.width - pad);
+      const ly = Phaser.Math.Clamp(cy + dy * Math.max(0, t - 24) + 12, 20, cam.height - 34);
+      this.edgeLabel.setPosition(cx + (lx - cx) / zoom, cy + (ly - cy) / zoom);
     } else if (this.edgeArrow || this.edgeLabel) {
       this.edgeArrow?.destroy();
       this.edgeArrow = null;
@@ -17704,8 +17694,8 @@ export class WorldScene extends Phaser.Scene {
         return;
       }
       this.emitQuestState({
-        title: "지역 클리어!",
-        desc: "",
+        title: this.portalActive ? "다음 구역으로" : "지역 클리어!",
+        desc: this.portalActive ? "목표 표시를 따라 차원문으로 이동하세요." : "",
         current: 1,
         target: 1,
         distance: null,
@@ -17747,8 +17737,8 @@ export class WorldScene extends Phaser.Scene {
     /* v3.0.15 (#8) — 현재 구역 퀘스트 미수락 시 수락 유도 */
     const accepted = this.isQuestAccepted(this.stageDef.key, this.questIdx);
     this.emitQuestState({
-      title: accepted ? q.title : `[수락 대기] ${q.title}`,
-      desc: accepted ? q.desc : "퀘스트 로그(J)에서 수락하면 진행됩니다",
+      title: q.title,
+      desc: q.type === "reach" && q.targetLabel ? `${q.targetLabel}까지 이동하세요.` : q.desc,
       current: accepted ? current : 0,
       target: accepted ? target : 1,
       distance: accepted ? distance : null,
@@ -19031,6 +19021,8 @@ export class WorldScene extends Phaser.Scene {
     this.addHistoryNpc();
     this.redrawMinimap();
     this.updateEdgeArrow();
+    this.emitQuest();
+    this.emitQuestLog();
     EventBus.emit("tut:state", { active: false, step: null });
     this.flushSave();
   }
@@ -19286,6 +19278,7 @@ export class WorldScene extends Phaser.Scene {
     this.tut = null;
     this.shockFX?.destroy(); // v4.8.0 — 셰이더 링 풀 정리
     this.slashArcFx?.destroy(); // v4.9.0 — 참격 궤적 풀 정리
+    EventBus.emit("ui:interact", { active: false, label: "", kind: null } satisfies InteractState);
     EventBus.emit("dialogue:hide");
   }
 }

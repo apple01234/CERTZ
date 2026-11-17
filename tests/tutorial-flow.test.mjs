@@ -9,7 +9,14 @@ import { TUTORIAL_STEPS, TUTORIAL_VERSION, tutorialAllows, tutorialResume, tutor
 const code = fs.readFileSync('src/game/Tutorial.ts', 'utf8');
 function harness(step) {
   const bus = new EventEmitter(), timers = [], rewards = { gold: 0, hp: 0, mp: 0, ticket: 0, done: 0 };
-  const node = () => ({ setVisible() { return this; }, setText() { return this; }, setPosition(x, y) { this.x=x; this.y=y; return this; }, setScale(n) { this.scaleX=n; return this; }, destroy() {} });
+  const node = () => ({
+    setVisible(visible) { this.visible = visible; return this; },
+    setText(text) { this.text = text; return this; },
+    setColor() { return this; },
+    setPosition(x, y) { this.x = x; this.y = y; return this; },
+    setScale(n) { this.scaleX = n; return this; },
+    destroy() {},
+  });
   class Enemy {
     constructor(scene, x, y, key) { Object.assign(this, { scene, x, y, key, active: true, alive: true, def: {}, data: {} }); }
     setData(key, value) { this.data[key] = value; }
@@ -31,12 +38,13 @@ function harness(step) {
     phaser: { __esModule: true, default: { Math: { Clamp: (v, a, b) => Math.max(a, Math.min(b, v)), Distance: { Between: (x, y, a, b) => Math.hypot(x - a, y - b) } } } },
     '../components/game/EventBus': { EventBus: bus }, './entities/Enemy': { Enemy }, './cutsceneCast': { castActor: id => ({ character: id }) },
     './fx/sceneCinematic': { cancelSceneCinematic() { bus.emit('cinematic:state', { active: false }); } },
-    './keymap': { keyLabel: x => x, loadKeyMap: () => ({}) }, './tutorialFlow': { TUTORIAL_STEPS },
+    './keymap': { keyLabel: x => x, loadKeyMap: () => ({ attack: 'P' }), loadMoveScheme: () => 'wasd' },
+    './tutorialFlow': { TUTORIAL_STEPS },
   };
   const context = { exports: {}, require: key => { if (!(key in imports)) throw Error(key); return imports[key]; } };
   vm.runInNewContext(ts.transpileModule(code, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, context);
   const Subject = context.exports.Tutorial;
-  Subject.prototype.buildHud = function () { for (const key of ['hud', 'tTitle', 'tDesc', 'tKey', 'tPips', 'mkGlow', 'mkSpark']) this[key] = node(); };
+  Subject.prototype.buildHud = function () { for (const key of ['hud', 'tTitle', 'tDesc', 'tKey']) this[key] = node(); };
   const tut = new Subject(scene, step); scene.tut = tut;
   function tick(ms = 100) {
     scene.time.now += ms;
@@ -66,38 +74,51 @@ test('cinematic stages reject general controls; practice exposes only taught con
 });
 test('actual movement to marker is required; unrelated interact cannot advance', () => {
   const h = harness(1); h.tut.notify('move'); h.tick(); assert.equal(h.tut.currentId, 'move');
+  assert.equal(h.tut.tKey.text, '왼쪽 이동 패드 · WASD');
+  assert.deepEqual(h.tut.waypoint, { x: 140, y: 0 });
+  h.bus.emit('cinematic:state', { active: true });
+  assert.equal(h.tut.hud.visible, false);
+  assert.equal(h.tut.waypoint, null);
+  h.closeCine();
+  assert.equal(h.tut.hud.visible, true);
+  assert.deepEqual(h.tut.waypoint, { x: 140, y: 0 });
   h.scene.playerRef.x = 140; h.tut.update(); h.tick(); assert.equal(h.tut.currentId, 'talk');
   h.tut.notify('talk'); h.tut.interact('register'); h.tick(); assert.equal(h.tut.currentId, 'talk');
   h.tut.interact('lilac'); h.closeCine(); h.tick(); assert.equal(h.tut.currentId, 'training'); assert.equal(h.scene.transitioned, true);
 });
 test('attack/skill require actual hit on designated target after a successful cast', () => {
   for (const [step, action, next] of [[4, 'attack', 'evade'], [6, 'skill', 'pickup']]) {
-    const h = harness(step); h.closeCine();
+    const h = harness(step);
+    assert.equal(h.scene.cineDone, undefined);
+    if (action === 'attack') assert.equal(h.tut.tKey.text, 'P · 공격 버튼');
     h.tut.notify(action); h.tick(); assert.equal(h.tut.currentId, TUTORIAL_STEPS[step].id);
     h.tut.notify('hit', { enemy: h.original }); h.tick(); assert.equal(h.tut.currentId, TUTORIAL_STEPS[step].id);
     h.tut.notify('hit', { enemy: h.tut.practice }); h.tick(); assert.equal(h.tut.currentId, next);
   }
 });
-test('evade requires a committed dash during this target windup, a miss and displacement', () => {
-  const h = harness(5); h.closeCine(); const enemy = h.tut.practice;
+test('evade shows when to dash and requires a committed dodge during the windup', () => {
+  const h = harness(5); const enemy = h.tut.practice;
   const stays = () => { h.tick(); assert.equal(h.tut.currentId, 'evade'); };
   const windup = () => h.tut.notify('evade_windup', { enemy });
   const resolve = missed => h.tut.notify('evade_resolved', { enemy, missed });
+  assert.match(h.tut.tDesc.text, /공격 예고를 기다리세요/);
   resolve(true); stays(); // No windup.
   h.tut.notify('dash'); windup(); h.scene.playerRef.x += 90; resolve(true); stays(); // Too early.
+  assert.match(h.tut.tDesc.text, /다시 다가가/);
   windup(); h.scene.playerRef.x += 90; resolve(true); stays(); // Walking alone.
   windup(); h.tut.notify('dash'); resolve(true); stays(); // Dash blocked by collision.
   windup(); h.tut.notify('dash'); h.scene.playerRef.x += 90; resolve(false); stays(); // Was hit.
   windup(); h.scene.playerRef.x += 90; resolve(true); stays(); // Previous dash cannot carry over.
   h.tut.notify('evade_windup', { enemy: h.original }); h.tut.notify('dash'); resolve(true); stays();
-  windup(); h.tut.notify('dash'); h.scene.playerRef.x += 90; resolve(true);
+  windup(); assert.match(h.tut.tDesc.text, /^지금!/);
+  h.tut.notify('dash'); h.scene.playerRef.x += 90; resolve(true);
   h.tick(); assert.equal(h.tut.currentId, 'skill');
   assert.equal(h.tut.evadeOrigin, null); assert.equal(h.tut.evadeDashed, false);
 });
 test('pickup must be manual potion; inventory needs actual open and close', () => {
-  const h = harness(7); h.closeCine();
+  const h = harness(7);
   for (const data of [{ kind: 'gold' }, { kind: 'potion_hp', viaPet: true }]) { h.tut.notify('pickup', data); h.tick(); assert.equal(h.tut.currentId, 'pickup'); }
-  h.tut.notify('pickup', { kind: 'potion_hp', viaPet: false }); h.tick(); h.closeCine();
+  h.tut.notify('pickup', { kind: 'potion_hp', viaPet: false }); h.tick();
   assert.equal(h.tut.currentId, 'inventory'); h.tut.notify('inventory_close'); h.tick(); assert.equal(h.tut.currentId, 'inventory');
   h.tut.notify('inventory_open'); h.tick(); assert.equal(h.tut.currentId, 'inventory');
   h.tut.notify('inventory_close'); h.tick(); assert.equal(h.tut.currentId, 'accept');

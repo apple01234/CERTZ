@@ -63,6 +63,7 @@ if(during.player.mp!==before.player.mp||Math.hypot(during.player.x-before.player
 await page.screenshot({path:join(out, 'tutorial-real-opening.png')});
 }
 await settle(); await waitStep('move');
+await page.waitForFunction(() => window.__SERTZ_SCENE__?.questMark?.visible);
 await walk((await state()).target); await waitStep('talk');
 await walk((await state()).target,55); await press('Space');
 await page.waitForTimeout(250);  if((await state()).step==='talk'){await press('Space'); await page.waitForTimeout(250); } await settle();
@@ -87,6 +88,7 @@ for(let i=0;i<120&&(await state()).step==='evade';i++){
   const s=await state();
   if(s.windup){
     if(!enemyWarning){
+      assert.match(await page.evaluate(() => window.__SERTZ_SCENE__.tut.tDesc.text), /^지금!/);
       assert.equal(s.enemy.hp,s.enemy.maxHp);
       assert.equal(s.enemy.bar?.visible,true);
       assert.equal(s.enemy.bar?.color,0xffb45c);
@@ -115,9 +117,12 @@ for(let i=0;i<120&&(await state()).step==='evade';i++){
 await waitStep('skill');await settle();assert.ok(enemyWarning);assert.equal(await page.evaluate(()=>window.__EVADE_BAR_REFS__.every(bar=>!bar.active)),true);assert.doesNotMatch(await dashButton.getAttribute('class'),/ring-4/);await walk((await state()).enemy,42);await press('z');
 await waitStep('pickup');await settle();await walk((await state()).target,10);
 await waitStep('inventory');await settle();
-await page.getByRole('button',{name:'가방 확인',exact:true}).click();await page.waitForTimeout(500);
+await page.getByRole('button',{name:'가방 확인',exact:true}).click();
+await page.getByText('물약 탭에서 체력을 회복하는 HP 물약을 확인하세요.',{exact:true}).waitFor();
+assert.equal(await page.getByText(/자동 물약 · 버프/).isVisible(),false);
 await page.screenshot({path:join(out, 'tutorial-real-inventory.png')});
-await press('Escape');await waitStep('accept');await settle();await walk((await state()).target,55);await press('Space');await page.waitForTimeout(400);
+await page.getByRole('button',{name:'확인 완료',exact:true}).click();
+await waitStep('accept');await settle();await walk((await state()).target,55);await press('Space');await page.waitForTimeout(400);
 for(let i=0;i<15;i++){const b=page.getByRole('button',{name:'[의뢰 받기]',exact:true});if(await b.isVisible()){await b.click();break;}await press('Space');await page.waitForTimeout(250);}
 await waitStep('mission');await settle();
 await page.getByRole('button',{name:'퀘스트 확인',exact:true}).click();
@@ -128,6 +133,14 @@ await walk((await state()).enemy,42);
 for(let i=0;i<16&&(await state()).step==='mission';i++){await press('x');await page.waitForTimeout(380);}
 await waitStep('reward');await walk((await state()).target,55);await press('Space');await waitStep('ending');await settle();
 await page.waitForFunction(()=>window.__SERTZ_SCENE__?.tutorialDone&&!window.__SERTZ_SCENE__.tut,{timeout:15000});
+await page.getByText('수련터 출구까지 이동하세요.',{exact:true}).waitFor();
+await page.waitForFunction(() => {
+  const { edgeArrow, edgeLabel, cameras } = window.__SERTZ_SCENE__;
+  if (!edgeArrow?.visible || edgeLabel?.text !== '수련터 출구') return false;
+  const cam = cameras.main;
+  const x = cam.width / 2 + (edgeArrow.x - cam.width / 2) * cam.zoom;
+  return x > cam.width / 2 && x < cam.width;
+});
 console.log('DONE',await state());
 if(await page.evaluate(()=>window.__SERTZ_SCENE__.featureTutOpen))throw Error('duplicate feature tutorial after completion');
 await page.keyboard.down('ArrowRight');await page.waitForTimeout(200);await page.keyboard.up('ArrowRight');await press('Shift');await page.waitForTimeout(250);await press('Shift');await page.waitForTimeout(250);
