@@ -58,7 +58,8 @@ try{
   await until(()=>old.connected,'legacy protocol connection '+idx);await old.subscribeAsync('sertz/mp/v2/stage/'+stage);
   old.publish('sertz/mp/v2/stage/'+stage,JSON.stringify({k:'hi',pid:'oldqa'+idx,name:'LegacyQA',stage,x:30,y:40}));
   await until(()=>a.peers.has('oldqa'+idx),'old protocol -> current on broker '+idx);
-  a.emit('act',{kind:'s1',x:10,y:20});await until(()=>oldActs.some(m=>m.kind==='s1'),'current -> old protocol '+idx);
+  const kind=idx===0?'s1':'s2';
+  a.emit('act',{kind,x:10,y:20});await until(()=>oldActs.some(m=>m.kind===kind),'current -> old protocol '+idx);
   result.events.push({broker:idx,legacyToCurrent:true,currentToLegacy:true});
  }
  // One dropped link must not make either peer disappear while the other continues.

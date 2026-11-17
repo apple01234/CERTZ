@@ -775,11 +775,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.syncHpBar();
       return;
     }
-    if (stunned) {
-      /* 기절이 방금 풀린 프레임 — 애니/틴트 복구 */
-      if (this.anims.isPaused) this.anims.resume();
-      this.clearTint();
-    }
+    // The stunned branch already returned; resume the same motion when stun expires.
+    if (this.anims.isPaused) this.anims.resume();
 
     /* v1.0.15 (피드백 #4) — 게이트 방어 진군: 코어를 향해 달려온다.
      *  기존에는 어그로 밖 몬스터가 제자리 배회만 해 "몬스터가 게이트로 안 달려오는" 버그였다

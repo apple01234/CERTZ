@@ -44,6 +44,10 @@ try{
   assert.equal(result.releaseRecovery,'ll_goblin-run','a completed strike must not hold a frozen attack pose throughout recovery');
   result.stun=await page.evaluate(()=>{const e=window.__SERTZ_SCENE__.__qa[1];e.applyStun(400);return{mode:e.ai.current,warningGone:!e.attackWarning,released:e.attackReleased};});
   assert.equal(result.stun.mode,'cooldown');assert.ok(result.stun.warningGone);assert.equal(result.stun.released,false);
+  await page.evaluate(()=>{const s=window.__SERTZ_SCENE__,e=new s.__Enemy(s,s.player.x+100,s.player.y,'ll_goblin');s.__stunQa=e;e.__target={x:e.x+100,y:e.y,hp:99999,maxHp:99999,takeDamage(){},applyEnemyStatus(){}};e.ai.set('chase');e.play('ll_goblin-run');e.applyStun(180);e.tick(0,e.__target);});
+  await page.waitForFunction(()=>window.__SERTZ_SCENE__.time.now>=window.__SERTZ_SCENE__.__stunQa.stunUntil,null,{timeout:5000});
+  result.stunRecovery=await page.evaluate(()=>{const e=window.__SERTZ_SCENE__.__stunQa;e.tick(0,e.__target);const state={paused:e.anims.isPaused,anim:e.anims.currentAnim?.key,mode:e.ai.current};e.destroy();return state;});
+  assert.equal(result.stunRecovery.paused,false,'a moving enemy must resume its existing animation after stun');
   result.damage=await page.evaluate(()=>{
    const s=window.__SERTZ_SCENE__,e=s.__qa[0],shown=[],original=s.spawnDamageText;s.spawnDamageText=(_x,_y,n)=>shown.push(n);
    e.def={...e.def,def:25,defPct:.25};e.hp=e.maxHp=200;e.takeDamage(100,{x:1,y:0},0,false,true);s.spawnDamageText=original;
@@ -72,7 +76,7 @@ try{
   const samples=[];const loops=mobile?Number(process.env.COMBAT_QA_SOAK_LOOPS??60):5;
   const cdp=await context.newCDPSession(page);
   for(let i=0;i<loops;i++){
-   await page.evaluate(()=>{const s=window.__SERTZ_SCENE__,e=new s.__Enemy(s,s.player.x+100,s.player.y,'ll_goblin');e.takeDamage(999999,{x:1,y:0},0);});
+   await page.evaluate(()=>{const s=window.__SERTZ_SCENE__,e=new s.__Enemy(s,s.player.x+100,s.player.y,'ll_goblin');e.setData('tutorialOwned',true);e.takeDamage(999999,{x:1,y:0},0);});
    await page.waitForTimeout(600);
    if(i%10===0){await cdp.send('HeapProfiler.collectGarbage');samples.push({cycle:i,...await cdp.send('Runtime.getHeapUsage'),objects:await page.evaluate(()=>window.__SERTZ_SCENE__.children.list.length)});}
   }
