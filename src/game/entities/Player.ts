@@ -28,7 +28,7 @@ import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUl
 import { DEATH_SLASH_CFG, runDeathSlashCinematic } from "../fx/DeathSlash"; // vc153 — 도적 제2궁극기 「사(死)의 일섬」 3D 시네마틱
 import { playUltLayers } from "../fx/ultLayers"; // vc183 — 극딜 3단계 연출 레이어(암전·이펙트·카메라)
 import { runUltFinale } from "../fx/ultFinale"; // vc204 (#10) — 직업별 고유 마무리
-import { playUltFx, prefetchUltFx, hasUltFx } from "../fx/ultPixelFx"; // 2026-11-14 — 궁극기 pixelfx (시전·종결)
+import { playUltFx, prefetchUltFx, hasUltFx, playUltFinaleCue, ULT_FINALE_CUE_MS } from "../fx/ultPixelFx";
 import { finaleTargetOrder, ultimateFinalePlan } from "../fx/ultFinalePlan";
 import * as audio from "../audio";
 import { netAction } from "../net"; // v4.1.0 — 파티원 공격/스킬 동기화
@@ -9605,6 +9605,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
      *  예산 밖 피해를 넣지 못하게 종결 뒤 15초간 유지한다(장판 지속시간 30초보다는 짧다 — 그 뒤는
      *  표적의 예산이 이미 소진됐거나 남은 몫만 남아 MIN_DRAW 로 수렴한다). */
     this.scene.time.delayedCall(holdMs + 15000, release);
+    const lastWaveAt = plan.at.at(-1);
+    const lead = ULT_FINALE_CUE_MS[slot];
+    let stopCue: (() => void) | undefined;
+    let finaleAngle: number | undefined;
+    if (lastWaveAt !== undefined && lastWaveAt >= lead) {
+      this.scene.time.delayedCall(lastWaveAt - lead, () => {
+        if (!this.active || this.state === "dead") return;
+        try {
+          finaleAngle = this.aimDirFree().angle();
+          stopCue = playUltFinaleCue(this.scene, resolveSkill5Of(this.cls), slot, finaleAngle,
+            () => this.active && this.state !== "dead" ? this : null);
+        } catch { /* 연출 실패가 판정을 막지 않는다 */ }
+      });
+    }
     for (let wi = 0; wi < n; wi++) {
       this.scene.time.delayedCall(plan.at[wi], () => {
         const last = wi === n - 1;
@@ -9637,8 +9651,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.impactFX.shake(finale ? 220 : 60, finale ? 0.012 : 0.004);
           if (finale && paid) this.scene.spawnShockwave(this.x, this.y, hex, 2.2, 480, 0.55);
           if (last) {
-            const aim = this.aimDirFree();
-            playUltFx(this.scene, resolveSkill5Of(this.cls), slot, "finale", this.x, this.y, aim.x < 0, aim.angle());
+            stopCue?.();
+            const angle = finaleAngle ?? this.aimDirFree().angle();
+            playUltFx(this.scene, resolveSkill5Of(this.cls), slot, "finale", this.x, this.y, Math.cos(angle) < 0, angle);
           }
         } catch { /* 연출 실패가 판정을 막지 않는다 */ }
       });

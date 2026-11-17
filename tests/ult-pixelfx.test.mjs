@@ -82,8 +82,10 @@ test('이터널 2차 궁극기 설명이 실제 동작(시간 역행 + 피해 �
   assert.doesNotMatch(SKILL5B_INFO.eternal.desc, /블랙홀|지옥의 문/);
 });
 
-test('궁극기 종결 도트는 조준점으로 향하며 절전 모드와 지연 로드에도 같은 배치를 쓴다', async () => {
+test('궁극기 예고·타격·잔상은 같은 배치를 쓰고 늦게 로드한 시트도 한 번만 나타난다', async () => {
   const draws = [];
+  const marks = [];
+  const tweens = [];
   let loaded = true;
   const bridge = {
     async ensureFxSheet() { loaded = true; return true; },
@@ -103,14 +105,44 @@ test('궁극기 종결 도트는 조준점으로 향하며 절전 모드와 지�
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   });
   vm.runInNewContext(`(function(require, module, exports) { ${outputText} })`)(
-    id => id === './pixelfxBridge' ? bridge : { STARTER_PIXELFX: [] }, module, module.exports,
+    id => id === './pixelfxBridge' ? bridge : { STARTER_PIXELFX: [], classDef: () => ({ color: '#ff7654' }) },
+    module, module.exports,
   );
-  const { playUltFx } = module.exports;
-  const scene = { fxLevel: 1, sys: { isActive: () => true } };
+  const { playUltFx, playUltFinaleCue } = module.exports;
+  const scene = {
+    fxLevel: 1,
+    sys: { isActive: () => true },
+    add: {
+      graphics() {
+        const mark = {
+          active: true,
+          setPosition(x, y) { this.x = x; this.y = y; },
+          destroy() { this.active = false; },
+        };
+        for (const method of ['setDepth', 'lineStyle', 'setRotation', 'beginPath', 'arc', 'strokePath', 'lineBetween',
+          'strokeEllipse', 'fillStyle', 'fillCircle', 'setAlpha', 'setScale']) mark[method] = () => mark;
+        marks.push(mark);
+        return mark;
+      },
+    },
+    tweens: { add(cfg) { tweens.push(cfg); return { stop() {} }; } },
+  };
+  const anchor = { x: 100, y: 120 };
+  const stop = playUltFinaleCue(scene, 'warbringer', 1, Math.PI / 2, () => anchor);
+  assert.equal(tweens[0].duration, 190);
+  assert.equal(marks[0].y, 195);
+  anchor.y += 20;
+  tweens[0].onUpdate();
+  assert.equal(marks[0].y, 215);
+  stop();
+  assert.equal(marks[0].active, false);
+
   playUltFx(scene, 'warbringer', 1, 'finale', 100, 120, false, Math.PI / 2);
   assert.deepEqual(draws[0], {
     key: 'hammer-smash', x: 100, y: 195, flip: false, scale: 1.95, rotation: Math.PI / 2,
   });
+  assert.equal(tweens[1].duration, 190);
+  assert.equal(tweens[2].delay + tweens[2].duration, 1250);
   playUltFx(scene, 'warbringer', 2, 'finale', 100, 120);
   assert.deepEqual(draws[1], { key: 'quake', x: 100, y: 120, flip: false, scale: 2.55 });
 
@@ -118,7 +150,10 @@ test('궁극기 종결 도트는 조준점으로 향하며 절전 모드와 지�
   scene.fxLevel = 0;
   playUltFx(scene, 'warbringer', 1, 'finale', 100, 120, true);
   assert.equal(draws.length, 2);
+  assert.equal(marks.length, 4, 'the impact mark is visible before the atlas arrives');
   await Promise.resolve();
+  assert.equal(marks.length, 4, 'the late atlas does not replay the impact mark');
+  assert.equal(tweens.at(-1).delay + tweens.at(-1).duration, 850);
   assert.deepEqual({ ...draws[2], y: Math.round(draws[2].y) }, {
     key: 'hammer-smash', x: 25, y: 120, flip: false,
     scale: 390 * 0.65 / 200, rotation: Math.PI,

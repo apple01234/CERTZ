@@ -40,7 +40,7 @@ test('class FX cleanup preserves shared starter art and downloads only the selec
  const removed=[],demanded=[],module={exports:{}};
  const code=ts.transpileModule(fs.readFileSync('src/game/fx/ultPixelFx.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText;
  vm.runInNewContext(`(function(require,module,exports){${code}})`,{})(id=>{
-  if(id==='phaser')return{};if(id.endsWith('/assetSelection'))return{STARTER_PIXELFX};
+  if(id==='phaser')return{};if(id.endsWith('/assetSelection'))return{STARTER_PIXELFX};if(id==='../classes')return{};
   if(id==='./pixelfxBridge')return{unloadFxSheet:(_s,key)=>removed.push(key),ensureFxSheet:(_s,key)=>{demanded.push(key);return Promise.resolve(true);}};throw Error(id);
  },module,module.exports);
  const {prefetchUltFx}=module.exports;prefetchUltFx({},null);assert.ok(removed.length>0);assert.deepEqual(demanded,[]);
