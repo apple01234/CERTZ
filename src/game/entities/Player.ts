@@ -26,7 +26,7 @@ import { ult5HoldOf, ult5bHoldOf, ultBurstMultOf } from "../ultHold"; // v1.4.41
 import { playUltCinematic } from "../fx/UltCinematic"; // v1.4.41 (#13) — 궁극기 시네마틱 연출
 import { spawnPentacle, spawnFlarePop, spawnRingPop, spawnUltimateIntro, spawnUltIntroSig, spawnTierFlair, spawnUltFlourish, spawnSkillImpact, spawnClassAccent, type FamKey } from "../fx/StudioFX"; // v1.0.10 — GameStudio FX (4차/5차 스킬 강화) · v1.4.0 — 5차 고유 시그니처 · vc147 — 계열별 지면 시그니처 · vc238 — 직업별 악센트
 import { DEATH_SLASH_CFG, runDeathSlashCinematic } from "../fx/DeathSlash"; // vc153 — 도적 제2궁극기 「사(死)의 일섬」 3D 시네마틱
-import { playUltLayers } from "../fx/ultLayers"; // vc183 — 극딜 3단계 연출 레이어(암전·이펙트·카메라)
+import { playUltLayers } from "../fx/ultLayers";
 import { runUltFinale } from "../fx/ultFinale"; // vc204 (#10) — 직업별 고유 마무리
 import { playUltFx, prefetchUltFx, hasUltFx, playUltFinaleCue, ULT_FINALE_CUE_MS } from "../fx/ultPixelFx";
 import { finaleTargetOrder, ultimateFinalePlan } from "../fx/ultFinalePlan";
@@ -4502,7 +4502,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     /* v1.4.0 (Task 3-1 — 유저 지시 #13) — 직업별 고유 VFX2 시그니처 연출 (8직업 1:1 매핑) */
     spawnUltFlourish(this.scene, this.x, this.y, key5, hex);
     { const cx = this.x, cy = this.y, flip = this.facing.x < 0; ultLater(castFx ? introMs : 0, () => playUltFx(this.scene, key5, 1, "cast", cx, cy, flip)); } // pixelfx 시전 — 3D 인트로 뒤
-    /* vc183 — 극딜 3단계 연출(암전 → 후면오라/지면룬/전면폭발 → 히트스톱·흔들림·줌).
+    /* vc183 — 극딜 연출(후면오라/지면룬/전면폭발과 히트스톱·흔들림·줌).
      *  계열별 강도표(ultLayers.ts)로 전사는 묵직, 도적은 짧고 날카롭게 자동 분기된다. */
     /* v1.4.41 (#3) — 연출 길이를 시전 시간에 비례시킨다.
      *  경직(ult5HoldOf)은 5~30초인데 연출이 2.6초로 고정이면 다시 어긋난다.
@@ -4945,12 +4945,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
 
       /* 블레이드마스터 — 극의: 무한 검무 오십연타 (v1.0.13 피드백#4 — 유저 지시 "무한 검무 50연타로 바꾸고 좀더 강하게")
-       *  · 데모(死 스킬 데모) 연출 차용: 붉은 死 한자 블룸 + 가속 연타 + HIT 카운터 + 시네마 레터박스
+       *  · 붉은 死 한자 블룸 + 가속 연타 + HIT 카운터
        *  · 가속 리듬: 시작 96ms 간격 → 베기마다 ~1.55ms씩 단축 → 마지막 20ms (50베기 총 ≈3.1초)
        *  · 화력 상향: 기존 100×0.36 + 7.0 = 43.0배 → 50×0.80 + 7.5 = 47.5배 (≈ +10% — 타수는 절반, 한 컷 한 컷은 크게)
        *  · 한자 블룸은 DeathSlash 본 연출보다 절제 톤(투명도 0.38·발광 반폭) — "한자 블룸이 너무 찐해" 반영
-       *  · v1.0.14 (#11): 개전 풀 블랙아웃(0→200ms 완전 암전) → 死 한자·레터박스와 함께 절개,
-       *    종결 일격 직전 순간 암전(≈140ms)→붉은 섬광 컷 — 암전은 Phaser Rectangle(카메라 고정·depth 최상단) 페이드 트윈
+       *  · 개전과 종결 직전에 붉은 지면 링으로 박자를 표시한다.
        *  · v1.0.14 (#13): 死 한자 옆 대형 콤보 카운터(매 베기 증가·스케일 펄스) + 종료 후 콤보 잔존 버그 수리
        *    (씬 셔다운·사망 경로 하드 클린업 — 예약 콜백이 오브젝트를 되살리지 못하게 차단) */
       case "blademaster": {
@@ -4972,25 +4971,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const ovParent = this.scene.game.canvas.parentElement;
         let kanji: HTMLDivElement | null = null;
         let hitBox: HTMLDivElement | null = null;
-        const bars: HTMLDivElement[] = [];
         const ovTimers: number[] = [];
         const ovCalls: Phaser.Time.TimerEvent[] = []; // #13 — 시퀀스 예약 전량 추적 (하드 정리 시 회수)
         let ovGone = false; // #13 — 하드 정리 후 모든 예약 콜백 전면 차단 (오브젝트 되살리기 방지)
-        /* #11 — 암전 오버레이: Phaser Rectangle (depth 최상단·스크롤 고정 = 카메라 고정) + 페이드 트윈.
-         *  유지 시간은 짧게(개전 200ms/종결 140ms) — 모바일 저사양에서 프레임 드랍으로 오해되지 않게.
-         *  depth 9000: 미니맵(95·96) 위, 튜토리얼 HUD(9100+) 아래. */
-        let blackRect: Phaser.GameObjects.Rectangle | null = null;
-        try {
-          const cam = this.scene.cameras.main;
-          blackRect = this.scene.add.rectangle(cam.width / 2, cam.height / 2, cam.width + 8, cam.height + 8, 0x000000)
-            .setScrollFactor(0)
-            .setDepth(9000);
-          blackRect.setAlpha(1); // 개전 즉시 컷 — 풀 블랙아웃으로 시작
-        } catch { blackRect = null; /* 헤들리스 등 — 암전 없이 전투만 */ }
+        spawnRingPop(this.scene, this.x, this.y, "vfx_ring", hex, 2.4, 240, 0.65);
         /* vc154 — 오버레이 시퀀스 타이밍은 전부 게임 시간(scene.time)으로 통일:
          *  컷 예약은 게임 시간인데 안전망·소산만 실시간(setTimeout)이면 저FPS 환경에서
          *  게임 시간이 늦어진 만큼 연출 도중 안전망이 먼저 뜯어진다 (헤들리스 9FPS 실측 재현).
-         *  #11 암전 트윈도 게임 시간(scene.tweens) — 실시간/게임시간 혼용 금지 컨벤션 유지.
          *  window 실시간 타이머는 최후 유출 방지 백스톱(30초)만 둔다. */
         const ovAt = (ms: number, f: () => void) => {
           /* 게임 시간 기반 스케줄 — 씬이 죽으면 함께 정리된다 (유출 없음) */
@@ -5001,15 +4988,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         ovTimers.push(window.setTimeout(() => { try { ovHardCleanup(); } catch { /* 무시 */ } }, 30000));
         try {
           if (ovParent) {
-            /* 레터박스 — 상하 블랙바 (데모 연출, vc154) — #11: 블랙아웃 절개 시점에 함께 열린다 */
-            for (const side of ["top", "bottom"]) {
-              const bar = document.createElement("div");
-              bar.style.cssText = `position:absolute;left:0;${side}:0;width:100%;height:0;background:#000;opacity:0.82;pointer-events:none;z-index:7;transition:height 300ms ease-out;`;
-              ovParent.appendChild(bar);
-              bars.push(bar);
-            }
             /* 붉은 死 한자 — 절제 블룸 (블러 반폭·투명도 0.38 — DeathSlash 1.0 대비 소프트)
-             *  #11: 블룸 트리거를 절개 시점(200ms)으로 이동 — 어둠 속에서 한자가 떠오르는 절개 */
+             *  #11: 블룸은 절개 시점(200ms)에 나타난다. */
             kanji = document.createElement("div");
             kanji.textContent = "死";
             kanji.style.cssText = [
@@ -5036,22 +5016,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             ovParent.appendChild(hitBox);
           }
         } catch { /* 오버레이 미지원 환경 — 연출 없이 전투만 */ }
-        /* #11 — 절개: 200ms 풀 블랙아웃 뒤 死 한자·레터박스가 함께 뜨며 암전이 걷힌다 (게임 시간) */
+        /* #11 — 절개 시점에 死 한자를 띄운다. */
         ovAt(200, () => {
-          requestAnimationFrame(() => { if (!ovGone) bars.forEach((b) => { b.style.height = "42px"; }); });
           if (kanji) {
             kanji.style.transition = "transform 460ms cubic-bezier(0.16,1.2,0.3,1), opacity 300ms ease-out";
             kanji.style.opacity = "0.38";
             kanji.style.transform = "translate(-50%,-50%) scale(1.06)";
           }
-          if (blackRect) ultTween({ targets: blackRect, alpha: 0, duration: 240, ease: "Quad.easeOut" });
         });
         const ovCleanup = () => {
           if (ovGone) return; // #13 — 하드 정리 뒤에는 소산 불필요 (제거된 요소 재제어 방지)
           for (const t of ovTimers) { try { window.clearTimeout(t); } catch { /* 무시 */ } }
           ovTimers.length = 0;
           try {
-            for (const b of bars) { b.style.height = "0"; window.setTimeout(() => { try { b.remove(); } catch { /* 무시 */ } }, 380); }
             if (kanji) {
               kanji.style.transition = "opacity 480ms ease-out, transform 480ms ease-out";
               kanji.style.opacity = "0";
@@ -5076,11 +5053,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           ovCalls.length = 0;
           for (const t of ovTimers) { try { window.clearTimeout(t); } catch { /* 무시 */ } }
           ovTimers.length = 0;
-          try { for (const b of bars) { b.remove(); } } catch { /* 무시 */ }
           try { kanji?.remove(); } catch { /* 무시 */ }
           try { hitBox?.remove(); } catch { /* 무시 */ }
-          try { if (blackRect) { this.scene.tweens.killTweensOf(blackRect); blackRect.destroy(); } } catch { /* 무시 */ }
-          blackRect = null;
         };
         /* 씬 셔다운(맵이동·씬 재시작) — DOM 유출 근본 차단 */
         this.scene.events.once("shutdown", ovHardCleanup);
@@ -5132,23 +5106,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
 
         /* 종결 — 교차하는 쌍검 극의 일격 (50베기 정점 직후) */
-        /* #11 — 종결 직전 순간 암전: 마지막 베기 직후 즉시 컷to 블랙 → ≈140ms 뒤 종결과 함께 섬광 */
-        ovCalls.push(ultLater(totalMs + 30, () => {
-          if (ovGone) return;
-          if (blackRect) blackRect.setAlpha(1);
-        }));
+        ovAt(totalMs + 30, () => {
+          if (this.state !== "dead") spawnRingPop(this.scene, this.x, this.y, "vfx_ring", hex, 3.2, 140, 0.65);
+        });
         ovCalls.push(ultLater(totalMs + 170, () => {
           if (ovGone) return;
           if (this.state === "dead") { ovHardCleanup(); return; } // #13 — 사망 종결도 잔존 없이 즉시 수거
-          /* #11 — 섬광 컷: 암전 해제와 동시에 붉은 플래시 (기존 flash 재사용) */
-          if (blackRect) {
-            ultTween({
-              targets: blackRect, alpha: 0, duration: 150, ease: "Quad.easeOut",
-              onComplete: () => { if (blackRect && !ovGone) { try { blackRect.destroy(); } catch { /* 무시 */ } blackRect = null; } },
-            });
-          }
           hitKeep = true; // 콤보 잔류 → 종결 연출 후 소산
-          ovCleanup(); // 레터박스/한자 소산 → 종결 플래시
+          ovCleanup(); // 한자 소산 → 종결 플래시
           ovAt(900, () => {
             if (hitBox) {
               hitBox.style.transition = "opacity 420ms ease-out";
@@ -5179,10 +5144,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }));
         /* 안전망 — 어떤 경우에도 오버레이가 남지 않게 (종결이 안 불려도 해제) */
         ovAt(totalMs + 4000, () => ovHardCleanup());
-        /* #11 — 암전 Rect 최종 수거 (정상 종결 소산 뒤 — 모든 경로에서 파괴 보장) */
-        ovAt(totalMs + 1500, () => {
-          if (blackRect && !ovGone) { try { blackRect.destroy(); } catch { /* 무시 */ } blackRect = null; }
-        });
         break;
       }
 
@@ -6345,7 +6306,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const introMs2 = castFx2 ? 1000 : 2400;
     void cine3d().play({ preset: "ultimate2", x: this.x, y: this.y, tint: hex, duration: introMs2, fam: this.ultKeyFor3D() });
     { const cx = this.x, cy = this.y, flip = this.facing.x < 0; ultLater(castFx2 ? introMs2 : 0, () => playUltFx(this.scene, key5, 2, "cast", cx, cy, flip)); } // pixelfx 시전 — 3D 인트로 뒤
-    /* vc183 — 제2궁극기(120초)는 극딜의 정점: 암전·연출을 1차보다 강하게(scale 1.15) */
+    /* vc183 — 제2궁극기(120초)는 오라와 타격 이펙트를 1차보다 크게 표시한다. */
     /* v1.4.41 (#3) — 2차 궁극기(쿨 120초)는 1차(60초)보다 길게. 연출 6초대 유지. */
     playUltLayers(this.scene, this.x, this.y, 0xb06aff, key5, {
       scale: 1.15,

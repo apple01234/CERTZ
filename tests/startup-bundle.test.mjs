@@ -2,8 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
+import sharp from 'sharp';
 import {StartupBundle} from '../src/game/startupBundle.ts';
 import {assetUrl,isWorldAsset,STARTER_PIXELFX,pixelFxKey} from '../src/game/assetSelection.ts';
+import {ADMITTED_PIXELFX} from '../src/game/fx/pixelFxSheets.ts';
 const manifest=JSON.parse(readFileSync('public/assets/startup-bundle/manifest.json','utf8'));
 test('concurrent image requests share bounded packages, preserve bytes and release decoded memory',async()=>{
  const original=globalThis.fetch,requests=new Map();
@@ -70,4 +72,36 @@ test('starter effects stay ready while unrelated boss art and expensive variatio
  assert.equal(pixelFxKey('melee/sword-slash'),'sword-slash');
  const remap=assetUrl('assets/fx/','big-explosion.png');assert.match(remap,/optimized-startup/);
  assert.equal(assetUrl('', '/'+remap),'/'+remap);
+});
+
+test('replacement combat textures load with transparency and boss sheets keep their frames', async () => {
+  const source = readFileSync('src/game/assetSelection.ts', 'utf8');
+  const aliases = source.slice(source.indexOf('const transparentFxUrls'), source.indexOf('export function assetUrl'));
+  const replacements = [...aliases.matchAll(/\["(assets\/[^"]+)", "(assets\/[^"]+)"\]/g)];
+  assert.ok(replacements.length > 0);
+  for (const [, original] of replacements) {
+    const resolved = assetUrl('', original);
+    assert.notEqual(resolved, original);
+    const image = sharp('public/' + resolved);
+    assert.equal((await image.metadata()).hasAlpha, true, resolved);
+    const alpha = (await image.stats()).channels[3];
+    assert.equal(alpha.min, 0, resolved);
+    assert.ok(alpha.max > 64, resolved);
+    const { data, info: { width, height } } = await image.raw().toBuffer({ resolveWithObject: true });
+    const corners = [0, width - 1, width * (height - 1), width * height - 1];
+    assert.ok(corners.every(i => data[4 * i + 3] === 0), resolved);
+  }
+  for (const key of ['impact-frame', 'pixel-dissolve']) assert.equal(ADMITTED_PIXELFX.has(key), false);
+
+  const scope = { body: 'hero', bodies: [], monsters: [], allMonsters: [], demandFx: true };
+  const boot = readFileSync('src/game/scenes/BootScene.ts', 'utf8');
+  for (const [key, sourceKey] of [
+    ['vx_bolt', 'spark-arc'], ['vx_elec', 'zap-hit'], ['vx_expcore', 'plasma-explosion'], ['vx_fire', 'fireball'],
+  ]) {
+    const url = assetUrl('assets/', key + '.webp');
+    assert.equal(isWorldAsset({ type: 'spritesheet', key, urls: [url] }, scope), true);
+    const { frameSize, frames } = JSON.parse(readFileSync(`public/assets/fx/${sourceKey}.json`)).meta.pixelfx;
+    assert.ok(boot.includes(`["${key}", ${frameSize.join(', ')}]`), key);
+    assert.ok(boot.includes(`, "${key}", 0, `) && new RegExp(`"${key}", 0, \\d+, \\d+, ${frames}\\]`).test(boot), key);
+  }
 });

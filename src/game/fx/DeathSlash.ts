@@ -117,14 +117,7 @@ export function runDeathSlashCinematic(
   try {
     if (!parent) { finish(); return null; }
 
-    /* ═══ 1단계: 검은 overlay + 붉은 「死」 연출 (2D — DOM/Phaser 하이브리드) ═══ */
-    const veil = document.createElement("div");
-    veil.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:7;background:#000;opacity:0;transition:opacity 260ms ease-out;";
-    parent.appendChild(veil);
-    requestAnimationFrame(() => { veil.style.opacity = "0.88"; });
-    cleanups.push(() => { try { veil.remove(); } catch { /* 무시 */ } });
-
-    /* 사(死) 붓글씨 — 세리프 + 붉은 발광 + 붓터치 느낌의 text-shadow 레이어 */
+    /* ═══ 1단계: 투명 바탕의 붉은 「死」 붓글씨와 잉크 ═══ */
     const glyph = document.createElement("div");
     glyph.textContent = "死";
     glyph.style.cssText = [
@@ -298,7 +291,7 @@ export function runDeathSlashCinematic(
     });
 
     /* ═══ 타임라인 (ms) — 유저 스펙 흐름 그대로 ═══
-     *    0    검은 veil + 「死」 폭발 확대
+     *    0    붉은 잉크와 「死」 폭발 확대
      *    900  3D 페이드인 — 카메라 다가옴 + 발도 포즈
      *    1750 참격 3연격 (궤적+파티클) → 1900 hitstop(70ms) → 1970 플래시/충격파/피해
      *    2600 3D 페이드아웃 + 「死」 소산

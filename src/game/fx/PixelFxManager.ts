@@ -38,7 +38,7 @@ const EVENT_FX: Record<FxEvent, string[]> = {
   "hit.slash":     ["melee/sword-slash", "melee/claw-swipe", "melee/spin-slash"],
   "hit.blunt":     ["impacts/blunt-hit", "melee/hammer-smash"],
   "hit.ranged":    ["impacts/bullet-impact", "impacts/hit-spark"],
-  "hit.crit":      ["impacts/crit-hit", "impacts/impact-frame"],
+  "hit.crit":      ["impacts/crit-hit", "impacts/hit-flash"],
 
   /* vc232 (#6 "속성 연계 이펙트 적절한 걸 골라서 써 (+과도하지 않게)")
    *  종전엔 원소마다 3종을 랜덤 선택했다. 연계가 연쇄되면 화면이 이펙트로 덮여
@@ -62,7 +62,7 @@ const EVENT_FX: Record<FxEvent, string[]> = {
   "heal":          ["holy/heal", "nature/healing-bloom"],
 
   "ui.click":      ["ui/quest-complete"],
-  "portal":        ["arcane/portal", "transitions/pixel-dissolve"],
+  "portal":        ["arcane/portal", "arcane/blink-in"],
   "shield":        ["holy/divine-shield", "impacts/shield-block"],
   "buff":          ["status/haste", "status/rage"],
   "debuff":        ["status/poisoned", "status/frozen", "status/bleeding"],

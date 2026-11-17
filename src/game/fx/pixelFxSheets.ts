@@ -3,8 +3,8 @@ export const PIXELFX_SHEETS = [
   "arcane-orb", "big-explosion", "bleeding", "blink-in", "blunt-hit", "bullet-impact",
   "claw-swipe", "coin-spin", "collect-burst", "crit-hit", "crystal-shard", "dissolve-burn",
   "divine-shield", "fireball", "frozen", "gem-spin", "hammer-smash", "haste", "heal",
-  "healing-bloom", "hit-spark", "ice-spikes", "impact-frame", "implosion", "leaf-storm",
-  "level-up", "pixel-dissolve", "poisoned", "poof", "portal", "quest-complete", "rage",
+  "healing-bloom", "hit-flash", "hit-spark", "ice-spikes", "implosion", "leaf-storm",
+  "level-up", "poisoned", "poof", "portal", "quest-complete", "rage",
   "resurrection", "shadow-flames", "shatter-death", "shield-block", "smite", "soul-rise",
   "spawn-portal", "spin-slash", "splash", "summon-rise", "sunburst", "sword-slash", "zap-hit",
   /* vc289 — 2026-11-09 Drive 배급 "FX Pack 1" 8종 (128px 24f).

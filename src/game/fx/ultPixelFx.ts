@@ -29,7 +29,7 @@ export const ULT_PIXELFX: Record<string, Pair> = {
   shadowlord:  { s5: { cast: "necro-skulls", finale: "curse" },          s5b: { cast: "eclipse", finale: "black-hole" } },
   blademaster: { s5: { cast: "double-slash", finale: "spin-slash" },     s5b: { cast: "whip-crack", finale: "scythe-reap" } },
   seaking:     { s5: { cast: "whirlpool", finale: "wave-crash" },        s5b: { cast: "water-jet", finale: "splash" } },
-  dreadnought: { s5: { cast: "muzzle-shotgun", finale: "plasma-explosion" }, s5b: { cast: "impact-frame", finale: "implosion" } },
+  dreadnought: { s5: { cast: "muzzle-shotgun", finale: "plasma-explosion" }, s5b: { cast: "hit-flash", finale: "implosion" } },
 };
 
 const CAST_SCALE = 1.2;

@@ -14321,8 +14321,7 @@ export class WorldScene extends Phaser.Scene {
          *  familyOf("blademaster")==="thief"라 기존 `fam==="warrior"&&cls==="blademaster"` 분기는
          *  도달 불가(dead code)였고, 계열 공용 도적 연출로 대체돼 있었다.
          *  계열 도적 분기보다 먼저 cls로 판정해야 한다. 로컬 궁극기 50연타 개편과 동일 리듬 동기화.
-         *  v1.0.14 (#11/#13) — 로컬 개편 동기화: 개전 풀 블랙아웃 200ms → 死 한자+대형 콤보 절개,
-         *  종결 직전 순간 암전(140ms)→붉은 섬광. 콤보는 원격 근사(컷마다 증가 — 판정 동기화 없음). */
+         *  개전·종결 전 링과 死 한자를 띄운다. 콤보는 원격에서 시각 연출로 재생한다. */
         /* 블레이드마스터 — 무한 검무 50연타 근사:
          *  가속 리듬 96→20ms · 50컷 코스메틱 · 死 한자 유령 — 판정 없음
          *  LEAD 240 = 로컬 시전 전주(240ms)와 동일 — 원격 컷·종결 타임라인이 로컬과 일치 */
@@ -14331,13 +14330,7 @@ export class WorldScene extends Phaser.Scene {
         let racc = 0;
         /* #13 — 콤보 카운터 (死 한자 옆 대형, 로컬과 동일 위치·톤) */
         let rCombo: HTMLDivElement | null = null;
-        /* #11 — 개전 풀 블랙아웃 (Phaser Rectangle, 스크롤 고정 = 카메라 고정, depth 최상단) */
-        let rBlack: Phaser.GameObjects.Rectangle | null = null;
-        try {
-          const cam = this.cameras.main;
-          rBlack = this.add.rectangle(cam.width / 2, cam.height / 2, cam.width + 8, cam.height + 8, 0x000000)
-            .setScrollFactor(0).setDepth(9000).setAlpha(1);
-        } catch { rBlack = null; /* 암전 실패 — 연출만 생략 */ }
+        spawnRingPop(this, x, y, "vfx_ring", hex, 2.4, 240, 0.65);
         for (let i = 0; i < CUTS; i++) {
           const t0 = racc;
           racc += Math.max(IV_MIN, IV_START - decay * i);
@@ -14386,18 +14379,9 @@ export class WorldScene extends Phaser.Scene {
             });
           }
         } catch { /* DOM 이펙트 실패 무시 */ }
-        /* #11 — 절개: 블랙아웃 걷힘(게임 시간 트윈, 로컬과 동일 200ms) + 최종 수거(scene.time — 씬 정리와 운명 공유) */
-        if (rBlack) {
-          this.tweens.add({ targets: rBlack, alpha: 0, duration: 240, ease: "Quad.easeOut", delay: 200 });
-          this.time.delayedCall(racc + 900, () => { try { rBlack?.destroy(); } catch { /* 무시 */ } });
-        }
-        /* #11 — 종결 직전 순간 암전(컷to 블랙, ≈140ms) → 종결과 함께 섬광 */
-        this.time.delayedCall(racc + 270, () => { if (rBlack) rBlack.setAlpha(1); });
+        this.time.delayedCall(racc + 270, () => spawnRingPop(this, x, y, "vfx_ring", hex, 3.2, 140, 0.65));
         /* 종결 — 교차 쌍검 근사 (로컬 종결 시점 racc+410과 동일) */
         this.time.delayedCall(racc + 410, () => {
-          if (rBlack) {
-            this.tweens.add({ targets: rBlack, alpha: 0, duration: 150, ease: "Quad.easeOut", onComplete: () => { try { rBlack?.destroy(); } catch { /* 무시 */ } } });
-          }
           try { this.cameras.main.flash(180, 255, 60, 60); } catch { /* 무시 */ }
           this.spawnSlashArc(x, y, face, 0xffe0e0, 3.4 * s, 320, 0.95);
           this.spawnSpinSlash(x, y, face);

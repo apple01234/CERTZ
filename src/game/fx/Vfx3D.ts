@@ -176,8 +176,8 @@ class Vfx3DImpl {
     const rand = (a: number, b: number) => a + Math.random() * (b - a);
 
     if (kind === "boom") {
-      /* 중심 코어 + 잔연기 + 12방향 파편 — uni_expcore/vx_expcore·vx_smoke·vx_debris */
-      const core = mkSprite("vx_expcore", 90 * scale);
+      /* 중심 코어는 단일 투명 텍스처로 그린다. */
+      const core = mkSprite("vfx_expc", 90 * scale);
       const glow = mkSprite("vx_glowball", 70 * scale, 0.8);
       if (core) core.material.rotation = rand(0, Math.PI * 2);
       for (let i = 0; i < 12; i++) {

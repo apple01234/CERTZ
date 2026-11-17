@@ -5,6 +5,8 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
+import sharp from 'sharp';
+import { assetUrl } from '../src/game/assetSelection.ts';
 
 const { ULT_CLASSES } = await import('../src/game/classes.ts');
 const src = readFileSync('src/game/fx/ultPixelFx.ts', 'utf8');
@@ -31,6 +33,23 @@ test('시트가 실재하고 pixelfx 메타가 있으며 모바일 한도 안이
     const [w, h] = dims(key);
     assert.ok(w <= 4096 && h <= 4096, `${key} ${w}x${h} — 모바일 최대 텍스처 4096 초과`);
     assert.ok(w * h * 4 <= 13.5e6, `${key} 풀린 크기 ${(w * h * 4 / 1e6).toFixed(1)}MB — 13.5MB 초과`);
+  }
+});
+
+test('궁극기 시트는 최적화 파일을 포함해 검은 바탕 프레임이 없다', async () => {
+  for (const key of new Set(Object.values(rows).flat())) {
+    const atlas = JSON.parse(readFileSync(`public/assets/fx/${key}.json`, 'utf8'));
+    for (const path of new Set([`assets/fx/${key}.png`, assetUrl('assets/fx/', key + '.png')])) {
+      const { data, info } = await sharp('public/' + path).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+      for (const [{ x, y, w, h }, index] of Object.values(atlas.frames).map(({ frame }, i) => [frame, i])) {
+        const corners = [[x, y], [x + w - 1, y], [x, y + h - 1], [x + w - 1, y + h - 1]];
+        const opaqueBlack = corners.filter(([px, py]) => {
+          const i = (py * info.width + px) * 4;
+          return data[i + 3] >= 210 && Math.max(data[i], data[i + 1], data[i + 2]) <= 30;
+        });
+        assert.ok(opaqueBlack.length < 3, `${path} frame ${index} has an opaque dark backdrop`);
+      }
+    }
   }
 });
 

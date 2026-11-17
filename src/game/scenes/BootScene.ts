@@ -889,8 +889,8 @@ export class BootScene extends Phaser.Scene {
     /* vc142 (#9/#12) — UNI VFX · Hovl Studio · Cartoon FX Remaster · GameVFX 3차 통합 34종
      *  (scripts/conv_vc142_assets.py — 유저 제공 원본 크롭). 보스 고유 패턴 FX + 3D 오버레이 공용 */
     const VX142_SHEETS: [string, number, number][] = [
-      ["vx_smoke", 128, 128], ["vx_expcore", 256, 256], ["vx_fire", 128, 128],
-      ["vx_elec", 128, 128], ["vx_bolt", 128, 128], ["vx_smokecloud", 192, 192],
+      ["vx_smoke", 128, 128], ["vx_expcore", 224, 200], ["vx_fire", 136, 56],
+      ["vx_elec", 144, 112], ["vx_bolt", 124, 120], ["vx_smokecloud", 128, 128],
       ["vx_petal", 192, 192], ["vx_fly", 96, 96], ["vx_debris", 128, 128],
     ];
     for (const [k, w, h] of VX142_SHEETS) this.load.spritesheet(k, `${k}.webp`, { frameWidth: w, frameHeight: h });
@@ -956,13 +956,17 @@ function registerLoadedAnimations(scene: Phaser.Scene) {
   }
   for (const tex of Object.keys(BOSS_ATLAS)) registerBossAnims(scene, tex);
   const sheets = [
-    ["vx-fire", "vx_fire", 0, 8, 14], ["vx-elec", "vx_elec", 0, 13, 20],
-    ["vx-bolt", "vx_bolt", 0, 7, 16], ["vx-smoke", "vx_smoke", 0, 7, 12],
-    ["vx-expcore", "vx_expcore", 0, 3, 12], ["vx-smokecloud", "vx_smokecloud", 0, 7, 12],
+    ["vx-fire", "vx_fire", 0, 8, 14, 36], ["vx-elec", "vx_elec", 0, 13, 20, 28],
+    ["vx-bolt", "vx_bolt", 0, 7, 16, 60], ["vx-smoke", "vx_smoke", 0, 7, 12],
+    ["vx-expcore", "vx_expcore", 0, 3, 12, 52], ["vx-smokecloud", "vx_smokecloud", 0, 7, 12],
     ["vx-petal", "vx_petal", 0, 3, 8], ["vx-debris", "vx_debris", 0, 8, 16],
   ] as const;
-  for (const [key, texture, start, end, rate] of sheets) {
+  for (const [key, texture, start, end, rate, sourceCount] of sheets) {
     if (!scene.textures.exists(texture) || scene.anims.exists(key)) continue;
-    scene.anims.create({ key, frames: scene.anims.generateFrameNumbers(texture, { start, end }), frameRate: rate, repeat: 0 });
+    // Sample the replacement sheet across its full duration, keeping the boss animation's original frame count.
+    const indices = sourceCount
+      ? { frames: Array.from({ length: end + 1 }, (_, i) => Math.round(i * (sourceCount - 1) / end)) }
+      : { start, end };
+    scene.anims.create({ key, frames: scene.anims.generateFrameNumbers(texture, indices), frameRate: rate, repeat: 0 });
   }
 }
