@@ -28,6 +28,8 @@ GROUPS = {
     "brick": [WALL + f"brick_dark_{i}.png" for i in range(3)],
     "masonry": [WALL + f"stone_2_gray_{i}.png" for i in range(2)],
     "metal": [WALL + f"lab-metal_{i}.png" for i in range(3)],
+    "deepWater": ["dungeon/water/shoals_deep_water_" + i + ".png" for i in ("0", "1_new", "2_new")],
+    "shoal": ["dungeon/water/shoals_shallow_water_" + i + ".png" for i in ("0", "1_new", "2_new")],
 }
 
 

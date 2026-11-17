@@ -65,6 +65,16 @@
       88,
       89,
       90
+    ],
+    "deepWater": [
+      91,
+      92,
+      93
+    ],
+    "shoal": [
+      94,
+      95,
+      96
     ]
   },
   "tiles": [
@@ -242,6 +252,36 @@
       "id": 90,
       "source": "dungeon/wall/lab-metal_2.png",
       "sha256": "2217a5c18fc5077c05b5bc1d5f3d8d27d6afabdb1ee84cf5c967e6b62d29328f"
+    },
+    {
+      "id": 91,
+      "source": "dungeon/water/shoals_deep_water_0.png",
+      "sha256": "1ae8eb194c4394d3f904419a34d36bddc9f5ee791ad276e1c755007d04117e19"
+    },
+    {
+      "id": 92,
+      "source": "dungeon/water/shoals_deep_water_1_new.png",
+      "sha256": "08f8a3758468010c7f73cb41962c4749932a192b0ed5e9d28c62fe0796a9b91d"
+    },
+    {
+      "id": 93,
+      "source": "dungeon/water/shoals_deep_water_2_new.png",
+      "sha256": "2f6609611a45092650c77f36e76028ff7d5806833ba94720763cf7f429d94c83"
+    },
+    {
+      "id": 94,
+      "source": "dungeon/water/shoals_shallow_water_0.png",
+      "sha256": "c80f28d91258c9fcd38901f9fbce7783dcbbcd5eea37ba659de4ebb9a0472d1c"
+    },
+    {
+      "id": 95,
+      "source": "dungeon/water/shoals_shallow_water_1_new.png",
+      "sha256": "efed36e92df9a4525787b9ea4b7b799a349c7d42eb35444d93fa8e12771a6905"
+    },
+    {
+      "id": 96,
+      "source": "dungeon/water/shoals_shallow_water_2_new.png",
+      "sha256": "3d558474f30a08f8d141e825824d23e05d8fc43f167aee75c91ce0723aa772ed"
     }
   ]
 }

@@ -28,6 +28,12 @@ test('all 171 native chapter maps preserve the exact collision mask and world di
       for (const index of [data.ground[y][x], data.border[y][x]]) assert.ok(index === -1 || tileIds.has(index), `${stage.key}: missing native tile ${index}`);
     }
     assert.equal(stage.bossKey, place.boss);
+    if (place.role === 'rail') {
+      const trackCells = data.railRoute.map(p => Math.floor(p.y / layout.cellH) * layout.cols + Math.floor(p.x / layout.cellW));
+      assert.equal(trackCells[0], layout.entry, stage.key);
+      assert.equal(trackCells.at(-1), layout.exit, stage.key);
+      assert.ok(trackCells.every((cell, i) => layout.open[cell] && (!i || [1, layout.cols].includes(Math.abs(cell - trackCells[i - 1])))), stage.key);
+    }
     if (!stage.enemies.length) assert.equal(stage.repeat, undefined, `${stage.key}: impossible repeat quest`);
     rooms++;
   }

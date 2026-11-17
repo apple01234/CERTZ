@@ -48,6 +48,8 @@ export function chapterTerrainData(lay: RoomLayout, place: Place, framedRoom = f
   const road = new Set<number>();
   // Six fine tiles (about 192–240px) leave room for several character bodies.
   // Clip against the shared walkable mask so wider bends never paint over walls.
+  const railRoute: { x: number; y: number }[] = [];
+  const railPoint = (cell: number) => ({ x: (cell % lay.cols + .5) * lay.cellW, y: (Math.floor(cell / lay.cols) + .5) * lay.cellH });
   const paint = (x: number, y: number) => {
     for (let dx = -3; dx < 3; dx++) for (let dy = -3; dy < 3; dy++) {
       if (open(x + dx, y + dy)) road.add((y + dy) * cols + x + dx);
@@ -56,11 +58,13 @@ export function chapterTerrainData(lay: RoomLayout, place: Place, framedRoom = f
   let cur = lay.entry;
   for (let count = 0; count < lay.open.length && cur !== lay.exit; count++) {
     const next = nextStepToward(lay, cur, lay.exit); if (next === null) break;
+    if (place.role === "rail") railRoute.push(railPoint(cur));
     const x0 = cur % lay.cols * detail + 2, y0 = Math.floor(cur / lay.cols) * detail + 2;
     const x1 = next % lay.cols * detail + 2, y1 = Math.floor(next / lay.cols) * detail + 2;
     for (let i = 0; i <= detail; i++) paint(x0 + Math.sign(x1 - x0) * i, y0 + Math.sign(y1 - y0) * i);
     cur = next;
   }
+  if (railRoute.length) railRoute.push(railPoint(cur));
   const accents = new Map<number, Detail>();
   const isScarlet = lay.authored?.stageKey?.startsWith("lilacworld11") || place.boss === "scarlet_blood";
   const accent = place.floor === "snow" ? "ice" : isScarlet ? "redStone" : INLAYS[place.role];
@@ -97,6 +101,10 @@ export function chapterTerrainData(lay: RoomLayout, place: Place, framedRoom = f
       g.push(-1);
       const edge = open(c, r - 1) || open(c, r + 1) || open(c - 1, r) || open(c + 1, r);
       if (framedRoom && !edge) b.push(-1);
+      else if (place.border === "water") {
+        const shallows = place.role !== "deck" && [1, 2].some(n => open(c, r - n) || open(c, r + n) || open(c - n, r) || open(c + n, r));
+        b.push(variation(shallows ? details.shoal : details.deepWater, c, r));
+      }
       else if (boundary) b.push(variation(details[boundary], c, r));
       else if (place.border !== "rock") b.push(variation(materials[place.border].tiles, c, r));
       else if (open(c, r - 1)) b.push(materials.rock.tiles[9 + c % 3]);
@@ -104,7 +112,7 @@ export function chapterTerrainData(lay: RoomLayout, place: Place, framedRoom = f
     }
     ground.push(g); border.push(b);
   }
-  return { ground, border, tileW: lay.cellW / detail, tileH: lay.cellH / detail, detail };
+  return { ground, border, tileW: lay.cellW / detail, tileH: lay.cellH / detail, detail, railRoute };
 }
 
 /** Rendering only; existing WorldScene route bodies remain the sole source of collision. */
@@ -123,6 +131,7 @@ export function renderChapterTerrain(scene: Phaser.Scene, lay: RoomLayout, onDec
     layer.setScale(data.tileW / 64, data.tileH / 64).setDepth(depth).setName(`chapter-terrain:${name}:${place.role}`);
     maps.push(map); layers.push(layer);
   }
+  const track = data.railRoute.length > 1 ? renderRailTrack(scene, data.railRoute, Math.min(data.tileW, data.tileH)) : undefined;
   const props: Partial<Record<Place["role"], string[]>> = {
     cliff: ["obj_forest_rock__1", "obj_forest_tree_orange"], road: ["obj_forest_tree_orange", "obj_forest_rock__1"],
     garden: ["obj_forest_tree_pink", "obj_dungeon_table__1"], sanctuary: ["obj_forest_tree_pink", "obj_dungeon_jar__1"],
@@ -136,13 +145,14 @@ export function renderChapterTerrain(scene: Phaser.Scene, lay: RoomLayout, onDec
     rift: ["obj_forest_rock_monument"], domain: ["obj_dungeon_candle", "obj_forest_rock_monument"],
   };
   const pool = props[place.role] ?? [];
-  const closedEdges: number[] = [];
+  const waterside = place.border === "water" && ["shore", "deck", "harbor"].includes(place.role);
+  const propEdges: number[] = [];
   for (let r = 1; r < lay.rows - 1; r++) for (let c = 1; c < lay.cols - 1; c++) {
     const cell = r * lay.cols + c;
-    if (lay.open[cell]) continue;
-    if (![cell - 1, cell + 1, cell - lay.cols, cell + lay.cols].some((n) => lay.open[n])) continue;
+    if (lay.open[cell] !== waterside) continue;
+    if (![cell - 1, cell + 1, cell - lay.cols, cell + lay.cols].some(n => lay.open[n] !== waterside)) continue;
     if ([lay.entry, lay.exit].some((n) => Math.abs(c - n % lay.cols) + Math.abs(r - Math.floor(n / lay.cols)) <= 2)) continue;
-    closedEdges.push(cell);
+    propEdges.push(cell);
   }
   const addProp = (key: string, cell: number, scale = 1) => {
     if (!scene.textures.exists(key)) return;
@@ -155,17 +165,50 @@ export function renderChapterTerrain(scene: Phaser.Scene, lay: RoomLayout, onDec
   let roseCell: number | undefined;
   if (site?.chapter === "dlcstargate" && [3, 4, 9].includes(site.sub) && focus !== undefined) {
     const distance = (cell: number) => Math.abs(cell % lay.cols - focus % lay.cols) + Math.abs(Math.floor(cell / lay.cols) - Math.floor(focus / lay.cols));
-    roseCell = closedEdges.reduce<number | undefined>((best, cell) => best === undefined || distance(cell) < distance(best) ? cell : best, undefined);
+    roseCell = propEdges.reduce<number | undefined>((best, cell) => best === undefined || distance(cell) < distance(best) ? cell : best, undefined);
     if (roseCell !== undefined) addProp(ROSE_KEY, roseCell, 1.35);
   }
   // Sample across the entire field so decor does not collect only along the first wall.
   if (pool.length) {
-    const count = Math.min(place.boss ? 6 : 10, closedEdges.length);
+    const count = Math.min(place.boss ? 6 : 10, propEdges.length);
     for (let i = 0; i < count; i++) {
-      const cell = closedEdges[Math.floor((i + .5) * closedEdges.length / count)];
+      const cell = propEdges[Math.floor((i + .5) * propEdges.length / count)];
       if (cell !== roseCell) addProp(pool[i % pool.length], cell);
     }
   }
-  scene.events.once("shutdown", () => { for (const map of maps) map.destroy(); for (const img of images) img.destroy(); });
+  scene.events.once("shutdown", () => { track?.destroy(); for (const map of maps) map.destroy(); for (const img of images) img.destroy(); });
   return { maps, layers, images };
+}
+
+function renderRailTrack(scene: Phaser.Scene, route: { x: number; y: number }[], tileSize: number) {
+  const track = scene.add.graphics().setDepth(2).setName("chapter-rail-track");
+  const gauge = tileSize * .44;
+  const normals = route.slice(1).map((point, i) => ({ x: Math.sign(route[i].y - point.y), y: Math.sign(point.x - route[i].x) }));
+  const stroke = (points: typeof route) => {
+    track.beginPath().moveTo(points[0].x, points[0].y);
+    for (const point of points.slice(1)) track.lineTo(point.x, point.y);
+    track.strokePath();
+  };
+  track.lineStyle(gauge * 3.8, 0x232e35, .8);
+  stroke(route);
+  track.lineStyle(5, 0x806750, .9);
+  for (let i = 0; i < normals.length; i++) {
+    const a = route[i], b = route[i + 1];
+    const dx = normals[i].x * gauge * 1.55, dy = normals[i].y * gauge * 1.55;
+    const count = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / (tileSize * .88));
+    for (let j = 0; j < count; j++) {
+      const t = (j + .5) / count, x = a.x + (b.x - a.x) * t, y = a.y + (b.y - a.y) * t;
+      track.lineBetween(x - dx, y - dy, x + dx, y + dy);
+    }
+  }
+  track.lineStyle(3, 0x9db5b8, .92);
+  for (const side of [-gauge, gauge]) {
+    stroke(route.map(({ x, y }, i) => {
+      const before = normals[i - 1] ?? normals[0], after = normals[i] ?? before;
+      // Offset both rails through a right-angle bend without breaking either line.
+      const offset = before.x === after.x && before.y === after.y ? side / 2 : side;
+      return { x: x + offset * (before.x + after.x), y: y + offset * (before.y + after.y) };
+    }));
+  }
+  return track;
 }
