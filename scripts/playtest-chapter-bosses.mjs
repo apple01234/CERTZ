@@ -8,15 +8,15 @@ import { storyPattern } from '../src/game/entities/storyBossPatterns.ts';
 import { telegraphMs } from '../src/game/entities/bossPhases.ts';
 const out = process.env.BOSS_QA_OUT ?? '/dev/shm/chapter-boss-qa';
 await mkdir(out, { recursive: true });
-const browser = await chromium.launch({ args: ['--no-sandbox', '--enable-unsafe-swiftshader'] });
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH, args: ['--no-sandbox', '--enable-unsafe-swiftshader'] });
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 const errors = [], badAssets = [], results = [];
 page.on('pageerror', e => errors.push(e.message));
 page.on('response', r => { if (/\/(story-bosses|chapter-terrain|cutscene-cast)\//.test(r.url()) && !r.ok()) badAssets.push([r.status(), r.url()]); });
 const cases = [
   ['lilacworld2x3', 'dio', 'shadowcopies', .4, 'story_dio'],
-  ['lilacworld5x4', 'harold', 'tentacleslam', .4, 'story_kraken'],
-  ['lilacworld7x3', 'verodin', 'cursefield', .4, 'story_veronica'],
+  ['lilacworld7x3', 'harold', 'tentacleslam', .4, 'story_kraken'],
+  ['lilacworld7x4', 'verodin', 'cursefield', .4, 'story_veronica'],
   ['lilacworld7x5', 'rasion', 'counter', .4, 'story_rasion'],
   ['lilacworld8x4', 'feron', 'shadowcopies', .4, 'story_feron'],
   ['lilacworld11x4', 'scarlet_blood', 'bloodseal', .4, 'story_scarlet'],

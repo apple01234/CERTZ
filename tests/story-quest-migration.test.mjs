@@ -154,3 +154,65 @@ test('creating a second guest persists its stub immediately and cannot replace t
   assert.equal(save.storyQuestMigration.revision, STORY_QUEST_REVISION);
   assert.equal(store.getItem(`sertz_char_${old.id}`), oldRaw);
 });
+
+/* e713366 — 해롤드 5-4 → 7-3, 베로딘 7-3 → 7-4, 옛 7-4 이동석 수집 삭제, 에스테반 마을(lilacworld5v) 삭제. */
+const before7 = (questIdx, extra = {}) => ({ ...legacy(), stage: 'lilacworld6x1', questIdx, questAccepted: {}, ...extra,
+  storyQuestMigration: { revision: 2, credits: {}, review: [] } });
+
+test('new chapter 5/7 layout: Harold is the 7-3 boss, Verodin the 7-4 boss, 5-4 a single talk', () => {
+  assert.deepEqual(STAGES.lilacworld5x4.quests.map(q => q.type), ['talk']);
+  assert.deepEqual(STAGES.lilacworld7x3.quests.map(q => q.type), ['boss', 'reach']);
+  assert.deepEqual(STAGES.lilacworld7x4.quests.map(q => q.type), ['boss', 'reach']);
+  assert.equal(STAGES.lilacworld5v, undefined);
+});
+
+test('deleted 5장 village save resumes at 5-1', () => {
+  const next = migrateSave(before7({ lilacworld4x4: 1 }, { stage: 'lilacworld5v' }));
+  assert.equal(next.stage, 'lilacworld5x1');
+  assert.ok(STAGES[next.stage]);
+});
+
+test('Harold killed at old 5-4: fought again at 7-3 without paying the old 5-4 reward twice', () => {
+  const next = migrateSave(before7({ lilacworld5x4: 2 }));
+  assert.equal(next.questIdx.lilacworld5x4, 1, 'new 5-4 has one objective');
+  assert.equal(next.questIdx.lilacworld7x3, undefined);
+  assert.deepEqual(next.storyQuestMigration.credits.lilacworld7x3, { gold: 451, exp: 18504 });
+  const q = STAGES.lilacworld7x3.quests[0], exp = Math.round(q.expReward * QUEST_EXP_MUL);
+  assert.deepEqual(storyQuestReward(next.storyQuestMigration, 'lilacworld7x3', q.reward, exp), { gold: q.reward - 451, exp: exp - 18504 });
+  assert.deepEqual(migrateSave(next), next, 'runs once');
+});
+
+test('old 7-3 Verodin kill is kept at his new 7-4 arena (no second Verodin)', () => {
+  // 7-3에서 베로딘을 잡고 그 자리에 저장 → 해롤드는 같은 자리에서 순서대로, 베로딘은 완료
+  const at73 = migrateSave(before7({ lilacworld5x4: 2, lilacworld7x3: 1 }, { stage: 'lilacworld7x3', huntCount: 3 }));
+  assert.equal(at73.questIdx.lilacworld7x4, 1);
+  assert.equal(at73.questIdx.lilacworld7x3, 0);
+  assert.equal(at73.stage, 'lilacworld7x3');
+  assert.equal(at73.huntCount, 0);
+  assert.ok(at73.storyQuestMigration.credits.lilacworld7x3);
+  // 옛 7-4 이동석 수집 중 → 해롤드가 밀린 7-3로 한 칸 돌아가 순서대로 싸운다
+  const at74 = migrateSave(before7({ lilacworld5x4: 2, lilacworld7x3: 2, lilacworld7x4: 0 }, { stage: 'lilacworld7x4', questAccepted: { lilacworld7x4: 0 } }));
+  assert.deepEqual([at74.questIdx.lilacworld7x3, at74.questIdx.lilacworld7x4, at74.stage], [0, 1, 'lilacworld7x3']);
+  assert.equal(at74.questAccepted.lilacworld7x4, undefined, 'old acceptance does not carry to a different objective');
+  // 옛 7-4까지 끝냄 → 두 보스 모두 완료, 추가 보상 없음
+  const past = migrateSave(before7({ lilacworld5x4: 2, lilacworld7x3: 2, lilacworld7x4: 1, lilacworld7x5: 2 }, { stage: 'lilacworld8x1' }));
+  assert.deepEqual([past.questIdx.lilacworld7x3, past.questIdx.lilacworld7x4, past.questIdx.lilacworld7x5], [2, 2, 2]);
+  assert.equal(past.storyQuestMigration.credits.lilacworld7x3, undefined);
+  assert.equal(past.stage, 'lilacworld8x1');
+  // 옛 7-3 베로딘 진행 전 → 새 순서 그대로(해롤드 → 베로딘)
+  const fresh = migrateSave(before7({ lilacworld5x4: 2, lilacworld7x3: 0 }, { stage: 'lilacworld7x3' }));
+  assert.deepEqual([fresh.questIdx.lilacworld7x3, fresh.questIdx.lilacworld7x4], [0, 0]);
+});
+
+test('saves already on the new layout are left alone', () => {
+  for (const save of [
+    before7({ lilacworld5x4: 1, lilacworld7x3: 2, lilacworld7x4: 2 }, { lastSeen: Date.UTC(2026, 10, 18, 18) }),
+    before7({ lilacworld5x4: 1, lilacworld7x3: 1 }, { seen: ['lwKartelArrives'] }),
+    before7({ lilacworld5x4: 1 }, { lastSeen: Date.UTC(2026, 10, 18, 18) }),
+  ]) {
+    const next = migrateSave(save);
+    assert.deepEqual(next.questIdx, save.questIdx);
+    assert.deepEqual(next.storyQuestMigration.credits, {});
+    assert.equal(next.storyQuestMigration.revision, STORY_QUEST_REVISION);
+  }
+});

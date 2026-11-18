@@ -1,5 +1,11 @@
 /** Quest layouts collapsed by 7ac2782. Amounts are the rewards actually paid before that commit. */
-export const STORY_QUEST_REVISION = 2;
+const DLC_LAYOUT_REVISION = 2;
+/** e713366 moved Harold from 5-4 to 7-3 and Verodin from 7-3 to 7-4 (old 7-4 was a warp-stone collect). */
+const LILAC_BOSS_ORDER_REVISION = 3;
+export const STORY_QUEST_REVISION = LILAC_BOSS_ORDER_REVISION;
+const LILAC_BOSS_ORDER_AT = Date.UTC(2026, 10, 18, 15, 21, 35);
+/** What the old 5-4 Harold quest paid: gold 451, exp 1542 × QUEST_EXP_MUL 12. */
+const OLD_HAROLD_PAID = { gold: 451, exp: 18504 };
 export type StoryQuestMigration = { revision: number; credits: Record<string, { gold: number; exp: number }>; review?: string[] };
 const LEGACY: Record<string, { dialogue: string; paid: [number, number][] }> = {
   dlcstargate1: { dialogue: "gpDeparture", paid: [[278,1664484],[14300,16609320]] },
@@ -40,14 +46,18 @@ type QuestSave = {
 };
 
 export function migrateStoryQuests<T extends QuestSave>(save: T): T {
-  if ((save.storyQuestMigration?.revision ?? 0) >= STORY_QUEST_REVISION) {
+  return migrateLilacBossOrder(migrateDlcLayout(save));
+}
+
+function migrateDlcLayout<T extends QuestSave>(save: T): T {
+  if ((save.storyQuestMigration?.revision ?? 0) >= DLC_LAYOUT_REVISION) {
     const review = save.storyQuestMigration?.review;
     return review === undefined || Array.isArray(review) ? save
       : { ...save, storyQuestMigration: { ...save.storyQuestMigration!, review: [] } };
   }
   if (save.storyRevision && save.storyRevision !== "haru-evernote-v1") return save;
   const next = { ...save, questIdx: { ...save.questIdx }, questAccepted: { ...save.questAccepted },
-    storyQuestMigration: { revision: STORY_QUEST_REVISION, credits: { ...save.storyQuestMigration?.credits }, review: [] } as StoryQuestMigration };
+    storyQuestMigration: { revision: DLC_LAYOUT_REVISION, credits: { ...save.storyQuestMigration?.credits }, review: [] } as StoryQuestMigration };
   const alreadyMigrated = (save.storyQuestMigration?.revision ?? 0) >= 1;
   // Timestamps cannot identify a quest layout after an old character has been played again.
   const legacy = (save.v ?? 0) < 3 || (Number.isFinite(save.lastSeen) && save.lastSeen! > 0 && save.lastSeen! < Date.UTC(2026, 10, 16, 3, 14, 49));
@@ -68,6 +78,39 @@ export function migrateStoryQuests<T extends QuestSave>(save: T): T {
     }
   }
   return next;
+}
+
+/** Old order: 5-4 Harold → 7-3 Verodin → 7-4 collect. New order: 5-4 talk → 7-3 Harold → 7-4 Verodin.
+ *  No boss is fought twice for pay, the reward Harold now carries is not lost, and the removed 5장 village falls back to 5-1. */
+function migrateLilacBossOrder<T extends QuestSave>(save: T): T {
+  const m = save.storyQuestMigration;
+  if (!m || m.revision >= LILAC_BOSS_ORDER_REVISION) return save;
+  const next = { ...save, storyQuestMigration: { ...m, revision: LILAC_BOSS_ORDER_REVISION, credits: { ...m.credits } } };
+  if (next.stage === "lilacworld5v") next.stage = "lilacworld5x1";
+  const q = save.questIdx ?? {}, seen = save.seen ?? [];
+  // A 2 is impossible in the other layout (old 7-4 and new 5-4 have one objective each).
+  const newLayout = q.lilacworld7x4 === 2 || seen.includes("lwKartelArrives");
+  const oldLayout = q.lilacworld5x4 === 2 || seen.includes("lwWarpStone") || (save.v ?? 0) < 3
+    || (Number.isFinite(save.lastSeen) && save.lastSeen! > 0 && save.lastSeen! < LILAC_BOSS_ORDER_AT);
+  if (newLayout || !oldLayout) return next;
+  const idx = { ...q }, accepted = { ...save.questAccepted };
+  const haroldPaid = (q.lilacworld5x4 ?? 0) >= 1;
+  if (haroldPaid) idx.lilacworld5x4 = 1;
+  const old73 = q.lilacworld7x3, old74 = q.lilacworld7x4;
+  if (old73 !== undefined || old74 !== undefined) {
+    // Verodin keeps his state at his new arena. Harold counts as done only if the old 7-4 reward he now carries was paid.
+    idx.lilacworld7x4 = old74 !== undefined ? (old74 >= 1 ? 2 : 1) : old73!;
+    idx.lilacworld7x3 = (old74 ?? 0) >= 1 ? 2 : 0;
+    delete accepted.lilacworld7x3; delete accepted.lilacworld7x4;
+    // Standing past Harold's new arena with him still pending: go back one zone so he is fought in order.
+    if (next.stage === "lilacworld7x4" && idx.lilacworld7x3 === 0) next.stage = "lilacworld7x3";
+    if (next.stage === "lilacworld7x3" || next.stage === "lilacworld7x4") next.huntCount = 0;
+  }
+  if (haroldPaid && idx.lilacworld7x3 !== 2) {
+    const c = next.storyQuestMigration.credits.lilacworld7x3 ?? { gold: 0, exp: 0 };
+    next.storyQuestMigration.credits.lilacworld7x3 = { gold: c.gold + OLD_HAROLD_PAID.gold, exp: c.exp + OLD_HAROLD_PAID.exp };
+  }
+  return { ...next, questIdx: idx, questAccepted: accepted };
 }
 
 /** Optional recovery replays an ambiguous objective without paying it a second time. */
