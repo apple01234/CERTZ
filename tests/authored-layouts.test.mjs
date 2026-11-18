@@ -63,7 +63,7 @@ test('all 171 authored fields have one connected, protected route', () => {
 });
 
 test('story geography has distinct authored structures and no changes to feature maps', () => {
-  const expected = { lilacworld1x1: 'cliff', lilacworld5x2: 'coast', lilacworld6x1: 'grove', lilacworld10x1: 'ruins' };
+  const expected = { lilacworld1x1: 'cliff', lilacworld7x2: 'coast', lilacworld6x1: 'grove', lilacworld10x1: 'ruins' };
   const masks = [];
   for (const [key, theme] of Object.entries(expected)) {
     const lay = authoredRoomLayout(key, 2400, 1280);
@@ -75,10 +75,9 @@ test('story geography has distinct authored structures and no changes to feature
   assert.ok(cliff.authored.landmarks.some((p) => p.kind === 'cliff'));
   assert.equal(cliff.authored.ground, 'ground_meadow');
   assert.equal(authoredRoomLayout('lilacworld1x2', 2400, 1280).authored.theme, 'town', 'the village training area precedes the castle');
-  const citadel = authoredRoomLayout('lilacworld10x3', 2400, 1280);
-  assert.deepEqual(citadel.authored.landmarks.map(x => x.kind), ['gate-water','gate-wind','gate-lightning','gate-fire']);
-  assert.equal(citadel.open[citadel.cols + 6], false, 'gate rooms retain walls between their north entrances');
-  const coast = authoredRoomLayout('lilacworld5x2', 2400, 1280);
+  const tunnel = authoredRoomLayout('lilacworld10x3', 2400, 1280);
+  assert.deepEqual(tunnel.authored.landmarks.map(x => x.kind), ['tunnel'], '10-3 is the rebels\' underground route (2.txt:161), not the retired four gates');
+  const coast = authoredRoomLayout('lilacworld7x2', 2400, 1280);
   assert.equal(coast.authored.landmarks.filter(x => x.kind === 'pier').length, 2);
   for (const key of ['village', 'youngprincessv', 'dlcstargatev', 'forest1', 'dojang', 'tower1', 'lilacworld99x1', 'lilacworld1x99', 'dlcunknown1']) {
     assert.equal(authoredRoomLayout(key, 2400, 1280), null, key);

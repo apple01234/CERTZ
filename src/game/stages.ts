@@ -923,7 +923,7 @@ export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: nu
   /* v2.9 — 챕터 마을(Xv)도 챕터 소속으로 파싱 */
   const v = /^([a-z]+)v$/.exec(key);
   if (v) return { ch: v[1] as ChapterKey, sub: 0 };
-  /* 2026-11-18 — 라일락 월드 이야기 마을(`lilacworld{장}v`). 장 번호에 숫자가 있어 위 규칙에 안 걸린다. */
+  // 라일락 월드 마을 `lilacworld{장}v`
   const lv = /^(lilacworld(?:[1-9]|1[0-5]))v$/.exec(key);
   if (lv) return { ch: lv[1] as ChapterKey, sub: 0 };
   /* vc235 — 영프 편은 `lilacworld{장}x{구역}` (예 lilacworld15x4).
@@ -1045,8 +1045,8 @@ const LATE_HP_RAMP = 1.2;
  *  측정·검증: scripts/measure-combat-balance.mjs, tests/combat-balance.test.mjs. */
 export const BOSS_STAGE_STATS: Record<StageKey, { hp: number; atk?: number }> = {
   lilacworld2x3: { hp: FIRST_DIO.hp, atk: FIRST_DIO.atk },
-  lilacworld5x4: { hp: 71200 },
-  lilacworld7x3: { hp: 110000 },
+  lilacworld7x3: { hp: 104000 },
+  lilacworld7x4: { hp: 110000 },
   lilacworld7x5: { hp: 117000 },
   lilacworld8x4: { hp: 143000 },
   lilacworld11x4: { hp: 285000, atk: 187 }, // 〃
@@ -2348,6 +2348,7 @@ export const LEGACY_STAGE_FALLBACK: Record<string, StageKey> = {
   forest: "village", kingdom: "village", fairyglade: "village",
   emberland: "village", frostland: "village", cave: "village",
   forgehall: "village", duskrealm: "village", abyss: "village",
+  lilacworld5v: "lilacworld5x1",
 };
 
 /** 유효 스테이지 키 검증 (+구 세이브 폴백) */
@@ -2374,9 +2375,7 @@ export function stageIntro(key: StageKey): string {
       const { sub } = parseStage(key);
       if (sub === 1) return hw.intro;
       const n = hw.key.slice("lilacworld".length);
-      if (sub === 5) return `lwEliteWarn${n}`;
-      if (sub === 10) return `lwBossApproach${n}`;
-      return `lwWalk${n}_${((sub - 2) % 3) + 1}`;
+      return `lwWalk${n}_${sub - 1}`;
     }
     const rb = /^r(\d+)$/.exec(key);
     if (rb) {
@@ -2449,7 +2448,7 @@ for (const [chapter, plan] of Object.entries(CHAPTER_STORY_PLAN)) {
       stage.enemies = [];
       stage.quests = [
         { id: stage.quests.find(q => q.type === "boss")?.id ?? `${key}-boss`, type: "boss", title: BOSS_DEFS[encounter].name,
-          desc: `${place.title}의 전투 국면을 돌파하자.`, targetLabel: BOSS_DEFS[encounter].name,
+          desc: `${objJosa(BOSS_DEFS[encounter].name)} 쓰러뜨리자.`, targetLabel: BOSS_DEFS[encounter].name,
           reward: Math.round(320 * (stage.scaleMul?.gold ?? 1) * G), expReward: Math.round(420 * (stage.scaleMul?.exp ?? 1)) },
         { id: `${key}-next`, type: "reach", title: "다음 장소로", desc: "열린 차원문으로 다음 장소에 가자.", targetLabel: "차원문" },
       ];
@@ -2462,7 +2461,7 @@ for (const [chapter, plan] of Object.entries(CHAPTER_STORY_PLAN)) {
         stage.quests = [{ id: stage.quests[0]?.id ?? `${key}-route`, type: "reach", title: place.title, desc: "동료의 이야기를 듣고 다음 장소로 가자.", targetLabel: "차원문" }];
       } else {
         for (const q of stage.quests) {
-          if (q.type === "hunt") { q.title = `${place.title}의 길 확보`; q.desc = `${q.targetLabel ?? "적"}을 상대해 통행로를 확보하자.`; }
+          if (q.type === "hunt") { q.title = `${place.title}의 길 확보`; q.desc = `${objJosa(q.targetLabel ?? "적")} 물리치고 길을 확보하자.`; }
           if (q.type === "collect" && !q.storyItemTexture) { q.title = `${place.title} 조사`; q.desc = "주변의 흔적을 확인해 길을 확보하자."; }
         }
       }
@@ -2471,34 +2470,22 @@ for (const [chapter, plan] of Object.entries(CHAPTER_STORY_PLAN)) {
   }
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
- * 2026-11-18 (사용자 지시 "게임 중간중간마다 스토리에 맞는 마을을 배치해")
- *
- * 라일락 월드 본편 65구역에는 시작 마을 뒤로 안전한 마을이 하나도 없었다.
- * 정본(evernote-approved 2·5·8.txt)에서 하루가 실제로 머무는 곳에만 마을을 끼운다.
- * 이름은 정본 지명 그대로, 새 고유명사는 만들지 않는다.
- *  · 칼리야 왕국 — 언덕에 쓰러진 하루를 도사 리엘이 업고 마을 주막으로 데려간다 (3-2 → 마을 → 3-3 리엘의 주막)
- *  · 에벤트 왕국 — 벨리카의 안내로 도착해 리안 왕자·제르에게 수련을 받는다 (4-3 외곽 → 마을 → 4-4 수련뜰)
- *  · 에스테반 왕국 — 리안의 경고가 담긴 벨리카의 서신 뒤 침공에 대비한다 (4-4 → 마을 → 5-1 남부 방어선)
- *  · 연합 진영 — 연합이 각 왕국에 이동석을 놓기로 한다 (8-5 → 마을 → 9-1 연합 집결지)
- *  · 스타게이트 — 이미 있던 그랜드 플레닛 제1행성 마을(dlcstargatev)을 영프 최종 구역 다음에 거치게 한다.
- * 마을 화면은 기존 공용 buildVillage(여관·전직관·주민)를 그대로 쓰고, 주민·간판은
- * data.ts CHAPTER_VILLAGE_NPC / VLG 의 같은 장 키로 채운다. 성채 안(10~14장)에는 마을을 두지 않는다.
- * ══════════════════════════════════════════════════════════════════════════ */
+/* 하루가 실제로 머무는 곳(2.txt)에만 마을을 둔다. 주민·대사는 data.ts CHAPTER_VILLAGE_NPC / VLG.
+ *  칼리야: 리엘이 언덕에서 업고 온 마을(3-2 → 3-3 주막). 에벤트: 벨리카의 안내로 도착해 리안을 만난다(4-3 → 4-4).
+ *  에벤트(8장 뒤): 리안이 아리와 페르온을 병원으로 옮기고 연합이 부상자를 돌본다(8-5 → 9-1).
+ *  영프 최종 구역 다음에는 그랜드 플레닛 제1행성 마을(dlcstargatev)을 거친다. */
 export const LILACWORLD_STORY_VILLAGES: readonly {
   key: StageKey; name: string; subtitle: string; after: StageKey; before: StageKey; themeFrom: StageKey;
 }[] = [
-  { key: "lilacworld3v", name: "칼리야 왕국", subtitle: "도사 리엘이 쓰러진 하루를 업고 온 마을",
+  { key: "lilacworld3v", name: "칼리야 왕국", subtitle: "리엘이 쓰러진 하루를 업고 온 마을",
     after: "lilacworld3x2", before: "lilacworld3x3", themeFrom: "lilacworld3x3" },
-  { key: "lilacworld4v", name: "에벤트 왕국", subtitle: "결계와 높은 산 너머 — 리안 왕자의 왕국",
+  { key: "lilacworld4v", name: "에벤트 왕국", subtitle: "리안 왕자가 다스리는 왕국",
     after: "lilacworld4x3", before: "lilacworld4x4", themeFrom: "lilacworld4x3" },
-  { key: "lilacworld5v", name: "에스테반 왕국", subtitle: "벨리카의 서신을 받고 침공에 대비하는 바다의 왕국",
-    after: "lilacworld4x4", before: "lilacworld5x1", themeFrom: "lilacworld5x2" },
-  { key: "lilacworld9v", name: "연합 진영", subtitle: "각 왕국에 이동석을 놓기로 한 연합의 거점",
+  { key: "lilacworld9v", name: "에벤트 왕국", subtitle: "부상자를 돌보며 때를 기다리는 연합",
     after: "lilacworld8x5", before: "lilacworld9x1", themeFrom: "lilacworld9x1" },
 ];
 for (const v of LILACWORLD_STORY_VILLAGES) {
-  /* 체인이 예상한 모양일 때만 끼운다 — 앞뒤 구역이 바뀌면 조용히 엉뚱한 곳에 붙지 않게 건너뛴다(테스트가 잡는다). */
+  // 앞뒤 구역이 바뀌었으면 끼우지 않는다(tests/story-villages가 잡는다).
   if (NEXT_STAGE[v.after] !== v.before || PREV_STAGE[v.before] !== v.after) continue;
   STAGES[v.key] = {
     key: v.key, name: v.name, subtitle: v.subtitle,
@@ -2514,7 +2501,6 @@ for (const v of LILACWORLD_STORY_VILLAGES) {
   PREV_STAGE[v.before] = v.key;
 }
 {
-  /* 영프 최종 구역 → 그랜드 플레닛 제1행성 마을 → 1구역. 마을 복귀는 기존 규칙(영프 마을)을 유지한다. */
   const last = LILACWORLD_CHAPTERS[LILACWORLD_CHAPTERS.length - 1];
   const finalKey = `${last.key}x${last.stages}`;
   if (STAGES.dlcstargatev && NEXT_STAGE[finalKey] === "dlcstargate1") NEXT_STAGE[finalKey] = "dlcstargatev";
@@ -2580,19 +2566,21 @@ for (const { sub, quest } of SNORIKA_STORY.beats) {
   PREV_STAGE[key] = key === SNORIKA_ENTRY ? SNORIKA_STORY.returnStage : `snorika${sub - 1}`;
 }
 
+/** 받침 없거나 ㄹ 받침이면 "로", 아니면 "으로". */
+const toJosa = (word: string) => { const c = word.charCodeAt(word.length - 1) - 0xac00; const jong = c >= 0 && c < 11172 ? c % 28 : 0; return jong === 0 || jong === 8 ? "로" : "으로"; };
 const lilacObjectives: Record<string, { type: "reach" | "talk" | "collect"; dialogue: string; title: string; target: string }> = {
   lilacworld3x2: { type: "reach", dialogue: "lwHillside", title: "도깨비들의 언덕을 지나", target: "리엘의 주막" },
   lilacworld3x3: { type: "talk", dialogue: "lwRiel", title: "주막에서 만난 도사", target: "리엘" },
-  lilacworld4x3: { type: "talk", dialogue: "lwAriTraining", title: "에벤트에서 익히는 일섬", target: "아리" },
+  lilacworld4x4: { type: "talk", dialogue: "lwAriTraining", title: "에벤트에서 익히는 일섬", target: "아리" },
+  lilacworld5x4: { type: "talk", dialogue: "lwKartelArrives", title: "이동석으로 온 국왕", target: "카르텔" },
   lilacworld6x4: { type: "collect", dialogue: "lwLucyCorruption", title: "상처에 남은 보석의 힘", target: "다크니스의 흔적" },
-  lilacworld7x4: { type: "collect", dialogue: "lwWarpStone", title: "전선을 잇는 이동석", target: "이동석" },
   lilacworld8x5: { type: "talk", dialogue: "lwFeronMemory", title: "라일락의 기억", target: "아리" },
   lilacworld9x3: { type: "collect", dialogue: "lwBarrier", title: "시스터즈가 무너뜨린 결계", target: "성채 결계" },
   lilacworld10x2: { type: "reach", dialogue: "lwSecretRoute", title: "정면 대신 지하로", target: "지하 통로" },
   lilacworld10x4: { type: "collect", dialogue: "lwTrap", title: "닫혀 버린 통로", target: "닫힌 문" },
   lilacworld10x5: { type: "reach", dialogue: "lwSistersLast", title: "시스터즈가 열어 준 길", target: "최상층" },
   lilacworld11x2: { type: "collect", dialogue: "lwBloodRite", title: "원혈의 방식", target: "흡수의 흔적" },
-  lilacworld12x3: { type: "talk", dialogue: "lwReaction", title: "반응으로 돌아오는 원소", target: "제르" },
+  lilacworld12x2: { type: "talk", dialogue: "lwReaction", title: "반응으로 돌아오는 원소", target: "제르" },
   lilacworld14x2: { type: "reach", dialogue: "lwRasionPact", title: "검 안의 계약", target: "하루의 내면" },
   lilacworld14x4: { type: "collect", dialogue: "lwEther", title: "무의 원소 에테르", target: "운명의 검" },
   lilacworld15x3: { type: "reach", dialogue: "lwEmptyHome", title: "다녀왔습니다", target: "하루가 돌아온 집" },
@@ -2601,7 +2589,7 @@ for (const [key, { type, dialogue, title, target }] of Object.entries(lilacObjec
   const stage = STAGES[key];
   bindStoryQuest(stage, {
     id: stage.quests[0]?.id ?? dialogue, type, dialogue, title,
-    desc: type === "talk" ? `${target}에게 이야기를 듣는다.` : type === "collect" ? `${target}에 다가가 조사한다.` : `${target}으로 이어지는 길을 찾는다.`,
+    desc: type === "talk" ? `${target}에게 이야기를 듣는다.` : type === "collect" ? `${target}에 다가가 조사한다.` : `${target}${toJosa(target)} 이어지는 길을 찾는다.`,
     targetLabel: target, storyItemTexture: key === "lilacworld14x4" ? "item_wpn_greatsword" : undefined,
   });
 }
@@ -2613,6 +2601,8 @@ for (const [key, reward] of Object.entries(fortressRewards)) {
   const objective = STAGES[key].quests[0];
   objective.expReward = (objective.expReward ?? 0) - reward;
 }
+// 7장은 해롤드가 5장에서 옮겨 와 보스가 셋이다. 사라진 일반 구역 몫을 해롤드 토벌에 얹는다.
+STAGES.lilacworld7x3.quests[0].expReward = (STAGES.lilacworld7x3.quests[0].expReward ?? 0) + 24_000;
 for (const [key, reward] of Object.entries({ lilacworld11x1: 150_000, lilacworld12x1: 100_000 })) {
   const objective = STAGES[key].quests[0];
   objective.expReward = (objective.expReward ?? 0) + reward;

@@ -51,14 +51,7 @@ export const FRAME_FILL = 0.74;
  *  2배를 넘으면 방이 아니라 캐릭터 초상화처럼 보인다. */
 export const MAX_ZOOM = 2;
 
-/**
- * 2026-11-18 (사용자 지시 "크기가 큰 맵에서는 카메라 줌 아웃 하지마").
- *
- * 방 전체를 한 화면에 맞추려면 평소 줌(`viewZoom()`)보다 낮춰야 하는 방은 프레이밍하지 않는다.
- * 그런 방은 평소 줌으로 플레이어를 따라가는 기존 카메라를 쓴다.
- * 실측(36개 프레이밍 방): 1920×1080 에서 맞춤 줌 0.46~1.01 / 평소 2.0,
- * 844×390(폰 가로) 에서 0.20~0.41 / 평소 1.0 — 전부 2~5배 줌 아웃이었다.
- */
+/** 방을 한 화면에 넣으려면 평소 줌보다 낮춰야 하는 큰 방은 프레이밍하지 않는다(줌 아웃 금지). */
 export function framingKeepsZoom(
   roomW: number, roomH: number, screenW: number, screenH: number, normalZoom: number, room?: RoomBounds,
 ): boolean {

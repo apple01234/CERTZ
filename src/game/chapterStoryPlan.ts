@@ -26,18 +26,18 @@ export const CHAPTER_STORY_PLAN: Record<string, ChapterStoryPlan> = {
     place("우편배달 길", "road", "grass", "earth", "forest"), place("대공립천문대", "observatory", "castle", "astral", "castle"),
     place("에벤트 외곽", "village", "grass", "castle", "forest"), place("왕국의 수련뜰", "court", "castle", "earth", "castle"),
   ] },
-  lilacworld5: { title: "남부의 해전", canon: "2.txt:59-71", places: [
-    place("남부 방어선", "camp", "grass", "earth"), place("에스테반 항만", "harbor", "sand", "wood", "water"),
-    place("전함의 갑판", "deck", "wood", "wood", "water"), place("해롤드의 크라켄", "shore", "sand", "wood", "water", "harold"),
+  lilacworld5: { title: "남부의 결전", canon: "2.txt:61-86", places: [
+    place("천문대로 가는 길", "road", "grass", "earth", "forest"), place("천문대 방어선", "camp", "grass", "earth"),
+    place("번개를 복사한 일섬", "observatory", "castle", "astral", "castle"), place("이동석으로 온 국왕", "court", "castle", "earth", "castle"),
   ] },
   lilacworld6: { title: "루시의 상처", canon: "2.txt:90-103", places: [
     place("생명의 영역 입구", "garden", "forest", "grass", "forest"), place("숲의 치료소", "sanctuary", "grass", "castle", "forest"),
     place("다크니스의 상흔", "sanctuary", "ruin", "forest", "forest"), place("보석의 힘 흡수", "court", "castle", "forest", "forest"),
   ] },
-  lilacworld7: { title: "이동석과 고대의 재앙", canon: "2.txt:73-125", places: [
-    place("칼리야 전선", "camp", "earth", "castle"), place("군단장의 전초", "ruin", "ruin", "earth"),
-    place("저주와 흑마법의 진지", "court", "ruin", "castle", "rock", "verodin"),
-    place("이동석 설치 지점", "observatory", "castle", "earth"), place("라시온과의 결투", "court", "earth", "castle", "rock", "rasion"),
+  lilacworld7: { title: "이동석과 고대의 재앙", canon: "2.txt:101-127", places: [
+    place("에델리오나의 이동석", "observatory", "castle", "earth"), place("에스테반 전선", "harbor", "sand", "wood", "water"),
+    place("해롤드의 크라켄", "shore", "sand", "wood", "water", "harold"),
+    place("칼리야의 이동석 진지", "court", "ruin", "castle", "rock", "verodin"), place("라시온과의 결투", "court", "earth", "castle", "rock", "rasion"),
   ] },
   lilacworld8: { title: "잃어버린 라일락의 기억", canon: "2.txt:129-143", places: [
     place("에벤트 성문", "court", "castle"), place("두 전사의 전장", "court", "earth", "castle"),
@@ -58,7 +58,7 @@ export const CHAPTER_STORY_PLAN: Record<string, ChapterStoryPlan> = {
   ] },
   lilacworld12: { title: "원소가 반응하는 순간", canon: "2.txt:167-205", places: [
     place("중첩된 영역", "domain", "astral", "castle"), place("원소의 반응", "domain", "castle", "astral"),
-    place("마지막 자연의 힘", "garden", "forest", "castle"), place("어둠의 잠식", "domain", "ruin", "castle", "rock", "scarlet_dark"),
+    place("생명의 원소가 막은 잠식", "garden", "forest", "castle"), place("어둠의 잠식", "domain", "ruin", "castle", "rock", "scarlet_dark"),
   ] },
   lilacworld13: { title: "붙잡아야 할 일 분", canon: "2.txt:208-241", places: [
     place("일 분의 결의", "court", "castle"), place("그림자의 분신", "domain", "ruin", "castle"),

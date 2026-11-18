@@ -309,11 +309,7 @@ export function renderAuthoredMapLayers(
   for (const { kind, cell } of art.landmarks) {
     const x = (cell % lay.cols + 0.5) * lay.cellW;
     const y = (Math.floor(cell / lay.cols) + 0.5) * lay.cellH;
-    if (kind.startsWith("gate-")) {
-      const colors: Record<string, number> = { "gate-water": 0x76bcff, "gate-wind": 0x8fe8ac, "gate-lightning": 0xe5c977, "gate-fire": 0xf28d79 };
-      prop("obj_dungeon_torch", x - lay.cellW * 0.55, y, 1, colors[kind]);
-      prop("obj_dungeon_torch", x + lay.cellW * 0.55, y, 1, colors[kind]);
-    } else if (kind === "pier") {
+    if (kind === "pier") {
       // The pier is three cells wide; a small barrel on its outer corner leaves the route clear.
       prop("obj_dungeon_barrel", x - lay.cellW * 0.75, y + lay.cellH * 0.15);
     } else if (kind === "arena") {

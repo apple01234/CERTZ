@@ -1,8 +1,4 @@
-/* 2026-11-18 — "게임 중간중간마다 스토리에 맞는 마을을 배치해" 회귀 테스트.
- *  · 라일락 월드 사이에 정본 지명 마을이 실제 안전 마을로 존재한다
- *  · 마을마다 주민 2명과 대사가 등록돼 있다(빈 대화 없음)
- *  · 키 파싱이 마을을 올바른 장으로 읽는다(시작 마을로 오인하지 않는다)
- *  · 부적 목록·차원문 미리보기가 마을을 인식한다 */
+// 라일락 월드 이야기 마을: 하루가 실제로 머무는 곳(2.txt)에만 있다.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { STAGES, NEXT_STAGE, parseStage, LILACWORLD_STORY_VILLAGES } from "../src/game/stages.ts";
@@ -10,8 +6,10 @@ import { CHAPTER_VILLAGE_NPC, DIALOGUES } from "../src/game/data.ts";
 import { warpGroups } from "../src/game/warpGroups.ts";
 import { portalPreview } from "../src/game/portalPreview.ts";
 
-test("이야기 마을 4곳이 안전 마을로 체인에 들어 있다", () => {
-  assert.deepEqual(LILACWORLD_STORY_VILLAGES.map((v) => v.name), ["칼리야 왕국", "에벤트 왕국", "에스테반 왕국", "연합 진영"]);
+test("이야기 마을이 안전 마을로 체인에 들어 있다", () => {
+  assert.deepEqual(LILACWORLD_STORY_VILLAGES.map((v) => v.key), ["lilacworld3v", "lilacworld4v", "lilacworld9v"]);
+  assert.deepEqual(LILACWORLD_STORY_VILLAGES.map((v) => v.name), ["칼리야 왕국", "에벤트 왕국", "에벤트 왕국"]);
+  assert.equal(STAGES.lilacworld5v, undefined, "하루는 에스테반에 머물지 않는다");
   for (const v of LILACWORLD_STORY_VILLAGES) {
     const def = STAGES[v.key];
     assert.ok(def?.isVillage, `${v.key} 는 마을`);

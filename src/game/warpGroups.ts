@@ -1,14 +1,5 @@
-/**
- * 2026-11-18 — 지역 이동 부적 목록.
- *
- * 버그: WarpPanel 이 `village`·`CHAPTERS`의 `장+번호`·`r1~15` 만 나열했다.
- * 현재 본편(라일락 월드)의 구역 키는 `lilacworldNxM`, 챕터 마을은 `…v` 라서
- * 방문 기록이 있어도 목록이 비고, 부적을 써도 갈 곳을 고를 수 없었다.
- *
- * 수정: 방문 기록에서 실제로 존재하는 구역(STAGES)을 전부 모은다. 알려진 묶음
- * (마을 → 라일락 월드 장 → 기존 장 → 재림) 순서로 나누고, 어디에도 안 들어간 구역은
- * "그 밖의 구역"에 넣어 다시는 조용히 빠지지 않게 한다.
- */
+/** 지역 이동 부적 목록. 방문한 구역을 마을 → 라일락 월드 장 → 기존 장 → 재림 순으로 묶고,
+ *  어디에도 안 들어가는 구역은 "그 밖의 구역"에 넣는다. */
 import { CHAPTERS, STAGES, STAGE_SHORT } from "./stages";
 import { LILACWORLD_CHAPTERS } from "./lilacworld";
 
@@ -28,7 +19,6 @@ export function warpGroups(visited: Iterable<string>): WarpGroup[] {
 
   const groups: WarpGroup[] = [{ label: "시작 마을", stages: pick(["village"]) }];
   LILACWORLD_CHAPTERS.forEach((c, i) => {
-    /* 이야기 마을(`…v`, 있으면)을 그 장의 맨 앞에 둔다 — 부적으로 가장 자주 가는 곳이다. */
     const keys = [`${c.key}v`, ...Array.from({ length: c.stages }, (_, s) => `${c.key}x${s + 1}`)];
     groups.push({ label: `라일락 월드 ${i + 1}장 ${c.title}`, stages: pick(keys) });
   });

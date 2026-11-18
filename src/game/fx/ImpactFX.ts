@@ -23,7 +23,6 @@ export const IMPACT_PROFILES = {
 
 export type ImpactKind = keyof typeof IMPACT_PROFILES;
 
-/** 2026-11-18 — 히트스톱 사건 프리셋은 순수 모듈로 분리했다(노드 테스트가 Phaser 없이 읽게). */
 export { HITSTOP, hitStopMs, type HitStopKind } from "./hitStopPresets";
 
 export class ImpactFX {

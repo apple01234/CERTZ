@@ -11,7 +11,7 @@ import { pythonBin, pythonEnv } from './python.mjs';
 test('story encounters bind the correct faction without changing stable enemy IDs', () => {
   for (const [stage, key, role] of [
     ['lilacworld2x2', 'x2_frog', 'thought'], ['lilacworld3x2', 'x2_frog', 'dokkaebi'],
-    ['lilacworld5x3', 'x3_chort', 'deckhand'], ['lilacworld10x3', 'wraith', 'thought'],
+    ['lilacworld7x2', 'x3_ogre', 'deckhand'], ['lilacworld5x3', 'x3_chort', 'thought'], ['lilacworld10x3', 'wraith', 'thought'],
     ['dlcstargate8', 'wraith', 'virus'], ['dlcprisma7', 'runegolem', 'jadeclone'],
     ['dlcprisma7', 'minion', 'robot'], ['dlcreverse3', 'minion', 'drone'], ['dlcreverse3', 'golem', 'robot'],
   ]) assert.equal(storyEnemyRole(stage, key), role);

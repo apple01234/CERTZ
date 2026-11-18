@@ -1,6 +1,6 @@
 import { CHAPTER_STORY_PLAN } from "./chapterStoryPlan";
 /**
- * 영준 프린세스 편(영프) — 1기 15화 원문 기반 스테이지 데이터
+ * 영준 프린세스 편(영프) — 라일락 월드 15장 스테이지 데이터
  *
  * 왜 별도 모듈인가
  * ----------------
@@ -18,23 +18,8 @@ import { CHAPTER_STORY_PLAN } from "./chapterStoryPlan";
  * 이 파일은 **런타임 의존이 없는 순수 데이터**다(stages.ts 를 값으로 import 하지 않는다).
  * stages.ts 가 이 데이터를 읽어 스테이지를 만들므로 모듈 순환(E SM cycle)이 생기지 않는다.
  *
- * 원문 근거 (기획서 1기 정리본)
- * ---------------------------
- *  1화  전설의 시작 — 왕립도서관, 「웨폰마스터를 위한 정리서」, 스칼렛의 왕조 탈환
- *  2화  어둠이 커지기 시작했을 때 — 에스테반 왕국, 아덴하르 총리, 에벤트왕국의 서신
- *  3화  시작된 전쟁 — 상어전함, 바다의 군단장 해롤드, 크라켄
- *  4화  석양으로 물든 바다 — 에벤트 왕국, 아리스텔라(아리)·에벤트이안(리안)
- *  5화  협상 그리고 연합 — 조선시대 왕국의 카시엘로아(시엘), 라일락 연합 결성
- *  6화  초월자 — 생명의 초월자 루시페르(루시), 인피니트보석의 자아
- *  7화  군단장들과의 전투 — 해롤드 / 베로니카·딘 / 엔젤릭 영프·거대 골렘
- *  8화  두 전사의 격전 — 페르온(다크엑스칼리버) vs 아리(솔라플래임이그니션소드)
- *  9화  과거의 향기는 라일락 꽃밭보다 진하다 — 라일락의 희생, 페르온의 합류
- * 10화  어둠의 성채 — 4개의 문(물·바람·번개·불), 스칼렛 환영 4체
- * 11화  어둠의 왕좌 — 빛의 아이온 / 어둠의 알다바오트
- * 12화  운명 — 저주 표식, 제르와 란의 장벽
- * 13화  최후의 일격 — 태양의 표식 각성, 스칼렛 격파
- * 14화  THE END TIME — 어둠의 완전체, 시간의 초월자
- * 15화  New Beginning Not the End — 세계 복구, 라일락 연합, 선발대 결성
+ * 장 순서·장소·보스는 chapterStoryPlan.ts 가 정한다(정본 1.txt → 2.txt 순서).
+ * 이 파일의 title/subtitle/boss 는 파일 끝에서 그 계획으로 덮어쓴다.
  *
  * 원문에 없는 대사는 창작하지 않는다. 원문 문장을 그대로 쓰거나 시스템 안내
  * (퀘스트 설명·목표 라벨)만 새로 쓴다.
@@ -103,12 +88,11 @@ export const LILACWORLD_BOSSES: Record<LilacworldBossKey, LilacworldBossSpec> = 
   scarlet_blood: { key: "scarlet_blood", name: "스칼렛 · 원혈과 피의 영역", episode: "2.txt:162-166", hp: 105000, atk: 88, speed: 112, exp: 5700, gold: 3000, tex: "cast_scarlet", orbTint: 0xd34c66, introDialogue: "bossIntroScarletBlood", sig: "ring", patterns: { p1: ["blinkslash", "ring"], p2: ["blinkslash", "ring", "volley"], p3: ["blinkslash", "ring", "volley", "zones"] } },
   scarlet_dark: { key: "scarlet_dark", name: "스칼렛 · 어둠의 잠식", episode: "2.txt:165-205", hp: 117000, atk: 94, speed: 114, exp: 6300, gold: 3300, tex: "cast_scarlet", orbTint: 0x78529d, introDialogue: "bossIntroScarletDark", sig: "zones", patterns: { p1: ["zones", "blinkslash"], p2: ["zones", "blinkslash", "beam"], p3: ["zones", "blinkslash", "beam", "ring"] } },
   scarlet_seal: { key: "scarlet_seal", name: "스칼렛 · 봉쇄된 영역", episode: "2.txt:208-241", hp: 120000, atk: 98, speed: 110, exp: 6800, gold: 3500, tex: "cast_scarlet", orbTint: 0xb15593, introDialogue: "bossIntroScarletSeal", sig: "counter", patterns: { p1: ["counter", "blinkslash"], p2: ["counter", "blinkslash", "zones"], p3: ["counter", "blinkslash", "zones", "ring"] } },
-  /* 3화 "거대한 해적선이 나타났다 … 바다의 군단장 해롤드" → 크라켄.
-   *  원문의 "수상전 최강 병기" 설정에 맞춰 원거리 탄막 위주. */
+  /* 에스테반 전선의 해롤드(크라켄). 원거리 탄막 위주. */
   harold: {
     key: "harold",
     name: "바다의 군단장 해롤드",
-    episode: "3화 시작된 전쟁",
+    episode: "2.txt:109-110 에스테반 전선",
     hp: 46000, atk: 64, speed: 92, exp: 2800, gold: 1600,
     tex: "cast_harold",
     orbTint: 0x5ad0ff,
@@ -122,12 +106,11 @@ export const LILACWORLD_BOSSES: Record<LilacworldBossKey, LilacworldBossSpec> = 
     },
     summonKey: "x2_reeffish",
   },
-  /* 7화 "조선시대 왕국에는 군단장 베로니카, 딘을 막기 위해 리안, 도사, 시엘이 갔다"
-   *  주술 + 흑마법 — 소환과 저주 장판이 정체성. */
+  /* 칼리야 이동석 진지의 딘과 베로니카. 소환과 저주 장판. */
   verodin: {
     key: "verodin",
     name: "주술사 베로니카와 흑마법사 딘",
-    episode: "7화 군단장들과의 전투",
+    episode: "2.txt:113-117 칼리야 이동석 진지",
     hp: 58000, atk: 69, speed: 96, exp: 3300, gold: 1800,
     tex: "cast_veronica",
     orbTint: 0xc06aff,
@@ -141,12 +124,11 @@ export const LILACWORLD_BOSSES: Record<LilacworldBossKey, LilacworldBossSpec> = 
     },
     summonKey: "x3_necromancer",
   },
-  /* 8화 "두 전사는 두 검을 맞대면서" — 다크엑스칼리버 + 검은드래곤의 영혼.
-   *  근접 압박 + 돌진. */
+  /* 에벤트의 페르온. 근접 압박과 돌진. */
   feron: {
     key: "feron",
     name: "페르슈타인 카르리온 — 다크엑스칼리버",
-    episode: "8화 두 전사의 격전",
+    episode: "2.txt:127-148 에벤트의 격전",
     hp: 74000, atk: 78, speed: 112, exp: 4100, gold: 2200,
     tex: "cast_feron",
     orbTint: 0x8a5aff,
@@ -286,8 +268,8 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
    * ══════════════════════════════════════════════════════════════════════ */
   {
     key: "lilacworld1",
-    title: "영프 1장 — 전설의 시작",
-    subtitle: "절벽의 약속 · 기사단 입단 시험 · 펜던트가 가리킨 검",
+    title: "절벽의 약속",
+    subtitle: "",
     episodes: "1화",
     stages: 4,
     intro: "chapterIntroLilacworld1",
@@ -306,18 +288,18 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
       { sub: 2, dialogue: "lwBook", quest: { id: "hw1", type: "reach", title: "기사단을 향해", desc: "라일락과의 약속을 지키기 위해 레지스터에게 검술을 배웠다. 수련터를 지나 기사단 입단 시험을 보러 가자.", targetLabel: "수련터 출구", reward: Math.round(2600 * G), expReward: 93 } },
       { sub: 3, dialogue: "lwLetter", quest: { id: "hw2", type: "reach", title: "빛나는 펜던트", desc: "입단 시험을 마친 하루는 디오를 피해 성 안으로 들어왔다. 펜던트가 빛나는 방향을 따라 지하 감옥으로 내려가자.", targetLabel: "지하 감옥 입구", reward: Math.round(2900 * G), expReward: 93 } }
     ],
-    repeat: {need: 28, gold: Math.round(210 * G), exp: 210, title: "[반복] 해변 순찰", desc: "석양으로 물든 바다 — 해안선을 계속 지켜야 한다."},
+    repeat: {need: 28, gold: Math.round(210 * G), exp: 210, title: "[반복] 수련터 정리", desc: "수련터 주변에 몰려든 무리를 쫓아낸다."},
     lvGate: {enter: 1, mid: 5},
     scaleMul: {hp: 0.6, atk: 0.65, exp: 0.1239, gold: 1},
   },
   {
     key: "lilacworld2",
-    title: "영프 2장 — 어둠이 커지기 시작했을 때",
-    subtitle: "에델리오나의 마을 습격 · 디오와 사념체 · 피난",
+    title: "떠나야 할 이유",
+    subtitle: "",
     episodes: "2화",
     stages: 4,
     intro: "chapterIntroLilacworld2",
-    boss: null,
+    boss: "dio",
     bossDone: "lilacworld2Done",
     width: 2000, height: 1120, groundTint: 0x8ad0ff,
     groundTex: "tile_grass", pathTex: "tile_path", bg: "#0a1a26",
@@ -327,20 +309,20 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
       { key: "x2_rat", count: 3 }, { key: "minion", count: 3 }],
     main: "x2_reeffish",
     beats: [
-      { sub: 2, dialogue: "lwWar", quest: { id: "hw3", type: "reach", title: "연기가 솟는 마을로", desc: "서쪽으로 떠나던 하루는 자신이 살던 마을에서 연기가 솟는 것을 보고 발길을 돌렸다. 골목을 지나 마을 안쪽으로 돌아가자.", targetLabel: "마을 안쪽", reward: Math.round(3100 * G), expReward: 416 } }
+      { sub: 2, dialogue: "", quest: { id: "hw3", type: "reach", title: "연기가 솟는 마을로", desc: "서쪽으로 떠나던 하루는 자신이 살던 마을에서 연기가 솟는 것을 보고 발길을 돌렸다. 골목을 지나 마을 안쪽으로 돌아가자.", targetLabel: "마을 안쪽", reward: Math.round(3100 * G), expReward: 416 } }
     ],
-    repeat: {need: 28, gold: Math.round(210 * G), exp: 210, title: "[반복] 해변 순찰", desc: "석양으로 물든 바다 — 해안선을 계속 지켜야 한다."},
+    repeat: {need: 28, gold: Math.round(210 * G), exp: 210, title: "[반복] 피난로 지키기", desc: "마을 사람들이 빠져나갈 길을 지킨다."},
     lvGate: {enter: 8, mid: 12},
     scaleMul: {hp: 1.65, atk: 0.77, exp: 0.4655, gold: 1.3},
   },
   {
     key: "lilacworld3",
-    title: "영프 3장 — 시작된 전쟁",
-    subtitle: "상어전함 · 바다의 군단장 해롤드 · 크라켄",
+    title: "칼리야의 수련",
+    subtitle: "",
     episodes: "3화",
     stages: 5,
     intro: "chapterIntroLilacworld3",
-    boss: "harold",
+    boss: null,
     bossDone: "lilacworld3Done",
     width: 2000, height: 1120, groundTint: 0x8ad0ff,
     groundTex: "tile_grass", pathTex: "tile_path", bg: "#0a1a26",
@@ -353,18 +335,18 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
      *  vc286 — 종전엔 5.txt 3화의 "이동석·크라켄 먹물·해롤드 호위대"가 들어와 있었다.
      *  그 사건들은 정본 배치상 5장(남부의 해전, 2.txt:59-71) 소재이므로 그쪽으로 옮겼다. */
     beats: [
-      { sub: 2, dialogue: "lwDokkaebi", quest: { id: "hw4", type: "hunt", title: "도깨비의 약탈", desc: "칼리야까지 걸어간 하루는 탈진해 언덕에 쓰러졌다. 도깨비들이 가진 것을 빼앗으려 덤벼들었다. 리엘이 올 때까지 버텨라.", need: 10, targetKey: "x3_chort", targetLabel: "도깨비 무리", reward: Math.round(3300 * G), expReward: 354 } },
+      { sub: 2, dialogue: "", quest: { id: "hw4", type: "hunt", title: "도깨비의 약탈", desc: "칼리야까지 걸어간 하루는 탈진해 언덕에 쓰러졌다. 도깨비들이 가진 것을 빼앗으려 덤벼들었다. 리엘이 올 때까지 버텨라.", need: 10, targetKey: "x3_chort", targetLabel: "도깨비 무리", reward: Math.round(3300 * G), expReward: 354 } },
       { sub: 3, dialogue: "lwRiel", quest: { id: "hw5", type: "hunt", title: "검을 쥔 손", desc: "리엘은 하루가 가진 검이 보통 검이 아니라고 말했다. 검과 웨폰마스터의 관계를 확인하는 동안, 주막을 노리는 자들을 물리쳐라.", need: 8, targetKey: "x2_rat", targetLabel: "주막을 노리는 자", reward: Math.round(3600 * G), expReward: 354 } },
       { sub: 4, dialogue: "", quest: { id: "hw5b", type: "hunt", title: "카피와 순환", desc: "리엘의 지도로 수련을 거듭해 카피와 순환을 쓸 수 있게 되었다. 순환을 익히는 동안 몰려든 자들을 상대하라.", need: 12, targetKey: "x3_chort", targetLabel: "수련 상대", reward: Math.round(3900 * G), expReward: 354 } },
     ],
-    repeat: {need: 28, gold: Math.round(210 * G), exp: 210, title: "[반복] 해변 순찰", desc: "석양으로 물든 바다 — 해안선을 계속 지켜야 한다."},
+    repeat: {need: 28, gold: Math.round(210 * G), exp: 210, title: "[반복] 칼리야 길목 정리", desc: "도깨비들이 다시 길목을 노린다."},
     lvGate: {enter: 15, mid: 18},
     scaleMul: {hp: 2.94, atk: 0.89, exp: 0.571, gold: 1.6},
   },
   {
     key: "lilacworld4",
-    title: "영프 4장 — 석양으로 물든 바다",
-    subtitle: "에벤트 왕국 · 아리스텔라(아리) · 에벤트이안(리안)",
+    title: "벨리카와 에벤트",
+    subtitle: "",
     episodes: "4화",
     stages: 4,
     intro: "chapterIntroLilacworld4",
@@ -378,16 +360,16 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
       { key: "x2_bat", count: 3 }, { key: "x3_maskedorc", count: 3 }],
     main: "x3_imp",
     beats: [
-      { sub: 2, dialogue: "lwAri", quest: { id: "hw6", type: "hunt", title: "근위대장 아리스텔라", desc: "\"아직 움직이지 마십시오 카르텔국왕\" — 근위대장 아리가 부상자를 지키는 동안 앞길을 막은 자들을 처리해라.", need: 10, targetKey: "x3_imp", targetLabel: "에벤트왕국 습격자", reward: Math.round(3000 * G), expReward: 2559 } }
+      { sub: 2, dialogue: "", quest: { id: "hw6", type: "hunt", title: "천문대 앞길", desc: "길을 잃은 하루를 벨리카가 에벤트까지 데려다주기로 했다. 천문대 앞을 막은 무리를 치우자.", need: 10, targetKey: "x3_imp", targetLabel: "길을 막은 무리", reward: Math.round(3000 * G), expReward: 2559 } }
     ],
-    repeat: {need: 30, gold: Math.round(230 * G), exp: 230, title: "[반복] 연합 순찰", desc: "라일락 연합의 임무 — 각 왕국을 계속 오가야 한다."},
+    repeat: {need: 30, gold: Math.round(230 * G), exp: 230, title: "[반복] 에벤트 산길 순찰", desc: "에벤트로 오가는 산길을 지킨다."},
     lvGate: {enter: 21, mid: 24},
     scaleMul: {hp: 2.95, atk: 1.01, exp: 1.558, gold: 1.9},
   },
   {
     key: "lilacworld5",
-    title: "영프 5장 — 협상 그리고 연합",
-    subtitle: "조선시대 왕국 · 카시엘로아(시엘) · 라일락 연합 결성",
+    title: "남부의 결전",
+    subtitle: "",
     episodes: "5화",
     stages: 4,
     intro: "chapterIntroLilacworld5",
@@ -407,14 +389,14 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
       { sub: 2, dialogue: "lwSouthWar", quest: { id: "hw7", type: "hunt", title: "남부 방어선", desc: "스칼렛이 각 왕국에 사흘 뒤 남부를 침공하겠다 선포했다. 결전의 아침, 나팔이 울렸다. 방어선을 무너뜨리려는 선봉을 막아라.", need: 10, targetKey: "swampbeast", targetLabel: "남부 선봉", reward: Math.round(3300 * G), expReward: 12582 } },
       { sub: 3, dialogue: "lwBolt", quest: { id: "hw8", type: "hunt", title: "벨리카의 번개를 복사하다", desc: "하루가 벨리카의 번개 원소를 복사하고 일섬에 성공하며 각성했다. 각성의 틈을 노리는 자들을 쓸어라.", need: 12, targetKey: "x3_imp", targetLabel: "각성의 틈을 노리는 자", reward: Math.round(3500 * G), expReward: 12582 } },
     ],
-    repeat: {need: 30, gold: Math.round(230 * G), exp: 230, title: "[반복] 연합 순찰", desc: "라일락 연합의 임무 — 각 왕국을 계속 오가야 한다."},
+    repeat: {need: 30, gold: Math.round(230 * G), exp: 230, title: "[반복] 천문대 방어", desc: "천문대로 밀려오는 어둠의 피조물을 막는다."},
     lvGate: {enter: 27, mid: 31},
     scaleMul: {hp: 3.6, atk: 1.13, exp: 9.181, gold: 2.2},
   },
   {
     key: "lilacworld6",
-    title: "영프 6장 — 초월자",
-    subtitle: "생명의 초월자 루시페르(루시) · 인피니트보석의 자아",
+    title: "루시의 상처",
+    subtitle: "",
     episodes: "6화",
     stages: 4,
     intro: "chapterIntroLilacworld6",
@@ -428,21 +410,21 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
       { key: "x2_bat", count: 3 }, { key: "x3_maskedorc", count: 3 }],
     main: "x3_imp",
     beats: [
-      { sub: 2, dialogue: "lwLuci", quest: { id: "hw9", type: "collect", title: "[사연] 라이트 보석의 파편", desc: "라이트 보석이 약간 부서져서 파편이 있고, 그걸 마시니 움직일 수 있었다. 남은 파편을 찾아라.", targetLabel: "라이트 보석의 파편", reward: Math.round(3800 * G), expReward: 27748 } },
-      { sub: 3, dialogue: "", quest: { id: "hw10", type: "hunt", title: "[기믹] 어둠의 왕좌가 도래하기까지", desc: "\"지금 우리쪽으로 오는 자는 살려 주겠다. 대신에 나머지는 전부 죽음이다\" — 스칼렛의 첩자를 베어라.", need: 8, targetKey: "x3_necromancer", targetLabel: "스칼렛의 첩자", reward: Math.round(4200 * G), expReward: 27748 } }
+      { sub: 2, dialogue: "", quest: { id: "hw9", type: "collect", title: "루시의 상처", desc: "상처에 남은 보석의 흔적을 살핀다.", targetLabel: "보석의 흔적", reward: Math.round(3800 * G), expReward: 27748 } },
+      { sub: 3, dialogue: "", quest: { id: "hw10", type: "hunt", title: "다크니스의 상흔", desc: "상처에서 스며 나온 어둠을 걷어낸다.", need: 8, targetKey: "x3_necromancer", targetLabel: "스며 나온 어둠", reward: Math.round(4200 * G), expReward: 27748 } }
     ],
-    repeat: {need: 30, gold: Math.round(230 * G), exp: 230, title: "[반복] 연합 순찰", desc: "라일락 연합의 임무 — 각 왕국을 계속 오가야 한다."},
+    repeat: {need: 30, gold: Math.round(230 * G), exp: 230, title: "[반복] 연합 순찰", desc: "연합의 회의장 주변을 지킨다."},
     lvGate: {enter: 34, mid: 38},
     scaleMul: {hp: 4.25, atk: 1.25, exp: 20.25, gold: 2.5},
   },
   {
     key: "lilacworld7",
-    title: "영프 7장 — 군단장들과의 전투",
-    subtitle: "해롤드 · 베로니카·딘 · 엔젤릭 영프·거대 골렘",
+    title: "이동석과 고대의 재앙",
+    subtitle: "",
     episodes: "7화",
     stages: 5,
     intro: "chapterIntroLilacworld7",
-    boss: "verodin",
+    boss: "rasion",
     bossDone: "lilacworld7Done",
     width: 2200, height: 1200, groundTint: 0xb08ad8,
     groundTex: "tile_moss", pathTex: "tile_dirt", bg: "#140a1e",
@@ -452,18 +434,18 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
       { key: "x3_wogol", count: 3 }, { key: "x3_orcshaman", count: 3 }],
     main: "x3_orcwarrior",
     beats: [
-      { sub: 2, dialogue: "lwGolem", quest: { id: "hw11", type: "hunt", title: "엔젤릭 영프와 거대한 골렘", desc: "근위대장이 더 이상 막기 어려운 것 같았다 — 엔젤릭 영프와 거대한 골렘이 있었기 때문이다. 골렘을 무너뜨려라.", need: 10, targetKey: "x3_ogre", targetLabel: "거대한 골렘", reward: Math.round(3400 * G), expReward: 12355 } },
-      { sub: 3, dialogue: "lwRiande", quest: { id: "hw12", type: "hunt", title: "\"3분뒤에 보시죠\"", desc: "리안이 차크람을 던지고 이현이 도술을 사용했다. 2대2 교전에서 베로니카의 부하들을 쓸어라.", need: 8, targetKey: "x3_wogol", targetLabel: "베로니카의 부하", reward: Math.round(3800 * G), expReward: 12355 } },
-      { sub: 4, dialogue: "lwSwords", quest: { id: "hw13", type: "hunt", title: "두 전사의 격전", desc: "서로의 검이 맞댈수록 천둥과 땅이 갈라졌다. 검은 드래곤의 잔재를 베어라.", need: 8, targetKey: "x2_darkhound", targetLabel: "검은 드래곤의 잔재", reward: Math.round(4200 * G), expReward: 12355 } }
+      { sub: 2, dialogue: "", quest: { id: "hw11", type: "hunt", title: "에스테반 전선", desc: "카르텔과 아덴이 해롤드의 군단 사이에 틈을 벌린다. 제르가 불의 마법을 쓸 수 있게 앞을 정리하자.", need: 10, targetKey: "x3_ogre", targetLabel: "해롤드의 군단", reward: Math.round(3400 * G), expReward: 12355 } },
+      { sub: 3, dialogue: "", quest: { id: "hw12", type: "hunt", title: "해롤드의 크라켄", desc: "제르의 불 마법이 닿을 때까지 크라켄을 붙잡는다.", need: 8, targetKey: "x3_wogol", targetLabel: "크라켄의 촉수", reward: Math.round(3800 * G), expReward: 12355 } },
+      { sub: 4, dialogue: "", quest: { id: "hw13", type: "hunt", title: "칼리야의 이동석", desc: "\"3분 후에 보시죠.\" 리안과 도사가 딘과 베로니카를 맡는다.", need: 8, targetKey: "x2_darkhound", targetLabel: "군단장의 부하", reward: Math.round(4200 * G), expReward: 12355 } }
     ],
-    repeat: {need: 32, gold: Math.round(260 * G), exp: 260, title: "[반복] 군단장 전선", desc: "각 왕국에 배치된 군단장들 — 계속 부대를 소모시켜라."},
+    repeat: {need: 32, gold: Math.round(260 * G), exp: 260, title: "[반복] 군단장 전선", desc: "각 왕국에 남은 군단장의 부대를 계속 상대한다."},
     lvGate: {enter: 41, mid: 45},
     scaleMul: {hp: 4.9, atk: 1.37, exp: 6.888, gold: 2.8},
   },
   {
     key: "lilacworld8",
-    title: "영프 8장 — 두 전사의 격전",
-    subtitle: "페르온(다크엑스칼리버) vs 아리(솔라플래임이그니션소드)",
+    title: "잃어버린 라일락의 기억",
+    subtitle: "",
     episodes: "8화",
     stages: 5,
     intro: "chapterIntroLilacworld8",
@@ -477,17 +459,17 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
       { key: "x3_wogol", count: 3 }, { key: "x3_orcshaman", count: 3 }],
     main: "x3_orcwarrior",
     beats: [
-      { sub: 2, dialogue: "lwLilac", quest: { id: "hw14", type: "collect", title: "[사연] 과거의 향기는 라일락 꽃밭보다 진하다", desc: "\"꽃말이 추억이라… 너의 이름을 부르는 사람마다 추억이 되라고 이름을 지었어\" — 꽃밭에 남은 추억을 모아라.", targetLabel: "라일락의 추억", reward: Math.round(4600 * G), expReward: 33146 } },
-      { sub: 4, dialogue: "", quest: { id: "hw15", type: "hunt", title: "[기믹] 어둠의 왕좌로 가는 길", desc: "페르온이 말했다 \"어둠에 왕좌로 가는 길은 내가 잘 알아 나도 돕지\" — 길을 막는 자들을 베어라.", need: 8, targetKey: "x3_bigzombie", targetLabel: "왕좌의 수문장", reward: Math.round(5000 * G), expReward: 33146 } }
+      { sub: 2, dialogue: "", quest: { id: "hw14", type: "collect", title: "두 전사의 전장", desc: "검이 부딪히는 소리를 따라 아리에게 간다. 길에 남은 격전의 흔적을 살피자.", targetLabel: "격전의 흔적", reward: Math.round(4600 * G), expReward: 33146 } },
+      { sub: 4, dialogue: "", quest: { id: "hw15", type: "hunt", title: "아리와 페르온", desc: "페르온의 그림자 검술에 밀리는 아리 곁으로 간다.", need: 8, targetKey: "x3_bigzombie", targetLabel: "그림자 검", reward: Math.round(5000 * G), expReward: 33146 } }
     ],
-    repeat: {need: 32, gold: Math.round(260 * G), exp: 260, title: "[반복] 군단장 전선", desc: "각 왕국에 배치된 군단장들 — 계속 부대를 소모시켜라."},
+    repeat: {need: 32, gold: Math.round(260 * G), exp: 260, title: "[반복] 에벤트 성문 경계", desc: "격전이 끝난 성문 주변을 지킨다."},
     lvGate: {enter: 49, mid: 53},
     scaleMul: {hp: 5.55, atk: 1.49, exp: 16.17, gold: 3.1},
   },
   {
     key: "lilacworld9",
-    title: "영프 9장 — 과거의 향기는 라일락 꽃밭보다 진하다",
-    subtitle: "라일락의 희생 · 페르온의 합류",
+    title: "연합의 재집결",
+    subtitle: "",
     episodes: "9화",
     stages: 4,
     intro: "chapterIntroLilacworld9",
@@ -504,20 +486,20 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
      *  vc286 — 종전엔 비트가 비어 있어 이 장에서 서사 사건이 하나도 진행되지 않았다. */
     beats: [
       { sub: 2, dialogue: "lwUnited", quest: { id: "hw15b", type: "hunt", title: "부상자 치료 천막", desc: "연합은 당장 에델리오나로 가고 싶었지만 부상자가 많아 움직이지 못했다. 치료 천막을 노리는 자들을 막아라.", need: 10, targetKey: "x3_bigzombie", targetLabel: "천막을 노리는 자", reward: Math.round(4400 * G), expReward: 19020 } },
-      { sub: 3, dialogue: "lwGateBreak", quest: { id: "hw15c", type: "hunt", title: "결계를 여는 길", desc: "도사가 반란군에 결계 파괴를 부탁했고, 반란군이 성 내부 진입에 성공했다. 결계가 걷히는 동안 성채 외곽을 정리하라.", need: 12, targetKey: "x3_wogol", targetLabel: "성채 외곽의 수비병", reward: Math.round(4600 * G), expReward: 19020 } },
+      { sub: 3, dialogue: "", quest: { id: "hw15c", type: "hunt", title: "결계를 여는 길", desc: "도사가 반란군에 결계 파괴를 부탁했고, 반란군이 성 내부 진입에 성공했다. 결계가 걷히는 동안 성채 외곽을 정리하라.", need: 12, targetKey: "x3_wogol", targetLabel: "성채 외곽의 수비병", reward: Math.round(4600 * G), expReward: 19020 } },
     ],
-    repeat: {need: 32, gold: Math.round(260 * G), exp: 260, title: "[반복] 군단장 전선", desc: "각 왕국에 배치된 군단장들 — 계속 부대를 소모시켜라."},
+    repeat: {need: 32, gold: Math.round(260 * G), exp: 260, title: "[반복] 치료 천막 경계", desc: "부상자가 회복할 때까지 천막 주변을 지킨다."},
     lvGate: {enter: 57, mid: 62},
     scaleMul: {hp: 6.2, atk: 1.6099999999999999, exp: 19.02, gold: 3.4},
   },
   {
     key: "lilacworld10",
-    title: "영프 10장 — 어둠의 성채",
-    subtitle: "4개의 문(물·바람·번개·불) · 스칼렛 환영 4체",
+    title: "시스터즈의 비밀 통로",
+    subtitle: "",
     episodes: "10화",
     stages: 5,
     intro: "chapterIntroLilacworld10",
-    boss: "shadow",
+    boss: null,
     bossDone: "lilacworld10Done",
     width: 2300, height: 1250, groundTint: 0x6a4a9a,
     groundTex: "tile_morgue", pathTex: "tile_basalt", bg: "#0d0616",
@@ -532,23 +514,23 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
       { key: "ll_mushroom", count: 2 }, { key: "ll_flyingeye", count: 2 }],
     main: "wraith",
     beats: [
-      { sub: 2, dialogue: "lwFourDoors", quest: { id: "hw16", type: "hunt", title: "첫 번째 문 — 물의 스칼렛", desc: "4개의 문을 클리어해야만 스칼렛이 있는 어둠의 왕좌로 갈 수 있다. 첫 번째 문의 수호자들을 처치하라.", need: 10, targetKey: "wraith", targetLabel: "물의 문 수호자", reward: Math.round(3600 * G), expReward: 78248 } },
-      { sub: 3, dialogue: "lwWindDoor", quest: { id: "hw17", type: "hunt", title: "두 번째 문 — 바람의 스칼렛", desc: "루시가 만든 풀의 장막과 란이 만든 그림 몬스터로 공격을 막고 리안이 공격했다. 두 번째 문을 열어라.", need: 8, targetKey: "x2_reeffish", targetLabel: "바람의 문 수호자", reward: Math.round(4000 * G), expReward: 78248 } },
-      { sub: 4, dialogue: "lwBalloon", quest: { id: "hw18", type: "collect", title: "그림 열기구", desc: "스칼렛이 가는 길을 끊었다. 란과 루시의 힘을 합쳐 그림 열기구를 만들 재료를 모아라.", targetLabel: "그림의 재료", reward: Math.round(4400 * G), expReward: 78248 } }
+      { sub: 2, dialogue: "", quest: { id: "hw16", type: "hunt", title: "정면 입구", desc: "정면을 지키는 군단장들의 사념체를 피해 길을 찾는다.", need: 10, targetKey: "wraith", targetLabel: "사념체", reward: Math.round(3600 * G), expReward: 78248 } },
+      { sub: 3, dialogue: "", quest: { id: "hw17", type: "hunt", title: "지하의 미로", desc: "시스터즈가 확보한 통로를 따라 내려간다. 통로에 남은 사념체를 쓰러뜨리자.", need: 8, targetKey: "x2_reeffish", targetLabel: "통로의 사념체", reward: Math.round(4000 * G), expReward: 78248 } },
+      { sub: 4, dialogue: "", quest: { id: "hw18", type: "collect", title: "스칼렛의 함정", desc: "닫힌 통로에서 빠져나갈 길을 찾는다.", targetLabel: "닫힌 문", reward: Math.round(4400 * G), expReward: 78248 } }
     ],
-    repeat: {need: 34, gold: Math.round(300 * G), exp: 300, title: "[반복] 성채 정찰", desc: "어둠의 성채가 계속 군대를 만들어낸다 — 계속 베어내야 한다."},
+    repeat: {need: 34, gold: Math.round(300 * G), exp: 300, title: "[반복] 성채 정찰", desc: "성채 주변에 다시 생겨난 사념체를 정리한다."},
     lvGate: {enter: 66, mid: 71},
     /* 2026-11-14 (유저 지시 "난이도 — 튀는 구간만 고르게") — 공격 배율 상향. 약한 유령 위주라 표준 육성이 73~89대 맞아야 죽었다(9장 30대·13장 40대). */
     scaleMul: {hp: 16.9, atk: 2.6, exp: 55.66, gold: 3.6999999999999997},
   },
   {
     key: "lilacworld11",
-    title: "영프 11장 — 어둠의 왕좌",
-    subtitle: "빛의 아이온 · 어둠의 알다바오트",
+    title: "피의 영역",
+    subtitle: "",
     episodes: "11화",
     stages: 4,
     intro: "chapterIntroLilacworld11",
-    boss: null,
+    boss: "scarlet_blood",
     bossDone: "lilacworld11Done",
     width: 2300, height: 1250, groundTint: 0x6a4a9a,
     groundTex: "tile_morgue", pathTex: "tile_basalt", bg: "#0d0616",
@@ -558,21 +540,21 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
       { key: "x3_bigzombie", count: 3 }, { key: "x2_reeffish", count: 3 }],
     main: "wraith",
     beats: [
-      { sub: 2, dialogue: "lwIon", quest: { id: "hw19", type: "hunt", title: "빛의 아이온 · 어둠의 알다바오트", desc: "라이트와 다크니스보석이 형체화된 존재가 그들을 위협했다. 형체를 흩어라.", need: 8, targetKey: "duskhound", targetLabel: "형체화된 보석의 파편", reward: Math.round(5000 * G), expReward: 131115 } }
+      { sub: 2, dialogue: "", quest: { id: "hw19", type: "hunt", title: "원혈의 의식", desc: "원소를 흡수하는 스칼렛에게 체술로 파고든다.", need: 8, targetKey: "duskhound", targetLabel: "스칼렛의 피조물", reward: Math.round(5000 * G), expReward: 131115 } }
     ],
-    repeat: {need: 34, gold: Math.round(300 * G), exp: 300, title: "[반복] 성채 정찰", desc: "어둠의 성채가 계속 군대를 만들어낸다 — 계속 베어내야 한다."},
+    repeat: {need: 34, gold: Math.round(300 * G), exp: 300, title: "[반복] 성채 정찰", desc: "성채 주변에 다시 생겨난 사념체를 정리한다."},
     lvGate: {enter: 75, mid: 80},
     /* 2026-11-14 (유저 지시 "난이도 — 튀는 구간만 고르게") — 공격 배율 상향. 약한 유령 위주라 표준 육성이 73~89대 맞아야 죽었다(9장 30대·13장 40대). */
     scaleMul: {hp: 17.1, atk: 2.5, exp: 72.86, gold: 4},
   },
   {
     key: "lilacworld12",
-    title: "영프 12장 — 운명",
-    subtitle: "저주 표식 · 제르와 란의 장벽",
+    title: "원소가 반응하는 순간",
+    subtitle: "",
     episodes: "12화",
     stages: 4,
     intro: "chapterIntroLilacworld12",
-    boss: null,
+    boss: "scarlet_dark",
     bossDone: "lilacworld12Done",
     width: 2300, height: 1250, groundTint: 0x6a4a9a,
     groundTex: "tile_blood", pathTex: "tile_basalt", bg: "#0d0616",
@@ -582,22 +564,22 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
       { key: "x3_bigzombie", count: 3 }, { key: "x2_reeffish", count: 3 }],
     main: "wraith",
     beats: [
-      { sub: 2, dialogue: "lwCurse", quest: { id: "hw20", type: "collect", title: "[사연] 저주의 표식", desc: "베로니카, 시엘, 딘이 저주의 표식을 맞아 힘을 잃어갔다. 표식의 근원을 찾아라.", targetLabel: "저주의 표식", reward: Math.round(5400 * G), expReward: 258700 } },
-      { sub: 3, dialogue: "", quest: { id: "hw21", type: "hunt", title: "[기믹] 남은 6명", desc: "남은 인원은 도사, 루시, 리안, 아리, 란, 제르까지 6명뿐. 스칼렛이 흡수한 군세를 끊어라.", need: 8, targetKey: "x3_bigzombie", targetLabel: "흡수된 군세", reward: Math.round(6000 * G), expReward: 258700 } }
+      { sub: 2, dialogue: "", quest: { id: "hw20", type: "collect", title: "원소의 반응", desc: "흩어진 원소의 흔적을 모은다.", targetLabel: "원소의 흔적", reward: Math.round(5400 * G), expReward: 258700 } },
+      { sub: 3, dialogue: "", quest: { id: "hw21", type: "hunt", title: "잠식을 막는 생명의 원소", desc: "하루의 각성으로 원소가 돌아왔다. 루시가 생명의 원소로 잠식을 막는 동안 몰려드는 군세를 막자.", need: 8, targetKey: "x3_bigzombie", targetLabel: "잠식된 군세", reward: Math.round(6000 * G), expReward: 258700 } }
     ],
-    repeat: {need: 34, gold: Math.round(300 * G), exp: 300, title: "[반복] 성채 정찰", desc: "어둠의 성채가 계속 군대를 만들어낸다 — 계속 베어내야 한다."},
+    repeat: {need: 34, gold: Math.round(300 * G), exp: 300, title: "[반복] 성채 정찰", desc: "성채 주변에 다시 생겨난 사념체를 정리한다."},
     lvGate: {enter: 85, mid: 90},
     /* 2026-11-14 (유저 지시 "난이도 — 튀는 구간만 고르게") — 공격 배율 상향. 약한 유령 위주라 표준 육성이 73~89대 맞아야 죽었다(9장 30대·13장 40대). */
     scaleMul: {hp: 20.1, atk: 2.5, exp: 172.5, gold: 4.3},
   },
   {
     key: "lilacworld13",
-    title: "영프 13장 — 최후의 일격",
-    subtitle: "태양의 표식 각성 · 스칼렛 격파",
+    title: "붙잡아야 할 일 분",
+    subtitle: "",
     episodes: "13화",
     stages: 4,
     intro: "chapterIntroLilacworld13",
-    boss: null,
+    boss: "scarlet_seal",
     bossDone: "lilacworld13Done",
     width: 2400, height: 1300, groundTint: 0x9a3030,
     groundTex: "tile_blood", pathTex: "tile_basalt", bg: "#1c0606",
@@ -607,21 +589,21 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
       { key: "x3_wogol", count: 3 }, { key: "minion", count: 3 }],
     main: "duskhound",
     beats: [
-      { sub: 2, dialogue: "lwSunMark", quest: { id: "hw22", type: "collect", title: "태양의 표식", desc: "보석이 깨지면서 태양의 표식이 검에 새겨졌다. 라일락 월드에 있는 모든 자의 염원을 모아라.", targetLabel: "라일락의 염원", reward: Math.round(4200 * G), expReward: 419529 } },
-      { sub: 3, dialogue: "lwEndTime", quest: { id: "hw23", type: "hunt", title: "THE END TIME", desc: "\"내가 이것만으로 끝날것이라고 생각하는거야?\" — 라일락월드의 반을 삼킨 어둠을 밀어내라.", need: 10, targetKey: "duskhound", targetLabel: "삼켜진 자들", reward: Math.round(4800 * G), expReward: 419529 } }
+      { sub: 2, dialogue: "", quest: { id: "hw22", type: "collect", title: "그림자의 분신", desc: "페르온이 그림자 분신을 불러 스칼렛을 붙잡는다. 그사이 흩어진 원소를 모으자.", targetLabel: "흩어진 원소", reward: Math.round(4200 * G), expReward: 419529 } },
+      { sub: 3, dialogue: "", quest: { id: "hw23", type: "hunt", title: "페르온의 영역 봉쇄", desc: "페르온의 영역이 버티는 일 분 동안 스칼렛에게 다가가는 길을 연다.", need: 10, targetKey: "duskhound", targetLabel: "어둠의 군세", reward: Math.round(4800 * G), expReward: 419529 } }
     ],
-    repeat: {need: 36, gold: Math.round(340 * G), exp: 340, title: "[반복] 왕좌 수복", desc: "어둠의 왕좌가 무너졌다 — 남은 잔재를 계속 정화하자."},
+    repeat: {need: 36, gold: Math.round(340 * G), exp: 340, title: "[반복] 남은 어둠 정리", desc: "왕좌 주변에 남은 어둠을 걷어낸다."},
     lvGate: {enter: 95, mid: 101},
     scaleMul: {hp: 14.8, atk: 2.09, exp: 259, gold: 4.6},
   },
   {
     key: "lilacworld14",
-    title: "영프 14장 — THE END TIME",
-    subtitle: "어둠의 완전체 · 시간의 초월자",
+    title: "무의 원소와 시간의 힘",
+    subtitle: "",
     episodes: "14화",
     stages: 5,
     intro: "chapterIntroLilacworld14",
-    boss: "scarlet",
+    boss: "desknis",
     bossDone: "lilacworld14Done",
     width: 2400, height: 1300, groundTint: 0x9a3030,
     groundTex: "tile_blood", pathTex: "tile_basalt", bg: "#1c0606",
@@ -631,17 +613,17 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
       { key: "x3_wogol", count: 3 }, { key: "minion", count: 3 }],
     main: "duskhound",
     beats: [
-      { sub: 2, dialogue: "lwTimeRuler", quest: { id: "hw24", type: "hunt", title: "시간의 초월자", desc: "도사가 부채를 던지더니 긴 총이 되었다. 검을 머리 위에서 아래로 쓸어 내리더니 시간의 초월자로 변했다.", need: 10, targetKey: "x2_darkhound", targetLabel: "멈춘 시간의 잔영", reward: Math.round(5400 * G), expReward: 1452419 } },
-      { sub: 4, dialogue: "lwNewBeginning", quest: { id: "hw25", type: "collect", title: "라일락 연합의 탄생", desc: "완전히 5왕국이 서로 싸우지 않고 연합의 임무로 파견될 수 있도록. 연합의 증표를 세워라.", targetLabel: "연합의 증표", reward: Math.round(6000 * G), expReward: 1452419 } }
+      { sub: 2, dialogue: "", quest: { id: "hw24", type: "hunt", title: "라시온의 계약", desc: "하루를 대신해 라시온이 데스크니스를 막는다.", need: 10, targetKey: "x2_darkhound", targetLabel: "잠식된 그림자", reward: Math.round(5400 * G), expReward: 1452419 } },
+      { sub: 4, dialogue: "", quest: { id: "hw25", type: "collect", title: "하루의 에테르", desc: "무의 원소를 붙잡는다.", targetLabel: "무의 원소", reward: Math.round(6000 * G), expReward: 1452419 } }
     ],
-    repeat: {need: 36, gold: Math.round(340 * G), exp: 340, title: "[반복] 왕좌 수복", desc: "어둠의 왕좌가 무너졌다 — 남은 잔재를 계속 정화하자."},
+    repeat: {need: 36, gold: Math.round(340 * G), exp: 340, title: "[반복] 남은 어둠 정리", desc: "왕좌 주변에 남은 어둠을 걷어낸다."},
     lvGate: {enter: 106, mid: 113},
     scaleMul: {hp: 15.9, atk: 2.21, exp: 836.9, gold: 4.9},
   },
   {
     key: "lilacworld15",
-    title: "영프 15장 — New Beginning Not the End",
-    subtitle: "세계 복구 · 라일락 연합 · 선발대 결성",
+    title: "끝이 아닌 재건",
+    subtitle: "",
     episodes: "15화",
     stages: 4,
     intro: "chapterIntroLilacworld15",
@@ -655,10 +637,10 @@ export const LILACWORLD_CHAPTERS: LilacworldChapterSpec[] = [
       { key: "x3_wogol", count: 3 }, { key: "minion", count: 3 }],
     main: "duskhound",
     beats: [
-      { sub: 2, dialogue: "lwSerniumCall", quest: { id: "hw26", type: "collect", title: "[사연] 세르니움에서 온 연락", desc: "그랜드 플래닛에 있는 세르니움에서 에벤트왕국에 연락이 왔다. 파견 선발대를 준비하라.", targetLabel: "선발대 편성표", reward: Math.round(6600 * G), expReward: 16687047 } },
-      { sub: 3, dialogue: "", quest: { id: "hw27", type: "hunt", title: "[기믹] 남은 어둠", desc: "보석의 힘과 각자의 힘, 무수히 많은 시간과 추억들은 완전히 리셋되지 않았다. 남은 어둠을 걷어라.", need: 8, targetKey: "x3_wogol", targetLabel: "남은 어둠", reward: Math.round(7400 * G), expReward: 16687047 } }
+      { sub: 2, dialogue: "", quest: { id: "hw26", type: "collect", title: "라일락의 무덤", desc: "페르온과 아리를 따라 라일락의 무덤에 간다.", targetLabel: "라일락의 무덤", reward: Math.round(6600 * G), expReward: 16687047 } },
+      { sub: 3, dialogue: "", quest: { id: "hw27", type: "hunt", title: "다녀왔습니다", desc: "하루가 살던 집으로 돌아간다.", need: 8, targetKey: "x3_wogol", targetLabel: "남은 어둠", reward: Math.round(7400 * G), expReward: 16687047 } }
     ],
-    repeat: {need: 36, gold: Math.round(340 * G), exp: 340, title: "[반복] 왕좌 수복", desc: "어둠의 왕좌가 무너졌다 — 남은 잔재를 계속 정화하자."},
+    repeat: {need: 36, gold: Math.round(340 * G), exp: 340, title: "[반복] 남은 어둠 정리", desc: "왕좌 주변에 남은 어둠을 걷어낸다."},
     lvGate: {enter: 120, mid: 128},
     scaleMul: {hp: 10.1, atk: 2.33, exp: 10300, gold: 5.2},
   },

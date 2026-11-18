@@ -15,7 +15,7 @@ import {
   closetThemeOf, CLOSET_THEMES, isPremiumPet, // v1.2.1 (#3) — 프리미엄 펫 특전 판정
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey, type EnemyKey, type BossKey, type BossDiffKey,
 } from "@/game/data";
-import { warpGroups } from "@/game/warpGroups"; // 2026-11-18 — 지역 이동 부적 목록(라일락 월드 포함)
+import { warpGroups } from "@/game/warpGroups";
 import { UNLOCKS, unlockLevel, unlockDef, type FeatureKey } from "@/game/unlocks"; // vc178 (지시 #1·#2) — 레벨 개방 표 + 튜토리얼 다시보기
 import { GameIcon } from "./GameIcon"; // vc247 (지시 #11) — 잠금 자물쇠 표시
 import BossRushPanel from "./BossRushPanel"; // vc291 — 보스 러시 패널
@@ -4960,14 +4960,18 @@ export function WarpPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
   useEffect(() => {
     const t = setInterval(() => {
       const v = loadSave()?.visited ?? [];
-      setVisited((cur) => (cur.length === v.length && cur.every((s) => v.includes(s)) ? cur : v));
+      setVisited((cur) => {
+        if (cur.length !== v.length) return v;
+        const have = new Set(cur);
+        return v.every((s) => have.has(s)) ? cur : v;
+      });
     }, 600);
     return () => clearInterval(t);
   }, []);
 
   const hasScroll = rpg.owned.includes("scroll_warp");
-  /* 2026-11-18 — 라일락 월드(lilacworldNxM)·챕터 마을이 목록에서 빠져 부적이 동작하지 않던 버그 수정 */
-  const groups = warpGroups(visited);
+  // rpg 는 300ms마다 갱신된다. 방문 기록이 바뀔 때만 다시 묶는다.
+  const groups = useMemo(() => warpGroups(visited), [visited]);
   const empty = groups.length === 0;
 
   return (

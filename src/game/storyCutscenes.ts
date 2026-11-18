@@ -231,14 +231,6 @@ const BEAT_SHOTS: Record<StageBeat, ChapterIntroShot[]> = {
  * shots 의 dialogue 는 DIALOGUES 키. stageIntro 키를 넣으면 그 구역 대사가 연출과 함께 나온다.
  */
 export const STAGE_INTROS: Record<string, ChapterIntroSpec> = {
-  /* 영프 편 — 해롤드(크라켄) 직전. 바다가 통째로 검게 물드는 장면 */
-  "lilacworld3:5": {
-    once: true,
-    shots: [
-      { rx: 0.24, ry: 0.5, focus: "entry", panMs: 520, holdMs: 260, zoom: 0.86 },
-      { rx: 0.72, ry: 0.48, focus: "feature", panMs: 980, holdMs: 380, zoom: 0.8, dialogue: "lwEliteWarn3" },
-    ],
-  },
   /* 최종장 직전 — 가장 웅장하게 */
   "dlcsernium:9": {
     once: true,

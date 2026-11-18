@@ -13,7 +13,7 @@ import { finaleTargetOrder, finalePlanReach, type FinalePlan } from "../fx/ultFi
 import { storyPortalDestination, storyEntryAllowed, lwFinalStage, YOUNG_PRINCESS_VILLAGE } from "../storyProgression";
 import { fieldNpcLook } from "../npcThemes";
 import { resolveGroundTile } from "../tileThemes"; // vc204 — 지역 지면 → 타일 단일 매핑
-import { portalPreview } from "../portalPreview"; // 2026-11-18 — 차원문 다음 구역 미리보기
+import { portalPreview } from "../portalPreview";
 import { renderAuthoredMapLayers } from "../fx/AuthoredMapLayers";
 import { openMaskAt, patternFor } from "../autotile"; // vc204 — 4비트 이웃 마스크 오토타일
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
@@ -1826,8 +1826,7 @@ export class WorldScene extends Phaser.Scene {
     {
       const ps = parseStage(stageKey);
       this.framedRoom = !!this.layout && usesFramedRoom(chapterPlace(ps.ch, ps.sub));
-      /* 2026-11-18 (지시 "크기가 큰 맵에서는 카메라 줌 아웃 하지마") — 방을 한 화면에 맞추려면
-       *  평소 줌보다 낮춰야 하는 큰 방은 프레이밍을 끄고 기존 추적 카메라(평소 줌)를 쓴다. */
+      // 큰 방은 줌을 낮춰 한 화면에 넣지 않고 평소 줌 추적 카메라를 쓴다.
       if (this.framedRoom && this.layout) {
         const lay = this.layout;
         const room = roomBoundsFromLayout(lay.open, lay.cols, lay.cellW, lay.cellH, this.stageW, this.stageH);
@@ -4433,7 +4432,6 @@ export class WorldScene extends Phaser.Scene {
     if (!silent) audio.sfx.portal();
     /* v4.1.0 — 전진 차원문 위치 라벨 (복귀 차원문 라벨과 동일 규약 — 지시 #14) */
     this.portalLabel?.destroy();
-    /* 2026-11-18 — 다음 구역이 보스전/마을이면 라벨에 표시 (portalPreview.ts) */
     const preview = portalPreview(NEXT_STAGE[this.stageDef.key]);
     this.portalLabel = this.add
       .text(this.portal.x, this.portal.y - 46, preview.text, {
@@ -4943,7 +4941,7 @@ export class WorldScene extends Phaser.Scene {
     if (chSpec && vSpec) {
       this.addBuildingSign(cx, cy - 320, `${chSpec.title} 마을`, vSpec.signColor);
     } else if (vSpec) {
-      /* 2026-11-18 — 라일락 월드 이야기 마을은 CHAPTERS 밖이라 chapterSpec 이 없다. 마을 이름(정본 지명)을 그대로 단다. */
+      // 라일락 월드 마을은 chapterSpec 이 없어 마을 이름을 그대로 단다.
       this.addBuildingSign(cx, cy - 320, this.stageDef.name, vSpec.signColor);
     }
     // 건물 간판 + 기능 상호작용 — 여관(회복+저장), 내 집(무료 휴식), 전직관(카이엔 앞)
@@ -5259,9 +5257,7 @@ export class WorldScene extends Phaser.Scene {
   /** v3.0.15 (#16) — color/prefix 지원: 원소 약점 시 원소색 + "약점" 접두 표시
    *  v3.3.0 (지시 #9) — 크리티컬 펀치 스케일 + 큰 글씨 (타격감 강화) */
   spawnDamageText(x: number, y: number, val: number, crit = false, color?: string, prefix?: string) {
-    /* 2026-11-18 — 풀 소진 시 **가장 오래된** 숫자를 재사용한다 (레퍼런스: Endless Wander
-     *  `FloatingTextConfig` 동시 표시 상한). 종전엔 새 숫자를 버려 난전 중 치명타가 사라졌다.
-     *  풀 크기(상한)는 그대로라 프레임 부담은 같다. */
+    // 풀이 다 차면 가장 오래된 숫자를 다시 쓴다(새 숫자를 버리지 않는다).
     let t = this.dmgPool.find((d) => d.scene && !d.active);
     if (!t) {
       let oldest: Phaser.GameObjects.Text | undefined;
@@ -5332,28 +5328,6 @@ export class WorldScene extends Phaser.Scene {
    *  이제 ImpactFX 단일 소유자로 넘긴다 — 세대 ID 로 최신 호출만 복원하고,
    *  지속시간은 최댓값을 써서 연타로 무한 연장되지 않는다.
    *  `hitStopUntil` 은 ImpactFX 값과 동기화해 update() 의 물리 자가치유가 존중하게 한다. */
-  /** 2026-11-18 — 짧은 슬로모션 (레퍼런스: Endless Wander `FreezeFrameType.OnLastEnemyKilled`/`ShortSlowMo`).
-   *  보스 사망 슬로모션과 같은 이중 복원(씬 타이머 + 실제 시각 안전망 + update 워치독)을 쓴다.
-   *  이미 슬로모션 중이면 겹치지 않는다. 연출 끈 유저(fxLevel 0)는 생략. */
-  playShortSlowMo(scale = 0.4, gameMs = 90) {
-    if (this.fxLevel <= 0 || this.slowmoUntil > 0) return;
-    this.time.timeScale = scale;
-    this.tweens.timeScale = scale;
-    this.slowmoUntil = Date.now() + 2000;
-    const restore = () => {
-      if (this.time) this.time.timeScale = 1;
-      if (this.tweens) this.tweens.timeScale = 1;
-      this.slowmoUntil = 0;
-    };
-    this.time.delayedCall(gameMs, restore);
-    window.setTimeout(restore, Math.round(gameMs / scale) + 400);
-  }
-
-  /** 2026-11-18 — 큰 스킬(궁극기) 전용 방 조명 펄스. 연출 끈 유저(fxLevel 0)는 생략. */
-  skillLightPulse() {
-    if (this.fxLevel > 0) this.lighting?.pulse();
-  }
-
   hitStop(kind: HitStopKind | number = "hit") {
     this.impactFX.hitStop(hitStopMs(kind));
     this.hitStopUntil = this.impactFX.hitStopEndsAt;
@@ -8166,7 +8140,6 @@ export class WorldScene extends Phaser.Scene {
   private onGateWaveCleared() {
     if (this.gatePhase !== "fight" || this.gateEnded) return;
     this.trackMission("gate"); // v1.0.1 — 시즌 미션 게이트 웨이브 카운트
-    this.playShortSlowMo(); // 2026-11-18 — 웨이브의 마지막 적 처치 순간을 짧게 늘린다
     this.gatePhase = "cards";
     this.gatePendingCards = drawGateCards(this.gateWave);
     /* 웨이브 클리어 보너스 — 룬 드롭 (확률) */
@@ -10248,8 +10221,7 @@ export class WorldScene extends Phaser.Scene {
        *  문제 ② 그 사이 예외·씬 전환·백그라운드 복귀가 끼면 콜백이 유실돼
        *        **timeScale이 0.28에 영구 고정** → 게임 전체가 3.5배 느려져 "멈춘 것처럼" 보였다.
        *  이제 복원을 (a) 실제 시각 기준 setTimeout, (b) update의 워치독 두 경로로 보장한다. */
-      /* 2026-11-18 — 워치독은 `Date.now()`(실제 시각)와 비교한다. 종전엔 씬 시각(time.now,
-       *  게임 시작 후 ms)을 넣어 다음 프레임에 바로 원복됐다 → 보스 슬로모션이 1프레임만 보였다. */
+      // 워치독은 update 에서 Date.now() 와 비교한다. 씬 시각을 넣으면 다음 프레임에 바로 풀린다.
       this.slowmoUntil = Date.now() + 2000; // 워치독 기준(정상 복원 시 무시됨)
       const veilStart = Date.now();
       const restore = () => {
@@ -14916,8 +14888,7 @@ export class WorldScene extends Phaser.Scene {
       const vk = (spec.num <= 1 ? "village" : `${spec.key}v`) as StageKey;
       if (STAGES[vk]) return vk;
     }
-    /* 2026-11-18 — 라일락 월드는 chapterSpec 이 없다. 복귀 체인을 거슬러 가장 최근에 지난 마을
-     *  (칼리야·에벤트·에스테반·연합 진영, 없으면 시작 마을)로 보낸다. */
+    // 라일락 월드: 복귀 체인을 거슬러 가장 최근에 지난 마을로.
     if (/^lilacworld/.test(fromKey)) {
       let k: StageKey | null | undefined = PREV_STAGE[fromKey];
       for (let i = 0; k && i < 80; i++) {

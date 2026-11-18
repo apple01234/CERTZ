@@ -203,17 +203,10 @@ export function authoredRoomLayout(seed: string, mapW: number, mapH: number): Ro
     case "tunnel":
     case "dungeon":
       route([start, end]);
-      if (seed === "lilacworld10x3") {
-        for (const [kind, x, y] of [["gate-water", 3, top], ["gate-wind", right, top], ["gate-lightning", 3, bottom - 1], ["gate-fire", right, bottom - 1]] as const) {
-          route([[x, mid], [x, y]]);
-          mark(kind, x, y);
-        }
-      } else {
-        rect(left - 1, top, left + 1, mid);
-        rect(right - 2, mid, right + 1, bottom);
-        if (sub % 2 === 0) rect(center - 1, top, center, mid);
-        mark(place.role, right - 1, mid + 1);
-      }
+      rect(left - 1, top, left + 1, mid);
+      rect(right - 2, mid, right + 1, bottom);
+      if (sub % 2 === 0) rect(center - 1, top, center, mid);
+      mark(place.role, right - 1, mid + 1);
       break;
     case "throne":
       route([start, end]);

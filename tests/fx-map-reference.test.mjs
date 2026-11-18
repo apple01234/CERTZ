@@ -1,7 +1,4 @@
-/* 2026-11-18 — Endless Wander 레퍼런스 적용분 회귀 테스트
- *  · 히트스톱 사건 프리셋: 값이 종전 숫자와 같아야 한다(체감 변화 0)
- *  · 차원문 다음 구역 미리보기: 보스/마을 표시
- *  · 보스 슬로모션 워치독: 실제 시각(Date.now) 기준이어야 한다 */
+// 히트스톱 프리셋 값, 차원문 라벨, 보스 슬로모션 워치독, 상황에 맞지 않는 연출 제거.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -37,6 +34,12 @@ test("다음 구역이 마을이면 휴식 표시, 없으면 기본 문구", () 
   if (toVillage) assert.match(portalPreview(NEXT_STAGE[toVillage]).text, /휴식$/);
   assert.equal(portalPreview(null).text, "→ 다음 지역");
   assert.equal(portalPreview("no_such").text, "→ 다음 지역");
+});
+
+test("웨이브 처치 슬로모션·궁극기 조명 펄스는 넣지 않는다", () => {
+  const scene = readFileSync(new URL("../src/game/scenes/WorldScene.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(scene, /playShortSlowMo|skillLightPulse/);
+  assert.doesNotMatch(readFileSync(new URL("../src/game/fx/Lighting.ts", import.meta.url), "utf8"), /pulse\(/);
 });
 
 test("슬로모션 워치독 기준 시각은 실제 시각(Date.now)으로 잡는다", () => {

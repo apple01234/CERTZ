@@ -146,8 +146,8 @@ for (let i = 0; i < LILACWORLD_CHAPTERS.length - 1; i++) {
 assert.equal(NEXT_STAGE.lilacworld3x2, 'lilacworld3v', '도깨비 언덕 → 칼리야 왕국 (리엘이 업고 온 마을)');
 assert.equal(NEXT_STAGE.lilacworld3v, 'lilacworld3x3', '칼리야 왕국 → 리엘의 주막');
 assert.equal(NEXT_STAGE.lilacworld4x3, 'lilacworld4v', '에벤트 외곽 → 에벤트 왕국');
-assert.equal(NEXT_STAGE.lilacworld4x4, 'lilacworld5v', '4장 → 에스테반 왕국');
-assert.equal(NEXT_STAGE.lilacworld8x5, 'lilacworld9v', '8장 → 연합 진영');
+assert.equal(NEXT_STAGE.lilacworld4x4, 'lilacworld5x1', '하루는 에스테반에 가지 않는다(2.txt:61-65) — 4장 → 5장 바로');
+assert.equal(NEXT_STAGE.lilacworld8x5, 'lilacworld9v', '8장 → 에벤트 왕국(부상자 치료)');
 assert.equal(NEXT_STAGE[LILACWORLD_FINAL], 'dlcstargatev', '영프 최종 → 그랜드 플래닛 제1행성 마을 (스토리 순서대로)');
 assert.equal(NEXT_STAGE.dlcstargatev, 'dlcstargate1');
 assert.equal(PREV_STAGE.dlcstargate1, 'dlcstargatev', 'dlcstargate1 복귀는 그랜드 플래닛 마을 (기존 규칙 유지)');
