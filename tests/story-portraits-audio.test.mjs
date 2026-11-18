@@ -43,10 +43,12 @@ const beforeNext = Object.fromEntries(
  * [수정] 본질만 남긴다 — **영프 편 체인이 끊김 없이 이어지고 시작/끝이 올바른가**.
  *  전체 맵 동결(회귀 방지)은 위의 `combat(CHAPTERS)` / STAGES 키 비교가 이미 맡는다. */
 assert.equal(NEXT_STAGE.youngprincessv, HW_KEYS[0], '영프 마을 → 영프 1장 1구역');
+/* 2026-11-18 — 이야기 마을이 구역 사이에 끼어들 수 있다: 바로 다음 구역이거나, 다음 구역으로 이어지는 마을 한 곳. */
+const viaVillage = (from) => (STAGES[NEXT_STAGE[from]]?.isVillage ? NEXT_STAGE[NEXT_STAGE[from]] : NEXT_STAGE[from]);
 for (let i = 0; i < HW_KEYS.length - 1; i++) {
-  assert.equal(NEXT_STAGE[HW_KEYS[i]], HW_KEYS[i + 1], `${HW_KEYS[i]} 전진`);
+  assert.equal(viaVillage(HW_KEYS[i]), HW_KEYS[i + 1], `${HW_KEYS[i]} 전진`);
 }
-assert.equal(NEXT_STAGE[HW_KEYS[HW_KEYS.length - 1]], 'dlcstargate1', '영프 최종 → 그랜드 플래닛 1구역');
+assert.equal(NEXT_STAGE[HW_KEYS[HW_KEYS.length - 1]], 'dlcstargatev', '영프 최종 → 그랜드 플래닛 제1행성 마을');
 assert.equal(NEXT_STAGE.dlcstargatev, 'dlcstargate1', '그랜드 플래닛 마을 → 1구역');
 void beforeNext;
 const beforePrev = Object.fromEntries(
@@ -57,8 +59,9 @@ assert.equal(PREV_STAGE.youngprincessv, 'village', '영프 마을 복귀 → 시
 /* 유저 지시 — 애델리오나 마을 → 1-1 직행. youngprincessv 는 경유지에서 제외됐다. */
 assert.equal(PREV_STAGE[HW_KEYS[0]], 'village', '영프 1장 1구역 복귀 → 애델리오나 마을');
 assert.equal(NEXT_STAGE.village, HW_KEYS[0], '애델리오나 마을 → 영프 1-1 직행');
+const backViaVillage = (from) => (STAGES[PREV_STAGE[from]]?.isVillage ? PREV_STAGE[PREV_STAGE[from]] : PREV_STAGE[from]);
 for (let i = 1; i < HW_KEYS.length; i++) {
-  assert.equal(PREV_STAGE[HW_KEYS[i]], HW_KEYS[i - 1], `${HW_KEYS[i]} 복귀`);
+  assert.equal(backViaVillage(HW_KEYS[i]), HW_KEYS[i - 1], `${HW_KEYS[i]} 복귀`);
 }
 assert.equal(PREV_STAGE.dlcstargatev, 'youngprincessv', '그랜드 플래닛 마을 복귀 → 영프 마을');
 void beforePrev;

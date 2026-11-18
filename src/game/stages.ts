@@ -923,6 +923,9 @@ export function parseStage(key: StageKey): { ch: ChapterKey | "village"; sub: nu
   /* v2.9 — 챕터 마을(Xv)도 챕터 소속으로 파싱 */
   const v = /^([a-z]+)v$/.exec(key);
   if (v) return { ch: v[1] as ChapterKey, sub: 0 };
+  /* 2026-11-18 — 라일락 월드 이야기 마을(`lilacworld{장}v`). 장 번호에 숫자가 있어 위 규칙에 안 걸린다. */
+  const lv = /^(lilacworld(?:[1-9]|1[0-5]))v$/.exec(key);
+  if (lv) return { ch: lv[1] as ChapterKey, sub: 0 };
   /* vc235 — 영프 편은 `lilacworld{장}x{구역}` (예 lilacworld15x4).
    *  챕터가 두 자리라 붙여쓰기는 모호해진다("1장12구역" vs "11장2구역").
    *  본편/DLC 는 기존 형식 그대로 둔다. */
@@ -2466,6 +2469,55 @@ for (const [chapter, plan] of Object.entries(CHAPTER_STORY_PLAN)) {
     }
     if (!stage.enemies.length) stage.repeat = undefined;
   }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 2026-11-18 (사용자 지시 "게임 중간중간마다 스토리에 맞는 마을을 배치해")
+ *
+ * 라일락 월드 본편 65구역에는 시작 마을 뒤로 안전한 마을이 하나도 없었다.
+ * 정본(evernote-approved 2·5·8.txt)에서 하루가 실제로 머무는 곳에만 마을을 끼운다.
+ * 이름은 정본 지명 그대로, 새 고유명사는 만들지 않는다.
+ *  · 칼리야 왕국 — 언덕에 쓰러진 하루를 도사 리엘이 업고 마을 주막으로 데려간다 (3-2 → 마을 → 3-3 리엘의 주막)
+ *  · 에벤트 왕국 — 벨리카의 안내로 도착해 리안 왕자·제르에게 수련을 받는다 (4-3 외곽 → 마을 → 4-4 수련뜰)
+ *  · 에스테반 왕국 — 리안의 경고가 담긴 벨리카의 서신 뒤 침공에 대비한다 (4-4 → 마을 → 5-1 남부 방어선)
+ *  · 연합 진영 — 연합이 각 왕국에 이동석을 놓기로 한다 (8-5 → 마을 → 9-1 연합 집결지)
+ *  · 스타게이트 — 이미 있던 그랜드 플레닛 제1행성 마을(dlcstargatev)을 영프 최종 구역 다음에 거치게 한다.
+ * 마을 화면은 기존 공용 buildVillage(여관·전직관·주민)를 그대로 쓰고, 주민·간판은
+ * data.ts CHAPTER_VILLAGE_NPC / VLG 의 같은 장 키로 채운다. 성채 안(10~14장)에는 마을을 두지 않는다.
+ * ══════════════════════════════════════════════════════════════════════════ */
+export const LILACWORLD_STORY_VILLAGES: readonly {
+  key: StageKey; name: string; subtitle: string; after: StageKey; before: StageKey; themeFrom: StageKey;
+}[] = [
+  { key: "lilacworld3v", name: "칼리야 왕국", subtitle: "도사 리엘이 쓰러진 하루를 업고 온 마을",
+    after: "lilacworld3x2", before: "lilacworld3x3", themeFrom: "lilacworld3x3" },
+  { key: "lilacworld4v", name: "에벤트 왕국", subtitle: "결계와 높은 산 너머 — 리안 왕자의 왕국",
+    after: "lilacworld4x3", before: "lilacworld4x4", themeFrom: "lilacworld4x3" },
+  { key: "lilacworld5v", name: "에스테반 왕국", subtitle: "벨리카의 서신을 받고 침공에 대비하는 바다의 왕국",
+    after: "lilacworld4x4", before: "lilacworld5x1", themeFrom: "lilacworld5x2" },
+  { key: "lilacworld9v", name: "연합 진영", subtitle: "각 왕국에 이동석을 놓기로 한 연합의 거점",
+    after: "lilacworld8x5", before: "lilacworld9x1", themeFrom: "lilacworld9x1" },
+];
+for (const v of LILACWORLD_STORY_VILLAGES) {
+  /* 체인이 예상한 모양일 때만 끼운다 — 앞뒤 구역이 바뀌면 조용히 엉뚱한 곳에 붙지 않게 건너뛴다(테스트가 잡는다). */
+  if (NEXT_STAGE[v.after] !== v.before || PREV_STAGE[v.before] !== v.after) continue;
+  STAGES[v.key] = {
+    key: v.key, name: v.name, subtitle: v.subtitle,
+    width: 1500, height: 860, groundTint: 0xffffff,
+    flowerCount: 6, treeCount: 6, rockCount: 2,
+    quests: [], enemies: [], boss: false, isVillage: true,
+  };
+  STAGE_SHORT[v.key] = v.name;
+  if (STAGE_THEME[v.themeFrom]) STAGE_THEME[v.key] = { ...STAGE_THEME[v.themeFrom] };
+  NEXT_STAGE[v.after] = v.key;
+  PREV_STAGE[v.key] = v.after;
+  NEXT_STAGE[v.key] = v.before;
+  PREV_STAGE[v.before] = v.key;
+}
+{
+  /* 영프 최종 구역 → 그랜드 플레닛 제1행성 마을 → 1구역. 마을 복귀는 기존 규칙(영프 마을)을 유지한다. */
+  const last = LILACWORLD_CHAPTERS[LILACWORLD_CHAPTERS.length - 1];
+  const finalKey = `${last.key}x${last.stages}`;
+  if (STAGES.dlcstargatev && NEXT_STAGE[finalKey] === "dlcstargate1") NEXT_STAGE[finalKey] = "dlcstargatev";
 }
 
 function bindStoryQuest(stage: StageDef, quest: QuestDef, departure?: string, capGold = false) {

@@ -6316,3 +6316,19 @@ Work Log:
 - 기록: `docs/RE_endless_wander_analysis.md` §9.
 - 검사: 새 테스트 `fx-map-reference`(5)·`warp-groups`(3)·`framed-room`(+2) 통과, `shake-scale`은 hitStop 시그니처 변경에 맞춰 검색 문자열 갱신(30/30). 전체 788 중 769 통과 → shake-scale 수정 후 남은 실패 18건은 이 체크아웃 환경 문제(삭제된 `server.js`·`accounts/index.js`·`multiplayer/*`·`electron/main.js`, 손상된 `node_modules/next`, git 소유권 거부, CRLF 줄끝에 `\n` 정규식). tsc: src 오류 0 (단 `node_modules/csstype`·`@prisma/client` 파일이 0바이트로 채워져 있어 그 타입 확인은 불완전). eslint는 `node_modules/es-abstract` 손상으로 실행 불가.
 - 미검증: 브라우저 실행(`node_modules/next` 손상으로 개발 서버 불가), 실제 플레이 체감, 모바일.
+
+## Task — 2026-11-18 (버전 유지 2.2.27/vc285): 라일락 월드 사이 이야기 마을 배치
+
+- 유저 지시 "게임 중간중간 마다 스토리에 맞는 마을을 배치해". 빌드·버전 변경 없음.
+- 문제: 라일락 월드 본편 65구역에는 시작 마을 뒤로 안전한 마을이 하나도 없었다. 그랜드 플레닛 제1행성 마을(`dlcstargatev`)은 있었지만 영프 최종 구역이 1구역으로 바로 건너뛰어 아무도 지나지 않았다.
+- 정본(evernote-approved 2·5·8.txt)에서 하루가 실제로 머무는 곳에만 마을을 끼웠다(`stages.ts` `LILACWORLD_STORY_VILLAGES`). 이름은 정본 지명 그대로다.
+  · 칼리야 왕국 `lilacworld3v` — 3-2 도깨비들의 언덕 → 마을 → 3-3 리엘의 주막 (리엘이 쓰러진 하루를 업고 마을 주막으로)
+  · 에벤트 왕국 `lilacworld4v` — 4-3 에벤트 외곽 → 마을 → 4-4 왕국의 수련뜰 (벨리카의 안내, 리안·제르의 수련)
+  · 에스테반 왕국 `lilacworld5v` — 4-4 → 마을 → 5-1 남부 방어선 (벨리카의 서신 뒤 침공 대비)
+  · 연합 진영 `lilacworld9v` — 8-5 → 마을 → 9-1 연합 집결지 (각 왕국 이동석 설치 결정)
+  · 스타게이트 — 15-4 워프 아일랜드 → `dlcstargatev` → 그랜드 플레닛 1구역. 마을 복귀 규칙(→ 영프 마을)은 유지.
+  성채 안(10~14장)은 일부러 마을을 두지 않았다.
+- 마을 화면은 공용 `buildVillage`(여관·전직관·주민) 재사용. 주민 2명·대사는 `data.ts` `CHAPTER_VILLAGE_NPC`/`VLG`에 장 키로 추가했고, 새 고유명사 없이 역할 이름과 정본 사실만 쓴다.
+- 연결: `parseStage`가 `lilacworld{장}v`를 그 장으로 읽는다(숫자 때문에 시작 마을로 오인되던 자리). 간판은 chapterSpec 이 없으면 마을 이름을 쓴다. 마을 귀환서·가장 가까운 마을은 라일락 월드에서 복귀 체인을 거슬러 가장 최근 마을로 간다. 지역 이동 부적 목록은 마을을 그 장 맨 앞에 둔다.
+- 테스트: 새 `story-villages`(4). `lilacworld`·`story-portraits-audio`의 "구역 → 바로 다음 구역" 체인 검사를 "바로 다음 구역 또는 그리로 이어지는 마을 한 곳(복귀는 역순)"으로 갱신하고, 영프 최종 → `dlcstargatev` 로 바꿨다. 깨끗한 worktree(origin/main 기준)에서 전체 896 중 895 통과(남은 1건은 로컬 node_modules/next 손상), tsc 프로젝트 오류 0.
+- 미검증: 브라우저 실행(로컬 개발 서버 불가), 마을 BGM·지면 타일이 의도대로 보이는지, 기존 저장으로 해당 구간에 있는 캐릭터의 실제 이동.

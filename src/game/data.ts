@@ -2854,6 +2854,32 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
     npcA: { name: "세르니움 장로", tex: "spum_mage", dlg: "vlgDlcSerniumA" },
     npcB: { name: "왕궁 시녀", tex: "spum_villager_f", dlg: "vlgDlcSerniumB" },
   },
+  /* 2026-11-18 — 라일락 월드 이야기 마을 (stages.ts LILACWORLD_STORY_VILLAGES). 키는 장 키, 대사는 VLG 의 같은 키.
+   *  주민은 새 고유명사를 만들지 않고 역할 이름만 쓴다. */
+  lilacworld3: {
+    houseTint: 0xe8cfa0,
+    signColor: "#ffe2a8",
+    npcA: { name: "주막 손님", tex: "spum_villager_m", dlg: "vlgLilacworld3A" },
+    npcB: { name: "칼리야 주민", tex: "spum_villager_f", dlg: "vlgLilacworld3B" },
+  },
+  lilacworld4: {
+    houseTint: 0xc8d8f0,
+    signColor: "#cfe2ff",
+    npcA: { name: "에벤트 수련생", tex: "spum_knight", dlg: "vlgLilacworld4A" },
+    npcB: { name: "천문대 연구원", tex: "spum_mage", dlg: "vlgLilacworld4B" },
+  },
+  lilacworld5: {
+    houseTint: 0xa8d8e8,
+    signColor: "#a8ecff",
+    npcA: { name: "항구 경비병", tex: "spum_knight", dlg: "vlgLilacworld5A" },
+    npcB: { name: "항구 어부", tex: "spum_fisher", dlg: "vlgLilacworld5B" },
+  },
+  lilacworld9: {
+    houseTint: 0xd8c8a8,
+    signColor: "#ffd9a0",
+    npcA: { name: "연합 전령", tex: "spum_knight", dlg: "vlgLilacworld9A" },
+    npcB: { name: "통신석 담당", tex: "spum_mage", dlg: "vlgLilacworld9B" },
+  },
 };
 
 /* 챕터 마을 주민 대사 일괄 등록 — 각 챕터 분위기에 맞는 3줄 멘트 */
@@ -2991,6 +3017,48 @@ export const CHAPTER_VILLAGE_NPC: Record<string, VillageNpcSpec> = {
         "리안 왕자를 찾고 계신가요? 장로들은 환영하지만 황실은 냉담해요.",
         "아버지 왕이 병으로 돌아가신 뒤부터 모든 게 뒤바뀌었어요.",
         "태양과 달이 합쳐질 때 진정한 힘이 깨어난다고 들었어요.",
+      ] },
+    },
+
+    /* 2026-11-18 — 라일락 월드 이야기 마을. 정본(2·5.txt)에 있는 사실만 주민의 말로 옮긴다. */
+    lilacworld3: {
+      a: { sp: "주막 손님", lines: [
+        "도사 리엘이 언덕에 쓰러진 하루를 업고 이 마을 주막으로 데려왔지.",
+        "주막에서 치료를 받았다더군. 리엘은 보기보다 정이 많은 사람이야.",
+      ] },
+      b: { sp: "칼리야 주민", lines: [
+        "칼리야 가는 길 언덕엔 도깨비들이 나와서 지나가는 사람 물건을 노려.",
+        "예전 일 때문에 칼리야와 에벤트 사이는 한동안 좋지 않았어.",
+      ] },
+    },
+    lilacworld4: {
+      a: { sp: "에벤트 수련생", lines: [
+        "에벤트 왕국은 결계와 높은 산에 둘러싸여 쉽게 닿을 수 없는 곳이야.",
+        "리안 왕자님은 바람의 원소를, 제르 총리님은 불의 원소와 순환을 가르쳐 주셔.",
+      ] },
+      b: { sp: "천문대 연구원", lines: [
+        "길을 잃은 여행자를 벨리카가 대공립천문대에서 돌아오는 길에 데려왔대.",
+        "이동석이 있으면 에벤트까지 단숨에 올 수 있어.",
+      ] },
+    },
+    lilacworld5: {
+      a: { sp: "항구 경비병", lines: [
+        "한 달 전, 벨리카가 리안 왕자의 경고를 담은 서신을 보내왔어.",
+        "석양으로 물든 바다 꿈이 이 왕국과 관련 있다더군.",
+      ] },
+      b: { sp: "항구 어부", lines: [
+        "아덴 님은 그 서신을 크게 걱정하지 않으셨지만, 준비는 해 두는 게 좋겠지.",
+        "군단이 바다로 온다면 이 항구가 가장 먼저 부딪히게 될 거야.",
+      ] },
+    },
+    lilacworld9: {
+      a: { sp: "연합 전령", lines: [
+        "연합은 각 왕국에 이동석을 설치하기로 했어.",
+        "주요 거점은 군단장들이 지키고 있어서, 왕국마다 웨폰마스터를 보낸대.",
+      ] },
+      b: { sp: "통신석 담당", lines: [
+        "멀리 떨어진 왕국과는 통신석으로 연락을 주고받고 있어.",
+        "회의에서는 훈련이 어디까지 진행됐는지 하나하나 확인하고 있어.",
       ] },
     },
   };

@@ -4942,6 +4942,9 @@ export class WorldScene extends Phaser.Scene {
     // v3.0 (#4) — 챕터 마을 간판 (마을 이름을 알려준다)
     if (chSpec && vSpec) {
       this.addBuildingSign(cx, cy - 320, `${chSpec.title} 마을`, vSpec.signColor);
+    } else if (vSpec) {
+      /* 2026-11-18 — 라일락 월드 이야기 마을은 CHAPTERS 밖이라 chapterSpec 이 없다. 마을 이름(정본 지명)을 그대로 단다. */
+      this.addBuildingSign(cx, cy - 320, this.stageDef.name, vSpec.signColor);
     }
     // 건물 간판 + 기능 상호작용 — 여관(회복+저장), 내 집(무료 휴식), 전직관(카이엔 앞)
     this.addBuildingSign(cx - 400, cy - 236, "여관 — 20G 회복+버프", "#7de8ff"); // v1.0.2 밸런스 분리
@@ -14912,6 +14915,15 @@ export class WorldScene extends Phaser.Scene {
     if (spec) {
       const vk = (spec.num <= 1 ? "village" : `${spec.key}v`) as StageKey;
       if (STAGES[vk]) return vk;
+    }
+    /* 2026-11-18 — 라일락 월드는 chapterSpec 이 없다. 복귀 체인을 거슬러 가장 최근에 지난 마을
+     *  (칼리야·에벤트·에스테반·연합 진영, 없으면 시작 마을)로 보낸다. */
+    if (/^lilacworld/.test(fromKey)) {
+      let k: StageKey | null | undefined = PREV_STAGE[fromKey];
+      for (let i = 0; k && i < 80; i++) {
+        if (STAGES[k]?.isVillage) return k;
+        k = PREV_STAGE[k];
+      }
     }
     /* vc193 (버그 #3 "재림 지역에서 가까운 마을로 가면 에델리오나 마을로 가지는 버그") —
      *  재림 스테이지는 key 가 `r5` / `r10` / `r15` 이고 parseStage() 가

@@ -5,7 +5,7 @@
 // 검증 축:
 //  1) 기획서 1기 15화가 5챕터 × 10구역 = 50 필드로 실제 생성됐는가
 //  2) 기존 본편/DLC 계약이 바뀌지 않았는가 (CHAPTERS 배열 불변 = 인덱스 곡선 회귀 0)
-//  3) 체인이 youngprincessv → lilacworld1x1 … lilacworld15x4 → dlcstargate1 로 이어지는가
+//  3) 체인이 village → lilacworld1x1 … (이야기 마을) … lilacworld15x4 → dlcstargatev → dlcstargate1 로 이어지는가
 //  4) 영프 엔딩 플래그가 서면 그랜드 플래닛 게이트가 잠기는가 (vc230이 남긴 막다른 길 해소)
 //  5) 퀘스트/몬스터/보스/대사가 실제로 채워져 있는가 (빈 구역 없음)
 import assert from 'node:assert/strict';
@@ -121,17 +121,35 @@ assert.equal(NEXT_STAGE[YOUNG_PRINCESS_VILLAGE], firstKey, '영프 마을 → �
  *  youngprincessv 는 경유지에서 빠졌지만 스테이지 정의는 남아 있다. */
 assert.equal(NEXT_STAGE['village'], firstKey, '애델리오나 마을 → 영프 1-1 직행');
 assert.equal(PREV_STAGE[firstKey], 'village', '영프 1-1 복귀는 애델리오나 마을');
+/* 2026-11-18 — 이야기 마을(LILACWORLD_STORY_VILLAGES)이 구역 사이에 끼어든다.
+ *  전진은 "바로 다음 구역" 또는 "다음 구역으로 이어지는 마을 한 곳"이어야 하고, 복귀는 그 역순이어야 한다. */
+const stepTo = (from, to, label) => {
+  const nx = NEXT_STAGE[from];
+  if (nx === to) { assert.equal(PREV_STAGE[to], from, `${label} 복귀`); return; }
+  assert.ok(STAGES[nx]?.isVillage, `${label} 전진은 다음 구역 또는 이야기 마을 (실제 ${nx})`);
+  assert.equal(NEXT_STAGE[nx], to, `${label} 마을 → 다음 구역`);
+  assert.equal(PREV_STAGE[nx], from, `${label} 마을 복귀`);
+  assert.equal(PREV_STAGE[to], nx, `${label} 다음 구역 복귀는 마을`);
+};
 // 챕터 내부 순차
 for (const ch of LILACWORLD_CHAPTERS) {
-  for (let sub = 1; sub < ch.stages; sub++) {
-    assert.equal(NEXT_STAGE[`${ch.key}x${sub}`], `${ch.key}x${sub + 1}`, `${ch.key}x${sub} 전진`);
-    assert.equal(PREV_STAGE[`${ch.key}x${sub + 1}`], `${ch.key}x${sub}`, `${ch.key}x${sub + 1} 복귀`);
-  }
+  for (let sub = 1; sub < ch.stages; sub++) stepTo(`${ch.key}x${sub}`, `${ch.key}x${sub + 1}`, `${ch.key}x${sub}`);
 }
 // 챕터 경계
 assert.equal(NEXT_STAGE['lilacworld1x4'], 'lilacworld2x1');
 assert.equal(PREV_STAGE['lilacworld2x1'], 'lilacworld1x4');
-assert.equal(NEXT_STAGE[LILACWORLD_FINAL], 'dlcstargate1', '영프 최종 → 그랜드 플래닛 (스토리 순서대로)');
+for (let i = 0; i < LILACWORLD_CHAPTERS.length - 1; i++) {
+  const a = LILACWORLD_CHAPTERS[i], b = LILACWORLD_CHAPTERS[i + 1];
+  stepTo(`${a.key}x${a.stages}`, `${b.key}x1`, `${a.key} → ${b.key}`);
+}
+// 정본 지명 마을이 정확히 그 자리에 있다
+assert.equal(NEXT_STAGE.lilacworld3x2, 'lilacworld3v', '도깨비 언덕 → 칼리야 왕국 (리엘이 업고 온 마을)');
+assert.equal(NEXT_STAGE.lilacworld3v, 'lilacworld3x3', '칼리야 왕국 → 리엘의 주막');
+assert.equal(NEXT_STAGE.lilacworld4x3, 'lilacworld4v', '에벤트 외곽 → 에벤트 왕국');
+assert.equal(NEXT_STAGE.lilacworld4x4, 'lilacworld5v', '4장 → 에스테반 왕국');
+assert.equal(NEXT_STAGE.lilacworld8x5, 'lilacworld9v', '8장 → 연합 진영');
+assert.equal(NEXT_STAGE[LILACWORLD_FINAL], 'dlcstargatev', '영프 최종 → 그랜드 플래닛 제1행성 마을 (스토리 순서대로)');
+assert.equal(NEXT_STAGE.dlcstargatev, 'dlcstargate1');
 assert.equal(PREV_STAGE.dlcstargate1, 'dlcstargatev', 'dlcstargate1 복귀는 그랜드 플래닛 마을 (기존 규칙 유지)');
 assert.equal(PREV_STAGE.dlcstargatev, YOUNG_PRINCESS_VILLAGE, '그랜드 플래닛 마을 복귀는 영프 마을');
 

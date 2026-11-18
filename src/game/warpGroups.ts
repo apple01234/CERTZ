@@ -28,7 +28,8 @@ export function warpGroups(visited: Iterable<string>): WarpGroup[] {
 
   const groups: WarpGroup[] = [{ label: "시작 마을", stages: pick(["village"]) }];
   LILACWORLD_CHAPTERS.forEach((c, i) => {
-    const keys = Array.from({ length: c.stages }, (_, s) => `${c.key}x${s + 1}`);
+    /* 이야기 마을(`…v`, 있으면)을 그 장의 맨 앞에 둔다 — 부적으로 가장 자주 가는 곳이다. */
+    const keys = [`${c.key}v`, ...Array.from({ length: c.stages }, (_, s) => `${c.key}x${s + 1}`)];
     groups.push({ label: `라일락 월드 ${i + 1}장 ${c.title}`, stages: pick(keys) });
   });
   for (const ch of CHAPTERS) {
