@@ -13,13 +13,14 @@ import { finaleTargetOrder, finalePlanReach, type FinalePlan } from "../fx/ultFi
 import { storyPortalDestination, storyEntryAllowed, lwFinalStage, YOUNG_PRINCESS_VILLAGE } from "../storyProgression";
 import { fieldNpcLook } from "../npcThemes";
 import { resolveGroundTile } from "../tileThemes"; // vc204 — 지역 지면 → 타일 단일 매핑
+import { portalPreview } from "../portalPreview"; // 2026-11-18 — 차원문 다음 구역 미리보기
 import { renderAuthoredMapLayers } from "../fx/AuthoredMapLayers";
 import { openMaskAt, patternFor } from "../autotile"; // vc204 — 4비트 이웃 마스크 오토타일
 import { fmt, fmtC } from "../fmt"; // v1.4.0 규칙 1-1 — 전역 반올림 포맷터
 import { getActiveCharId } from "../slots"; // v1.4.0 (#16) — 재부팅 자동 복귀 플래그
 import { ACC_ANCHORS, ACC_DEFAULT_ANCHOR } from "../acc_anchors"; // v1.2.1 (#1 치장위치) — 프레임별 실루엣 앵커
 import { PART_ANCHORS, PART_FALLBACK, placePart, resolvePartLayers, toCharacterParts } from "../characterParts"; // vc278 — 데이터 주도 파츠 레이어
-import { usesFramedRoom, computeFramedView, roomBoundsFromLayout, FRAME_PAD } from "../framedRoom"; // vc278 — 검은 배경에 떠 있는 방
+import { usesFramedRoom, computeFramedView, roomBoundsFromLayout, FRAME_PAD, framingKeepsZoom } from "../framedRoom"; // vc278 — 검은 배경에 떠 있는 방
 import { chapterPlace } from "../chapterStoryPlan"; // vc278 — 던전 계열 role 판별
 import { Player } from "../entities/Player";
 import { Enemy } from "../entities/Enemy";
@@ -97,7 +98,7 @@ import * as classroom from "../classroom"; // v1.4.30 (#9 클래스룸 — 교�
 import { loadSlots } from "../slots"; // v1.0.18 — 캐릭터 슬롯
 import { loadFx } from "../config"; // v1.0.18 — 셰이더 강도 설정
 import { setShakeScale, type ShakeScale } from "../fx/shakeScale";
-import { ImpactFX, type ImpactKind } from "../fx/ImpactFX";
+import { ImpactFX, hitStopMs, type ImpactKind, type HitStopKind } from "../fx/ImpactFX";
 import { ShockwaveFX } from "../fx/ShockwaveFX"; // v4.8.0 — 충격파 링 셰이더 (3D 느낌 VFX 2단계)
 import { SlashArcFX } from "../fx/SlashArcFX"; // v4.9.0 — 회전베기 참격 궤적 셰이더 (스킬 전용 셰이더)
 import { DriveFX } from "../fx/DriveFX"; // v1.3.0 — Drive 팩 VFX 통합 (참격/크리/폭발/낙뢰/불꽃놀이)
@@ -1825,6 +1826,13 @@ export class WorldScene extends Phaser.Scene {
     {
       const ps = parseStage(stageKey);
       this.framedRoom = !!this.layout && usesFramedRoom(chapterPlace(ps.ch, ps.sub));
+      /* 2026-11-18 (지시 "크기가 큰 맵에서는 카메라 줌 아웃 하지마") — 방을 한 화면에 맞추려면
+       *  평소 줌보다 낮춰야 하는 큰 방은 프레이밍을 끄고 기존 추적 카메라(평소 줌)를 쓴다. */
+      if (this.framedRoom && this.layout) {
+        const lay = this.layout;
+        const room = roomBoundsFromLayout(lay.open, lay.cols, lay.cellW, lay.cellH, this.stageW, this.stageH);
+        if (!framingKeepsZoom(room.w, room.h, this.scale.width, this.scale.height, viewZoom(), room)) this.framedRoom = false;
+      }
     }
     /* vc278 — 방 밖 여백은 카메라 배경(#000000)만으로 충분하다.
      *  [시도했다가 제거함] 검정 판때기를 depth -10 에 깔아 여백을 덮는 방법을 썼으나,
@@ -4425,11 +4433,13 @@ export class WorldScene extends Phaser.Scene {
     if (!silent) audio.sfx.portal();
     /* v4.1.0 — 전진 차원문 위치 라벨 (복귀 차원문 라벨과 동일 규약 — 지시 #14) */
     this.portalLabel?.destroy();
+    /* 2026-11-18 — 다음 구역이 보스전/마을이면 라벨에 표시 (portalPreview.ts) */
+    const preview = portalPreview(NEXT_STAGE[this.stageDef.key]);
     this.portalLabel = this.add
-      .text(this.portal.x, this.portal.y - 46, `→ ${STAGE_SHORT[NEXT_STAGE[this.stageDef.key] as StageKey] ?? "다음 지역"}`, {
+      .text(this.portal.x, this.portal.y - 46, preview.text, {
         fontFamily: "Galmuri11, sans-serif",
         fontSize: "11px",
-        color: "#d8b0ff",
+        color: preview.color,
         stroke: "#0a2030",
         strokeThickness: 4,
         fontStyle: "bold",
@@ -5246,8 +5256,21 @@ export class WorldScene extends Phaser.Scene {
   /** v3.0.15 (#16) — color/prefix 지원: 원소 약점 시 원소색 + "약점" 접두 표시
    *  v3.3.0 (지시 #9) — 크리티컬 펀치 스케일 + 큰 글씨 (타격감 강화) */
   spawnDamageText(x: number, y: number, val: number, crit = false, color?: string, prefix?: string) {
-    const t = this.dmgPool.find((d) => d.scene && !d.active);
-    if (!t) return; // 풀 소진 시 조용히 포기 (프레임 보호)
+    /* 2026-11-18 — 풀 소진 시 **가장 오래된** 숫자를 재사용한다 (레퍼런스: Endless Wander
+     *  `FloatingTextConfig` 동시 표시 상한). 종전엔 새 숫자를 버려 난전 중 치명타가 사라졌다.
+     *  풀 크기(상한)는 그대로라 프레임 부담은 같다. */
+    let t = this.dmgPool.find((d) => d.scene && !d.active);
+    if (!t) {
+      let oldest: Phaser.GameObjects.Text | undefined;
+      for (const d of this.dmgPool) {
+        if (!d.scene) continue;
+        if (!oldest || ((d.getData("dmgAt") as number) ?? 0) < ((oldest.getData("dmgAt") as number) ?? 0)) oldest = d;
+      }
+      if (!oldest) return;
+      this.tweens.killTweensOf(oldest);
+      t = oldest;
+    }
+    t.setData("dmgAt", this.time.now);
     // 크리티컬: 금색 큰 글씨 + 느낌표 (타격감 강조) · 약점: 원소색
     // v1.0.7 — 크리티컬 가시성 확보: 스케일 1.75→1.42 · 지속 740→600ms (유저 지시)
     // v1.4.0 (규칙 1-1) — 표시 수치는 전역 포맷터로 소수 둘째 자리 반올림
@@ -5306,8 +5329,30 @@ export class WorldScene extends Phaser.Scene {
    *  이제 ImpactFX 단일 소유자로 넘긴다 — 세대 ID 로 최신 호출만 복원하고,
    *  지속시간은 최댓값을 써서 연타로 무한 연장되지 않는다.
    *  `hitStopUntil` 은 ImpactFX 값과 동기화해 update() 의 물리 자가치유가 존중하게 한다. */
-  hitStop(ms = 26) {
-    this.impactFX.hitStop(ms);
+  /** 2026-11-18 — 짧은 슬로모션 (레퍼런스: Endless Wander `FreezeFrameType.OnLastEnemyKilled`/`ShortSlowMo`).
+   *  보스 사망 슬로모션과 같은 이중 복원(씬 타이머 + 실제 시각 안전망 + update 워치독)을 쓴다.
+   *  이미 슬로모션 중이면 겹치지 않는다. 연출 끈 유저(fxLevel 0)는 생략. */
+  playShortSlowMo(scale = 0.4, gameMs = 90) {
+    if (this.fxLevel <= 0 || this.slowmoUntil > 0) return;
+    this.time.timeScale = scale;
+    this.tweens.timeScale = scale;
+    this.slowmoUntil = Date.now() + 2000;
+    const restore = () => {
+      if (this.time) this.time.timeScale = 1;
+      if (this.tweens) this.tweens.timeScale = 1;
+      this.slowmoUntil = 0;
+    };
+    this.time.delayedCall(gameMs, restore);
+    window.setTimeout(restore, Math.round(gameMs / scale) + 400);
+  }
+
+  /** 2026-11-18 — 큰 스킬(궁극기) 전용 방 조명 펄스. 연출 끈 유저(fxLevel 0)는 생략. */
+  skillLightPulse() {
+    if (this.fxLevel > 0) this.lighting?.pulse();
+  }
+
+  hitStop(kind: HitStopKind | number = "hit") {
+    this.impactFX.hitStop(hitStopMs(kind));
     this.hitStopUntil = this.impactFX.hitStopEndsAt;
   }
 
@@ -6652,7 +6697,7 @@ export class WorldScene extends Phaser.Scene {
     this.spawnShockwave(x, y, R.hex, 1.25, 420, 0.9);
     this.time.delayedCall(120, () => this.spawnShockwave(x, y, R.hex, 0.85, 320, 0.55));
     /* 타격감 — 반응은 강한 순간이므로 크리티컬급 히트스톱+흔들림 */
-    this.hitStop(45);
+    this.hitStop("reaction");
     this.doShake(110, 0.0035);
   }
 
@@ -8118,6 +8163,7 @@ export class WorldScene extends Phaser.Scene {
   private onGateWaveCleared() {
     if (this.gatePhase !== "fight" || this.gateEnded) return;
     this.trackMission("gate"); // v1.0.1 — 시즌 미션 게이트 웨이브 카운트
+    this.playShortSlowMo(); // 2026-11-18 — 웨이브의 마지막 적 처치 순간을 짧게 늘린다
     this.gatePhase = "cards";
     this.gatePendingCards = drawGateCards(this.gateWave);
     /* 웨이브 클리어 보너스 — 룬 드롭 (확률) */
@@ -10199,7 +10245,9 @@ export class WorldScene extends Phaser.Scene {
        *  문제 ② 그 사이 예외·씬 전환·백그라운드 복귀가 끼면 콜백이 유실돼
        *        **timeScale이 0.28에 영구 고정** → 게임 전체가 3.5배 느려져 "멈춘 것처럼" 보였다.
        *  이제 복원을 (a) 실제 시각 기준 setTimeout, (b) update의 워치독 두 경로로 보장한다. */
-      this.slowmoUntil = this.time.now + 2000; // 워치독 기준(정상 복원 시 무시됨)
+      /* 2026-11-18 — 워치독은 `Date.now()`(실제 시각)와 비교한다. 종전엔 씬 시각(time.now,
+       *  게임 시작 후 ms)을 넣어 다음 프레임에 바로 원복됐다 → 보스 슬로모션이 1프레임만 보였다. */
+      this.slowmoUntil = Date.now() + 2000; // 워치독 기준(정상 복원 시 무시됨)
       const veilStart = Date.now();
       const restore = () => {
         if (this.time) this.time.timeScale = 1;

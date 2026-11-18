@@ -246,3 +246,13 @@ test("vc278 — 야외 role 은 프레이밍 계산을 타지 않는다 (place �
   assert.equal(chapterPlace("village", 1), undefined);
   assert.equal(usesFramedRoom(chapterPlace("village", 1)), false);
 });
+
+/* 2026-11-18 "크기가 큰 맵에서는 카메라 줌 아웃 하지마" — 맞춤 줌이 평소 줌보다 낮으면 프레이밍하지 않는다. */
+import { framingKeepsZoom as keepsZoom } from "../src/game/framedRoom.ts";
+test("큰 방은 줌 아웃이 필요하므로 프레이밍하지 않는다", () => {
+  assert.equal(keepsZoom(2126, 1024, 1920, 1080, 2), false); // 실측 howlrstone11x1 크기
+  assert.equal(keepsZoom(2126, 1024, 844, 390, 1), false);
+});
+test("평소 줌 이상으로 맞출 수 있는 작은 방은 프레이밍을 유지한다", () => {
+  assert.equal(keepsZoom(400, 240, 1920, 1080, 2), true);
+});

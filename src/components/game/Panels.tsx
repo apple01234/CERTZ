@@ -7,7 +7,7 @@ import {
   ITEMS, BUFF_DEFS, PET_DEFS, COSMETIC_DEFS, UPGRADE_MAX, UPGRADE_RATES, upgradeCost, autoAllocPlan,
   starWeaponBonus, starArmorBonus, starTier, STAR_TIER_CSS, UPGRADE_FALLBACK_FROM, starPerStarAtk, starPerStarDef,
   TRADE_PRICES, tradeValue, TRADE_STOCK, STAR_BLESS_RATE, STAR_BLESS_MAX, starAccBonus,
-  CHAPTERS, STAGE_SHORT, parseStage, BM_STOCK, sellValue, dailyDeals, DAILY_DEAL_OFF,
+  CHAPTERS, parseStage, BM_STOCK, sellValue, dailyDeals, DAILY_DEAL_OFF,
   POT_GRADE_META, potLineText, SET_GEAR, POT_STAT_LABEL,
   /* vc178 — 집 꾸미기 가구 카탈로그 */
   FURNITURE_CATALOG,
@@ -15,6 +15,7 @@ import {
   closetThemeOf, CLOSET_THEMES, isPremiumPet, // v1.2.1 (#3) — 프리미엄 펫 특전 판정
   type ItemKey, type ItemTier, type BuffKey, type PetKey, type CosmeticKey, type StageKey, type PotStatKey, type EnemyKey, type BossKey, type BossDiffKey,
 } from "@/game/data";
+import { warpGroups } from "@/game/warpGroups"; // 2026-11-18 — 지역 이동 부적 목록(라일락 월드 포함)
 import { UNLOCKS, unlockLevel, unlockDef, type FeatureKey } from "@/game/unlocks"; // vc178 (지시 #1·#2) — 레벨 개방 표 + 튜토리얼 다시보기
 import { GameIcon } from "./GameIcon"; // vc247 (지시 #11) — 잠금 자물쇠 표시
 import BossRushPanel from "./BossRushPanel"; // vc291 — 보스 러시 패널
@@ -4965,29 +4966,9 @@ export function WarpPanel({ rpg, onClose }: { rpg: RpgState; onClose: () => void
   }, []);
 
   const hasScroll = rpg.owned.includes("scroll_warp");
-  const visitedSet = new Set(visited);
-  // 마을 + 챕터별 구역 그룹핑
-  const groups: { label: string; stages: { key: StageKey; name: string }[] }[] = [
-    { label: "시작 마을", stages: visitedSet.has("village" as StageKey) ? [{ key: "village" as StageKey, name: STAGE_SHORT["village" as StageKey] }] : [] },
-  ];
-  for (const ch of CHAPTERS) {
-    const stages: { key: StageKey; name: string }[] = [];
-    for (let sub = 1; sub <= 10; sub++) {
-      const key = `${ch.key}${sub}` as StageKey;
-      if (visitedSet.has(key)) stages.push({ key, name: STAGE_SHORT[key] ?? key });
-    }
-    if (stages.length > 0) groups.push({ label: `제${ch.num}장 ${ch.title}`, stages });
-  }
-  /* v1.0.19 (A-3) — 재림 지역(신규 15구역) 그룹: 방문한 구역만 표시 */
-  {
-    const rbStages: { key: StageKey; name: string }[] = [];
-    for (let i = 1; i <= 15; i++) {
-      const key = `r${i}` as StageKey;
-      if (visitedSet.has(key)) rbStages.push({ key, name: STAGE_SHORT[key] ?? key });
-    }
-    if (rbStages.length > 0) groups.push({ label: "재림의 땅 (신규)", stages: rbStages });
-  }
-  const empty = visited.length === 0 || groups.every((g) => g.stages.length === 0);
+  /* 2026-11-18 — 라일락 월드(lilacworldNxM)·챕터 마을이 목록에서 빠져 부적이 동작하지 않던 버그 수정 */
+  const groups = warpGroups(visited);
+  const empty = groups.length === 0;
 
   return (
     <div

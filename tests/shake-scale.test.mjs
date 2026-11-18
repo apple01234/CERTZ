@@ -82,7 +82,9 @@ const impact = readFileSync(new URL('../src/game/fx/ImpactFX.ts', import.meta.ur
 const hitStopBody = impact.slice(impact.indexOf('hitStop(ms: number)'), impact.indexOf('hitStop(ms: number)') + 900);
 t('hitStop 이 shakeFactor 를 참조하지 않음', !hitStopBody.includes('shakeFactor'));
 const scene = readFileSync(new URL('../src/game/scenes/WorldScene.ts', import.meta.url), 'utf8');
-const hs = scene.slice(scene.indexOf('hitStop(ms = 26)'), scene.indexOf('hitStop(ms = 26)') + 400);
+// 2026-11-18 — 시그니처가 사건 프리셋(HitStopKind | number)으로 바뀌었다. 위임 계약은 그대로.
+const hsSig = 'hitStop(kind: HitStopKind | number = "hit")';
+const hs = scene.indexOf(hsSig) < 0 ? '' : scene.slice(scene.indexOf(hsSig), scene.indexOf(hsSig) + 400);
 t('WorldScene.hitStop 도 위임만 (배율 무관)', !hs.includes('shakeFactor') && hs.includes('impactFX'));
 
 console.log(`\n결과: ${pass} PASS / ${fail} FAIL`);

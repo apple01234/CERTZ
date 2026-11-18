@@ -104,6 +104,8 @@ export type CinematicOpts = {
  */
 export function playUltCinematic(scene: S3, x: number, y: number, opts: CinematicOpts): void {
   const dur = Math.max(1000, opts.durationMs);
+  /* 2026-11-18 — 궁극기 시전 순간 방 조명 펄스 (WorldScene 에만 있음, 다른 씬은 no-op) */
+  (scene as unknown as { skillLightPulse?: () => void }).skillLightPulse?.();
   const tint = opts.tint;
   const s = opts.scale ?? 1;
   const webgl = scene.game.renderer.type === Phaser.WEBGL;

@@ -989,7 +989,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
          *  종전엔 크리티컬도 일반 타격과 같은 26ms(=기본) 정지였다.
          *  크리는 이 게임에서 "맛"의 핵심인데 손맛이 구분되지 않았다.
          *  55ms로 늘리고 약한 흔들림을 더해 확실히 구분되게 한다. */
-        this.scene.hitStop?.(55);
+        this.scene.hitStop?.("crit");
         this.scene.doShake?.(70, 0.0016);
       }
       /* v1.0.2 (#허수아비) — 고정 기준(baseSX/SY) 기준으로만 스쿼시: 아무리 연타해도 기준선 불변 */
@@ -1077,7 +1077,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.scene.spawnHitSpark(this.x, this.y, crit);
     /* v1.2.0 (#10 타격감) — 히트스톱: 일반 26ms · 크리티컬 55ms + 미세 카메라 흔들림.
      *  플래시·스쿼시·넉백과 함께 "얻어맞은 순간이 멈춘다"는 손맛을 만드는 핵심 장치 */
-    this.scene.hitStop(crit ? 55 : 26);
+    this.scene.hitStop(crit ? "crit" : "hit");
     this.scene.doShake(crit ? 70 : 30, crit ? 0.0022 : 0.0009); // v1.4.8 — doShake 게이트 우회 수정 (v1.2.1 절전 모드에서도 쉐이크 발생 버그)
     /* v4.8.0 — 강한 순간 충격파 링: 크리티컬 금색 / 약점 원소색 (WebGL 전용, Canvas 무시) */
     if (crit) { this.scene.spawnShockwave(this.x, this.y, 0xffd76a, 1.1); this.scene.spawnCritSplat(this.x, this.y); this.scene.driveFx?.critBurst(this.x, this.y); }
@@ -1189,7 +1189,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     /* v4.9.3 — pixelfx 사망 연출 (몸이 부서지며 흩어진다) */
     try { if (!bodyDeath) this.scene.pxFx?.play("death.normal", this.x, this.y, { scale: 0.7 }); } catch { /* 무시 */ }
     /* v1.2.0 (#10) — 격파 히트스톱 70ms — 처치 순간의 무게감 */
-    this.scene.hitStop(70);
+    this.scene.hitStop("kill");
     /* vc214 — 소멸 dissolve. 기존엔 파티클만 터지고 60ms 뒤 스프라이트가 즉시
      * 사라져 "팟 하고 없어지는" 인상이었다. 지금 스프라이트와 같은 텍스처/프레임으로
      * dissolve 셰이더를 그 자리에 얹어 몸이 재로 흩어지며 사라지게 한다.

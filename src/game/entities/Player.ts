@@ -5685,7 +5685,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             line.destroy();
             if (this.state === "dead") return;
             this.scene.impactFX.shake(160, 0.010);
-            this.scene.hitStop(120);
+            this.scene.hitStop("skillFinisher");
             this.scene.sfxSkill("snipe", 0.9);
             this.scene.spawnBurstAt(tgt.x, tgt.y, 40, 0xff4040);
             const away = this.awayScratch.set(tgt.x - this.x, tgt.y - this.y).normalize();
@@ -5959,7 +5959,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             this.scene.spawnSlash(t.x, t.y, away, true, 2.6, 0x60a0ff);
             this.scene.spawnBurstAt(t.x, t.y, 36, 0x60a0ff);
             this.scene.impactFX.shake(180, 0.011);
-            this.scene.hitStop(100);
+            this.scene.hitStop("skillHeavy");
             this.scene.sfxSkill("knife", 0.95);
             const { dmg } = rd(9.0, true);
             t.takeDamage(dmg, away, 300, true);
@@ -7452,7 +7452,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
               .setOrigin(0, 0).setDepth(13).setLineWidth(2).setBlendMode(Phaser.BlendModes.ADD);
             ultTween({ targets: trail, alpha: 0, duration: 260, onComplete: () => trail.destroy() });
             this.scene.spawnBurstAt(tx, ty, 24, 0xff5050);
-            this.scene.hitStop(60);
+            this.scene.hitStop("skillTick");
             this.scene.sfxSkill("snipe", 0.88);
             for (const e of this.targetsAround(tx, ty, 130)) {
               const away = this.awayScratch.set(e.x - tx, e.y - ty).normalize();
@@ -7731,7 +7731,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnPillar(t.x, t.y, 0x9a40ff, 320);
           this.scene.cameras.main.flash(200, 90, 0, 140);
           this.scene.impactFX.shake(360, 0.018);
-          this.scene.hitStop(140);
+          this.scene.hitStop("ultFinisher");
           this.scene.sfxSkill("dark", 0.7);
           this.scene.sfxSkill("superhit", 0.86);
           /* 최대 HP 비례 관통 — 보스는 절반 */
@@ -7768,7 +7768,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.scene.spawnShockwave(this.x, this.y, 0xfff0a0, 2.4, 460, 0.95);
           this.scene.cameras.main.flash(220, 255, 245, 180);
           this.scene.impactFX.shake(420, 0.020);
-          this.scene.hitStop(120);
+          this.scene.hitStop("skillFinisher");
           this.scene.sfxSkill("superhit", 0.9);
           for (const e of this.getAllTargetsIn(300)) {
             const away = this.awayScratch.set(e.x - this.x, e.y - this.y).normalize();

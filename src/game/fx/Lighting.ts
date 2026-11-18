@@ -137,6 +137,7 @@ export class Lighting {
    *  횃불 광원을 최대로 키워 플레이어·보스·바닥 판정이 항상 보이게 한다 (유저 지시). */
   setBossFight(on: boolean) {
     if (!this.overlay) return;
+    this.stopPulse();
     const profAlpha = this.ambientAlpha;
     const target = on ? Math.min(profAlpha, 0.2) : profAlpha;
     this.scene.tweens.add({ targets: this.overlay, alpha: target, duration: 450 });
@@ -148,6 +149,39 @@ export class Lighting {
       this.playerLight?.setScale(this.baseScale * this.torchMul);
       this.playerLight?.setAlpha(this.baseAlpha);
     }
+  }
+
+  /** 2026-11-18 — 스킬 조명 펄스 (레퍼런스: Endless Wander `ApplyFxCombatEffect._animateRoomLight*`).
+   *  궁극기 같은 큰 스킬에서만 방의 어둠을 잠깐 걷어 "빛이 터졌다"를 보여 준다.
+   *  기본공격·처치에는 호출하지 않는다(절제 규칙). 깜빡임 완화(noFlicker)면 생략한다.
+   *  밝은 챕터(오버레이 없음)는 할 일이 없다. 끝나면 펄스 시작 전 값으로 정확히 되돌린다. */
+  private pulseTween: Phaser.Tweens.Tween | null = null;
+  pulse(strength = 0.65, inMs = 90, outMs = 520) {
+    if (!this.overlay || this.pulseTween || loadFx().noFlicker) return;
+    const overlay = this.overlay;
+    const base = overlay.alpha;
+    if (base <= 0.02) return;
+    const done = () => { this.pulseTween = null; };
+    this.pulseTween = this.scene.tweens.add({
+      targets: overlay,
+      alpha: base * (1 - Math.min(0.95, Math.max(0, strength))),
+      duration: inMs,
+      ease: "Sine.easeOut",
+      onStop: done,
+      onComplete: () => {
+        this.pulseTween = this.scene.tweens.add({
+          targets: overlay, alpha: base, duration: outMs, delay: 60, ease: "Sine.easeIn",
+          onStop: done,
+          onComplete: () => { overlay.setAlpha(base); done(); },
+        });
+      },
+    });
+  }
+
+  /** 진행 중인 펄스를 끊는다 — 다른 경로(보스전 조명)가 어둠 값을 새로 정할 때. */
+  private stopPulse() {
+    this.pulseTween?.stop();
+    this.pulseTween = null;
   }
 
   /** v4.2.0 — 구역(sub) 진행률에 따른 횃불 광원 축소 (유저 지시: 스테이지를 지날때마다 줄어들게 —
