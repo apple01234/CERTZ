@@ -2034,7 +2034,8 @@ export class WorldScene extends Phaser.Scene {
 
     /* ---------- 상점 NPC (v3.0.15 #9 — 상인은 마을에만 배치. 필드 몬스터 구역에서 제거) ---------- */
     if (!this.isInterior && this.stageDef.isVillage) this.spawnMerchant();
-    if (!this.isInterior && this.stageDef.isVillage) this.spawnChibiNpcs(); // v1.2.3 — 씹덕 NPC 배치
+    /* 유저 지시 — 씹덕(치비) NPC 6종 시리즈 전면 제거. 마을에 배치하지 않는다.
+     *  이미 수주한 치비 퀘스트는 chibiProgress 로 계속 자동 완료된다. */
 
     /* v1.4.12 (#14) — 사냥터 정보 NPC: 챕터별 대사를 가진 정찰병/생존자를 필드에 배치.
      *  "상호작용 안 되는 이상한 오브젝트"의 대안 — 만나면 챕터 공략 힌트를 준다. */
@@ -5872,123 +5873,6 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /* ================= 2D MMORPG 기본 요소 (골드/물약/장비/상점/미니맵) ================= */
-
-  /* v1.2.3 — 씹덕 스타일 NPC 6종 마을 배치.
-   *  상점 상인과 겹치지 않게 스폰 지점 기준으로 방사형 배치하고,
-   *  각자 살짝 다른 위상으로 숨쉬는 모션을 주어 "살아있는 마을" 느낌을 낸다.
-   *  말풍선 대사는 기존 대화 시스템을 건드리지 않고 짧은 라벨만 붙였다(추후 확장 여지). */
-  /* v1.2.4 — 씹덕 NPC 대사 (NPC별 고유 2줄). 기존 DIALOGUES 테이블에 등록해
-   *  기존 대화창 시스템을 그대로 재사용한다(새 UI 안 만든다). */
-  private static readonly CHIBI_LINES: Record<string, string> = {
-    npc_guide_lily: "『여기가 시작 마을이야! 길 잃으면 나한테 물어봐.』",
-    npc_scholar_mio: "『기록에 따르면 이 아래에 고대 유적이 있었어. …지금은 없지만.』",
-    npc_mage_rin: "『실험 중이니까 조심해. 방금도 눈썹이 조금 탔어.』",
-    npc_merchant_nyan: "『좋은 물건 있어! …값은 물어보고 결정해.』",
-    npc_witch_nyx: "『저주? 아니야. 그냥 내 성격이 그래.』",
-    npc_fairy_aria: "『반짝이는 거 보여? 이게 진짜 빛이야.』",
-  };
-  private spawnChibiNpcs() {
-    /* vc178 — 유저 지시 "씹덕캐릭 마을 당 1개만 배치해": 6종 전원 배치는 시끄럽다.
-     *  스테이지 키 해시로 6종 중 1명만 선정해 마을마다 다른 NPC가 서게 한다. */
-    const ox = this.layout ? this.entryHome.x : 400;
-    const oy = this.layout ? this.entryHome.y : this.stageH / 2;
-    /* [텍스처, 이름, 대사, 각도(rad), 거리] — 마을 중앙을 비우고 바깥에 배치 */
-    const list: [string, string, string, number, number][] = [
-      ["npc_guide_lily", "안내원 리리", "어서 와요!", -2.2, 150],
-      ["npc_scholar_mio", "학자 미오", "기록은 정확히.", -1.2, 190],
-      ["npc_mage_rin", "마법사 린", "실험 중이야.", -0.35, 200],
-      ["npc_merchant_nyan", "상인 냥", "싸게 줄게~", 0.45, 195],
-      ["npc_witch_nyx", "마녀 닉스", "…거래할래?", 1.25, 185],
-      /* 유저 지시 — "요정 시리즈 NPC 전면 제거". npc_fairy_aria 를 마을 배치에서 뺀다.
-       *  이 NPC는 선택형 미니퀘스트(빛나는 조각 수집)만 담당하고 전직·튜토리얼·
-       *  메인 진행에 관여하지 않으므로 기능 이전이 필요 없다. 대사/에셋 정의는
-       *  chibiQuests.ts 에 남겨 두되(텍스처는 다른 NPC와 공유 여부 확인 필요)
-       *  스폰 목록에서 빠지므로 게임 내에 등장하지 않는다. */
-    ];
-    /* vc178 — 마을당 1명: 스테이지 키 해시로 담당 NPC 1명만 선정 (시드 11 — 10마을에 6종 고르게 분배) */
-    const stageHash = Array.from(this.stageDef.key).reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 11);
-    const pick = list[stageHash % list.length];
-    for (let i = 0; i < 1; i++) {
-      const [key, name, line, ang, dist] = pick;
-      if (!this.textures.exists(key)) continue; // 텍스처 없으면 조용히 건너뛴다
-      const x = ox + Math.cos(ang) * dist;
-      const y = oy + Math.sin(ang) * dist * 0.55; // 세로 압축(2.5D 원근)
-      const depth = this.yDepthFor(y);
-      /* v1.2.4 (버그 3) — "씹덕 캐릭터가 다른 지형지물에 가린다".
-       *  원인: depth를 y/10으로만 잡아 나무·집보다 낮아지면 뒤로 묻혔다.
-       *  NPC는 항상 플레이어 바로 앞 레이어(80)에 두고, 그림자만 지형 depth를 따른다.
-       *  → 어떤 지형에서도 가려지지 않는다. */
-      const npc = this.add.image(x, y, key).setDepth(80).setScale(1.0).setOrigin(0.5, 0.78); // v1.2.4 (64x96) — 발 기준 정렬
-      /* origin(0.5,0.78) 이므로 발이 곧 y 다 — 그림자는 발밑에 살짝만 겹치게 둔다.
-       * 종전 y+14 는 그림자가 발에서 14px 아래로 떨어져 떠 보였다. */
-      const sh = this.add.ellipse(x, y + 2, 26, 8, 0x000000, 0.32).setDepth(79);
-      void sh;
-
-      /* v1.2.4 (버그 3) — 상호작용 미동작 해소.
-       *  종전엔 장식 이미지만 놓아서 E키(nearInteract) 대상이 아니었다.
-       *  interactables에 등록해야 말풍선 대사가 실제로 뜬다. */
-      this.interactables.push({
-        x, y,
-        kind: "chibi",
-        label: `${name} — 대화`,
-        dlg: `chibi_${key}`,
-        npcId: key,
-      });
-      /* 대사 데이터 등록 (한 번만) */
-      if (!DIALOGUES[`chibi_${key}`]) {
-        DIALOGUES[`chibi_${key}`] = {
-          speaker: name,
-          lines: [WorldScene.CHIBI_LINES[key] ?? line],
-        };
-      }
-      /* 숨쉬기 — 위상차를 주어 동시에 움직이지 않게 */
-      this.tweens.add({
-        targets: npc,
-        y: y - 2,
-        duration: 1100 + i * 130,
-        yoyo: true,
-        repeat: -1,
-        ease: "Sine.inOut",
-        delay: i * 180,
-      });
-      /* 이름표 */
-      this.add
-        .text(x, y - 52, name, {
-          fontFamily: "Galmuri11, sans-serif",
-          fontSize: "11px",
-          color: "#ffe9b0",
-          stroke: "#1a1020",
-          strokeThickness: 3,
-          fontStyle: "bold",
-        })
-        .setOrigin(0.5)
-        .setDepth(21);
-      /* 대사 — 3초 주기로 깜빡이며 표시 (항상 떠 있으면 시끄럽다)
-       *  vc179 (지시 #7) — 이름표(y-52)와 E원(y-58) 사이에 끼어 겹치던 문제.
-       *  대사는 이름표 위(y-78)로 확실히 분리하고, E원은 syncEBubble이
-       *  대사 보유 NPC에서 y-96으로 더 올려 서로 침범하지 않게 한다. */
-      const bubble = this.add
-        .text(x, y - 78, line, {
-          fontFamily: "Galmuri11, sans-serif",
-          fontSize: "10px",
-          color: "#ffffff",
-          backgroundColor: "#1a1020cc",
-          padding: { x: 4, y: 2 },
-        })
-        .setOrigin(0.5)
-        .setDepth(22)
-        .setAlpha(0);
-      this.tweens.add({
-        targets: bubble,
-        alpha: { from: 0, to: 1 },
-        duration: 400,
-        yoyo: true,
-        hold: 2600,
-        repeat: -1,
-        delay: 1200 + i * 700,
-      });
-    }
-  }
 
   /** 상점 NPC — 스폰 근처 대기 (스테이지 공통) */
   private spawnMerchant() {
