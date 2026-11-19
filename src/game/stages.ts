@@ -2478,7 +2478,7 @@ export const LILACWORLD_STORY_VILLAGES: readonly {
   key: StageKey; name: string; subtitle: string; after: StageKey; before: StageKey; themeFrom: StageKey;
 }[] = [
   { key: "lilacworld3v", name: "칼리야 왕국", subtitle: "리엘이 쓰러진 하루를 업고 온 마을",
-    after: "lilacworld3x2", before: "lilacworld3x3", themeFrom: "lilacworld3x3" },
+    after: "lilacworld3x2", before: "lilacworld3x3", themeFrom: "lilacworld3x4" }, // 바깥 마을: 주막(3-3)의 실내 나무 바닥 대신 같은 왕국 수련장의 흙·돌길
   { key: "lilacworld4v", name: "에벤트 왕국", subtitle: "리안 왕자가 다스리는 왕국",
     after: "lilacworld4x3", before: "lilacworld4x4", themeFrom: "lilacworld4x3" },
   { key: "lilacworld9v", name: "에벤트 왕국", subtitle: "부상자를 돌보며 때를 기다리는 연합",

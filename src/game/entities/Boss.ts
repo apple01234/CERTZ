@@ -1195,8 +1195,10 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
     if (!this.scene.textures.exists("vx_ring")) return null;
     const r = this.scene.add.image(x, y, "vx_ring").setDepth(6).setBlendMode(Phaser.BlendModes.ADD).setTint(tint).setAlpha(0.0).setScale(target * 0.3);
     this.scene.tweens.add({ targets: r, alpha: 0.75, scaleX: target, scaleY: target, duration: dur, ease: "Quad.out" });
-    this.scene.time.delayedCall(dur + 120, () => {
-      this.scene.tweens.add({ targets: r, alpha: 0, duration: 160, onComplete: () => r.destroy() });
+    // 보스는 사망 0.9초 뒤 destroy 되어 this.scene 이 비므로, 씬을 미리 잡아 둔다.
+    const scene = this.scene;
+    scene.time.delayedCall(dur + 120, () => {
+      if (r.active) scene.tweens.add({ targets: r, alpha: 0, duration: 160, onComplete: () => r.destroy() });
     });
     return r;
   }
@@ -1405,9 +1407,10 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
           /* vc145 (#15) — ADD 블렌드 강제 (검은 네모 제거 — vxWarnRing과 동일 사유) */
           const img = this.scene.add.image(zx, zy, "vx_puddle").setDepth(4).setBlendMode(Phaser.BlendModes.ADD).setTint(0x5adf7a).setAlpha(0).setScale(1.5);
           this.scene.tweens.add({ targets: img, alpha: 0.42, duration: 260 });
-          this.scene.time.delayedCall(6000, () => {
+          const scene = this.scene; // 6초 안에 보스가 destroy 되어도 장판은 사라져야 한다
+          scene.time.delayedCall(6000, () => {
             if (!img.active) return;
-            this.scene.tweens.add({ targets: img, alpha: 0, duration: 420, onComplete: () => img.destroy() });
+            scene.tweens.add({ targets: img, alpha: 0, duration: 420, onComplete: () => img.destroy() });
           });
           this.poisonZones.push({ x: zx, y: zy, until, img, last: 0 });
         }

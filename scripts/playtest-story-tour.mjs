@@ -8,17 +8,20 @@ import { CHAPTER_STORY_PLAN } from '../src/game/chapterStoryPlan.ts';
 const base = process.env.TOUR_QA_URL ?? 'http://127.0.0.1:3100';
 const out = process.env.TOUR_QA_OUT ?? '/dev/shm/certz-story-tour';
 const shots = process.env.TOUR_QA_SHOTS !== '0';
+// TOUR_QA_MOBILE=1 → 844×390 터치 가로 화면. TOUR_QA_ONLY=키,키 → 그 구역만(순서는 차원문 순서 유지).
+const mobile = process.env.TOUR_QA_MOBILE === '1';
+const only = process.env.TOUR_QA_ONLY ? new Set(process.env.TOUR_QA_ONLY.split(',')) : null;
 await mkdir(out, { recursive: true });
 
 const chain = [];
-for (let k = 'lilacworld1x1'; k && k.startsWith('lilacworld') && chain.length < 120; k = NEXT_STAGE[k]) chain.push(k);
+for (let k = 'lilacworld1x1'; k && k.startsWith('lilacworld') && chain.length < 120; k = NEXT_STAGE[k]) if (!only || only.has(k)) chain.push(k);
 const expectedPlace = key => {
   const m = /^(lilacworld\d+)x(\d+)$/.exec(key);
   return m ? CHAPTER_STORY_PLAN[m[1]]?.places[Number(m[2]) - 1] : undefined;
 };
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH, args: ['--no-sandbox', '--enable-unsafe-swiftshader'] });
-const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+const page = await browser.newPage(mobile ? { viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true } : { viewport: { width: 1280, height: 800 } });
 const errors = [], rows = [], problems = [];
 page.on('pageerror', e => errors.push(e.message));
 try {

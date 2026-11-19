@@ -1,7 +1,7 @@
 // 라일락 월드 이야기 마을: 하루가 실제로 머무는 곳(2.txt)에만 있다.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { STAGES, NEXT_STAGE, parseStage, LILACWORLD_STORY_VILLAGES } from "../src/game/stages.ts";
+import { STAGES, NEXT_STAGE, parseStage, LILACWORLD_STORY_VILLAGES, STAGE_THEME } from "../src/game/stages.ts";
 import { CHAPTER_VILLAGE_NPC, DIALOGUES } from "../src/game/data.ts";
 import { warpGroups } from "../src/game/warpGroups.ts";
 import { portalPreview } from "../src/game/portalPreview.ts";
@@ -41,4 +41,9 @@ test("부적 목록은 마을을 그 장 맨 앞에, 차원문은 휴식으로 �
   const groups = warpGroups(["lilacworld3x2", "lilacworld3v", "lilacworld3x3"]);
   assert.deepEqual(groups[0].stages.map((s) => s.key), ["lilacworld3v", "lilacworld3x2", "lilacworld3x3"]);
   assert.match(portalPreview("lilacworld3v").text, /칼리야 왕국 · 휴식$/);
+});
+
+test("칼리야 마을은 바깥 마을이라 실내(주막) 나무 바닥을 쓰지 않는다", () => {
+  assert.notEqual(STAGE_THEME.lilacworld3v.ground, "terrain_wood");
+  assert.notEqual(STAGE_THEME.lilacworld3v.ground, STAGE_THEME.lilacworld4v.ground, "칼리야와 에벤트 마을 바닥이 구별된다");
 });
