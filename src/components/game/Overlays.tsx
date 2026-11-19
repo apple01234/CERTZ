@@ -5,7 +5,7 @@ import type Phaser from "phaser";
 import { loadSave, clearSave, type SaveData } from "@/game/config";
 import { EventBus, type EndState, type RewardPopupState } from "./EventBus";
 import { STAGES, STAGE_SHORT, resolveStage } from "@/game/data";
-import { RotateCw, Play, Swords, Skull, Trophy, Home, Store, MessageCircle, Sparkles, Smartphone } from "lucide-react";
+import { RotateCw, Play, Swords, Skull, Trophy, Home, Store, MessageCircle, Sparkles, Smartphone, ScrollText } from "lucide-react";
 import { useKeyGate, swallowKeys } from "./inputGate"; // v4.1.0
 import { resolveApiBase } from "@/game/server"; // v1.4.20 — 멀티서버 분리
 import { loadKeyMap, loadMoveScheme, keyLabel } from "@/game/keymap"; // v1.0.17 — 조작 안내줄이 키맵·스킨을 따라가도록
@@ -854,31 +854,32 @@ export function FeatureTutorialOverlay() {
         role="dialog"
         aria-modal="true"
         aria-label={`${cur.name} 안내`}
-        className={`pointer-events-auto w-[min(94vw,440px)] rounded-xl border p-3.5 shadow-2xl backdrop-blur-sm ${
-          needDo ? "border-amber-300/60 bg-[#1a1206]/95" : "border-cyan-300/40 bg-[#0a1420]/95"
-        }`}
+        /* 2026-11-19 (지시 "튜토리얼시 나오는 짜치는 에셋 아닌 ui 바꿔") — CSS 상자 대신
+         *  다른 창과 같은 ui2 에셋 프레임(game-panel·sertz-listrow·game-btn)을 쓴다. 문구·동작은 그대로. */
+        className="game-panel pointer-events-auto w-[min(94vw,440px)] px-3 py-2.5"
       >
         <div className="mb-1.5 flex items-center justify-between gap-2">
-          <p className={`truncate text-[12px] font-black ${needDo ? "text-amber-200" : "text-cyan-200"}`}>
+          <p className="flex min-w-0 items-center gap-1.5 truncate text-[12px] font-black text-amber-200">
+            <ScrollText size={13} className="shrink-0 text-amber-300" />
             {cur.auto ? "새 기능 안내" : "다시보기"} · {cur.name}
           </p>
-          <span className="shrink-0 rounded-md bg-cyan-400/15 px-1.5 py-0.5 text-[10px] font-bold text-cyan-200">
+          <span className="game-chip shrink-0 px-1.5 py-0.5 text-[10px] font-bold text-amber-100">
             {cur.page + 1}/{cur.total}
           </span>
         </div>
 
-        <p className="mb-1 text-[13px] font-black text-white">{cur.title}</p>
+        <p className="mb-1 text-[13px] font-black text-amber-50">{cur.title}</p>
         <p className="text-[11px] leading-relaxed text-white/80">{cur.body}</p>
         {cur.where && (
-          <p className="mt-1.5 rounded-md bg-white/[0.06] px-2 py-1 text-[10px] font-bold text-amber-200">
+          <p className="sertz-listrow mt-1.5 px-2 py-0.5 text-[10px] font-bold text-amber-200">
             위치: {cur.where}
           </p>
         )}
 
         {/* vc179 — 직접 해 보기 상태 */}
         {cur.do && (
-          <div className={`mt-2 rounded-md px-2 py-1.5 text-[10px] font-bold ${
-            cur.doDone ? "bg-emerald-400/15 text-emerald-200" : "bg-amber-400/15 text-amber-200"
+          <div className={`mt-2 px-2 py-1 text-[10px] font-bold ${
+            cur.doDone ? "sertz-listrow text-emerald-200" : "sertz-listrow-sel text-amber-200"
           }`}>
             {cur.doDone
               ? "잘했다! 곧 다음으로 넘어간다"
@@ -895,26 +896,15 @@ export function FeatureTutorialOverlay() {
 
         <div className="mt-2.5 flex items-center gap-1.5">
           {needDo && cur.do?.kind === "panel" ? (
-            <button
-              onClick={openPanel}
-              className="flex-1 rounded-md bg-amber-400 px-3 py-1.5 text-[11px] font-black text-slate-900 hover:bg-amber-300 active:scale-95"
-            >
+            <button onClick={openPanel} className="game-btn flex-1 px-3 py-1.5 text-[11px] font-black">
               지금 열어 보기
             </button>
           ) : (
-            <button
-              onClick={next}
-              className={`flex-1 rounded-md px-3 py-1.5 text-[11px] font-black text-slate-900 active:scale-95 ${
-                needDo ? "bg-amber-400/50 text-slate-900/60" : "bg-cyan-400 hover:bg-cyan-300"
-              }`}
-            >
+            <button onClick={next} className={`game-btn flex-1 px-3 py-1.5 text-[11px] font-black ${needDo ? "opacity-60" : ""}`}>
               {isLast ? "확인" : "다음"}
             </button>
           )}
-          <button
-            onClick={close}
-            className="rounded-md border border-white/20 bg-black/40 px-3 py-1.5 text-[11px] font-bold text-white/70 hover:bg-black/60 active:scale-95"
-          >
+          <button onClick={close} className="game-btn-ghost px-3 py-1.5 text-[11px] font-bold">
             닫기
           </button>
         </div>

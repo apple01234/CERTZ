@@ -40,6 +40,9 @@ function uiScaleOf(): number {
  *  - 오른쪽: 공격/회전베기/돌진베기 버튼 — pointerdown 즉시 발동
  *  - pointerId 추적으로 동시 조작 보장, touch-action:none으로 스크롤 차단
  */
+/** 이 폭보다 좁으면 [자동+물약]을 버튼 행 위로 올린다(조이스틱·미니맵과 겹침 방지). */
+const CLUSTER_FLOAT_BELOW = 810;
+
 export function TouchControls({
   skills,
   hpPot,
@@ -100,7 +103,9 @@ export function TouchControls({
    *  "이동할 때마다 물약이 발려 화면이 깨진다"는 리포트의 직접 원인.
    *  겹침 판정: 컨테이너 left = W - 클러스터폭 < 0.46W 구간.
    *  겹침 시 [자동+물약] 클러스터를 행 위쪽 가로열로 플로팅한다. */
-  const [clusterFloat, setClusterFloat] = useState(() => typeof window !== "undefined" && window.innerWidth < 576);
+  /* 2026-11-19 — 576 → 810. 가로 폰(667~806px)에서 [자동+물약] 세로열까지 든 행(약 311px)이
+   *  하단 중앙 미니맵(오른쪽 끝 = 화면 중앙 + 64px)을 덮었다(scripts/playtest-mobile-hud-overlap.mjs 실측). */
+  const [clusterFloat, setClusterFloat] = useState(() => typeof window !== "undefined" && window.innerWidth < CLUSTER_FLOAT_BELOW);
   /* vc143 (#7) — 화면 배율 상태 (resize 반영) */
   const [uiScale, setUiScale] = useState(() => (typeof window === "undefined" ? 1 : uiScaleOf()));
 
@@ -122,7 +127,7 @@ export function TouchControls({
     const reevaluate = () => {
       const coarse = window.matchMedia("(pointer: coarse)").matches;
       setIsTouch(coarse || window.innerWidth < 900);
-      setClusterFloat(window.innerWidth < 576);
+      setClusterFloat(window.innerWidth < CLUSTER_FLOAT_BELOW);
       setUiScale(uiScaleOf());
     };
     reevaluate();
@@ -353,18 +358,6 @@ export function TouchControls({
             {mpBtn}
           </div>
         )}
-        {allows("dash") && <button
-          type="button"
-          aria-label={`돌진 — 쿨타임 ${FREE_DASH.cooldownMs / 1000}초, 자원 소모 없음`}
-          className={`pointer-events-auto shrink-0 touch-none rounded-lg border border-white/40 bg-black/70 px-2 py-3 text-xs font-bold text-white ${learning && tutorial?.step === "evade" ? "ring-4 ring-amber-300/90 motion-safe:animate-pulse" : ""}`}
-          onPointerDown={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            EventBus.emit("input:dash");
-          }}
-        >
-          돌진<span className="block text-[10px]">Shift · {FREE_DASH.cooldownMs / 1000}초</span>
-        </button>}
         {/* [스킬그리드] — 해금된 스킬 2열 랩 그리드(아래→위로 쌓임), 궁극기는 마지막 칸의
          *  살짝 큰 황금 버튼(현행 스타일). 미해금 스킬은 그리드에서 제외 */}
         <div
@@ -443,53 +436,69 @@ export function TouchControls({
           )}
         </div>
         {/* [공격] — 행 끝 대형 원형 버튼 (현행 스타일·크기 유지) */}
-        {allows("attack") && <button
-          data-tutorial-control="attack"
-          aria-label="공격"
-          className="pointer-events-auto relative flex touch-none select-none items-center justify-center rounded-full border-[3px] border-rose-200/70 bg-gradient-to-b from-rose-500 to-rose-700 text-white shadow-[0_4px_14px_rgba(0,0,0,0.5)] transition-transform active:scale-90"
-          style={{ width: ATK, height: ATK }}
-          onPointerDown={(e) => {
-            e.preventDefault();
-            EventBus.emit("input:attack");
-          }}
-        >
-          {/* vc217 — 공격 단축키 배지. 종전엔 공격 버튼에 키 표시가 아예 없어
-           *  "스킬엔 있는데 공격은 왜 없나"가 불일치로 보였다. 스킬과 같은 규칙
-           *  (원 안쪽 10% 지점)으로 맞추고, 키맵 변경 시 함께 갱신된다. */}
-          {keyLabel(km.attack) && (
-            <span className="pointer-events-none absolute left-[10%] top-[10%] z-20 flex min-w-[13px] items-center justify-center rounded-[3px] bg-slate-950/95 px-[3px] text-[9px] font-black leading-[13px] text-rose-200 ring-1 ring-rose-300/50 [text-shadow:0_1px_1px_#000]">
-              {keyLabel(km.attack)}
-            </span>
-          )}
-          <div className="flex flex-col items-center">
-            {/* vc193 (버그 #2 "기본 공격키&상호작용키 등 저런 개짜치는 ai가 만든듯한 UI 전부 에셋 UI로 바꿔") —
-             *  종전엔 lucide <Swords> 벡터 + CSS 그라데이션으로 버튼을 그려서
-             *  "AI가 만든 듯한" 느낌이었다. 저장소에 이미 ui2/ab_sword.webp 등
-             *  전투 아이콘 에셋 6종이 있었는데 **한 곳에서도 쓰이지 않았다**.
-             *  에셋이 있으면 에셋을 쓰고, 로드 실패 시에만 벡터로 폴백한다. */}
-            <img
-              src="/assets/ui2/ab_sword.webp"
-              alt=""
-              draggable={false}
-              onError={(e) => {
-                const el = e.currentTarget;
-                if (el.dataset.fb) return;
-                el.dataset.fb = "1";
-                el.style.display = "none";
-                el.nextElementSibling?.classList.remove("hidden");
-              }}
-              className="h-[26px] w-[26px] drop-shadow-[0_2px_2px_rgba(0,0,0,0.55)]"
-              style={{ imageRendering: "pixelated" }}
-            />
-            <Swords size={26} className="hidden" />
-            <span className="mt-0.5 text-[10px] font-black tracking-wide">{atkName || "공격"}</span>
-          </div>
-          {/* vc154 (지시 #1) — 기본공격 단축키 키탭 제거 (유저 지시 "기본공격 단축키 X 아이콘 없애").
-           *  vc147에서 버튼에 키탭을 붙였을 때 attack 버튼에 relative가 없어 키탭이 클러스터
-           *  컨테이너(좌상단=자동 버튼 위)를 기준으로 배치돼, 어디서 왔는지 모를 유령 "X" 칩이
-           *  자동 버튼 위에 떠 있었다. 키탭 자체를 제거해 근본 해결 — 스킬 버튼 키탭(Z/C/V/A/S)은
-           *  relative 버튼 내부에 정상 렌더되므로 유지한다. */}
-        </button>}
+        {/* 2026-11-19 (지시 "모바일에서 대쉬키 때문에 맵을 가리는 버그") — 돌진을 행 가운데에 두면 행이 넓어져
+         *  844px 가로 화면에서 하단 중앙 미니맵(128px)을 덮었다. 공격 버튼 바로 위로 옮겨 행 폭을 줄인다. */}
+        <div className="flex flex-col items-center gap-1.5">
+          {allows("dash") && <button
+            type="button"
+            aria-label={`돌진 — 쿨타임 ${FREE_DASH.cooldownMs / 1000}초, 자원 소모 없음`}
+            className={`game-btn-ghost pointer-events-auto shrink-0 touch-none px-3 py-1 text-xs font-bold text-white ${learning && tutorial?.step === "evade" ? "ring-4 ring-amber-300/90 motion-safe:animate-pulse" : ""}`}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              EventBus.emit("input:dash");
+            }}
+          >
+            돌진 <span className="text-[10px] text-white/70">Shift · {FREE_DASH.cooldownMs / 1000}초</span>
+          </button>}
+          {allows("attack") && <button
+            data-tutorial-control="attack"
+            aria-label="공격"
+            className="pointer-events-auto relative flex touch-none select-none items-center justify-center rounded-full border-[3px] border-rose-200/70 bg-gradient-to-b from-rose-500 to-rose-700 text-white shadow-[0_4px_14px_rgba(0,0,0,0.5)] transition-transform active:scale-90"
+            style={{ width: ATK, height: ATK }}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              EventBus.emit("input:attack");
+            }}
+          >
+            {/* vc217 — 공격 단축키 배지. 종전엔 공격 버튼에 키 표시가 아예 없어
+             *  "스킬엔 있는데 공격은 왜 없나"가 불일치로 보였다. 스킬과 같은 규칙
+             *  (원 안쪽 10% 지점)으로 맞추고, 키맵 변경 시 함께 갱신된다. */}
+            {keyLabel(km.attack) && (
+              <span className="pointer-events-none absolute left-[10%] top-[10%] z-20 flex min-w-[13px] items-center justify-center rounded-[3px] bg-slate-950/95 px-[3px] text-[9px] font-black leading-[13px] text-rose-200 ring-1 ring-rose-300/50 [text-shadow:0_1px_1px_#000]">
+                {keyLabel(km.attack)}
+              </span>
+            )}
+            <div className="flex flex-col items-center">
+              {/* vc193 (버그 #2 "기본 공격키&상호작용키 등 저런 개짜치는 ai가 만든듯한 UI 전부 에셋 UI로 바꿔") —
+               *  종전엔 lucide <Swords> 벡터 + CSS 그라데이션으로 버튼을 그려서
+               *  "AI가 만든 듯한" 느낌이었다. 저장소에 이미 ui2/ab_sword.webp 등
+               *  전투 아이콘 에셋 6종이 있었는데 **한 곳에서도 쓰이지 않았다**.
+               *  에셋이 있으면 에셋을 쓰고, 로드 실패 시에만 벡터로 폴백한다. */}
+              <img
+                src="/assets/ui2/ab_sword.webp"
+                alt=""
+                draggable={false}
+                onError={(e) => {
+                  const el = e.currentTarget;
+                  if (el.dataset.fb) return;
+                  el.dataset.fb = "1";
+                  el.style.display = "none";
+                  el.nextElementSibling?.classList.remove("hidden");
+                }}
+                className="h-[26px] w-[26px] drop-shadow-[0_2px_2px_rgba(0,0,0,0.55)]"
+                style={{ imageRendering: "pixelated" }}
+              />
+              <Swords size={26} className="hidden" />
+              <span className="mt-0.5 text-[10px] font-black tracking-wide">{atkName || "공격"}</span>
+            </div>
+            {/* vc154 (지시 #1) — 기본공격 단축키 키탭 제거 (유저 지시 "기본공격 단축키 X 아이콘 없애").
+             *  vc147에서 버튼에 키탭을 붙였을 때 attack 버튼에 relative가 없어 키탭이 클러스터
+             *  컨테이너(좌상단=자동 버튼 위)를 기준으로 배치돼, 어디서 왔는지 모를 유령 "X" 칩이
+             *  자동 버튼 위에 떠 있었다. 키탭 자체를 제거해 근본 해결 — 스킬 버튼 키탭(Z/C/V/A/S)은
+             *  relative 버튼 내부에 정상 렌더되므로 유지한다. */}
+          </button>}
+        </div>
         {/* clusterFloat(좁은 세로 화면) — [자동+물약]을 행 위쪽 가로열로 피난:
          *  배치 복귀와 무관하게 조이스틱(화면 좌하단 46%)과의 겹침만 막는 안전장치(v1.4.18 계승) */}
         {!learning && clusterFloat && (
