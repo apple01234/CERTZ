@@ -30,7 +30,7 @@ import { Drop, type DropKind } from "../entities/Drop";
 import { AURA_ANIM, AURA_LUT, AURA_LUT_STEPS, HIT_FLIPBOOK, adFailText } from "./worldHelpers";
 import { FifthAuraRig } from "../fx/FifthAura"; // v1.4.41 (#9) — 5차 블룸·라이트
 import { fifthBurstFor } from "../fx/fifthLooks"; // vc204 (#15) — 직업별 각성 버스트
-import { lineByKey as chibiLineByKey, CHIBI_LINES, type ChibiSave } from "../chibiQuests"; // vc204 (#7) — 씹덕 NPC 퀘스트
+import { lineByKey as chibiLineByKey, type ChibiSave } from "../chibiQuests"; // vc204 (#7) — 씹덕 NPC 퀘스트
 /* vc238 — (스테이지:퀘스트) 단위 독립 처치 카운터. 맵/퀘스트 간 오염 제거. */
 import { huntScope, huntProgressOf, recordHuntKill, seedHuntProgress, type HuntProgress } from "../questProgress";
 import { getTraumaShake, playUltCinematic } from "../fx/UltCinematic"; // v1.4.41 (#13) — 궁극기 시네마틱
@@ -760,7 +760,7 @@ export class WorldScene extends Phaser.Scene {
    *  남는 자리는 마을 초행자 훈련장(작업2)으로 대체했다.
    *  buildLayeredKeep/유적 텍스처 로드는 제거 — tickKeepLayer(층 전환)도 함께 폐지.
    *  v1.4.4 — 유저 리포트 ②에 따라 하루 1회 보물상자(keepchest)만 부활(buildVillageChest). */
-  private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "gm" | "inn" | "house" | "innkeeper" | "bed" | "exit" | "keepchest" | "chibi" | "decor" | "dlcgate"; dlg?: string; npcId?: string; label: string }[] = [];
+  private interactables: { x: number; y: number; kind: "talk" | "shop" | "job" | "gm" | "inn" | "house" | "innkeeper" | "bed" | "exit" | "keepchest" | "decor" | "dlcgate"; dlg?: string; npcId?: string; label: string }[] = [];
   private nearInteract: (typeof this.interactables)[number] | null = null;
   private activeNpcId: string | null = null;
   private talkedNpcs = new Set<string>();
@@ -2034,8 +2034,8 @@ export class WorldScene extends Phaser.Scene {
 
     /* ---------- 상점 NPC (v3.0.15 #9 — 상인은 마을에만 배치. 필드 몬스터 구역에서 제거) ---------- */
     if (!this.isInterior && this.stageDef.isVillage) this.spawnMerchant();
-    /* 유저 지시 — 씹덕(치비) NPC 6종 시리즈 전면 제거. 마을에 배치하지 않는다.
-     *  이미 수주한 치비 퀘스트는 chibiProgress 로 계속 자동 완료된다. */
+    /* 유저 지시 — 씹덕(치비) NPC 6종 시리즈 전면 제거. 마을 배치·대화·새 수주가 없다.
+     *  이미 수주한 치비 퀘스트는 chibiProgress 로 계속 자동 완료된다(세이브 필드 보존). */
 
     /* v1.4.12 (#14) — 사냥터 정보 NPC: 챕터별 대사를 가진 정찰병/생존자를 필드에 배치.
      *  "상호작용 안 되는 이상한 오브젝트"의 대안 — 만나면 챕터 공략 힌트를 준다. */
@@ -6245,10 +6245,8 @@ export class WorldScene extends Phaser.Scene {
     {
       mm.fillStyle(0xffe066, 0.95);
       for (const it of this.interactables) {
-        /* vc204 (지시서 #7) — chibi NPC 도 노란 점 대상에 포함.
-         *  종전엔 talk/shop/job/gm/innkeeper 만 그려서 씹덕 NPC 는 지도에서 안 보였다. */
         if (it.kind !== "talk" && it.kind !== "shop" && it.kind !== "job" &&
-            it.kind !== "gm" && it.kind !== "innkeeper" && it.kind !== "chibi") continue;
+            it.kind !== "gm" && it.kind !== "innkeeper") continue;
         mm.fillCircle(mx(it.x), my(it.y), 2.4 / z);
       }
       if (this.jobNpc?.active) mm.fillCircle(mx(this.jobNpc.x), my(this.jobNpc.y), 2.6 / z);
@@ -8991,70 +8989,9 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** v3.0.22 (#43) — 동적 단발 대사 (DIALOGUES 테이블 밖 — 결정 수확 랜덤 멘트) */
-  /** vc204 (지시서 #7) — 씹덕 NPC 3단계 미니 퀘스트 상호작용.
-   *  기존 대화 시스템(showDialogueRaw + dialogue:choice)을 그대로 쓰고 새 UI 를 만들지 않는다.
-   *  분기: ① 라인 완료 → 잡담 ② 진행 중 → 진행도 보고 ③ 수주 가능 → 수주 제안 ④ 완료 가능 → 보상 */
-  private chibiInteract(npcId: string) {
-    const line = chibiLineByKey(npcId);
-    if (!line) return;
-    const st = this.chibiState(npcId);
-    const step = line.steps[st.done];
-    /* ① 라인 완료 */
-    if (!step) {
-      this.showDialogueRaw({
-        speaker: line.name,
-        lines: [`『${line.persona}』`, "『…네 덕분에 여기까지 왔어. 고마워.』"],
-      });
-      return;
-    }
-    /* ② 진행 중 — 진행도 보고 */
-    if (st.prog > 0) {
-      const need = step.need ?? 1;
-      this.showDialogueRaw({
-        speaker: line.name,
-        lines: [`『${step.title} — ${Math.min(st.prog, need)}/${need}.』`, "『아직이야. 조금만 더!』"],
-      });
-      return;
-    }
-    /* ③·④ 완료 판정 후 수주/보상 */
-    this.showDialogueRaw({
-      speaker: line.name,
-      lines: step.intro,
-      choices: [
-        { label: `[수주] ${step.title}`, id: "chibi_accept" },
-        { label: "나중에", id: "chibi_later" },
-      ],
-    });
-    const onChoice = (v: { id?: string }) => {
-      EventBus.off("dialogue:choice", onChoice as never);
-      if (v?.id !== "chibi_accept") return;
-      const cur = this.chibiState(npcId);
-      if (cur.prog > 0 || cur.done !== st.done) return;
-      this.chibiQuests[npcId] = { done: cur.done, prog: 0, active: step.id };
-      this.saveSoon();
-      this.showBanner(`퀘스트 수주 — ${step.title}`);
-      this.emitChibiHud();
-    };
-    EventBus.on("dialogue:choice", onChoice as never);
-  }
-
   /** 씹덕 퀘스트 상태 조회 (없으면 0/0) */
   private chibiState(npcId: string) {
     return this.chibiQuests[npcId] ?? { done: 0, prog: 0, active: null as string | null };
-  }
-
-  /** HUD 갱신 — 퀘스트 로그에 진행도가 보이게 */
-  private emitChibiHud() {
-    const entries = Object.entries(this.chibiQuests)
-      .filter(([, v]) => v.active)
-      .map(([k, v]) => {
-        const line = chibiLineByKey(k);
-        const step = line?.steps[v.done];
-        if (!line || !step) return null;
-        return `${line.name}: ${step.title} (${Math.min(v.prog, step.need ?? 1)}/${step.need ?? 1})`;
-      })
-      .filter(Boolean) as string[];
-    EventBus.emit("hud:chibiQuests", entries);
   }
 
   /** vc204 (#7) — 처치/수집/대화/도달 진행도를 씹덕 퀘스트에도 반영한다.
@@ -9072,10 +9009,7 @@ export class WorldScene extends Phaser.Scene {
       /* 목표 달성 → 완료 보고를 기다리지 않고 자동 완료 처리 */
       if (st.prog >= (step.need ?? 1)) this.completeChibiStep(npcId);
     }
-    if (changed) {
-      this.saveSoon();
-      this.emitChibiHud();
-    }
+    if (changed) this.saveSoon();
   }
 
   /** 단계 완료 — 보상 지급 + 다음 단계로 */
@@ -9090,9 +9024,8 @@ export class WorldScene extends Phaser.Scene {
     this.showBanner(`${step.title} 완료! +${step.reward ?? 0}G`);
     audio.sfx.levelup();
     this.spawnBurstAt(this.player.x, this.player.y, 18, 0xffe9a8);
-    this.showDialogueRaw({ speaker: line.name, lines: step.done });
+    /* 치비 NPC 시리즈 제거 — 완료 시 그 NPC 대사창은 띄우지 않고 배너·보상만 준다. */
     this.saveSoon();
-    this.emitChibiHud();
   }
 
   private showDialogueRaw(d: { speaker: string; portrait?: string; lines: string[]; choices?: { label: string; id: string }[] }) {
@@ -15861,14 +15794,6 @@ export class WorldScene extends Phaser.Scene {
     if (it.dlg?.startsWith("tutorial|")) {
       const who = it.dlg.slice(9);
       if (who === "lilac" || who === "register") this.tut?.interact(who);
-      return;
-    }
-    /* v1.2.4 (버그 3) — 씹덕 NPC 대화. 기존 showDialogue 경로를 그대로 쓴다.
-     *  vc204 (지시서 #7) — 이제 3단계 미니 퀘스트 라인을 갖는다(수주→진행→보상).
-     *  "대사만 있고 퀘스트나 상호작용 안됨" 지적의 직접 해소. 새 UI 없이
-     *  기존 showDialogueRaw + dialogue:choice 를 재사용한다. */
-    if (it.kind === "chibi") {
-      this.chibiInteract(it.npcId ?? "");
       return;
     }
     /* vc178 — 집 꾸미기 패널 개방 (내 집 실내 우측 하단 꾸미기 지점) */
