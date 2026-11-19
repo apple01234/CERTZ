@@ -442,14 +442,16 @@ export function TouchControls({
           {allows("dash") && <button
             type="button"
             aria-label={`돌진 — 쿨타임 ${FREE_DASH.cooldownMs / 1000}초, 자원 소모 없음`}
-            className={`game-btn-ghost pointer-events-auto shrink-0 touch-none px-3 py-1 text-xs font-bold text-white ${learning && tutorial?.step === "evade" ? "ring-4 ring-amber-300/90 motion-safe:animate-pulse" : ""}`}
+            className={`pointer-events-auto relative flex h-10 w-10 shrink-0 touch-none select-none items-center justify-center rounded-full border-2 border-white/25 bg-slate-800/85 text-[11px] font-black text-white shadow-lg transition-transform active:scale-90 sm:h-12 sm:w-12 ${learning && tutorial?.step === "evade" ? "ring-4 ring-amber-300/90 motion-safe:animate-pulse" : ""}`}
             onPointerDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
               EventBus.emit("input:dash");
             }}
           >
-            돌진 <span className="text-[10px] text-white/70">Shift · {FREE_DASH.cooldownMs / 1000}초</span>
+            {/* 맵 이름표를 덜 가리게 자동 버튼과 같은 작은 원형으로. 키는 공격 버튼과 같은 모서리 배지. */}
+            <span className="pointer-events-none absolute -left-1 -top-1 rounded-[3px] bg-slate-950/95 px-[3px] text-[8px] font-black leading-[12px] text-rose-200 ring-1 ring-rose-300/50">Shift</span>
+            돌진
           </button>}
           {allows("attack") && <button
             data-tutorial-control="attack"
